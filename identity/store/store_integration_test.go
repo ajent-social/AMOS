@@ -29,6 +29,8 @@ func TestT3_2_DuplicateEmailRollsBackPersonAndConcurrentCreateWinsOnce(t *testin
 	}
 
 	duplicate := pendingAccount(t, dbEmailCaseVariant(first.EmailAddress))
+	duplicate.InstallationID = first.InstallationID
+	duplicate.ApplicationID = first.ApplicationID
 	err := createAccount(t, db, duplicate)
 	if !errors.Is(err, store.ErrEmailAlreadyUsed) {
 		t.Fatalf("duplicate account error = %v, want ErrEmailAlreadyUsed", err)
@@ -39,6 +41,8 @@ func TestT3_2_DuplicateEmailRollsBackPersonAndConcurrentCreateWinsOnce(t *testin
 	// constraint must choose one committed identity, regardless of timing.
 	left := pendingAccount(t, "Race@example.test")
 	right := pendingAccount(t, "race@EXAMPLE.TEST")
+	left.InstallationID, left.ApplicationID = first.InstallationID, first.ApplicationID
+	right.InstallationID, right.ApplicationID = first.InstallationID, first.ApplicationID
 	start := make(chan struct{})
 	results := make(chan error, 2)
 	for _, input := range []store.PendingAccount{left, right} {
@@ -87,6 +91,8 @@ func TestT3_2_FailedCreateAfterPersonInsertLeavesNoPartialAccount(t *testing.T) 
 	// scoped email uniqueness constraint. storage.DB.WithTx must roll back that
 	// person row along with every other row in the account operation.
 	second := pendingAccount(t, "ROLLBACK@example.test")
+	second.InstallationID = first.InstallationID
+	second.ApplicationID = first.ApplicationID
 	err := createAccount(t, db, second)
 	if !errors.Is(err, store.ErrEmailAlreadyUsed) {
 		t.Fatalf("failing account error = %v, want ErrEmailAlreadyUsed", err)
