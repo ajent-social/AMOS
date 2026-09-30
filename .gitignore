@@ -3,6 +3,16 @@
 /ajent.social
 /.claude/scratch/
 /.local/
+/.aws/
+/.ssh/
+/.codex/
+/.agents/
+/.claude/*.local.json
+/credentials/
+/secrets/
+*.pem
+id_rsa
+id_ed25519
 .env
 .env.*
 !.env.example
