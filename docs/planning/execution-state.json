@@ -205,10 +205,13 @@
     ]
   },
   "T2.4": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Isolated task work underway; review and integration gates remain pending."
+      "Integrator reviewed generated typed contract, current principal/workspace membership checks and scoped revision-guarded SQL.",
+      "Real PostgreSQL tests passed for CRUD, restart persistence, shared workspace membership, cross-workspace denial and stale revisions.",
+      "A syntactically valid isolated update-predicate mutation allowed foreign-workspace update and was detected; restored suite passed.",
+      "Transport and operation-runner exposure remain downstream; no paid-feature or provider qualification claimed."
     ]
   },
   "T3.6": {
@@ -243,6 +246,20 @@
       "Integrator reviewed principal-bound bootstrap and current person/security-epoch transaction checks.",
       "Real PostgreSQL race tests passed for concurrent idempotency, owner/scope mismatch, rollback and repair-needed workspace state.",
       "Disposable owner-mismatch mutation failed the negative test and was restored; scoped vet/lint passed."
+    ]
+  },
+  "T4.4": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Isolated Luna implementation assigned with real test prerequisites; review and integration pending."
+    ]
+  },
+  "T6.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Isolated Luna implementation assigned with real test prerequisites; review and integration pending."
     ]
   }
 }

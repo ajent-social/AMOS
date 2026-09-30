@@ -1,11 +1,12 @@
-# Third-party Go dependency notices
+# Third-party notices
 
-Original AMOS code is licensed under Apache 2.0. The following selected dependency license texts are preserved for redistribution. They do not imply that upstream code is copied into AMOS source. Bundled and binary distribution must keep applicable notices.
+AMOS original code is Apache 2.0. Dependencies retain their own licenses; selected source notices below accompany distribution. Unresolved license evidence blocks release, not local verification.
 
 ## github.com/aws/aws-sdk-go-v2 v1.47.1
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2@v1.47.1
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -208,12 +209,21 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2@v1.47.1
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+```
 
+### NOTICE.txt
+
+```text
+AWS SDK for Go
+Copyright 2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+Copyright 2014-2015 Stripe, Inc.
+```
 
 ## github.com/aws/aws-sdk-go-v2/config v1.33.6
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/config@v1.33.6
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -416,12 +426,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/config@v1.33.6
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/credentials v1.20.6
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/credentials@v1.20.6
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -624,12 +635,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/credentials@v1.20.6
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.20.1
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/feature/ec2/imds@v1.20.1
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -832,12 +844,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/feature/ec2/imds@v1.20.1
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.4
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/internal/configsources@v1.5.4
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -1040,12 +1053,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/internal/configsources@v
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.4
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/internal/endpoints/v2@v2.8.4
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -1248,12 +1262,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/internal/endpoints/v2@v2
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.4
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/internal/v4a@v1.5.4
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -1456,12 +1471,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/internal/v4a@v1.5.4
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.19
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding@v1.13.19
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -1664,12 +1680,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/internal/accept-
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.4
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/internal/presigned-url@v1.14.4
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -1872,12 +1889,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/internal/presign
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/service/sesv2 v1.77.0
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sesv2@v1.77.0
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -2080,12 +2098,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sesv2@v1.77.0
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/service/signin v1.10.1
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/signin@v1.10.1
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -2288,12 +2307,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/signin@v1.10.1
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/service/sso v1.38.1
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sso@v1.38.1
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -2496,12 +2516,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sso@v1.38.1
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/service/ssooidc v1.43.1
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/ssooidc@v1.43.1
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -2704,12 +2725,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/ssooidc@v1.43.1
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/aws-sdk-go-v2/service/sts v1.51.1
 
-Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sts@v1.51.1
+### LICENSE.txt
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -2912,12 +2934,13 @@ Source: https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/sts@v1.51.1
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/aws/smithy-go v1.28.1
 
-Source: https://pkg.go.dev/github.com/aws/smithy-go@v1.28.1
+### LICENSE
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -3093,12 +3116,19 @@ Source: https://pkg.go.dev/github.com/aws/smithy-go@v1.28.1
       defend, and hold each Contributor harmless for any liability
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
+```
 
+### NOTICE
+
+```text
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+```
 
 ## github.com/bahlo/generic-list-go v0.2.0
 
-Source: https://pkg.go.dev/github.com/bahlo/generic-list-go@v0.2.0
+### LICENSE
 
+```text
 Copyright (c) 2009 The Go Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -3126,12 +3156,13 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+```
 
 ## github.com/buger/jsonparser v1.1.2
 
-Source: https://pkg.go.dev/github.com/buger/jsonparser@v1.1.2
+### LICENSE
 
+```text
 MIT License
 
 Copyright (c) 2016 Leonid Bugaev
@@ -3153,12 +3184,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
+```
 
 ## github.com/davecgh/go-spew v1.1.1
 
-Source: https://pkg.go.dev/github.com/davecgh/go-spew@v1.1.1
+### LICENSE
 
+```text
 ISC License
 
 Copyright (c) 2012-2016 Dave Collins <dave@davec.name>
@@ -3174,12 +3206,13 @@ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
 WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
+```
 
 ## github.com/google/uuid v1.6.0
 
-Source: https://pkg.go.dev/github.com/google/uuid@v1.6.0
+### LICENSE
 
+```text
 Copyright (c) 2009,2014 Google Inc. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -3207,12 +3240,13 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+```
 
 ## github.com/jackc/pgpassfile v1.0.0
 
-Source: https://pkg.go.dev/github.com/jackc/pgpassfile@v1.0.0
+### LICENSE
 
+```text
 Copyright (c) 2019 Jack Christensen
 
 MIT License
@@ -3235,12 +3269,13 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+```
 
 ## github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761
 
-Source: https://pkg.go.dev/github.com/jackc/pgservicefile@v0.0.0-20240606120523-5a60cdf6a761
+### LICENSE
 
+```text
 Copyright (c) 2020 Jack Christensen
 
 MIT License
@@ -3263,12 +3298,13 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+```
 
 ## github.com/jackc/pgx/v5 v5.11.0
 
-Source: https://pkg.go.dev/github.com/jackc/pgx/v5@v5.11.0
+### LICENSE
 
+```text
 Copyright (c) 2013-2021 Jack Christensen
 
 MIT License
@@ -3291,12 +3327,13 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+```
 
 ## github.com/jackc/puddle/v2 v2.2.2
 
-Source: https://pkg.go.dev/github.com/jackc/puddle/v2@v2.2.2
+### LICENSE
 
+```text
 Copyright (c) 2018 Jack Christensen
 
 MIT License
@@ -3319,12 +3356,66 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
 
+## github.com/kr/pretty v0.3.1
+
+### License
+
+```text
+Copyright 2012 Keith Rarick
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
+
+## github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
+
+### LICENSE
+
+```text
+The MIT License (MIT)
+
+Copyright (C) 2016 Lucas Jones
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
 
 ## github.com/pb33f/jsonpath v0.8.2
 
-Source: https://pkg.go.dev/github.com/pb33f/jsonpath@v0.8.2
+### LICENSE
 
+```text
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3526,12 +3617,13 @@ Source: https://pkg.go.dev/github.com/pb33f/jsonpath@v0.8.2
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/pb33f/libopenapi v0.38.7
 
-Source: https://pkg.go.dev/github.com/pb33f/libopenapi@v0.38.7
+### LICENSE
 
+```text
 MIT License
 
 Copyright (c) 2022-2025 Princess Beef Heavy Industries, LLC / Dave Shanley
@@ -3553,12 +3645,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
+```
 
 ## github.com/pb33f/ordered-map/v2 v2.3.1
 
-Source: https://pkg.go.dev/github.com/pb33f/ordered-map/v2@v2.3.1
+### LICENSE
 
+```text
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3760,12 +3853,13 @@ Source: https://pkg.go.dev/github.com/pb33f/ordered-map/v2@v2.3.1
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
+```
 
 ## github.com/pb33f/testify v0.1.0
 
-Source: https://pkg.go.dev/github.com/pb33f/testify@v0.1.0
+### LICENSE
 
+```text
 MIT License
 
 Copyright (c) 2012-2020 Mat Ryer, Tyler Bunnell and contributors.
@@ -3787,12 +3881,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
+```
 
 ## github.com/pmezard/go-difflib v1.0.0
 
-Source: https://pkg.go.dev/github.com/pmezard/go-difflib@v1.0.0
+### LICENSE
 
+```text
 Copyright (c) 2013, Patrick Mezard
 All rights reserved.
 
@@ -3820,12 +3915,42 @@ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
 
+## github.com/stretchr/objx v0.1.0
+
+### LICENSE
+
+```text
+The MIT License
+
+Copyright (c) 2014 Stretchr, Inc.
+Copyright (c) 2017-2018 objx contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## github.com/stretchr/testify v1.11.1
 
-Source: https://pkg.go.dev/github.com/stretchr/testify@v1.11.1
+### LICENSE
 
+```text
 MIT License
 
 Copyright (c) 2012-2020 Mat Ryer, Tyler Bunnell and contributors.
@@ -3847,12 +3972,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
+```
 
 ## go.yaml.in/yaml/v4 v4.0.0-rc.6
 
-Source: https://pkg.go.dev/go.yaml.in/yaml/v4@v4.0.0-rc.6
+### LICENSE
 
+```text
 
                                  Apache License
                            Version 2.0, January 2004
@@ -4055,12 +4181,39 @@ Source: https://pkg.go.dev/go.yaml.in/yaml/v4@v4.0.0-rc.6
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+```
 
+### NOTICE
 
-## golang.org/x/sync v0.22.0
+```text
+The following files were ported to Go from C files of libyaml, and thus are
+still covered by their original MIT license, with the additional copyright
+starting in 2011 when the project was ported over:
 
-Source: https://pkg.go.dev/golang.org/x/sync@v0.22.0
+- internal/libyaml/api.go
+- internal/libyaml/emitter.go
+- internal/libyaml/parser.go
+- internal/libyaml/reader.go
+- internal/libyaml/scanner.go
+- internal/libyaml/writer.go
+- internal/libyaml/yaml.go
+- internal/libyaml/yamlprivate.go
 
+Copyright 2006-2010 Kirill Simonov
+https://opensource.org/license/mit
+
+All the remaining project files are covered by the Apache license:
+
+Copyright 2011-2019 Canonical Ltd
+Copyright 2025 The go-yaml Project Contributors
+http://www.apache.org/licenses/LICENSE-2.0
+```
+
+## golang.org/x/crypto v0.57.0
+
+### LICENSE
+
+```text
 Copyright 2009 The Go Authors.
 
 Redistribution and use in source and binary forms, with or without
@@ -4088,12 +4241,13 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
 
+## golang.org/x/mod v0.41.0
 
-## golang.org/x/text v0.29.0
+### LICENSE
 
-Source: https://pkg.go.dev/golang.org/x/text@v0.29.0
-
+```text
 Copyright 2009 The Go Authors.
 
 Redistribution and use in source and binary forms, with or without
@@ -4121,12 +4275,249 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
 
+## golang.org/x/net v0.58.0
+
+### LICENSE
+
+```text
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## golang.org/x/sync v0.23.0
+
+### LICENSE
+
+```text
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## golang.org/x/sys v0.48.0
+
+### LICENSE
+
+```text
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## golang.org/x/term v0.46.0
+
+### LICENSE
+
+```text
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## golang.org/x/text v0.42.0
+
+### LICENSE
+
+```text
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## golang.org/x/tools v0.49.0
+
+### LICENSE
+
+```text
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
+
+### LICENSE
+
+```text
+Gocheck - A rich testing framework for Go
+ 
+Copyright (c) 2010-2013 Gustavo Niemeyer <gustavo@niemeyer.net>
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met: 
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer. 
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
 
 ## gopkg.in/yaml.v3 v3.0.1
 
-Source: https://pkg.go.dev/gopkg.in/yaml.v3@v3.0.1
+### LICENSE
 
+```text
 
 This project is covered by two different licenses: MIT and Apache.
 
@@ -4177,5 +4568,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+```
 
+### NOTICE
+
+```text
+Copyright 2011-2016 Canonical Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
 
