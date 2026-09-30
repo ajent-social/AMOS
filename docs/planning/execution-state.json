@@ -75,10 +75,12 @@
     ]
   },
   "T3.1": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Implementation or policy drafting in an isolated worktree; review and acceptance pending."
+      "Identity contract independently reviewed against frozen authority and operation seams.",
+      "Explicit password, email comparison, linking, session, MFA, callback and recovery policies recorded.",
+      "Public artifact and whitespace checks passed; runtime and provider verification remain future tasks."
     ]
   }
 }
