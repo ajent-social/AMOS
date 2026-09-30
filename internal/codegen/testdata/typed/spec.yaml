@@ -1,0 +1,54 @@
+openapi: 3.1.1
+info:
+  title: Synthetic typed generation contract
+  version: 1.0.0
+paths:
+  /widgets:
+    post:
+      operationId: widgets.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WidgetInput'
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Widget'
+      x-amos-policy:
+        operationId: widgets.create
+        permissions: [widgets:create]
+        entitlements: []
+        assurance: aal2
+        sideEffect: write
+        idempotency: required
+        mcp: challenge
+components:
+  schemas:
+    WidgetInput:
+      type: object
+      additionalProperties: false
+      required: [name, priority, labels]
+      properties:
+        name:
+          type: string
+        priority:
+          type: integer
+          format: int64
+        labels:
+          type: array
+          items:
+            type: string
+        note:
+          type: [string, 'null']
+    Widget:
+      type: object
+      additionalProperties: false
+      required: [id]
+      properties:
+        id:
+          type: string
