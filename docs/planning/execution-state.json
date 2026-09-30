@@ -199,5 +199,26 @@
       "Money-impacting catalog, seat capacity, usage lateness/corrections, refunds, trials/grace and entitlement freshness are explicit installation/provider activation gates.",
       "Design rejection cases recorded; runtime financial/provider qualification remains downstream."
     ]
+  },
+  "T2.4": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Isolated task work underway; review and integration gates remain pending."
+    ]
+  },
+  "T3.6": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Isolated task work underway; review and integration gates remain pending."
+    ]
+  },
+  "T6.1": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Isolated task work underway; review and integration gates remain pending."
+    ]
   }
 }
