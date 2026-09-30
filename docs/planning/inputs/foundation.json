@@ -1,0 +1,1628 @@
+{
+  "epics": [
+    {
+      "id": "E1",
+      "title": "Foundation contracts provenance and verification harness",
+      "stage": "S0",
+      "intent": "Create stable seams and honest evidence before domain fan-out.",
+      "exit_criteria": [
+        "Contracts frozen; module and real-boundary test harness exist; public provenance and ownership gates recorded."
+      ],
+      "tasks": [
+        {
+          "id": "T1.1",
+          "title": "Create the minimal module and test harness",
+          "stage": "S0",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [],
+          "use_cases": [
+            "UC-002",
+            "UC-008"
+          ],
+          "owned_paths": [
+            "go.mod",
+            "go.sum",
+            "internal/testkit/",
+            "Makefile"
+          ],
+          "objective": "Module compiles and test harness can create isolated database schemas.",
+          "instructions": [
+            "Choose supported toolchain versions from official sources and record the supported matrix.",
+            "Create the module with standard-library-first dependencies; no speculative packages.",
+            "Add real test-database setup with explicit required-service failure instead of silent skips.",
+            "Document local prerequisite checks and scoped test entrypoints."
+          ],
+          "acceptance": [
+            "Module compiles and test harness can create isolated database schemas.",
+            "Missing required database produces a visible failure in integration mode."
+          ],
+          "verification": [
+            "go test ./internal/testkit",
+            "go vet ./internal/testkit"
+          ],
+          "negative_test": "Configure a missing test database and confirm integration mode fails.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T1.2",
+          "title": "Freeze cross-lane semantic contracts",
+          "stage": "S0",
+          "lane": "L01",
+          "kind": "design",
+          "estimate_minutes": 60,
+          "deps": [],
+          "use_cases": [
+            "UC-003",
+            "UC-004",
+            "UC-005"
+          ],
+          "owned_paths": [
+            "docs/planning/contracts.md",
+            "api/policy.schema.json",
+            "config/schema.json",
+            "docs/adr/",
+            "scripts/check-contract-schemas.py"
+          ],
+          "objective": "Every shared field and operation-policy extension has defined semantics and ownership.",
+          "instructions": [
+            "Resolve proposed principal/workspace/grant/entitlement contracts without implementing domain policy.",
+            "Freeze package ownership, route namespaces, schema fragment assembly and migration allocation.",
+            "Define idempotency/errors/assurance/MCP exposure metadata with positive and rejected fixtures.",
+            "Publish compatibility and amendment procedure; reconcile all dependent contracts before dispatch."
+          ],
+          "acceptance": [
+            "Every shared field and operation-policy extension has defined semantics and ownership.",
+            "Required policy omissions and unknown fields are rejected by schema fixtures."
+          ],
+          "verification": [
+            "python3 scripts/check-contract-schemas.py"
+          ],
+          "negative_test": "Delete required permission metadata from an operation and expect schema rejection.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T1.3",
+          "title": "Build durable migration and transaction fixtures",
+          "stage": "S0",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.1",
+            "T1.2"
+          ],
+          "use_cases": [
+            "UC-006"
+          ],
+          "owned_paths": [
+            "storage/",
+            "migrations/registry.go",
+            "migrations/registry_test.go"
+          ],
+          "objective": "Repeated/concurrent migration yields one consistent schema ledger.",
+          "instructions": [
+            "Implement application-owned database handle and context-bounded transaction helpers.",
+            "Create checksum ledger and cross-process migration lock with explicit transactional/nontransactional rules.",
+            "Add repeated/concurrent migrate and changed-checksum rejection cases using real SQL.",
+            "Reserve migration numbering to integrator; domains contribute namespaced fragments."
+          ],
+          "acceptance": [
+            "Repeated/concurrent migration yields one consistent schema ledger.",
+            "Changed applied migration fails and leaves existing data intact."
+          ],
+          "verification": [
+            "go test ./storage ./migrations"
+          ],
+          "negative_test": "Modify an applied migration checksum in a test fixture and verify rejection.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T1.4",
+          "title": "Qualify dependency and publication provenance",
+          "stage": "S0",
+          "lane": "L02",
+          "kind": "design",
+          "estimate_minutes": 60,
+          "deps": [],
+          "use_cases": [
+            "UC-005",
+            "UC-009"
+          ],
+          "owned_paths": [
+            "docs/dependencies.md",
+            "docs/reuse-matrix.md",
+            "docs/provenance.md"
+          ],
+          "objective": "Every selected dependency has origin/license/version/evidence and a reuse or gap verdict.",
+          "instructions": [
+            "Inventory public AMSL contracts, maturity, immutable releases and tested consumer boundaries.",
+            "Compare established dependencies before requesting new shared abstractions.",
+            "Record file-level source/publication clearance for any proposed import without publishing restricted evidence.",
+            "Select original-work license through owner decision; preserve third-party notices; blocked sources are not copied."
+          ],
+          "acceptance": [
+            "Every selected dependency has origin/license/version/evidence and a reuse or gap verdict.",
+            "No restricted source or publication-unqualified code enters the release inventory."
+          ],
+          "verification": [
+            "python3 scripts/check-public-artifacts.py"
+          ],
+          "negative_test": "A fixture containing a prohibited private source locator is rejected.",
+          "risks": [],
+          "external_gate": "Owner chooses original-work license and clears any restricted-source import before copying."
+        },
+        {
+          "id": "T1.5",
+          "title": "Create API and browser verification harnesses",
+          "stage": "S0",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.1",
+            "T1.2"
+          ],
+          "use_cases": [
+            "UC-002",
+            "UC-004"
+          ],
+          "owned_paths": [
+            "tests/harness/",
+            "tests/browser/fixtures/",
+            "scripts/test-api.sh",
+            "scripts/test-browser.sh",
+            "tests/browser/package.json",
+            "tests/browser/playwright.config.ts"
+          ],
+          "objective": "Harness exercises a real route and browser page, including one failed request.",
+          "instructions": [
+            "Start a composed app against isolated real SQL and synthetic providers in test-only code.",
+            "Add real HTTP request/status/body assertions plus browser golden/edge helpers.",
+            "Keep provider fixture wiring unreachable in production binaries.",
+            "Separate credential-free and opt-in provider runs and make skipped gates explicit.",
+            "Pin Playwright in the isolated browser harness; the wrapper accepts documented suite selectors used by task contracts, asserts nonzero selected tests and propagates browser failures."
+          ],
+          "acceptance": [
+            "Harness exercises a real route and browser page, including one failed request.",
+            "Production build cannot select provider test doubles."
+          ],
+          "verification": [
+            "go test ./tests/harness",
+            "./scripts/test-browser.sh fixtures"
+          ],
+          "negative_test": "Break route policy wiring and confirm the boundary test fails.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T1.6",
+          "title": "Enforce public artifact and secret hygiene",
+          "stage": "S0",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.1"
+          ],
+          "use_cases": [
+            "UC-005",
+            "UC-009"
+          ],
+          "owned_paths": [
+            "scripts/check-public-artifacts.py",
+            "tests/planning/test_public_artifacts.py",
+            ".gitignore"
+          ],
+          "objective": "Public artifact checker rejects synthetic secrets and private locators without echoing their values.",
+          "instructions": [
+            "Define disallowed local/private paths and sensitive data patterns without storing real secrets.",
+            "Check tracked and proposed publication files; permit only documented synthetic fixtures.",
+            "Exclude local inputs/coordination/credentials from public artifacts.",
+            "Test detection using synthetic secrets and private-path fixtures."
+          ],
+          "acceptance": [
+            "Public artifact checker rejects synthetic secrets and private locators without echoing their values."
+          ],
+          "verification": [
+            "python3 -m unittest tests.planning.test_public_artifacts"
+          ],
+          "negative_test": "Insert a synthetic credential into a fixture and require nonzero sanitized output.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T1.7",
+          "title": "Record license and contribution/security policy",
+          "stage": "S0",
+          "lane": "L02",
+          "kind": "design",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.4"
+          ],
+          "use_cases": [
+            "UC-009"
+          ],
+          "owned_paths": [
+            "LICENSE",
+            "NOTICE",
+            "CONTRIBUTING.md",
+            "SECURITY.md",
+            "AGENTS.md"
+          ],
+          "objective": "License, notices and contribution/security guidance consistently cover shipped sources.",
+          "instructions": [
+            "Apply the owner-selected license only after source clearance.",
+            "Document contributor accountability, generated contributions, public evidence and private vulnerability handling.",
+            "State source/security review and supported-version responsibilities."
+          ],
+          "acceptance": [
+            "License, notices and contribution/security guidance consistently cover shipped sources."
+          ],
+          "verification": [
+            "python3 scripts/check-public-artifacts.py"
+          ],
+          "negative_test": "A required third-party notice removed from the release fixture fails validation.",
+          "risks": [],
+          "external_gate": "Original-work license selection."
+        },
+        {
+          "id": "T1.8",
+          "title": "Wire formatter linter and shared validation entrypoints",
+          "stage": "S0",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.1",
+            "T1.5"
+          ],
+          "use_cases": [
+            "UC-009"
+          ],
+          "owned_paths": [
+            "scripts/check-go.sh",
+            ".golangci.yml",
+            "Makefile"
+          ],
+          "objective": "Deliberately malformed formatting and an ignored-error fixture fail the appropriate check.",
+          "instructions": [
+            "Pin selected linter/tool versions; keep Go formatting canonical.",
+            "Provide scoped checks and full integration gates without paid provider calls.",
+            "Ensure required SQL/browser jobs cannot silently skip and document heavy-build scheduling."
+          ],
+          "acceptance": [
+            "Deliberately malformed formatting and an ignored-error fixture fail the appropriate check."
+          ],
+          "verification": [
+            "./scripts/check-go.sh"
+          ],
+          "negative_test": "Run against a malformed fixture and observe the predicted failure.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T1.9",
+          "title": "Reconcile specialist contracts and certify first execution lane",
+          "stage": "S0",
+          "lane": "L01",
+          "kind": "design",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.2",
+            "T1.4",
+            "T1.8"
+          ],
+          "use_cases": [
+            "UC-008",
+            "UC-009"
+          ],
+          "owned_paths": [
+            "docs/tasks/",
+            "docs/planning/contracts.md",
+            "docs/planning/certification.md"
+          ],
+          "objective": "One intended coding-agent tier completes one identified task with reviewed evidence, or an explicit blocker is recorded.",
+          "instructions": [
+            "Resolve provisional paths, provider choices and cross-lane dependencies using actual foundation code.",
+            "Select one bounded cheap-tier task and dispatch only after permissions and inputs exist.",
+            "Record observed execution evidence; revise underspecified contract if the task fails.",
+            "Do not mark any remaining task certified from this one trial."
+          ],
+          "acceptance": [
+            "One intended coding-agent tier completes one identified task with reviewed evidence, or an explicit blocker is recorded.",
+            "No invented certification or universal model-success claim."
+          ],
+          "verification": [
+            "python3 scripts/check-plan.py"
+          ],
+          "negative_test": "An unresolved placeholder dependency fails plan validation.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T1.10",
+          "title": "Implement bounded durable jobs and transactional outbox seam",
+          "stage": "S1",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T1.2",
+            "T1.3"
+          ],
+          "use_cases": [
+            "UC-002"
+          ],
+          "owned_paths": [
+            "jobs/",
+            "jobs/sqlstore/"
+          ],
+          "objective": "Committed intent survives restart and stale lease holders cannot commit local job completion; remote effects rely on provider idempotency and reconciliation, not impossible exactly-once fencing.",
+          "instructions": [
+            "Implement durable intent, lease/fencing, retry budget, deadline and terminal/unknown states using the application database.",
+            "Allow domain writes and outbox insertion in one transaction; no generic runtime workflow engine.",
+            "Define restart recovery and idempotent consumer contracts for email/billing/lifecycle jobs.",
+            "Exercise concurrent workers, lease loss and lost external responses with test-only effect doubles."
+          ],
+          "acceptance": [
+            "Committed intent survives restart and stale lease holders cannot commit local job completion; remote effects rely on provider idempotency and reconciliation, not impossible exactly-once fencing.",
+            "Unknown remote outcomes reconcile rather than blindly replay non-idempotent effects."
+          ],
+          "verification": [
+            "go test ./jobs ./jobs/sqlstore"
+          ],
+          "negative_test": "Expire a worker lease while a competing worker claims the job; stale completion must be rejected.",
+          "risks": [
+            "Provisional cross-domain seam; revalidate consumers and ownership at T1.2."
+          ],
+          "external_gate": null
+        },
+        {
+          "id": "T1.11",
+          "title": "Implement configured email delivery adapter and truthful local fixture",
+          "stage": "S1",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T1.4",
+            "T1.10"
+          ],
+          "use_cases": [
+            "UC-002"
+          ],
+          "owned_paths": [
+            "delivery/email/",
+            "delivery/email/ses/"
+          ],
+          "objective": "Delivery uses the configured provider adapter, redacts credentials/messages and never reports simulated production success.",
+          "instructions": [
+            "Freeze an EmailSender interface with secret references, bounded templates, recipient/privacy and error semantics.",
+            "Qualify AWS SES as the proposed initial provider using the maintained AWS SDK; keep selection visible if changed.",
+            "Send only from durable owned intents with backoff and unknown outcome handling.",
+            "Keep synthetic delivery in test-only injection and expose setup/unavailable when production sender is not configured."
+          ],
+          "acceptance": [
+            "Delivery uses the configured provider adapter, redacts credentials/messages and never reports simulated production success.",
+            "Golden and provider failure cases preserve durable email intent without arbitrary recipient content in logs."
+          ],
+          "verification": [
+            "go test ./delivery/email ./delivery/email/ses"
+          ],
+          "negative_test": "Remove provider configuration and verify production dispatch fails visibly rather than capturing an email as if sent.",
+          "risks": [
+            "Provisional cross-domain seam; revalidate consumers and ownership at T1.2."
+          ],
+          "external_gate": null
+        },
+        {
+          "id": "T1.12",
+          "title": "Implement redacted tenant-scoped security audit sink",
+          "stage": "S1",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T1.2",
+            "T1.3"
+          ],
+          "use_cases": [
+            "UC-004"
+          ],
+          "owned_paths": [
+            "audit/",
+            "audit/sqlstore/"
+          ],
+          "objective": "Material mutation produces a scoped durable event and another workspace cannot retrieve it.",
+          "instructions": [
+            "Define actor/action/resource/outcome/correlation/time records and strict field allowlist.",
+            "Record material lifecycle/security mutations transactionally or with the outbox.",
+            "Separate operational logs from durable security events and enforce current workspace/operator access.",
+            "Bound retention/pagination and test denied cross-tenant reads plus sensitive-field rejection."
+          ],
+          "acceptance": [
+            "Material mutation produces a scoped durable event and another workspace cannot retrieve it.",
+            "Secret values and arbitrary request bodies are not accepted by the event schema."
+          ],
+          "verification": [
+            "go test ./audit ./audit/sqlstore"
+          ],
+          "negative_test": "Submit an event containing a synthetic token field and require schema rejection without echoing it.",
+          "risks": [
+            "Provisional cross-domain seam; revalidate consumers and ownership at T1.2."
+          ],
+          "external_gate": null
+        },
+        {
+          "id": "T1.13",
+          "title": "Implement tenant-safe export and object-store seam",
+          "stage": "S3",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T1.10",
+            "T1.12"
+          ],
+          "use_cases": [
+            "UC-008"
+          ],
+          "owned_paths": [
+            "objects/",
+            "objects/s3/"
+          ],
+          "objective": "Authorized lifecycle job can persist/retrieve an expiring synthetic export without exposing another workspace object.",
+          "instructions": [
+            "Define owner-scoped object references, bounded streaming, encryption requirements and expiry.",
+            "Use maintained provider SDK for S3 and a separate local test-only store.",
+            "Generate exports through authenticated lifecycle jobs; bind download authorization to current owner/request state.",
+            "Test missing object, expired export, cross-tenant request and delete/retention outcomes.",
+            "Serve exports through an authenticated AMOS download boundary with current-state checks. Do not use bearer presigned URLs when immediate revocation is required; define any later bounded-expiry exception explicitly."
+          ],
+          "acceptance": [
+            "Authorized lifecycle job can persist/retrieve an expiring synthetic export without exposing another workspace object."
+          ],
+          "verification": [
+            "go test ./objects ./objects/s3"
+          ],
+          "negative_test": "Try a different tenant object reference and require denial at the actual object-access boundary.",
+          "risks": [
+            "Provisional cross-domain seam; revalidate consumers and ownership at T1.2."
+          ],
+          "external_gate": null
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "title": "Contract generator runtime composition and reference business app",
+      "stage": "S1",
+      "intent": "Prove a useful integrated application path from contract to paid feature.",
+      "exit_criteria": [
+        "Generated typed transport integrates with durable business behavior and a reproducible reference journey."
+      ],
+      "tasks": [
+        {
+          "id": "T2.1",
+          "title": "Implement contract validation and generator command foundation",
+          "stage": "S1",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.1",
+            "T1.2",
+            "T1.4"
+          ],
+          "use_cases": [
+            "UC-003",
+            "UC-010"
+          ],
+          "owned_paths": [
+            "internal/codegen/",
+            "internal/cli/generate/",
+            "api/generator.lock.json"
+          ],
+          "objective": "Same input produces byte-identical generated transport output.",
+          "instructions": [
+            "Qualify/pin maintained OpenAPI tooling and restrict supported schema features.",
+            "Validate operation IDs, policy extensions and names before generation.",
+            "Generate deterministically into owned transport files with a manifest.",
+            "Reject unsupported constructs with location-aware errors and no partial overwrite."
+          ],
+          "acceptance": [
+            "Same input produces byte-identical generated transport output.",
+            "Unsupported schema or missing policy exits nonzero without changing handwritten files."
+          ],
+          "verification": [
+            "go test ./internal/codegen ./internal/cli/generate"
+          ],
+          "negative_test": "Remove operation policy metadata and confirm generation refuses the contract.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T2.2",
+          "title": "Implement application composition and route ownership seam",
+          "stage": "S1",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.1",
+            "T1.2"
+          ],
+          "use_cases": [
+            "UC-002",
+            "UC-004"
+          ],
+          "owned_paths": [
+            "app/",
+            "internal/runtime/"
+          ],
+          "objective": "A generated app can mount a business route and a shared route at the same origin.",
+          "instructions": [
+            "Provide exported app composition options consumed by generated applications.",
+            "Register shared and business route namespaces explicitly; reject collisions.",
+            "Implement health/readiness and bounded shutdown without fabricated dependency success.",
+            "Keep domain imports behind small consumer-side interfaces."
+          ],
+          "acceptance": [
+            "A generated app can mount a business route and a shared route at the same origin.",
+            "Duplicate/reserved route collisions and unhealthy required dependencies fail visibly."
+          ],
+          "verification": [
+            "go test ./app ./internal/runtime"
+          ],
+          "negative_test": "Register a business handler over a reserved identity path and require failure.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T2.3",
+          "title": "Generate Go models and typed implementation interfaces",
+          "stage": "S1",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T2.1"
+          ],
+          "use_cases": [
+            "UC-003",
+            "UC-010"
+          ],
+          "owned_paths": [
+            "internal/codegen/gotypes/",
+            "internal/codegen/testdata/typed/"
+          ],
+          "objective": "Generated code compiles against a handwritten implementation that remains unchanged after regeneration.",
+          "instructions": [
+            "Generate typed request/response/error models and business handler interfaces.",
+            "Keep implementation hooks outside managed transport output.",
+            "Compile a generated miniature consumer and test regeneration after a schema amendment."
+          ],
+          "acceptance": [
+            "Generated code compiles against a handwritten implementation that remains unchanged after regeneration."
+          ],
+          "verification": [
+            "go test ./internal/codegen/gotypes"
+          ],
+          "negative_test": "Change an input field contract and detect an incompatible implementation at compile/check time.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T2.4",
+          "title": "Create the reference business contract and durable resource",
+          "stage": "S1",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T1.3",
+            "T2.3"
+          ],
+          "use_cases": [
+            "UC-007"
+          ],
+          "owned_paths": [
+            "examples/reference/api/business.openapi.yaml",
+            "examples/reference/app/business/",
+            "examples/reference/migrations/"
+          ],
+          "objective": "Resource survives restart and another workspace cannot read or mutate it.",
+          "instructions": [
+            "Use a synthetic shared-workspace todo/resource example with create/list/update/delete operations.",
+            "Persist resource ownership and constrain queries by verified workspace.",
+            "Use parameterized SQL and optimistic concurrency for updates.",
+            "Preserve original examples and avoid importing customer data."
+          ],
+          "acceptance": [
+            "Resource survives restart and another workspace cannot read or mutate it."
+          ],
+          "verification": [
+            "go test ./examples/reference/app/business"
+          ],
+          "negative_test": "Remove the workspace predicate in an isolated test mutation and require cross-tenant test failure.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T2.5",
+          "title": "Connect reference feature to identity and paid admission",
+          "stage": "S1",
+          "lane": "L02",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T2.4",
+            "T3.7",
+            "T4.4",
+            "T5.9"
+          ],
+          "use_cases": [
+            "UC-007",
+            "UC-120"
+          ],
+          "owned_paths": [
+            "examples/reference/app/admission/",
+            "examples/reference/tests/api/"
+          ],
+          "objective": "Unauthenticated, wrong-workspace and unpaid calls fail while qualified paid calls persist a resource.",
+          "instructions": [
+            "Resolve current principal/workspace before domain calls.",
+            "Require the configured paid feature at the backend; unavailable remains retryable unavailable.",
+            "Exercise allowed/denied/revoked and pending-payment states through real HTTP handlers."
+          ],
+          "acceptance": [
+            "Unauthenticated, wrong-workspace and unpaid calls fail while qualified paid calls persist a resource."
+          ],
+          "verification": [
+            "go test ./examples/reference/app/admission ./examples/reference/tests/api"
+          ],
+          "negative_test": "Replace an entitlement denial with allow and confirm denied-path test fails.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T2.6",
+          "title": "Implement reference landing and business pages",
+          "stage": "S1",
+          "lane": "L08",
+          "kind": "engineering",
+          "estimate_minutes": 60,
+          "deps": [
+            "T2.4",
+            "T6.2"
+          ],
+          "use_cases": [
+            "UC-007",
+            "UC-123"
+          ],
+          "owned_paths": [
+            "examples/reference/ui/",
+            "examples/reference/tests/browser/"
+          ],
+          "objective": "Browser can create/read an allowed resource; forbidden/stale/invalid form cases are visible and safe.",
+          "instructions": [
+            "Create developer-owned landing and resource pages with server-rendered forms and HTMX enhancements.",
+            "Render untrusted text safely; preserve ordinary navigation and server validation.",
+            "Provide responsive keyboard-accessible create/list/edit states and honest pending/unavailable messages."
+          ],
+          "acceptance": [
+            "Browser can create/read an allowed resource; forbidden/stale/invalid form cases are visible and safe."
+          ],
+          "verification": [
+            "./scripts/test-browser.sh reference"
+          ],
+          "negative_test": "Render a synthetic HTML payload and assert it remains text, not executable markup.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T2.7",
+          "title": "Write reproducible quickstart and local rehearsal",
+          "stage": "S1",
+          "lane": "L02",
+          "kind": "design",
+          "estimate_minutes": 60,
+          "deps": [
+            "T2.5",
+            "T2.6",
+            "T7.13",
+            "T7.14"
+          ],
+          "use_cases": [
+            "UC-001",
+            "UC-008",
+            "UC-123"
+          ],
+          "owned_paths": [
+            "README.md",
+            "docs/tutorials/reference-app.md",
+            "docs/tutorials/local-rehearsal.md",
+            "scripts/rehearse-reference.sh"
+          ],
+          "objective": "A reviewer can reproduce the local reference journey and a denied action from the written instructions.",
+          "instructions": [
+            "Document empty-repository initialization, required services and provider prerequisites.",
+            "Label fixture-only flows, local-only modes and every unavailable feature.",
+            "Rehearse the written commands from a fresh temporary checkout and record actual outcomes."
+          ],
+          "acceptance": [
+            "A reviewer can reproduce the local reference journey and a denied action from the written instructions."
+          ],
+          "verification": [
+            "./scripts/rehearse-reference.sh --local"
+          ],
+          "negative_test": "Removing a required setup step causes the rehearsal to fail visibly.",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T2.8",
+          "title": "Implement shared operation policy and durable invocation boundary",
+          "stage": "S1",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T1.2",
+            "T1.10",
+            "T1.12",
+            "T3.7",
+            "T4.4",
+            "T5.8"
+          ],
+          "use_cases": [
+            "UC-004"
+          ],
+          "owned_paths": [
+            "app/operation/",
+            "app/policy/"
+          ],
+          "objective": "All transports can consume one current-state invocation decision and duplicate payload-bound mutations cannot silently repeat.",
+          "instructions": [
+            "Resolve verified principal/current workspace before any operation, keeping selection separate from authority.",
+            "Evaluate permissions/entitlements/assurance from the operation registry and return allowed/denied/unavailable faithfully.",
+            "Bind idempotency to actor, workspace, operation and canonical payload; conflict on changed intent.",
+            "Invoke domain work under defined transaction/outbox ownership and record material audit results.",
+            "Expose one adapter seam used by web/REST/MCP/proxy transports; never permit transport-specific authorization shortcuts."
+          ],
+          "acceptance": [
+            "All transports can consume one current-state invocation decision and duplicate payload-bound mutations cannot silently repeat.",
+            "Revoked membership and stale billing state produce the documented denied/unavailable outcomes at the real boundary."
+          ],
+          "verification": [
+            "go test ./app/operation ./app/policy"
+          ],
+          "negative_test": "Change only the browser control while retaining the backend denial, then prove forged direct API mutation still fails.",
+          "risks": [
+            "Security-sensitive seam requires independent review and real transport denial tests."
+          ],
+          "external_gate": null
+        },
+        {
+          "id": "T2.9",
+          "title": "Implement private-service identity signer and verifier adapter",
+          "stage": "S3",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T12.4",
+            "T1.4",
+            "T8.2"
+          ],
+          "use_cases": [
+            "UC-004"
+          ],
+          "owned_paths": [
+            "proxy/identity/"
+          ],
+          "objective": "Only trusted short-lived service assertions reach the intended origin; forged/stale/cross-audience assertions are rejected.",
+          "instructions": [
+            "Freeze a maintained-library signed assertion or mutual-TLS binding selected by T12.4; do not invent cryptography.",
+            "Bind installation/service audience, actor/workspace/scopes, method/path, expiry and key identity to the private hop.",
+            "Keep signing authority separate from customer grants and strip any externally supplied equivalent headers.",
+            "Qualify key rotation, stale assertions, cross-audience misuse, replay policy and clock skew."
+          ],
+          "acceptance": [
+            "Only trusted short-lived service assertions reach the intended origin; forged/stale/cross-audience assertions are rejected."
+          ],
+          "verification": [
+            "go test ./proxy/identity"
+          ],
+          "negative_test": "Replay a valid assertion against another service audience or path and require verification failure.",
+          "risks": [
+            "Security-sensitive seam requires independent review and real transport denial tests."
+          ],
+          "external_gate": null
+        }
+      ]
+    },
+    {
+      "id": "E16",
+      "title": "Composed qualification release and operational acceptance",
+      "stage": "S1-S5",
+      "intent": "Qualify composed behavior and live claims separately from package completion.",
+      "exit_criteria": [
+        "Each released stage has actual required evidence and explicit unsupported boundaries."
+      ],
+      "tasks": [
+        {
+          "id": "T16.1",
+          "title": "Create executable release capability matrix",
+          "stage": "S1",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T1.9"
+          ],
+          "use_cases": [
+            "UC-124"
+          ],
+          "owned_paths": [
+            "docs/releases/compatibility.md",
+            "scripts/check-release-evidence.py"
+          ],
+          "objective": "An unsupported advertised capability or missing mandatory evidence blocks the release.",
+          "instructions": [
+            "List each advertised capability and required API/browser/provider/cloud/client evidence.",
+            "Record implemented/tested/qualified/deployed/rehearsed states separately.",
+            "Make missing mandatory evidence fail release promotion."
+          ],
+          "acceptance": [
+            "An unsupported advertised capability or missing mandatory evidence blocks the release."
+          ],
+          "verification": [
+            "python3 scripts/check-release-evidence.py"
+          ],
+          "negative_test": "Delete a mandatory evidence record and require failure",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T16.2",
+          "title": "Accept credential-free composed reference journey",
+          "stage": "S1",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T2.7",
+            "T16.1"
+          ],
+          "use_cases": [
+            "UC-120",
+            "UC-123"
+          ],
+          "owned_paths": [
+            "tests/acceptance/reference_test.go",
+            "docs/evidence/reference-local.md",
+            "scripts/test-browser.sh"
+          ],
+          "objective": "Composed local journey passes positive and denied cases; no required test silently skips.",
+          "instructions": [
+            "Run the real SQL/API/browser composition with test-only identity and payment providers.",
+            "Verify paid/unpaid/pending/unavailable, duplicate event and revoked-session behavior.",
+            "Record exact inputs/revisions/test results without describing them as live provider evidence."
+          ],
+          "acceptance": [
+            "Composed local journey passes positive and denied cases; no required test silently skips."
+          ],
+          "verification": [
+            "go test ./tests/acceptance -run TestReferenceLocal",
+            "./scripts/test-browser.sh reference"
+          ],
+          "negative_test": "Disable backend admission and require the composed denial test to fail",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T16.3",
+          "title": "Verify identity and payment provider lifecycle",
+          "stage": "S2",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T16.2",
+            "T5.10",
+            "T5.22",
+            "T6.18",
+            "T8.28"
+          ],
+          "use_cases": [
+            "UC-120"
+          ],
+          "owned_paths": [
+            "tests/acceptance/providers/",
+            "docs/evidence/provider-acceptance.md",
+            "scripts/verify-providers.sh"
+          ],
+          "objective": "Actual selected providers complete the test-mode journey and errors; provider fixtures cannot satisfy this gate.",
+          "instructions": [
+            "Use approved test accounts for the baseline password/email and flat personal-subscription profile; full selected provider methods are qualified by T16.6.",
+            "Complete actual identity login, test checkout payment, webhook receipt, portal, cancellation and policy transitions.",
+            "Exercise delayed events and provider outages; preserve cleanup receipts without private account ids."
+          ],
+          "acceptance": [
+            "Actual selected providers complete the test-mode journey and errors; provider fixtures cannot satisfy this gate."
+          ],
+          "verification": [
+            "./scripts/verify-providers.sh --test-mode"
+          ],
+          "negative_test": "Reject a forged provider callback/webhook and retain denied paid access",
+          "risks": [],
+          "external_gate": "Owner-approved provider accounts, credentials, test catalog and callback setup"
+        },
+        {
+          "id": "T16.4",
+          "title": "Verify cloud deployment and same-domain routing",
+          "stage": "S2",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T16.3",
+            "T7.11",
+            "T8.17",
+            "T9.14"
+          ],
+          "use_cases": [
+            "UC-121"
+          ],
+          "owned_paths": [
+            "tests/acceptance/cloud/",
+            "docs/evidence/cloud-release.md",
+            "scripts/verify-deployment.sh"
+          ],
+          "objective": "Real public domain serves the correct artifact and private boundaries reject unauthorized access.",
+          "instructions": [
+            "Deploy an immutable reviewed artifact using scoped owner credentials.",
+            "Observe public TLS, shared and business routes, readiness and current-state denied access.",
+            "Verify private origins/database cannot be bypassed and telemetry contains no secrets."
+          ],
+          "acceptance": [
+            "Real public domain serves the correct artifact and private boundaries reject unauthorized access."
+          ],
+          "verification": [
+            "./scripts/verify-deployment.sh --environment test"
+          ],
+          "negative_test": "An attempted direct-origin request without valid authority is denied",
+          "risks": [],
+          "external_gate": "Explicit infrastructure budget, deployment approval and domain ownership"
+        },
+        {
+          "id": "T16.5",
+          "title": "Rehearse rollback and independent data restore",
+          "stage": "S2",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T16.4",
+            "T10.10",
+            "T8.22"
+          ],
+          "use_cases": [
+            "UC-122"
+          ],
+          "owned_paths": [
+            "tests/acceptance/recovery/",
+            "docs/evidence/recovery.md",
+            "scripts/verify-recovery.sh"
+          ],
+          "objective": "A demonstrated release recovery and separate data restore pass without resurrecting revoked authority.",
+          "instructions": [
+            "Inject a bounded failed release and verify rollback eligibility and health.",
+            "Restore a backup into an isolated destination; compare synthetic records and identity revocation state.",
+            "Document RPO/RTO observations and operations that cannot safely roll back."
+          ],
+          "acceptance": [
+            "A demonstrated release recovery and separate data restore pass without resurrecting revoked authority."
+          ],
+          "verification": [
+            "./scripts/verify-recovery.sh --disposable"
+          ],
+          "negative_test": "A restored revoked credential must remain unusable",
+          "risks": [],
+          "external_gate": "Approved disposable recovery resources"
+        },
+        {
+          "id": "T16.6",
+          "title": "Accept complete authentication and workspace matrix",
+          "stage": "S3",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T3.21",
+            "T4.14",
+            "T6.16",
+            "T16.1"
+          ],
+          "use_cases": [
+            "UC-120",
+            "UC-124"
+          ],
+          "owned_paths": [
+            "tests/acceptance/identity-matrix/",
+            "docs/evidence/identity-matrix.md",
+            "scripts/verify-identity-matrix.sh"
+          ],
+          "objective": "Every advertised authentication/workspace flow has reviewed allowed/denied evidence and honest provider limitations.",
+          "instructions": [
+            "Verify every selected method, linking/recovery and organization enforcement in supported environments.",
+            "Exercise membership race, last-owner prevention, account disable and expired/replayed flow denial.",
+            "Record actual enterprise OIDC and passkey/device compatibility evidence."
+          ],
+          "acceptance": [
+            "Every advertised authentication/workspace flow has reviewed allowed/denied evidence and honest provider limitations."
+          ],
+          "verification": [
+            "./scripts/verify-identity-matrix.sh"
+          ],
+          "negative_test": "Reuse a completed challenge or remove a member during access and require denial",
+          "risks": [],
+          "external_gate": "Approved external provider configurations/devices"
+        },
+        {
+          "id": "T16.7",
+          "title": "Accept flat seat and usage billing matrix",
+          "stage": "S3",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T5.20",
+            "T6.12",
+            "T16.1"
+          ],
+          "use_cases": [
+            "UC-120",
+            "UC-124"
+          ],
+          "owned_paths": [
+            "tests/acceptance/billing-matrix/",
+            "docs/evidence/billing-matrix.md",
+            "scripts/verify-billing-matrix.sh"
+          ],
+          "objective": "All three pricing models converge to documented entitlement and invoice expectations under retries.",
+          "instructions": [
+            "Verify separate personal and organization billing ownership.",
+            "Exercise seat races, period cutover, usage replay/correction, mixed-plan rules and reconciliation.",
+            "Verify refund/dispute/unknown/freshness behavior matches frozen policy."
+          ],
+          "acceptance": [
+            "All three pricing models converge to documented entitlement and invoice expectations under retries."
+          ],
+          "verification": [
+            "./scripts/verify-billing-matrix.sh --test-mode"
+          ],
+          "negative_test": "Replay usage and out-of-order payment events without creating duplicate charges",
+          "risks": [],
+          "external_gate": "Approved payment test environment"
+        },
+        {
+          "id": "T16.8",
+          "title": "Accept REST MCP and separate-service equivalence",
+          "stage": "S3",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T11.14",
+            "T12.9",
+            "T12.11",
+            "T7.8",
+            "T16.6",
+            "T16.7"
+          ],
+          "use_cases": [
+            "UC-124"
+          ],
+          "owned_paths": [
+            "tests/acceptance/interfaces/",
+            "docs/evidence/interfaces.md",
+            "scripts/verify-interfaces.sh"
+          ],
+          "objective": "Supported interfaces agree on policy outcomes and no private upstream bypass succeeds.",
+          "instructions": [
+            "Run equivalent allowed/denied business cases through web, REST, API keys and actual supported MCP clients.",
+            "Verify resumable proof-required flows and grant revocation.",
+            "Exercise a non-Go private upstream including redirects/cookies/streaming and header forgery."
+          ],
+          "acceptance": [
+            "Supported interfaces agree on policy outcomes and no private upstream bypass succeeds."
+          ],
+          "verification": [
+            "./scripts/verify-interfaces.sh"
+          ],
+          "negative_test": "Inject a forged identity header and require identical denial through proxy and API",
+          "risks": [],
+          "external_gate": null
+        },
+        {
+          "id": "T16.9",
+          "title": "Accept upgrade PR and custom UI compatibility",
+          "stage": "S4",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T9.16",
+            "T6.17",
+            "T16.4"
+          ],
+          "use_cases": [
+            "UC-124"
+          ],
+          "owned_paths": [
+            "tests/acceptance/upgrades/",
+            "docs/evidence/upgrades.md",
+            "scripts/verify-upgrades.sh"
+          ],
+          "objective": "Compatible changes preserve custom work and incompatible changes stop with actionable diffs.",
+          "instructions": [
+            "Upgrade a real generated consumer with theme-only, page override and fully custom UI variants.",
+            "Verify immutable pins, file ownership, conflict stops, migration compatibility and rollback limits.",
+            "Observe an actual scoped upgrade PR without exposing credentials or customer code."
+          ],
+          "acceptance": [
+            "Compatible changes preserve custom work and incompatible changes stop with actionable diffs."
+          ],
+          "verification": [
+            "./scripts/verify-upgrades.sh"
+          ],
+          "negative_test": "Modify a generated managed-file preimage and require a conflict rather than overwrite",
+          "risks": [],
+          "external_gate": "Approved test repository for real upgrade PR verification"
+        },
+        {
+          "id": "T16.10",
+          "title": "Accept private maintenance security boundaries",
+          "stage": "S5",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T13.13",
+            "T15.14",
+            "T16.9"
+          ],
+          "use_cases": [
+            "UC-125"
+          ],
+          "owned_paths": [
+            "tests/acceptance/maintenance-private/",
+            "docs/evidence/maintenance-private.md",
+            "scripts/verify-maintenance.sh"
+          ],
+          "objective": "Eligible fix advances; malicious/unknown/high-risk cases halt without production authority or data exfiltration.",
+          "instructions": [
+            "Run a synthetic bug through an independent agent, verifier and policy-limited release.",
+            "Attempt instruction injection, forbidden workflow edits, credential access and evidence replay.",
+            "Verify spend/retry bounds, kill switch and failed-canary recovery."
+          ],
+          "acceptance": [
+            "Eligible fix advances; malicious/unknown/high-risk cases halt without production authority or data exfiltration."
+          ],
+          "verification": [
+            "./scripts/verify-maintenance.sh --private --synthetic"
+          ],
+          "negative_test": "Submit a patch that weakens required tests and require protected verification rejection",
+          "risks": [],
+          "external_gate": "Approved isolated agent execution/model budget"
+        },
+        {
+          "id": "T16.11",
+          "title": "Accept upstream repair and private-data exclusion",
+          "stage": "S5",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T14.12",
+            "T14.14",
+            "T15.15",
+            "T16.10"
+          ],
+          "use_cases": [
+            "UC-125"
+          ],
+          "owned_paths": [
+            "tests/acceptance/maintenance-upstream/",
+            "docs/evidence/maintenance-upstream.md",
+            "scripts/verify-maintenance.sh"
+          ],
+          "objective": "Shared correction reaches a qualified consumer while prohibited diagnostic fields and private patches are rejected.",
+          "instructions": [
+            "Submit only allowlisted synthetic diagnostics, deduplicate and reproduce a shared defect.",
+            "Exercise a reviewed upstream fix through versioned release to consumer upgrade PR.",
+            "Verify private disclosure routing and that restricted source never leaves the owner boundary."
+          ],
+          "acceptance": [
+            "Shared correction reaches a qualified consumer while prohibited diagnostic fields and private patches are rejected."
+          ],
+          "verification": [
+            "./scripts/verify-maintenance.sh --upstream --synthetic"
+          ],
+          "negative_test": "Embed a synthetic secret/path in a crash report and require rejection before egress",
+          "risks": [],
+          "external_gate": "Approved test repositories and release identities"
+        },
+        {
+          "id": "T16.12",
+          "title": "Publish honest supported release and operator handoff",
+          "stage": "S5",
+          "lane": "L01",
+          "kind": "engineering",
+          "estimate_minutes": 90,
+          "deps": [
+            "T16.5",
+            "T16.8",
+            "T16.9",
+            "T16.11",
+            "T1.7",
+            "T5.21",
+            "T7.16",
+            "T8.16",
+            "T8.18",
+            "T8.25",
+            "T9.17",
+            "T10.17",
+            "T11.7",
+            "T12.8",
+            "T12.12"
+          ],
+          "use_cases": [
+            "UC-124"
+          ],
+          "owned_paths": [
+            "docs/releases/",
+            "docs/runbooks/",
+            "docs/evidence/release-index.md"
+          ],
+          "objective": "A released artifact has complete required evidence and reproducible installation/operating instructions.",
+          "instructions": [
+            "Verify source, artifacts, notices, evidence and support matrix identify the same release.",
+            "Publish only with explicit release authority; record public verification and known limitations.",
+            "Hand off security response, deprecation, backup, cost and maintenance-stop procedures."
+          ],
+          "acceptance": [
+            "A released artifact has complete required evidence and reproducible installation/operating instructions."
+          ],
+          "verification": [
+            "python3 scripts/check-release-evidence.py",
+            "python3 scripts/check-public-artifacts.py"
+          ],
+          "negative_test": "Substitute an artifact digest and require release identity/evidence validation failure",
+          "risks": [],
+          "external_gate": "Maintainer release/publication authorization"
+        }
+      ]
+    }
+  ],
+  "use_cases": [
+    {
+      "id": "UC-001",
+      "domain": "foundation",
+      "name": "Initialize a developer-owned application",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos init"
+        }
+      ],
+      "expected_outcome": "An existing repository gains reviewed starter files without overwriting authored work",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-002",
+      "domain": "foundation",
+      "name": "Compose a working local application",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "web",
+          "path": "/"
+        },
+        {
+          "type": "cli",
+          "path": "amos dev"
+        }
+      ],
+      "expected_outcome": "A local app serves shared and business routes with durable state",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-003",
+      "domain": "contracts",
+      "name": "Declare a business operation once",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos generate"
+        }
+      ],
+      "expected_outcome": "One contract generates compatible API and MCP transport",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-004",
+      "domain": "contracts",
+      "name": "Verify route and policy registration",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos verify"
+        }
+      ],
+      "expected_outcome": "Missing policy or conflicting routes prevent startup",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-005",
+      "domain": "foundation",
+      "name": "Understand supported dependencies",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "docs",
+          "path": "docs/dependencies.md"
+        }
+      ],
+      "expected_outcome": "Owner can inspect licenses, evidence and supported version matrix",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-006",
+      "domain": "storage",
+      "name": "Apply compatible schema migrations",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos migrate"
+        }
+      ],
+      "expected_outcome": "Concurrent startup and forward upgrades preserve schema integrity",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-007",
+      "domain": "reference",
+      "name": "Exercise a reference paid feature",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "web",
+          "path": "/items"
+        },
+        {
+          "type": "api",
+          "path": "/api/v1/items"
+        },
+        {
+          "type": "mcp",
+          "path": "items.create"
+        }
+      ],
+      "expected_outcome": "A permitted paid workspace can create/read a resource; denied users cannot",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-008",
+      "domain": "documentation",
+      "name": "Resume development from public documentation",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "docs",
+          "path": "README.md"
+        }
+      ],
+      "expected_outcome": "A new contributor can follow setup, ownership and verification instructions",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-009",
+      "domain": "contribution",
+      "name": "Submit a compatible contribution",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "docs",
+          "path": "CONTRIBUTING.md"
+        }
+      ],
+      "expected_outcome": "A contributor can reproduce required checks and report an issue safely",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-010",
+      "domain": "contracts",
+      "name": "Regenerate without losing custom work",
+      "actor": "developer",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos generate"
+        }
+      ],
+      "expected_outcome": "Generated types change while handwritten domain logic remains intact",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-120",
+      "domain": "release",
+      "name": "Verify a complete paid user journey",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "web",
+          "path": "/signin"
+        },
+        {
+          "type": "web",
+          "path": "/billing"
+        }
+      ],
+      "expected_outcome": "A real provider test environment confirms identity/payment/webhook/paid access lifecycle",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-121",
+      "domain": "release",
+      "name": "Deploy and observe a qualified release",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos deploy"
+        },
+        {
+          "type": "web",
+          "path": "/healthz"
+        }
+      ],
+      "expected_outcome": "A reviewed artifact serves the public domain with observed health and policy enforcement",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-122",
+      "domain": "release",
+      "name": "Recover a released application",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos recover"
+        }
+      ],
+      "expected_outcome": "Owner proves a bounded release rollback and separate data restore",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-123",
+      "domain": "reference",
+      "name": "Rehearse the reference application",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "docs",
+          "path": "docs/tutorials/reference-app.md"
+        }
+      ],
+      "expected_outcome": "A new user can reproduce the documented demonstration and an important failure case",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-124",
+      "domain": "release",
+      "name": "Adopt a release with accurate support claims",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "docs",
+          "path": "docs/releases/compatibility.md"
+        }
+      ],
+      "expected_outcome": "Owner can distinguish implemented, tested, provider-qualified and supported capabilities",
+      "priority": "P0",
+      "status": "PLANNED"
+    },
+    {
+      "id": "UC-125",
+      "domain": "release",
+      "name": "Verify autonomous private and upstream repair",
+      "actor": "application_owner",
+      "preconditions": [
+        "A supported source checkout or release is available"
+      ],
+      "interfaces": [
+        {
+          "type": "cli",
+          "path": "amos maintenance status"
+        }
+      ],
+      "expected_outcome": "Eligible fixes can pass independent checks while forbidden changes and private data export stop",
+      "priority": "P0",
+      "status": "PLANNED"
+    }
+  ],
+  "findings": [],
+  "questions": []
+}

@@ -1,0 +1,3083 @@
+[
+  {
+    "id": "UC-001",
+    "domain": "foundation",
+    "name": "Initialize a developer-owned application",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos init"
+      }
+    ],
+    "expected_outcome": "An existing repository gains reviewed starter files without overwriting authored work",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-002",
+    "domain": "foundation",
+    "name": "Compose a working local application",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/"
+      },
+      {
+        "type": "cli",
+        "path": "amos dev"
+      }
+    ],
+    "expected_outcome": "A local app serves shared and business routes with durable state",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-003",
+    "domain": "contracts",
+    "name": "Declare a business operation once",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos generate"
+      }
+    ],
+    "expected_outcome": "One contract generates compatible API and MCP transport",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-004",
+    "domain": "contracts",
+    "name": "Verify route and policy registration",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos verify"
+      }
+    ],
+    "expected_outcome": "Missing policy or conflicting routes prevent startup",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-005",
+    "domain": "foundation",
+    "name": "Understand supported dependencies",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "docs",
+        "path": "docs/dependencies.md"
+      }
+    ],
+    "expected_outcome": "Owner can inspect licenses, evidence and supported version matrix",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-006",
+    "domain": "storage",
+    "name": "Apply compatible schema migrations",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos migrate"
+      }
+    ],
+    "expected_outcome": "Concurrent startup and forward upgrades preserve schema integrity",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-007",
+    "domain": "reference",
+    "name": "Exercise a reference paid feature",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/items"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/items"
+      },
+      {
+        "type": "mcp",
+        "path": "items.create"
+      }
+    ],
+    "expected_outcome": "A permitted paid workspace can create/read a resource; denied users cannot",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-008",
+    "domain": "documentation",
+    "name": "Resume development from public documentation",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "docs",
+        "path": "README.md"
+      }
+    ],
+    "expected_outcome": "A new contributor can follow setup, ownership and verification instructions",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-009",
+    "domain": "contribution",
+    "name": "Submit a compatible contribution",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "docs",
+        "path": "CONTRIBUTING.md"
+      }
+    ],
+    "expected_outcome": "A contributor can reproduce required checks and report an issue safely",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-010",
+    "domain": "contracts",
+    "name": "Regenerate without losing custom work",
+    "actor": "developer",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos generate"
+      }
+    ],
+    "expected_outcome": "Generated types change while handwritten domain logic remains intact",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-020",
+    "domain": "identity",
+    "name": "Register and verify an account",
+    "actor": "visitor",
+    "preconditions": [
+      "Registration enabled"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signup"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/registrations"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-020; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Verified person with exactly one personal workspace",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-021",
+    "domain": "identity",
+    "name": "Sign in with email and password",
+    "actor": "account_holder",
+    "preconditions": [
+      "Verified active account"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signin"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/sessions"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-021; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Revocable session for proven identity",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-022",
+    "domain": "identity",
+    "name": "Recover or change password",
+    "actor": "account_holder",
+    "preconditions": [
+      "Approved recovery or current proof"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/recover"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/password-recovery"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-022; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Password changes once; old sessions revoked and MFA retained",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-023",
+    "domain": "identity",
+    "name": "Sign in by email magic link",
+    "actor": "account_holder",
+    "preconditions": [
+      "Magic method and mail configured"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signin/magic"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/magic-links"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-023; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Single-use confirmed link establishes correct assurance",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-024",
+    "domain": "identity",
+    "name": "Sign in with Google",
+    "actor": "visitor_or_account_holder",
+    "preconditions": [
+      "Qualified Google application configured"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signin/google"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/providers/google/start"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-024; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Verified issuer/subject resolves explicit person binding",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-025",
+    "domain": "identity",
+    "name": "Sign in with GitHub",
+    "actor": "visitor_or_account_holder",
+    "preconditions": [
+      "Qualified GitHub application configured"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signin/github"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/providers/github/start"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-025; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "OAuth stable subject signs in without email-based account merge",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-026",
+    "domain": "identity",
+    "name": "Sign in with Apple",
+    "actor": "visitor_or_account_holder",
+    "preconditions": [
+      "Qualified Apple application configured"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signin/apple"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/providers/apple/start"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-026; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Apple callback establishes proven person despite optional profile omission",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-027",
+    "domain": "identity",
+    "name": "Enroll and use passkeys",
+    "actor": "account_holder",
+    "preconditions": [
+      "Qualified WebAuthn origin and supported browser"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/account/passkeys"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/passkeys"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-027; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "User-verified credential signs in with origin-bound proof",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-028",
+    "domain": "identity",
+    "name": "Enroll, satisfy and recover MFA",
+    "actor": "account_holder",
+    "preconditions": [
+      "Frozen assurance/recovery policy"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/account/security"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/challenges"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-028; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Sensitive operation resumes only after required proof",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-029",
+    "domain": "identity",
+    "name": "Manage profile, email and sign-in methods",
+    "actor": "account_holder",
+    "preconditions": [
+      "Authenticated current person"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/account/profile"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/account"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-029; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Verified profile/method changes preserve viable authentication",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-030",
+    "domain": "identity",
+    "name": "Inspect and revoke sessions",
+    "actor": "account_holder",
+    "preconditions": [
+      "Authenticated current person"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/account/sessions"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/sessions"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-030; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Chosen sessions lose protected access within documented bound",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-031",
+    "domain": "identity",
+    "name": "Export or delete personal account",
+    "actor": "account_holder",
+    "preconditions": [
+      "Required proof and lifecycle policy"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/account/privacy"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/lifecycle"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-031; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Tenant-safe export or gated durable deletion without orphaning obligations",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-032",
+    "domain": "identity",
+    "name": "Disable account and invalidate authority",
+    "actor": "authorized_account_administrator",
+    "preconditions": [
+      "Approved administration authority"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/account/status"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/account-status"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-032; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Disabled identity cannot use old browser/API/MCP authority",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-033",
+    "domain": "workspace",
+    "name": "Use personal workspace and switch organizations",
+    "actor": "account_holder",
+    "preconditions": [
+      "Current workspace membership"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/workspaces"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/selection"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-033; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Selected tenant is explicit and revalidated",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-034",
+    "domain": "workspace",
+    "name": "Create an organization",
+    "actor": "account_holder",
+    "preconditions": [
+      "Organization creation permitted"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/organizations/new"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/organizations"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-034; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Organization plus initial owner created atomically",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-035",
+    "domain": "workspace",
+    "name": "Invite and join organization",
+    "actor": "organization_admin_and_invitee",
+    "preconditions": [
+      "Active org, verified invitee and seat policy"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/organizations/{workspace}/invitations"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/invitations"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-035; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Approved identity joins once with authorized role and seat",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-036",
+    "domain": "workspace",
+    "name": "Manage roles, leave or remove members",
+    "actor": "organization_member_or_admin",
+    "preconditions": [
+      "Current membership and operation permission"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/organizations/{workspace}/members"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/members"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-036; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Authorized change takes effect without final-owner loss",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-037",
+    "domain": "workspace",
+    "name": "Transfer, suspend, export or delete organization",
+    "actor": "organization_owner",
+    "preconditions": [
+      "Recent proof and lifecycle prerequisites"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/organizations/{workspace}/settings"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/lifecycle"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-037; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Ownership and lifecycle transitions preserve billing and data isolation",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-038",
+    "domain": "workspace",
+    "name": "Access only authorized tenant resources",
+    "actor": "person_or_agent",
+    "preconditions": [
+      "Valid principal, selected workspace and resource permission"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/workspaces/{workspace}"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-038; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Every interface denies cross-tenant resource access",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-039",
+    "domain": "workspace",
+    "name": "Configure and enforce organization OIDC SSO",
+    "actor": "organization_owner_and_member",
+    "preconditions": [
+      "Qualified IdP, domain proof and policy"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/organizations/{workspace}/security"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/sso"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-039; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Tenant-bound issuer proof and MFA enforcement protect current requests",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-040",
+    "domain": "billing",
+    "name": "Buy independent personal subscription",
+    "actor": "personal_workspace_owner",
+    "preconditions": [
+      "Approved plan and Stripe configuration"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/billing/plans"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/billing/checkout"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-040; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Verified personal payment unlocks only personal configured entitlement",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-041",
+    "domain": "billing",
+    "name": "Buy independent organization subscription",
+    "actor": "organization_billing_owner",
+    "preconditions": [
+      "Billing permission in selected org"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/organizations/{workspace}/billing"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/billing/checkout"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-041; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Organization subscription is independent of every persons personal plan",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-042",
+    "domain": "billing",
+    "name": "Manage subscription, invoices and payment actions",
+    "actor": "workspace_billing_owner",
+    "preconditions": [
+      "Current billing authority"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/billing/manage"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/billing/subscription"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-042; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Approved lifecycle mutation and authorized history reflect provider-confirmed state",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-043",
+    "domain": "billing",
+    "name": "Pay and reconcile organization seats",
+    "actor": "organization_billing_owner",
+    "preconditions": [
+      "Approved seat model and active membership policy"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/billing/seats"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/billing/seats"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-043; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Desired and confirmed quantities converge without membership race overcharge",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-044",
+    "domain": "billing",
+    "name": "Record and inspect usage-based billing",
+    "actor": "authorized_meter_writer_and_billing_owner",
+    "preconditions": [
+      "Approved usage model and meter binding"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/billing/usage"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/billing/usage"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-044; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Immutable deduplicated usage is attributable, corrected and reconciled",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-045",
+    "domain": "billing",
+    "name": "Understand denied or unavailable paid access",
+    "actor": "person_or_agent",
+    "preconditions": [
+      "Protected action requires subscription"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/billing/status"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/workspaces/{workspace}/billing/entitlements"
+      },
+      {
+        "type": "mcp",
+        "path": "generated operation mapping for UC-045; proof challenges apply; IDs frozen in T1.2"
+      }
+    ],
+    "expected_outcome": "Known denied and unknown provider state remain distinct; account/billing recovery remains reachable",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-046",
+    "domain": "ui",
+    "name": "Complete lifecycle through default shared pages",
+    "actor": "account_holder",
+    "preconditions": [
+      "Default UI enabled"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signin"
+      },
+      {
+        "type": "api",
+        "path": "/api/v1/identity/sessions"
+      }
+    ],
+    "expected_outcome": "Default browser flows cover all selected identity/workspace/billing lifecycles",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-047",
+    "domain": "ui",
+    "name": "Theme or replace an individual shared page",
+    "actor": "application_developer",
+    "preconditions": [
+      "Public UI contract and managed file ownership"
+    ],
+    "interfaces": [
+      {
+        "type": "developer",
+        "path": "ui/overrides"
+      },
+      {
+        "type": "public-contract",
+        "path": "public ui.Renderer contract"
+      }
+    ],
+    "expected_outcome": "Authored customization retains backend proof and survives compatible upgrades",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-048",
+    "domain": "ui",
+    "name": "Replace the whole shared user interface",
+    "actor": "application_developer",
+    "preconditions": [
+      "Public API/domain contracts and default renderer disabled"
+    ],
+    "interfaces": [
+      {
+        "type": "developer",
+        "path": "examples/custom-ui"
+      },
+      {
+        "type": "public-contract",
+        "path": "public UI/API contracts"
+      }
+    ],
+    "expected_outcome": "Independent UI builds with no internal imports and preserves authorization parity",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-049",
+    "domain": "ui",
+    "name": "Use lifecycle with keyboard and small screen",
+    "actor": "account_holder",
+    "preconditions": [
+      "Supported browser and documented accessibility target"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/account/security"
+      },
+      {
+        "type": "public-contract",
+        "path": "/billing/manage"
+      }
+    ],
+    "expected_outcome": "Critical shared pages remain navigable with associated errors and visible pending states",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-050",
+    "domain": "initializer",
+    "name": "Initialize a named application",
+    "actor": "application developer",
+    "preconditions": [
+      "A supported Go toolchain is installed",
+      "Target directory is empty"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos init"
+      }
+    ],
+    "expected_outcome": "A deterministic generated application contains the selected modules and ownership manifest.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-051",
+    "domain": "initializer",
+    "name": "Diagnose local prerequisites",
+    "actor": "application developer",
+    "preconditions": [
+      "Generated application exists"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos doctor"
+      }
+    ],
+    "expected_outcome": "Actionable checks identify missing tools, ports, config, and incompatible versions without modifying cloud resources.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-052",
+    "domain": "initializer",
+    "name": "Run the local reference application",
+    "actor": "application developer",
+    "preconditions": [
+      "Podman is available",
+      "Local configuration validates"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos dev"
+      },
+      {
+        "type": "http",
+        "path": "GET /readyz"
+      }
+    ],
+    "expected_outcome": "Go SSR application and durable local PostgreSQL run on one browser origin.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-053",
+    "domain": "initializer",
+    "name": "Resume an interrupted local setup",
+    "actor": "application developer",
+    "preconditions": [
+      "A previous setup stopped before completion"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos init --resume"
+      },
+      {
+        "type": "cli",
+        "path": "amos dev"
+      }
+    ],
+    "expected_outcome": "Recognized AMOS files are resumed without overwriting developer work.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-054",
+    "domain": "initializer",
+    "name": "Choose an integrated or separate business service",
+    "actor": "application developer",
+    "preconditions": [
+      "Composition mode is explicit"
+    ],
+    "interfaces": [
+      {
+        "type": "config",
+        "path": "amos.yaml:business.mode"
+      },
+      {
+        "type": "http",
+        "path": "/app/*"
+      }
+    ],
+    "expected_outcome": "Both supported modes present one public origin with explicit trust and timeout rules.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-055",
+    "domain": "initializer",
+    "name": "Inspect deployment inputs before mutation",
+    "actor": "operator",
+    "preconditions": [
+      "A generated application and named environment exist"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos deploy plan"
+      }
+    ],
+    "expected_outcome": "A redacted resource and cost-impact plan identifies exact environment, artifact, and approval requirements.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-056",
+    "domain": "initializer",
+    "name": "Deploy an approved immutable application release",
+    "actor": "operator",
+    "preconditions": [
+      "Provisioned target exists",
+      "Artifact digest and approval match plan"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos deploy apply"
+      }
+    ],
+    "expected_outcome": "Deployment records actual success or partial failure and can resume safely.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-057",
+    "domain": "initializer",
+    "name": "Inspect, stop, and clean local resources",
+    "actor": "application developer",
+    "preconditions": [
+      "Local AMOS resource labels exist"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos status"
+      },
+      {
+        "type": "cli",
+        "path": "amos dev stop"
+      },
+      {
+        "type": "cli",
+        "path": "amos dev clean"
+      }
+    ],
+    "expected_outcome": "Only resources owned by this local project are stopped; data removal requires explicit intent.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-058",
+    "domain": "infrastructure",
+    "name": "Select a costed AWS hosting profile",
+    "actor": "application owner",
+    "preconditions": [
+      "Region and availability requirements are supplied"
+    ],
+    "interfaces": [
+      {
+        "type": "config",
+        "path": "amos.yaml:deploy.profile"
+      }
+    ],
+    "expected_outcome": "The owner selects managed or small-vm explicitly, compares complete costs and responsibilities, and never switches existing installations silently.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-059",
+    "domain": "infrastructure",
+    "name": "Bootstrap owner-controlled infrastructure state",
+    "actor": "operator",
+    "preconditions": [
+      "Owner AWS authentication is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos infra bootstrap"
+      }
+    ],
+    "expected_outcome": "Encrypted, versioned, access-scoped Pulumi state and independently recoverable secrets are configured.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-060",
+    "domain": "infrastructure",
+    "name": "Provision an isolated AWS application host",
+    "actor": "operator",
+    "preconditions": [
+      "Hosting profile is frozen",
+      "Cloud actions are explicitly authorized"
+    ],
+    "interfaces": [
+      {
+        "type": "iac",
+        "path": "deploy/aws/Pulumi.yaml"
+      }
+    ],
+    "expected_outcome": "The selected managed or small-vm profile enforces its documented network, storage, workload identity and deletion policy.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-061",
+    "domain": "infrastructure",
+    "name": "Connect a required Cloudflare domain",
+    "actor": "operator",
+    "preconditions": [
+      "Delegated Cloudflare zone is active",
+      "Scoped DNS token is supplied"
+    ],
+    "interfaces": [
+      {
+        "type": "config",
+        "path": "amos.yaml:deploy.cloudflare"
+      },
+      {
+        "type": "dns",
+        "path": "app.example.com"
+      }
+    ],
+    "expected_outcome": "Public DNS and origin TLS work in the explicitly selected DNS-only or separately qualified proxy mode.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-062",
+    "domain": "infrastructure",
+    "name": "Keep cloud credentials out of application artifacts",
+    "actor": "operator",
+    "preconditions": [
+      "Cloud providers and CI environment are configured"
+    ],
+    "interfaces": [
+      {
+        "type": "config",
+        "path": "deploy/credentials"
+      },
+      {
+        "type": "ci",
+        "path": "deploy environment"
+      }
+    ],
+    "expected_outcome": "Short-lived AWS identity and narrowly scoped Cloudflare tokens are separated from runtime app secrets.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-063",
+    "domain": "infrastructure",
+    "name": "Persist and recover PostgreSQL in either profile",
+    "actor": "operator",
+    "preconditions": [
+      "Selected PostgreSQL hosting profile has passed independent qualification"
+    ],
+    "interfaces": [
+      {
+        "type": "iac",
+        "path": "deploy/aws/database"
+      },
+      {
+        "type": "cli",
+        "path": "amos backup"
+      }
+    ],
+    "expected_outcome": "Managed PostgreSQL or owner-hosted PostgreSQL persists across app replacement with profile-specific backup and recovery evidence.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-064",
+    "domain": "infrastructure",
+    "name": "Protect cost and retained resources during changes",
+    "actor": "operator",
+    "preconditions": [
+      "Resource inventory and plan are available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos infra plan"
+      },
+      {
+        "type": "cli",
+        "path": "amos infra destroy"
+      },
+      {
+        "type": "cli",
+        "path": "amos profile migrate plan"
+      }
+    ],
+    "expected_outcome": "Budget, replacement and retention policy gate changes; profile migration requires a separate data/cutover plan.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-065",
+    "domain": "delivery",
+    "name": "Validate public contributions without cloud privilege",
+    "actor": "contributor",
+    "preconditions": [
+      "Pull request exists"
+    ],
+    "interfaces": [
+      {
+        "type": "ci",
+        "path": "validation workflow"
+      }
+    ],
+    "expected_outcome": "Untrusted changes receive real tests without credentials or deployment capability.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-066",
+    "domain": "delivery",
+    "name": "Build and verify immutable release artifacts",
+    "actor": "maintainer",
+    "preconditions": [
+      "Reviewed source revision passes validation"
+    ],
+    "interfaces": [
+      {
+        "type": "ci",
+        "path": "artifact workflow"
+      },
+      {
+        "type": "artifact",
+        "path": "release-manifest.json"
+      }
+    ],
+    "expected_outcome": "Go archives and OCI digests are tied to source, checksums, SBOM, and provenance.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-067",
+    "domain": "delivery",
+    "name": "Install a versioned CLI safely",
+    "actor": "application developer",
+    "preconditions": [
+      "Published release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos version"
+      },
+      {
+        "type": "artifact",
+        "path": "checksums.txt"
+      }
+    ],
+    "expected_outcome": "An OS/architecture-compatible CLI is verified before use; corrupt downloads fail closed.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-068",
+    "domain": "delivery",
+    "name": "Upgrade generated files without losing custom code",
+    "actor": "application owner",
+    "preconditions": [
+      "Current generated manifest and target release exist"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos upgrade plan"
+      },
+      {
+        "type": "cli",
+        "path": "amos upgrade apply"
+      }
+    ],
+    "expected_outcome": "Three-way upgrades preserve owner edits and report conflicting managed changes.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-069",
+    "domain": "delivery",
+    "name": "Receive and review an upgrade pull request",
+    "actor": "application owner",
+    "preconditions": [
+      "Repository installation permission is explicitly granted"
+    ],
+    "interfaces": [
+      {
+        "type": "ci",
+        "path": "upgrade workflow"
+      },
+      {
+        "type": "github",
+        "path": "upgrade pull request"
+      }
+    ],
+    "expected_outcome": "A version-pinned PR includes changes, migration impact, tests, and conflicts without merging itself.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-070",
+    "domain": "delivery",
+    "name": "Preserve overrides and package extension contracts",
+    "actor": "application developer",
+    "preconditions": [
+      "Application declares supported overrides"
+    ],
+    "interfaces": [
+      {
+        "type": "config",
+        "path": "amos.yaml:overrides"
+      },
+      {
+        "type": "artifact",
+        "path": ".amos/manifest.json"
+      }
+    ],
+    "expected_outcome": "Overrides remain owner-controlled while compatible package updates remain reviewable.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-071",
+    "domain": "delivery",
+    "name": "Reject incompatible or untrusted upgrades",
+    "actor": "application owner",
+    "preconditions": [
+      "A proposed release changes contracts"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos upgrade plan"
+      }
+    ],
+    "expected_outcome": "Schema, package, workflow, and generator compatibility checks block unsupported downgrade or migration paths.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-072",
+    "domain": "operations",
+    "name": "Observe application health without exposing internals",
+    "actor": "operator",
+    "preconditions": [
+      "Application is running"
+    ],
+    "interfaces": [
+      {
+        "type": "http",
+        "path": "GET /healthz"
+      },
+      {
+        "type": "http",
+        "path": "GET /readyz"
+      }
+    ],
+    "expected_outcome": "Liveness and dependency readiness have bounded latency and sanitized failure responses.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-073",
+    "domain": "operations",
+    "name": "Trace requests and business-side failures",
+    "actor": "operator",
+    "preconditions": [
+      "Telemetry is enabled"
+    ],
+    "interfaces": [
+      {
+        "type": "telemetry",
+        "path": "structured logs and metrics"
+      }
+    ],
+    "expected_outcome": "Correlation identifies failure paths while excluding credentials, payment data, and unbounded user labels.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-074",
+    "domain": "operations",
+    "name": "Detect failed background processing",
+    "actor": "operator",
+    "preconditions": [
+      "Durable delivery workers are configured"
+    ],
+    "interfaces": [
+      {
+        "type": "telemetry",
+        "path": "outbox and webhook metrics"
+      }
+    ],
+    "expected_outcome": "Backlog age, retries, dead letters, and dependency outages produce actionable signals.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-075",
+    "domain": "operations",
+    "name": "Create encrypted application backups",
+    "actor": "operator",
+    "preconditions": [
+      "Database and backup destination are configured"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos backup create"
+      }
+    ],
+    "expected_outcome": "Backup evidence includes consistency boundary, version, encrypted storage, completion time, and integrity digest.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-076",
+    "domain": "operations",
+    "name": "Restore into an isolated target",
+    "actor": "operator",
+    "preconditions": [
+      "A valid backup and recovery secrets exist"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos restore plan"
+      },
+      {
+        "type": "cli",
+        "path": "amos restore apply"
+      }
+    ],
+    "expected_outcome": "Restored identity, membership, billing state, and work queues reconcile safely before traffic cutover.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-077",
+    "domain": "operations",
+    "name": "Recover an unsuccessful release",
+    "actor": "operator",
+    "preconditions": [
+      "Prior signed artifact and migration compatibility data exist"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos deploy rollback"
+      }
+    ],
+    "expected_outcome": "Compatible application rollback restores service without pretending schema or external billing side effects were reverted.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-078",
+    "domain": "operations",
+    "name": "Operate within declared availability and cost limits",
+    "actor": "application owner",
+    "preconditions": [
+      "Profile-specific SLO, RPO, RTO and budget are declared"
+    ],
+    "interfaces": [
+      {
+        "type": "document",
+        "path": "operations runbook"
+      },
+      {
+        "type": "telemetry",
+        "path": "alerts"
+      }
+    ],
+    "expected_outcome": "Observed service and recovery evidence is compared to targets; single-host downtime is disclosed.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-079",
+    "domain": "operations",
+    "name": "Rotate secrets and export diagnostic evidence",
+    "actor": "operator",
+    "preconditions": [
+      "Authorized operator and redaction policy exist"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos secrets rotate"
+      },
+      {
+        "type": "cli",
+        "path": "amos support bundle"
+      }
+    ],
+    "expected_outcome": "Rotation preserves service continuity and the export contains no secret values or user data.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-080",
+    "domain": "agent-access",
+    "name": "Discover only eligible MCP tools",
+    "actor": "External MCP client",
+    "preconditions": [
+      "Configured installation and supported client profile"
+    ],
+    "interfaces": [
+      {
+        "type": "MCP",
+        "path": "/mcp: tools/list"
+      }
+    ],
+    "expected_outcome": "Tool discovery follows frozen exposure policy without leaking inaccessible tenant resources.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-081",
+    "domain": "agent-access",
+    "name": "Invoke domain behavior with REST/MCP parity",
+    "actor": "Authorized human or external agent",
+    "preconditions": [
+      "Active membership, scopes and entitlement"
+    ],
+    "interfaces": [
+      {
+        "type": "REST",
+        "path": "/api/v1/{operation}"
+      },
+      {
+        "type": "MCP",
+        "path": "/mcp: tools/call"
+      }
+    ],
+    "expected_outcome": "Equivalent inputs produce equivalent domain outcomes and security decisions.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-082",
+    "domain": "agent-access",
+    "name": "Create and manage bounded API keys",
+    "actor": "Workspace member",
+    "preconditions": [
+      "Interactive authenticated session and key-management permission"
+    ],
+    "interfaces": [
+      {
+        "type": "REST",
+        "path": "/api/v1/api-keys"
+      },
+      {
+        "type": "UI",
+        "path": "/settings/api-keys"
+      }
+    ],
+    "expected_outcome": "Secret is revealed once; listing excludes verifiers; rotation and revocation have explicit outcomes.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-083",
+    "domain": "agent-access",
+    "name": "Reject stale or overpowered keys",
+    "actor": "Customer integration",
+    "preconditions": [
+      "Issued scoped expiring key"
+    ],
+    "interfaces": [
+      {
+        "type": "REST",
+        "path": "/api/v1/{operation}"
+      }
+    ],
+    "expected_outcome": "Current membership, owner/resource/scopes and entitlement all apply; keys cannot elevate themselves.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-084",
+    "domain": "agent-access",
+    "name": "Authorize public MCP clients",
+    "actor": "Account holder and external MCP client",
+    "preconditions": [
+      "Frozen client profile, session and trusted configured issuer"
+    ],
+    "interfaces": [
+      {
+        "type": "OAuth",
+        "path": "/.well-known/oauth-protected-resource"
+      },
+      {
+        "type": "OAuth",
+        "path": "/oauth/authorize"
+      },
+      {
+        "type": "UI",
+        "path": "/oauth/consent"
+      }
+    ],
+    "expected_outcome": "Consent binds exact client/resource/workspace/scopes; unsupported profiles fail explicitly.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-085",
+    "domain": "agent-access",
+    "name": "Refresh or revoke MCP access",
+    "actor": "External MCP client",
+    "preconditions": [
+      "Existing consent grant"
+    ],
+    "interfaces": [
+      {
+        "type": "OAuth",
+        "path": "/oauth/token"
+      },
+      {
+        "type": "OAuth",
+        "path": "/oauth/revoke"
+      },
+      {
+        "type": "REST",
+        "path": "/api/v1/oauth-grants"
+      }
+    ],
+    "expected_outcome": "Rotation, reuse, account changes and revocation enforce documented ordering without authority revival.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-086",
+    "domain": "agent-access",
+    "name": "Resume required human proof",
+    "actor": "External agent acting for user",
+    "preconditions": [
+      "Sensitive operation requires fresh proof"
+    ],
+    "interfaces": [
+      {
+        "type": "REST",
+        "path": "/api/v1/challenges/{id}"
+      },
+      {
+        "type": "MCP",
+        "path": "/mcp: tools/call"
+      },
+      {
+        "type": "UI",
+        "path": "/challenges/{id}"
+      }
+    ],
+    "expected_outcome": "A bounded operation-bound challenge completes through ordinary proof and one resumable authorized action.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-087",
+    "domain": "agent-access",
+    "name": "Use independently qualified MCP clients",
+    "actor": "Application owner",
+    "preconditions": [
+      "Pinned MCP profile and documented supported clients"
+    ],
+    "interfaces": [
+      {
+        "type": "MCP",
+        "path": "/mcp"
+      }
+    ],
+    "expected_outcome": "Independent clients complete allowed and denied flows without any AMOS-hosted governance service.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-088",
+    "domain": "business-extension",
+    "name": "Generate transport from business contract",
+    "actor": "Application developer",
+    "preconditions": [
+      "Frozen contract extensions and generator"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "amos generate"
+      },
+      {
+        "type": "OpenAPI",
+        "path": "api/business.openapi.yaml"
+      }
+    ],
+    "expected_outcome": "Stable Go and MCP transports map to developer-owned behavior without overwriting it.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-089",
+    "domain": "business-extension",
+    "name": "Compose integrated Go business handlers",
+    "actor": "Application developer",
+    "preconditions": [
+      "Registered implementation and reserved-route map"
+    ],
+    "interfaces": [
+      {
+        "type": "Go",
+        "path": "app/business"
+      },
+      {
+        "type": "REST",
+        "path": "/api/v1/business/{operation}"
+      }
+    ],
+    "expected_outcome": "Business code executes behind the same authorization and entitlement boundary.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-090",
+    "domain": "business-extension",
+    "name": "Proxy to privately reachable service",
+    "actor": "Application developer",
+    "preconditions": [
+      "Separate service configured with approved trust profile"
+    ],
+    "interfaces": [
+      {
+        "type": "HTTP",
+        "path": "/business/{path}"
+      }
+    ],
+    "expected_outcome": "One public domain forwards only approved requests with authenticated, audience-bound identity.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-091",
+    "domain": "business-extension",
+    "name": "Reject proxy boundary bypass",
+    "actor": "Untrusted caller",
+    "preconditions": [
+      "Configured separate-service deployment"
+    ],
+    "interfaces": [
+      {
+        "type": "HTTP",
+        "path": "/business/{path}"
+      },
+      {
+        "type": "Network",
+        "path": "private business origin"
+      }
+    ],
+    "expected_outcome": "Spoofed identity, routing tricks and direct origin access cannot evade authorization.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-092",
+    "domain": "business-extension",
+    "name": "Publish fully replaced account UI",
+    "actor": "Custom UI developer",
+    "preconditions": [
+      "Core API contract and approved UI extension seam"
+    ],
+    "interfaces": [
+      {
+        "type": "Browser",
+        "path": "custom shared-page replacement"
+      },
+      {
+        "type": "REST",
+        "path": "/api/v1/{operation}"
+      }
+    ],
+    "expected_outcome": "A custom client completes the same account/security/billing flows using public APIs.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-093",
+    "domain": "business-extension",
+    "name": "Preserve side effects across retries",
+    "actor": "Business client",
+    "preconditions": [
+      "Declared idempotency or non-retry semantics"
+    ],
+    "interfaces": [
+      {
+        "type": "REST",
+        "path": "/api/v1/business/{operation}"
+      },
+      {
+        "type": "MCP",
+        "path": "/mcp: tools/call"
+      }
+    ],
+    "expected_outcome": "Duplicate, timed-out and unknown outcomes remain observable without duplicate business changes.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-094",
+    "domain": "business-extension",
+    "name": "Upgrade generated contracts safely",
+    "actor": "Application maintainer",
+    "preconditions": [
+      "Prior generated manifest and customized implementation"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "amos generate --check"
+      }
+    ],
+    "expected_outcome": "Breaking schema or ownership changes stop with a reviewable diff; authored code survives.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-095",
+    "domain": "business-extension",
+    "name": "Qualify unsupported operation shapes",
+    "actor": "Contract author",
+    "preconditions": [
+      "Candidate upload, streaming or asynchronous operation"
+    ],
+    "interfaces": [
+      {
+        "type": "OpenAPI",
+        "path": "api/business.openapi.yaml"
+      },
+      {
+        "type": "MCP",
+        "path": "/mcp"
+      }
+    ],
+    "expected_outcome": "Explicitly qualified mappings work; unsupported protocol shapes fail generation with actionable diagnostics.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-096",
+    "domain": "private-maintenance",
+    "name": "Configure owner-hosted maintenance",
+    "actor": "Application owner",
+    "preconditions": [
+      "Independent owner runner and owner model credentials"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "amos maintenance configure"
+      },
+      {
+        "type": "Config",
+        "path": "maintenance/owner-policy.yaml"
+      }
+    ],
+    "expected_outcome": "Maintenance runs under bounded owner policy independently of application service.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-097",
+    "domain": "private-maintenance",
+    "name": "Create bounded diagnosis from observations",
+    "actor": "Owner maintenance system",
+    "preconditions": [
+      "Local observation source and approved task scope"
+    ],
+    "interfaces": [
+      {
+        "type": "Event",
+        "path": "maintenance observation intake"
+      }
+    ],
+    "expected_outcome": "Deduplicated, provenance-tagged evidence yields a bounded job while hostile text remains untrusted.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-098",
+    "domain": "private-maintenance",
+    "name": "Run isolated private coding job",
+    "actor": "Owner coding agent",
+    "preconditions": [
+      "Approved job and restricted ephemeral workspace"
+    ],
+    "interfaces": [
+      {
+        "type": "Runner",
+        "path": "maintenance coding adapter"
+      }
+    ],
+    "expected_outcome": "Agent edits only assigned private paths with bounded spend/time/egress and no production authority.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-099",
+    "domain": "private-maintenance",
+    "name": "Verify independently of proposed patch",
+    "actor": "Owner verifier",
+    "preconditions": [
+      "Proposed patch and immutable protected checks"
+    ],
+    "interfaces": [
+      {
+        "type": "Runner",
+        "path": "maintenance verification adapter"
+      }
+    ],
+    "expected_outcome": "Independent checks test intended behavior and denied paths against exact candidate source.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-100",
+    "domain": "private-maintenance",
+    "name": "Promote eligible repair automatically",
+    "actor": "Owner release identity",
+    "preconditions": [
+      "Owner-enabled policy, valid evidence and approved risk class"
+    ],
+    "interfaces": [
+      {
+        "type": "Release",
+        "path": "maintenance promotion decision"
+      }
+    ],
+    "expected_outcome": "Separate authority promotes only the verified immutable artifact matching current policy and source.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-101",
+    "domain": "private-maintenance",
+    "name": "Pause, recover and resume safely",
+    "actor": "Application owner",
+    "preconditions": [
+      "Active maintenance job or rollout"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "amos maintenance pause"
+      },
+      {
+        "type": "CLI",
+        "path": "amos maintenance resume"
+      }
+    ],
+    "expected_outcome": "Independent kill switch stops new actions; reconciliation precedes explicit safe resume.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-102",
+    "domain": "private-maintenance",
+    "name": "Retain private fixes and evidence",
+    "actor": "Application maintainer",
+    "preconditions": [
+      "Private business/custom-UI issue"
+    ],
+    "interfaces": [
+      {
+        "type": "Repository",
+        "path": "owner private repair branch"
+      }
+    ],
+    "expected_outcome": "Private code and evidence never enter upstream channels without a separate sanitized contribution.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-103",
+    "domain": "private-maintenance",
+    "name": "Continue service during maintenance outage",
+    "actor": "Application user",
+    "preconditions": [
+      "Healthy application and unavailable agent/reporting plane"
+    ],
+    "interfaces": [
+      {
+        "type": "HTTP",
+        "path": "application health and protected business API"
+      }
+    ],
+    "expected_outcome": "Application requests continue; maintenance queues are bounded and failure remains visible.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-104",
+    "domain": "upstream-maintenance",
+    "name": "Inspect and disable sanitized reporting",
+    "actor": "Application owner",
+    "preconditions": [
+      "Reporting configuration and local diagnostic candidates"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "amos diagnostics preview"
+      },
+      {
+        "type": "CLI",
+        "path": "amos diagnostics disable"
+      }
+    ],
+    "expected_outcome": "Owner sees exact allowed payload; disablement prevents export; runtime remains usable.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-105",
+    "domain": "upstream-maintenance",
+    "name": "Receive bounded sanitized diagnostics",
+    "actor": "Upstream operator",
+    "preconditions": [
+      "Public diagnostic schema and intake controls"
+    ],
+    "interfaces": [
+      {
+        "type": "HTTP",
+        "path": "upstream /v1/diagnostics"
+      }
+    ],
+    "expected_outcome": "Only schema-valid bounded diagnostics enter quarantine; duplicates and hostile input cannot trigger trusted code.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-106",
+    "domain": "upstream-maintenance",
+    "name": "Create public synthetic reproduction",
+    "actor": "Upstream maintainer",
+    "preconditions": [
+      "Approved sanitized diagnostic cluster"
+    ],
+    "interfaces": [
+      {
+        "type": "Artifact",
+        "path": "upstream synthetic reproduction bundle"
+      }
+    ],
+    "expected_outcome": "A reproduction independently demonstrates the shared defect without private source or identifying data.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-107",
+    "domain": "upstream-maintenance",
+    "name": "Route suspected vulnerabilities privately",
+    "actor": "Owner or upstream security maintainer",
+    "preconditions": [
+      "Evidence may indicate security impact"
+    ],
+    "interfaces": [
+      {
+        "type": "Process",
+        "path": "private vulnerability disclosure intake"
+      }
+    ],
+    "expected_outcome": "Restricted evidence reaches approved security handling without automatic public issue creation.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-108",
+    "domain": "upstream-maintenance",
+    "name": "Repair shared AMOS code independently",
+    "actor": "Upstream maintenance operator",
+    "preconditions": [
+      "Qualified reproduction and protected upstream policy"
+    ],
+    "interfaces": [
+      {
+        "type": "Runner",
+        "path": "upstream maintenance job"
+      }
+    ],
+    "expected_outcome": "Isolated coding, independent checks and separate release identity enforce upstream policy.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-109",
+    "domain": "upstream-maintenance",
+    "name": "Contribute demonstrated AMSL mechanism gaps",
+    "actor": "AMOS maintainer and AMSL human reviewer",
+    "preconditions": [
+      "Failing publishable consumer case and proven mechanism gap"
+    ],
+    "interfaces": [
+      {
+        "type": "Process",
+        "path": "AMSL contribution packet"
+      }
+    ],
+    "expected_outcome": "Scoped contribution preserves public provenance, compatibility and security-sensitive human review.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-110",
+    "domain": "upstream-maintenance",
+    "name": "Adopt upstream repair through upgrade PR",
+    "actor": "Application owner",
+    "preconditions": [
+      "Signed upstream release and owner update policy"
+    ],
+    "interfaces": [
+      {
+        "type": "Repository",
+        "path": "consumer upgrade pull request"
+      }
+    ],
+    "expected_outcome": "Owner policy evaluates a pinned diff and local qualification before eligible automatic adoption.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-111",
+    "domain": "upstream-maintenance",
+    "name": "Delete or expire reporting data",
+    "actor": "Application owner and upstream operator",
+    "preconditions": [
+      "Retention settings and accepted diagnostic receipts"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "amos diagnostics status"
+      },
+      {
+        "type": "HTTP",
+        "path": "upstream diagnostics retention controls"
+      }
+    ],
+    "expected_outcome": "Retention/deletion applies to allowed payloads and derived indexing according to documented limits.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-112",
+    "domain": "security",
+    "name": "Review application and maintenance threat boundaries",
+    "actor": "Security reviewer",
+    "preconditions": [
+      "Frozen architecture and asset inventory"
+    ],
+    "interfaces": [
+      {
+        "type": "Document",
+        "path": "docs/security/threat-model.md"
+      }
+    ],
+    "expected_outcome": "Attack paths map to explicit controls, tests, residual risks and stage gates.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-113",
+    "domain": "security",
+    "name": "Deny tenant and authority confusion",
+    "actor": "Authenticated adversary",
+    "preconditions": [
+      "Two synthetic tenants and varied role/credential states"
+    ],
+    "interfaces": [
+      {
+        "type": "REST",
+        "path": "/api/v1/{operation}"
+      },
+      {
+        "type": "MCP",
+        "path": "/mcp"
+      },
+      {
+        "type": "Browser",
+        "path": "shared account pages"
+      }
+    ],
+    "expected_outcome": "Cross-tenant and confused-deputy actions are denied across all advertised interfaces.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-114",
+    "domain": "security",
+    "name": "Enforce protected change policy",
+    "actor": "Owner release identity",
+    "preconditions": [
+      "Protected policy and proposed change"
+    ],
+    "interfaces": [
+      {
+        "type": "Policy",
+        "path": "maintenance protected-path evaluation"
+      }
+    ],
+    "expected_outcome": "Policy/check/release-identity edits and uncertain risk classes require elevated review outside coding authority.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-115",
+    "domain": "security",
+    "name": "Verify reproducible release provenance",
+    "actor": "Release operator",
+    "preconditions": [
+      "Pinned source and build inputs"
+    ],
+    "interfaces": [
+      {
+        "type": "Artifact",
+        "path": "release provenance and attestations"
+      }
+    ],
+    "expected_outcome": "Artifact provenance binds trusted builder/source/dependencies; mismatches block promotion.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-116",
+    "domain": "security",
+    "name": "Treat third-party proposals as untrusted",
+    "actor": "Maintainer",
+    "preconditions": [
+      "External pull request or contributed diagnostic"
+    ],
+    "interfaces": [
+      {
+        "type": "CI",
+        "path": "untrusted pull-request checks"
+      }
+    ],
+    "expected_outcome": "Untrusted code gets no production secrets, privileged tokens or trusted cache/artifact path.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-117",
+    "domain": "security",
+    "name": "Withstand injected instructions and exfiltration",
+    "actor": "Owner or upstream security reviewer",
+    "preconditions": [
+      "Hostile repository, log, diagnostic or model output"
+    ],
+    "interfaces": [
+      {
+        "type": "Runner",
+        "path": "adversarial maintenance qualification"
+      }
+    ],
+    "expected_outcome": "Untrusted content cannot exfiltrate protected material or change effective policy.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-118",
+    "domain": "security",
+    "name": "Recover compatible data and code state",
+    "actor": "Application owner",
+    "preconditions": [
+      "Failed update or disaster recovery drill"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "amos recover"
+      },
+      {
+        "type": "Release",
+        "path": "rollback compatibility evaluation"
+      }
+    ],
+    "expected_outcome": "Only compatible rollback proceeds; restore and forward recovery preserve documented data guarantees.",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-119",
+    "domain": "security",
+    "name": "Pause fleet and qualify recovery authority",
+    "actor": "Fleet owner",
+    "preconditions": [
+      "Several independent owner installations and failed maintenance trust"
+    ],
+    "interfaces": [
+      {
+        "type": "CLI",
+        "path": "maintenance fleet pause"
+      },
+      {
+        "type": "Process",
+        "path": "credential revocation and recovery"
+      }
+    ],
+    "expected_outcome": "Owner-authorized fleet pause/revocation work without agent availability; each installation resumes only after requalification.",
+    "priority": "P1",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-120",
+    "domain": "release",
+    "name": "Verify a complete paid user journey",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "web",
+        "path": "/signin"
+      },
+      {
+        "type": "web",
+        "path": "/billing"
+      }
+    ],
+    "expected_outcome": "A real provider test environment confirms identity/payment/webhook/paid access lifecycle",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-121",
+    "domain": "release",
+    "name": "Deploy and observe a qualified release",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos deploy"
+      },
+      {
+        "type": "web",
+        "path": "/healthz"
+      }
+    ],
+    "expected_outcome": "A reviewed artifact serves the public domain with observed health and policy enforcement",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-122",
+    "domain": "release",
+    "name": "Recover a released application",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos recover"
+      }
+    ],
+    "expected_outcome": "Owner proves a bounded release rollback and separate data restore",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-123",
+    "domain": "reference",
+    "name": "Rehearse the reference application",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "docs",
+        "path": "docs/tutorials/reference-app.md"
+      }
+    ],
+    "expected_outcome": "A new user can reproduce the documented demonstration and an important failure case",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-124",
+    "domain": "release",
+    "name": "Adopt a release with accurate support claims",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "docs",
+        "path": "docs/releases/compatibility.md"
+      }
+    ],
+    "expected_outcome": "Owner can distinguish implemented, tested, provider-qualified and supported capabilities",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  },
+  {
+    "id": "UC-125",
+    "domain": "release",
+    "name": "Verify autonomous private and upstream repair",
+    "actor": "application_owner",
+    "preconditions": [
+      "A supported source checkout or release is available"
+    ],
+    "interfaces": [
+      {
+        "type": "cli",
+        "path": "amos maintenance status"
+      }
+    ],
+    "expected_outcome": "Eligible fixes can pass independent checks while forbidden changes and private data export stop",
+    "priority": "P0",
+    "status": "PLANNED",
+    "wiring_status": "PLANNED",
+    "coverage": {
+      "interfaces_found": [],
+      "has_tests": false
+    }
+  }
+]

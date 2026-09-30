@@ -1,0 +1,8 @@
+# Local inputs and coordination are not public project artifacts.
+/tmp/
+/ajent.social
+/.claude/scratch/
+/.local/
+.env
+.env.*
+!.env.example
