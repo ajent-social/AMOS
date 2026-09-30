@@ -10,6 +10,39 @@ Shared pages cover sign-up, sign-in, signout confirmation, contact verification 
 
 Every page explicitly distinguishes anonymous, authenticated, forbidden, missing/nonenumerating, invalid-input, dependency-unavailable, operation-pending, proof-required and success states. Organization selectors require current server-side membership/grant resolution. Billing/account/recovery routes remain usable without paid-feature access where their own policy permits them. Organization policy and current assurance are enforced by the service runner, not hidden-menu state.
 
+## Required page inventory and states
+
+Page IDs below have major version 1. Every row must render a pending/loading state during a declared async operation, an explicit unavailable state on dependency failure, a nonenumerating denied state, and the listed initial/empty and success outcomes. Loading never disables recovery navigation or implies success; full-page forms remain usable without JavaScript. HTTP/API policy supplies authoritative status. Authentication pages use generic responses where contact/account enumeration would otherwise occur.
+
+| Page ID | Reserved route | Initial/empty state | Success state | Mutation and security requirements |
+|---|---|---|---|---|
+| signup | `/signup` | Blank enrollment form | Verification pending | POST; origin/CSRF enrollment transaction; no session before verification |
+| signin | `/signin` | Methods supported by current installation | Authenticated return | POST; browser-bound login CSRF; generic failure; qualified methods only |
+| signout | `/signout` | Confirmation | Revoked session, signed-out landing | POST only; current cookie origin+CSRF |
+| verify-email | `/verify-email` | Link confirmation or missing/expired challenge | Contact verified | POST consumes bound purpose once; GET previews only |
+| forgot-password | `/forgot-password` | Address form | Generic delivery-pending response | POST; origin/login CSRF and abuse budget; no contact enumeration |
+| reset-password | `/reset-password` | New secret form or expired challenge | Reset complete; prior sessions revoked | POST; purpose-bound single-use challenge and normalized password policy |
+| auth-callback | `/oauth/{provider}/callback` | Pending provider proof | Verified method continuation | Protocol callback validation; not arbitrary GET action; state/nonce/PKCE/exact redirect |
+| magic-link | `/auth/magic-link` | Browser-bound request/confirmation | Verified method continuation | Request/consume POST; purpose-bound challenge; GET preview does not authenticate |
+| passkeys | `/account/passkeys` | No enrolled keys | Enrollment/removal acknowledged | Current principal; operation-bound proof and maintained passkey validation |
+| mfa | `/account/mfa` | No enrolled factors | Enrollment/removal acknowledged | Fresh required proof; current org policy; no secret echo |
+| auth-proof | `/auth/challenge` | Required operation proof prompt | Resume exact bound operation | Single-use expiring principal/input-bound proof; no local approved flag |
+| recovery | `/auth/recovery` | Recovery method prompt | Recovery transition acknowledged | Current recovery policy and security epoch transition; no fallback exemption |
+| profile | `/account/profile` | Current safe profile fields | Profile update acknowledged | Current person; POST origin+CSRF; verified contact transition separate |
+| account-admin | `/account/administration` | Safe account state | Requested lifecycle transition | Current owner/admin authority and fresh bound proof; org role is not installation admin |
+| workspace-chooser | `/workspaces` | No admitted organizations; own personal workspace | Authorized selection | Current server ownership/membership lookup; selector is untrusted |
+| organization-create | `/workspaces/new` | New organization form | Active org with atomic creator membership | POST current person + explicit create policy/abuse checks |
+| members | `/workspaces/{id}/members` | Empty filtered directory | Mutation/delivery pending or confirmed | Exact workspace policy; fresh proof for mutations; owner management separate |
+| invitations | `/workspaces/{id}/invitations` | No outstanding invitations | Delivery/acceptance pending or confirmed | Current inviter permissions; verified recipient; committed capacity; atomic consume |
+| invitation-confirm | `/workspaces/invitations/accept` | Bound confirmation or expired invitation | Admitted membership | POST; exact verified recipient; current org auth and seat policy |
+| organization-auth | `/workspaces/{id}/authentication` | Explicit current policy/connections | Policy change acknowledged | Owner authority, enterprise entitlement, fresh policy proof, tested recovery path |
+| billing-catalog | `/billing/catalog` | No selected product | Checkout intent pending | Selected workspace; server catalog; POST billing authority/current proof |
+| billing-summary | `/billing` | No active subscription | Reconciled financial summary | Exact workspace billing.read; no checkout-redirect entitlement |
+| billing-action | `/billing/payment-action` | Provider action required/expired | Reconciliation pending or confirmed | Billing.manage current proof; provider-bound action; unknown stays pending |
+| billing-manage | `/billing/manage` | Current safe subscription controls | Confirmed transition or pending reconciliation | POST; exact workspace authority; durable idempotency; no automatic refund |
+
+All listed pages inherit typed invalid-input, dependency-unavailable, denied and proof-required handling as applicable. Denied responses never reveal foreign workspace existence; an empty collection is not a substitute for denial. Theme/page replacement tests cover this matrix, including empty invitation/key lists and outage/loading behavior rather than only populated success fixtures.
+
 ## Public presentation seams
 
 The public `ui` package owns exported renderer, view-model and theme contracts. Generated applications import public packages, never `internal/`. A renderer accepts request context, a named versioned page, a validated immutable view model and response presentation options. Typed models expose only fields necessary to render the page, safe navigation destinations, field errors, request ID and operation/challenge references. They exclude password verifiers, cookie/session secrets, service keys, raw provider events and diagnostic payloads.
