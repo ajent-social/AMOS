@@ -131,5 +131,27 @@
     "evidence": [
       "Maintained SES SDK pinned; provider adapter implementation dispatched after durable-job acceptance."
     ]
+  },
+  "T4.1": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Workspace and membership policy independently reviewed with no required corrections.",
+      "Scoped machine authority clarification integrated; runtime enforcement remains downstream work."
+    ]
+  },
+  "T2.3": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Implementation assigned to an isolated Luna task worktree; acceptance pending integration review."
+    ]
+  },
+  "T3.3": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Implementation assigned to an isolated Luna task worktree; acceptance pending integration review."
+    ]
   }
 }
