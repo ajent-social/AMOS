@@ -77,12 +77,12 @@ func normalized(secret string) (string, error) {
 	if len(secret) > 512 || !utf8.ValidString(secret) {
 		return "", ErrInvalid
 	}
-	secret = norm.NFC.String(secret)
-	n := utf8.RuneCountInString(secret)
-	if len(secret) > 512 || n < 15 || n > 128 {
+	normalizedValue := norm.NFC.String(secret)
+	n := utf8.RuneCountInString(normalizedValue)
+	if len(normalizedValue) > 512 || n < 15 || n > 128 {
 		return "", ErrInvalid
 	}
-	return secret, nil
+	return normalizedValue, nil
 }
 func (h *Hasher) acquire(ctx context.Context, key string) (func(), error) {
 	if h == nil || h.budget == nil || key == "" {

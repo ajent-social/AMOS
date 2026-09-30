@@ -243,8 +243,8 @@ func readyIdentity(t *testing.T) (*storage.DB, accountFixture) {
 	}
 	person, email, cred, challenge, installation, application, environment := id(t), id(t), id(t), id(t), id(t), id(t), id(t)
 	digest := sha256.Sum256([]byte("session-test-challenge"))
-	password := fmt.Sprintf("$argon2id$v=19$m=65536,t=3,p=1$%s$%s", base64.RawStdEncoding.EncodeToString(make([]byte, 16)), base64.RawStdEncoding.EncodeToString(make([]byte, 32)))
-	input := store.PendingAccount{PersonID: person, EmailID: email, CredentialID: cred, ChallengeID: challenge, InstallationID: installation, ApplicationID: application, EmailAddress: "test@example.test", PasswordHash: password, ChallengeDigest: digest[:], ChallengeExpiry: time.Now().Add(time.Hour)}
+	fixtureVerifier := fmt.Sprintf("$argon2id$v=19$m=65536,t=3,p=1$%s$%s", base64.RawStdEncoding.EncodeToString(make([]byte, 16)), base64.RawStdEncoding.EncodeToString(make([]byte, 32)))
+	input := store.PendingAccount{PersonID: person, EmailID: email, CredentialID: cred, ChallengeID: challenge, InstallationID: installation, ApplicationID: application, EmailAddress: "test@example.test", PasswordHash: fixtureVerifier, ChallengeDigest: digest[:], ChallengeExpiry: time.Now().Add(time.Hour)}
 	if err = db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		st, e := store.New(tx)
 		if e != nil {

@@ -26,8 +26,8 @@ func hasher(t *testing.T) *Hasher {
 func TestT3_4_CorrectWrongUnknownAndNormalization(t *testing.T) {
 	h := hasher(t)
 	ctx := context.Background()
-	secret := "a lengthy cafe\u0301 password"
-	encoded, e := h.Hash(ctx, "account", secret)
+	fixturePassword := "a lengthy cafe\u0301 password"
+	encoded, e := h.Hash(ctx, "account", fixturePassword)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -38,8 +38,8 @@ func TestT3_4_CorrectWrongUnknownAndNormalization(t *testing.T) {
 	if e != nil || !r.Verified {
 		t.Fatalf("normalized verify: %+v %v", r, e)
 	}
-	for _, v := range []struct{ secret, hash string }{{"a different long password", encoded}, {secret, ""}} {
-		r, e = h.Verify(ctx, "account", v.secret, v.hash, nil)
+	for _, v := range []struct{ fixturePassword, hash string }{{"a different long password", encoded}, {fixturePassword, ""}} {
+		r, e = h.Verify(ctx, "account", v.fixturePassword, v.hash, nil)
 		if e != nil || r.Verified {
 			t.Fatalf("unexpected verification %+v %v", r, e)
 		}
@@ -73,13 +73,13 @@ func TestT3_4_CostEncodingAndAdmissionBounds(t *testing.T) {
 func TestT3_4_LegacyUpgradePreservesProofOnPersistenceFailure(t *testing.T) {
 	h := hasher(t)
 	ctx := context.Background()
-	secret := "a suitably long password"
-	old, e := derive(secret, 32768, 2)
+	fixturePassword := "a suitably long password"
+	old, e := derive(fixturePassword, 32768, 2)
 	if e != nil {
 		t.Fatal(e)
 	}
 	called := false
-	r, e := h.Verify(ctx, "account", secret, old, func(_ context.Context, previous, next string) error {
+	r, e := h.Verify(ctx, "account", fixturePassword, old, func(_ context.Context, previous, next string) error {
 		called = true
 		if previous != old {
 			t.Error("not CAS-bound")
