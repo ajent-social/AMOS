@@ -126,10 +126,12 @@
     ]
   },
   "T1.11": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Maintained SES SDK pinned; provider adapter implementation dispatched after durable-job acceptance."
+      "Protected material references constrained to canonical UUIDv7 registry identifiers after independent security review.",
+      "SES boundary unit tests and real PostgreSQL outbox tests passed; integrated lint and database suite passed.",
+      "Live SES, owner protected-material resolver and retention workflow remain unqualified release dependencies."
     ]
   },
   "T4.1": {
@@ -179,10 +181,19 @@
     ]
   },
   "T3.4": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Maintained Argon2id wrapper independently reviewed; legacy/current/unknown verification uses a fixed two-profile work schedule.",
+      "Scoped behavioral tests, vet and lint passed, including malformed resource-cost encodings and process-wide admission bypass rejection.",
+      "CAS rehash preserves authentication on persistence failure; production blocklist provenance, rate-limit adapter and deployment benchmarks remain later gates."
+    ]
+  },
+  "T5.1": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Maintained Argon2 wrapper under independent security review; review corrections being verified."
+      "Scoped catalog, flat/seat/usage and financial lifecycle policy authored; independent review pending."
     ]
   }
 }
