@@ -1,0 +1,175 @@
+openapi: 3.1.1
+info:
+  title: AMOS reference workspace todo API
+  version: 1.0.0
+paths:
+  /todos:
+    post:
+      operationId: todos.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodo'
+      responses:
+        '201':
+          description: Created todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+      x-amos-policy:
+        operationId: todos.create
+        permissions: [todos:write]
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+    put:
+      operationId: todos.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodo'
+      responses:
+        '200':
+          description: Updated todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+      x-amos-policy:
+        operationId: todos.update
+        permissions: [todos:write]
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+  /todos/search:
+    post:
+      operationId: todos.list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListTodos'
+      responses:
+        '200':
+          description: Todos in the selected workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoList'
+      x-amos-policy:
+        operationId: todos.list
+        permissions: [todos:read]
+        entitlements: []
+        assurance: aal1
+        sideEffect: read
+        idempotency: forbidden
+        mcp: never
+  /todos/delete:
+    delete:
+      operationId: todos.delete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteTodo'
+      responses:
+        '204':
+          description: Deleted todo
+      x-amos-policy:
+        operationId: todos.delete
+        permissions: [todos:write]
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+components:
+  schemas:
+    CreateTodo:
+      type: object
+      additionalProperties: false
+      required: [workspaceId, title]
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        title:
+          type: string
+    ListTodos:
+      type: object
+      additionalProperties: false
+      required: [workspaceId]
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+    UpdateTodo:
+      type: object
+      additionalProperties: false
+      required: [workspaceId, todoId, revision, title, completed]
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        todoId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          format: int64
+        title:
+          type: string
+        completed:
+          type: boolean
+    DeleteTodo:
+      type: object
+      additionalProperties: false
+      required: [workspaceId, todoId, revision]
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        todoId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+          format: int64
+    Todo:
+      type: object
+      additionalProperties: false
+      required: [id, workspaceId, title, completed, revision]
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        completed:
+          type: boolean
+        revision:
+          type: integer
+          format: int64
+    TodoList:
+      type: object
+      additionalProperties: false
+      required: [todos]
+      properties:
+        todos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Todo'
