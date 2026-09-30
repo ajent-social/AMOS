@@ -187,7 +187,13 @@ func validAddress(value string) bool {
 
 func validSecretReference(value SecretReference) bool {
 	s := string(value)
-	return len(s) > 0 && len(s) <= 512 && strings.TrimSpace(s) == s && strings.IndexFunc(s, unicode.IsControl) < 0 && !strings.ContainsAny(s, "\r\n")
+	const prefix = "material:"
+	if !strings.HasPrefix(s, prefix) || len(s) != len(prefix)+36 || strings.TrimSpace(s) != s || strings.IndexFunc(s, unicode.IsControl) >= 0 {
+		return false
+	}
+	idText := strings.TrimPrefix(s, prefix)
+	id, err := uuid.Parse(idText)
+	return err == nil && id.Version() == 7 && id.String() == idText
 }
 
 func (r *Renderer) validateRequest(req Request) error {

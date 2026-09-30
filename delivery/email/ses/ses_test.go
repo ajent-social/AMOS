@@ -33,7 +33,7 @@ func testMessage(t *testing.T) email.Message {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := r.Render(id, email.Request{Template: email.TemplateSignIn, MaterialRef: "vault://flow/1", ExpiresInSeconds: 600}, email.PrivateMaterial{Recipient: "person@example.test", ActionURL: "https://app.example.test/auth?token=synthetic-token"})
+	m, err := r.Render(id, email.Request{Template: email.TemplateSignIn, MaterialRef: "material:018f22e7-8e71-7b4c-9a4c-6d7b8f15a3c2", ExpiresInSeconds: 600}, email.PrivateMaterial{Recipient: "person@example.test", ActionURL: "https://app.example.test/auth?token=synthetic-token"})
 	if err != nil {
 		t.Fatal(err)
 	}

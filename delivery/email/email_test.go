@@ -27,7 +27,7 @@ func testRenderer(t *testing.T) *Renderer {
 }
 
 func validRequest() Request {
-	return Request{Template: TemplateSignIn, MaterialRef: "vault://auth-flow/abc123", ExpiresInSeconds: 600}
+	return Request{Template: TemplateSignIn, MaterialRef: "material:018f22e7-8e71-7b4c-9a4c-6d7b8f15a3c2", ExpiresInSeconds: 600}
 }
 
 func validMaterial() PrivateMaterial {
@@ -146,6 +146,28 @@ func TestMissingSecretMaterialResolverFailsSetupAndFailureDoesNotSend(t *testing
 	}
 }
 
+func TestMaterialReferenceRequiresOpaqueCanonicalUUIDv7(t *testing.T) {
+	r := testRenderer(t)
+	invalid := []SecretReference{
+		"person@example.test",
+		"mailto:person@example.test",
+		"https://app.example.test/auth/reset?token=synthetic-bearer",
+		"vault://secret-store/users/person@example.test",
+		"material:018f22e7-8e71-4b4c-9a4c-6d7b8f15a3c2",
+		"material:018F22E7-8E71-7B4C-9A4C-6D7B8F15A3C2",
+	}
+	for _, ref := range invalid {
+		req := validRequest()
+		req.MaterialRef = ref
+		if err := r.validateRequest(req); !errors.Is(err, ErrInvalidRequest) {
+			t.Errorf("unsafe material reference accepted: %v", err)
+		}
+	}
+	if err := r.validateRequest(validRequest()); err != nil {
+		t.Fatalf("canonical opaque reference rejected: %v", err)
+	}
+}
+
 func TestEnqueuePersistsOnlySecretReference(t *testing.T) {
 	db, _ := testkit.NewPostgres(t)
 	schema, err := os.ReadFile(filepath.Join("..", "..", "migrations", "fragments", "jobs.sql"))
@@ -171,7 +193,7 @@ func TestEnqueuePersistsOnlySecretReference(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := validRequest()
-	req.MaterialRef = "vault://verified-flow/flow-01"
+	req.MaterialRef = "material:018f22e7-8e71-7b4c-9a4c-6d7b8f15a3c2"
 	job, err := EnqueueTx(context.Background(), tx, store, testRenderer(t), installation, application, "login-flow-01", req, time.Now().UTC().Add(time.Hour))
 	if err != nil {
 		_ = tx.Rollback()
