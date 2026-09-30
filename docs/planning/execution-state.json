@@ -153,5 +153,19 @@
     "evidence": [
       "Implementation assigned to an isolated Luna task worktree; acceptance pending integration review."
     ]
+  },
+  "T4.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Isolated Luna implementation assigned; integration and real-service verification pending."
+    ]
+  },
+  "T1.12": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Isolated Luna implementation assigned; integration and real-service verification pending."
+    ]
   }
 }
