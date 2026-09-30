@@ -139,7 +139,7 @@ func (s *Store) List(ctx context.Context, scope audit.Scope, cursor *audit.Curso
 	if err != nil {
 		return nil, unavailable(err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }() // rows.Err is checked below; preserve the primary query failure.
 	result := make([]audit.Record, 0, limit)
 	for rows.Next() {
 		record, scanErr := scanRecord(rows)
