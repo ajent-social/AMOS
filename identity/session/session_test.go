@@ -166,7 +166,7 @@ func TestT3_3_EpochDisabledAndExpiredSessionsFailClosed(t *testing.T) {
 	defer cancel()
 	digest := sha256.Sum256([]byte(expired.Value))
 	if err := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, `UPDATE identity_sessions SET expires_at = transaction_timestamp() - interval '1 second', idle_expires_at = transaction_timestamp() - interval '1 second' WHERE token_digest = $1`, digest[:])
+		_, err := tx.ExecContext(ctx, `UPDATE identity_sessions SET authenticated_at = transaction_timestamp() - interval '2 hours', issued_at = transaction_timestamp() - interval '2 hours', expires_at = transaction_timestamp() - interval '1 second', idle_expires_at = transaction_timestamp() - interval '1 second' WHERE token_digest = $1`, digest[:])
 		return err
 	}); err != nil {
 		t.Fatal(err)
