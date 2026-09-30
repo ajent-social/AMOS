@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BROWSER_DIR="$ROOT/tests/browser"
 suite="${1:-}"
 if [[ -z "$suite" ]] || (($# != 1)); then
-  printf 'usage: %s <fixtures|reference|initializer|generated-app|upgrade|personal-billing>\n' "$0" >&2
+  printf 'usage: %s <fixtures|ui-shell|reference|initializer|generated-app|upgrade|personal-billing>\n' "$0" >&2
   exit 2
 fi
 
@@ -13,12 +13,15 @@ case "$suite" in
   fixtures)
     grep_pattern='@fixtures'
     ;;
+  ui-shell)
+    grep_pattern='@ui-shell'
+    ;;
   reference|initializer|generated-app|upgrade|personal-billing)
     printf 'Browser suite "%s" is reserved by task contracts but unavailable until its product UI and tests are implemented.\n' "$suite" >&2
     exit 2
     ;;
   *)
-    printf 'unknown browser suite: %s\nusage: %s <fixtures|reference|initializer|generated-app|upgrade|personal-billing>\n' "$suite" "$0" >&2
+    printf 'unknown browser suite: %s\nusage: %s <fixtures|ui-shell|reference|initializer|generated-app|upgrade|personal-billing>\n' "$suite" "$0" >&2
     exit 2
     ;;
 esac

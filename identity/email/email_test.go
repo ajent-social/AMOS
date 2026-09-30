@@ -197,8 +197,8 @@ func TestT3_6_IssueWritesOnlyOpaqueOutboxIntentAndRollsBackOnOutboxFailure(t *te
 	if material.Recipient == "" || material.ActionURL == "" || !strings.Contains(material.ActionURL, "token=") {
 		t.Fatalf("protected writer did not receive expected material: %+v", material)
 	}
-	for _, secret := range []string{material.Recipient, material.ActionURL, strings.TrimPrefix(material.ActionURL[strings.Index(material.ActionURL, "token="):], "token=")} {
-		if strings.Contains(payload, secret) {
+	for _, sensitiveFixture := range []string{material.Recipient, material.ActionURL, strings.TrimPrefix(material.ActionURL[strings.Index(material.ActionURL, "token="):], "token=")} {
+		if strings.Contains(payload, sensitiveFixture) {
 			t.Fatal("persisted job payload contains protected recipient or action material")
 		}
 	}

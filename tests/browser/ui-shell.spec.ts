@@ -32,7 +32,7 @@ test.beforeAll(async () => {
 });
 test.afterAll(() => { server?.kill("SIGTERM"); });
 
-test("real renderer supports keyboard use, escaped profile text and no-JS form submission", async ({ browser }) => {
+test("@ui-shell real renderer supports keyboard use, escaped profile text and no-JS form submission", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   const payload = '<script>document.body.dataset.pwned="yes"</script> & "quoted"';
@@ -58,7 +58,7 @@ test("real renderer supports keyboard use, escaped profile text and no-JS form s
   await context.close();
 });
 
-test("HTMX main target gets a bounded fragment and missing metadata gets full HTML", async ({ request }) => {
+test("@ui-shell HTMX main target gets a bounded fragment and missing metadata gets full HTML", async ({ request }) => {
   const full = await request.get(`${baseURL}/ui`, { headers: { "HX-Request": "true" } });
   expect(full.headers()["cache-control"]).toBe("no-store");
   expect(full.headers().vary).toContain("HX-Target");
