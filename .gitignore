@@ -21,3 +21,9 @@ id_ed25519
 __pycache__/
 *.py[cod]
 /.worktrees/
+
+node_modules/
+
+test-results/
+
+playwright-report/

@@ -20,3 +20,7 @@ Status: inventory of the integrated AMOS module, recorded 2026-09-30. The module
 The module graph is now concrete: pgx is selected directly and its five indirect modules are pinned and checksummed. Upstream license evidence is linked per selected version/source. Preserve each license and copyright notice when distributing the resulting binary or source; the project's Apache-2.0 license does not replace these third-party terms.
 
 The dependencies are inventoried and provenance-qualified for source, version and license. Runtime behavior still requires the project integration checks and a real PostgreSQL database; this document does not claim those checks ran or establish production/security maturity. The T1.6 public-artifact checker is tracked separately and is not certified by this inventory.
+
+## UUIDv7 identifier dependency
+
+`github.com/google/uuid` v1.6.0 is selected for canonical UUID parsing and trusted UUIDv7 generation. The exact module checksum is `h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=`. Its [pinned implementation](https://github.com/google/uuid/blob/v1.6.0/version7.go) and [BSD-3-Clause license](https://github.com/google/uuid/blob/v1.6.0/LICENSE) were inspected. UUIDs are identifiers, not authentication secrets; current authority still comes from verified credentials and database relationships. Consumer tests must enforce canonical lower-case text, version 7, and the RFC variant.
