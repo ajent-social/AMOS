@@ -1,0 +1,1 @@
+{"mode":"production","profile":"aws_managed","database":{"urlRef":"env://AMOS_DATABASE_URL"},"providers":{"aws":{"state":"disabled"},"cloudflare":{"state":"disabled"},"email":{"state":"disabled"},"payments":{"state":"disabled"},"identity":{"state":"disabled"}}}

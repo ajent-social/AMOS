@@ -7,15 +7,27 @@
   "required": ["mode", "profile", "database", "providers"],
   "properties": {
     "mode": {"enum": ["development", "production"]},
-    "profile": {"enum": ["aws_managed", "aws_vm", "cloudflare"]},
+    "profile": {"enum": ["aws_managed", "aws_vm"]},
     "database": {"$ref": "#/$defs/database"},
     "providers": {"$ref": "#/$defs/providers"},
     "development": {"$ref": "#/$defs/development"}
   },
   "allOf": [
     {"if": {"properties": {"mode": {"const": "development"}}, "required": ["mode"]}, "then": {"required": ["development"]}, "else": {"not": {"required": ["development"]}}},
-    {"if": {"properties": {"profile": {"enum": ["aws_managed", "aws_vm"]}}, "required": ["profile"]}, "then": {"properties": {"providers": {"properties": {"aws": {"properties": {"state": {"const": "required"}}}}}}}},
-    {"properties": {"providers": {"properties": {"cloudflare": {"properties": {"state": {"const": "required"}}}}}}}
+    {
+      "if": {"properties": {"mode": {"const": "production"}}, "required": ["mode"]},
+      "then": {"properties": {"providers": {"properties": {
+        "aws": {"properties": {"state": {"const": "required"}}},
+        "cloudflare": {"properties": {"state": {"const": "required"}}}
+      }}}}
+    },
+    {
+      "if": {"properties": {"mode": {"const": "development"}}, "required": ["mode"]},
+      "then": {"properties": {"development": {"properties": {
+        "localOnly": {"const": true},
+        "bindAddress": {"enum": ["localhost", "127.0.0.1", "::1"]}
+      }}}}
+    }
   ],
   "$defs": {
     "secretRef": {
@@ -26,8 +38,9 @@
       ]
     },
     "database": {"type": "object", "additionalProperties": false, "required": ["urlRef"], "properties": {"urlRef": {"$ref": "#/$defs/secretRef"}}},
-    "providerState": {"type": "object", "additionalProperties": false, "required": ["state"], "properties": {"state": {"enum": ["required", "disabled"]}, "credentialRef": {"$ref": "#/$defs/secretRef"}, "proxyMode": {"enum": ["dns_only", "proxied"]}}},
-    "providers": {"type": "object", "additionalProperties": false, "required": ["aws", "cloudflare", "email", "payments", "identity"], "properties": {"aws": {"$ref": "#/$defs/providerState"}, "cloudflare": {"$ref": "#/$defs/providerState"}, "email": {"$ref": "#/$defs/providerState"}, "payments": {"$ref": "#/$defs/providerState"}, "identity": {"$ref": "#/$defs/providerState"}}},
-    "development": {"type": "object", "additionalProperties": false, "required": ["allowInsecureLocalAuth"], "properties": {"allowInsecureLocalAuth": {"type": "boolean"}}}
+    "providerState": {"type": "object", "additionalProperties": false, "required": ["state"], "properties": {"state": {"enum": ["required", "disabled"]}, "credentialRef": {"$ref": "#/$defs/secretRef"}, "proxyMode": {"enum": ["dns_only", "proxied"]}}, "allOf": [{"if": {"properties": {"state": {"const": "required"}}, "required": ["state"]}, "then": {"required": ["credentialRef"]}}]},
+    "cloudflareState": {"allOf": [{"$ref": "#/$defs/providerState"}, {"if": {"properties": {"state": {"const": "required"}}, "required": ["state"]}, "then": {"required": ["proxyMode"]}}]},
+    "providers": {"type": "object", "additionalProperties": false, "required": ["aws", "cloudflare", "email", "payments", "identity"], "properties": {"aws": {"$ref": "#/$defs/providerState"}, "cloudflare": {"$ref": "#/$defs/cloudflareState"}, "email": {"$ref": "#/$defs/providerState"}, "payments": {"$ref": "#/$defs/providerState"}, "identity": {"$ref": "#/$defs/providerState"}}},
+    "development": {"type": "object", "additionalProperties": false, "required": ["localOnly", "bindAddress"], "properties": {"localOnly": {"type": "boolean", "const": true}, "bindAddress": {"enum": ["localhost", "127.0.0.1", "::1"]}}}
   }
 }

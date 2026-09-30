@@ -15,7 +15,16 @@ FIXTURES = ROOT / "tests" / "contracts"
 
 def read_json(path: Path):
     with path.open(encoding="utf-8") as stream:
-        return json.load(stream)
+        return json.load(stream, object_pairs_hook=no_duplicate_keys)
+
+
+def no_duplicate_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        result[key] = value
+    return result
 
 
 def main() -> int:
@@ -40,6 +49,10 @@ def main() -> int:
         "config-production.json": ("config", True, None),
         "config-literal-secret.json": ("config", False, "/database/urlRef"),
         "config-unknown-field.json": ("config", False, "debugSecrets"),
+        "config-missing-credentials.json": ("config", False, "credentialRef"),
+        "config-missing-proxy-mode.json": ("config", False, "proxyMode"),
+        "config-production-disabled.json": ("config", False, "state"),
+        "config-unsupported-profile.json": ("config", False, "cloudflare"),
     }
     if set(expectations) != {path.name for path in FIXTURES.glob("*.json")}:
         raise ValueError("contract fixture inventory differs from the checker manifest")
