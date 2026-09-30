@@ -115,6 +115,7 @@ func parseSchema(proxy *base.SchemaProxy, location string, depth int) (*schemaIR
 			result.required[required] = true
 		}
 		goNames := make(map[string]string)
+		jsonNames := make(map[string]struct{}, schema.Properties.Len())
 		for property, child := range schema.Properties.FromOldest() {
 			if !propertyNamePattern.MatchString(property) {
 				return nil, fmt.Errorf("%s.properties: property name cannot be represented as a Go field", location)
@@ -127,6 +128,7 @@ func parseSchema(proxy *base.SchemaProxy, location string, depth int) (*schemaIR
 				return nil, fmt.Errorf("%s.properties: names collide after Go identifier normalization (%s and %s)", location, prior, property)
 			}
 			goNames[goName] = property
+			jsonNames[property] = struct{}{}
 			childIR, err := parseSchema(child, location+".properties["+property+"]", depth+1)
 			if err != nil {
 				return nil, err
@@ -134,16 +136,18 @@ func parseSchema(proxy *base.SchemaProxy, location string, depth int) (*schemaIR
 			result.fields = append(result.fields, schemaField{jsonName: property, goName: goName, schema: childIR})
 		}
 		for required := range result.required {
-			requiredName, err := goIdentifier("", required)
-			if err != nil {
-				return nil, fmt.Errorf("%s.required: entry does not name a declared property", location)
-			}
-			if _, exists := goNames[requiredName]; !exists {
+			if _, exists := jsonNames[required]; !exists {
 				return nil, fmt.Errorf("%s.required: entry does not name a declared property", location)
 			}
 		}
+		if schema.Format != "" {
+			return nil, fmt.Errorf("%s: object format is unsupported", location)
+		}
 		sort.Slice(result.fields, func(i, j int) bool { return result.fields[i].jsonName < result.fields[j].jsonName })
 	case "array":
+		if schema.Format != "" {
+			return nil, fmt.Errorf("%s: array format is unsupported", location)
+		}
 		if schema.Items == nil || !schema.Items.IsA() || schema.Items.A == nil {
 			return nil, fmt.Errorf("%s: arrays require a homogeneous schema-valued items field", location)
 		}

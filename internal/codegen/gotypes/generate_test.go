@@ -103,6 +103,8 @@ func TestGenerateRejectsUnsupportedSchemaShapes(t *testing.T) {
 		{"external-ref", "#/components/schemas/WidgetInput", "https://example.invalid/schema.yaml"},
 		{"injected-property", "        name:\n          type: string", "        'name; package injected':\n          type: string"},
 		{"normalized-collision", "        note:\n          type: [string, 'null']", "        note:\n          type: [string, 'null']\n        'note-value':\n          type: integer"},
+		{"object-format", "      type: object\n      additionalProperties: false", "      type: object\n      format: unknown\n      additionalProperties: false"},
+		{"array-format", "        labels:\n          type: array", "        labels:\n          type: array\n          format: unknown"},
 	} {
 		t.Run(change.name, func(t *testing.T) {
 			mutated := bytes.Replace(source, []byte(change.from), []byte(change.to), 1)
@@ -113,5 +115,13 @@ func TestGenerateRejectsUnsupportedSchemaShapes(t *testing.T) {
 				t.Fatal("unsupported schema shape was accepted")
 			}
 		})
+	}
+	mutated := bytes.Replace(source, []byte("required: [name, priority, labels]"), []byte("required: [name, priority, labels, foo_bar]"), 1)
+	mutated = bytes.Replace(mutated, []byte("        note:\n"), []byte("        'foo-bar':\n          type: string\n        note:\n"), 1)
+	if bytes.Equal(mutated, source) {
+		t.Fatal("required-name mutation was not applied")
+	}
+	if _, err := Generate(mutated); err == nil {
+		t.Fatal("required name that only matches after Go identifier normalization was accepted")
 	}
 }
