@@ -143,10 +143,12 @@
     ]
   },
   "T2.3": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Implementation assigned to an isolated Luna task worktree; acceptance pending integration review."
+      "Typed model/handler generator independently reviewed; exact JSON required-name and unsupported-format corrections integrated.",
+      "Real generated consumer compiles; incompatible schema mutation fails compilation. Scoped tests, vet and lint passed.",
+      "Unsupported schemas, unsafe identifiers and collisions fail explicitly; no placeholder handlers are generated."
     ]
   },
   "T3.3": {
@@ -190,10 +192,12 @@
     ]
   },
   "T5.1": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Scoped catalog, flat/seat/usage and financial lifecycle policy authored; independent review pending."
+      "All three subscription model policies independently reviewed with no required corrections.",
+      "Money-impacting catalog, seat capacity, usage lateness/corrections, refunds, trials/grace and entitlement freshness are explicit installation/provider activation gates.",
+      "Design rejection cases recorded; runtime financial/provider qualification remains downstream."
     ]
   }
 }
