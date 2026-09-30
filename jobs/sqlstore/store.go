@@ -127,7 +127,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 	if err != nil {
 		return jobs.Job{}, false, ErrUnavailable
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }() // Commit consumes the transaction; failures already return unavailable.
 	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs SET status='dead', lease_owner=NULL, lease_action=NULL, lease_until=NULL, updated_at=clock_timestamp()
 		WHERE status='queued' AND deadline_at <= clock_timestamp()`)
 	if err != nil {

@@ -39,11 +39,12 @@ func (w Worker) RunOne(ctx context.Context) (bool, error) {
 		return ok, err
 	}
 	var outcome Resolution
-	if job.Action == ActionExecute {
+	switch job.Action {
+	case ActionExecute:
 		outcome = w.Consumer.Execute(ctx, job, job.ID)
-	} else if job.Action == ActionReconcile {
+	case ActionReconcile:
 		outcome = w.Consumer.Reconcile(ctx, job, job.ID)
-	} else {
+	default:
 		return true, ErrInvalidResolution
 	}
 	if ctx.Err() != nil {

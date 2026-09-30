@@ -46,7 +46,7 @@ func WriteManifest(path string, content []byte) error {
 		return errors.New("unable to create temporary manifest")
 	}
 	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }() // The temp name is absent after a successful rename.
 	if err := temporary.Chmod(0o644); err != nil {
 		_ = temporary.Close()
 		return errors.New("unable to set manifest permissions")
