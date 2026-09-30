@@ -58,13 +58,17 @@ test("@ui-shell real renderer supports keyboard use, escaped profile text and no
   await context.close();
 });
 
-test("@ui-shell HTMX main target gets a bounded fragment and missing metadata gets full HTML", async ({ request }) => {
+test("@ui-shell HTMX main target gets a bounded fragment and missing metadata gets full HTML", async ({ request, page }) => {
   const full = await request.get(`${baseURL}/ui`, { headers: { "HX-Request": "true" } });
   expect(full.headers()["cache-control"]).toBe("no-store");
   expect(full.headers().vary).toContain("HX-Target");
   expect((await full.text()).startsWith("<!doctype html>")).toBeTruthy();
   const fragment = await request.get(`${baseURL}/ui`, { headers: { "HX-Request": "true", "HX-Target": "main-content" } });
   const html = await fragment.text();
-  expect(html.startsWith("<main id=\"main-content\"")).toBeTruthy();
+  expect(html).toContain("<h1>");
+  await page.goto(`${baseURL}/ui`);
+  await page.locator("#main-content").evaluate((node, markup) => { node.innerHTML = markup; }, html);
+  await expect(page.locator("main")).toHaveCount(1);
+  await expect(page.locator("#main-content")).toHaveCount(1);
   expect(html.includes("<!doctype html>")).toBeFalsy();
 });

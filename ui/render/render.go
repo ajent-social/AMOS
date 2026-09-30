@@ -173,9 +173,9 @@ func safeLocalPath(path string) bool {
 const documentTemplate = `{{define "document"}}<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{.Title}}</title><link rel="stylesheet" href="/assets/base.css"></head>
 <body><a class="skip-link" href="#main-content">Skip to main content</a><header class="site-header"><a href="/" class="brand">AMOS</a><nav aria-label="Primary">{{range .Navigation}}<a href="{{.Path}}">{{.Label}}</a>{{end}}</nav></header>
-{{template "fragment" .}}<footer><p>Request reference: <span>{{.RequestID}}</span></p></footer></body></html>{{end}}
-{{define "fragment"}}<main id="main-content" tabindex="-1"><h1>{{.Heading}}</h1>{{if .ProfileName}}<p class="profile-name">{{.ProfileName}}</p>{{end}}
+<main id="main-content" tabindex="-1">{{template "fragment" .}}</main><footer><p>Request reference: <span>{{.RequestID}}</span></p></footer></body></html>{{end}}
+{{define "fragment"}}<h1>{{.Heading}}</h1>{{if .ProfileName}}<p class="profile-name">{{.ProfileName}}</p>{{end}}
 {{range .Flash}}<p class="flash flash-{{.Kind}}" role="{{if eq .Kind "error"}}alert{{else}}status{{end}}" aria-live="polite">{{.Message}}</p>{{end}}
 {{if .FieldErrors}}<section class="error-summary" tabindex="-1" aria-labelledby="error-title"><h2 id="error-title">Please correct these errors</h2><ul>{{range .FieldErrors}}<li><a href="#{{.Field}}">{{.Message}}</a></li>{{end}}</ul></section>{{end}}
 {{if .Form}}<form action="{{.Form.Action}}" method="post"><label for="{{.Form.Field}}">{{.Form.Label}}</label>{{range .FieldErrors}}<span class="field-error" id="{{.Field}}-error">{{.Message}}</span>{{end}}<input id="{{.Form.Field}}" name="{{.Form.Field}}" value="{{.Form.Value}}" aria-describedby="{{range $i, $e := .FieldErrors}}{{if eq $e.Field $.Form.Field}}{{$e.Field}}-error{{end}}{{end}}"><button type="submit">{{.Form.Submit}}</button>{{if .Form.CSRFToken}}<input type="hidden" name="_csrf" value="{{.Form.CSRFToken}}">{{end}}</form>{{end}}
-{{if .Status}}<p role="status" aria-live="polite">{{.Status}}</p>{{end}}</main>{{end}}`
+{{if .Status}}<p role="status" aria-live="polite">{{.Status}}</p>{{end}}{{end}}`

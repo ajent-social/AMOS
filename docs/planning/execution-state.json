@@ -215,10 +215,12 @@
     ]
   },
   "T3.6": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Isolated task work underway; review and integration gates remain pending."
+      "Email verification independently reviewed after requiring explicit installation/application realm binding.",
+      "Real PostgreSQL tests passed for purpose/contact/realm binding, preview nonconsumption, single-use/expiry, account activation and protected-material/outbox rollback.",
+      "Integrated lint and SQL suite passed; live SES and protected material adapter activation remain separate gates."
     ]
   },
   "T6.1": {
@@ -249,17 +251,29 @@
     ]
   },
   "T4.4": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Isolated Luna implementation assigned with real test prerequisites; review and integration pending."
+      "Integrator reviewed current principal-only selector boundary with immutable resolved workspace permission context.",
+      "Real HTTP/PostgreSQL race tests passed for selection, current account/membership revocation, cross-scope denial, forged headers and outage.",
+      "Removing active-membership predicate was detected by stale-membership regression test and restored.",
+      "Machine actors fail unavailable until a qualified current-owner grant adapter is wired."
     ]
   },
   "T6.2": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Independent review found nested main elements under default HTMX innerHTML swapping; browser regression failed before the fix.",
+      "Renderer now returns main contents for targeted fragments; Go tests, vet and scoped lint pass.",
+      "Both real Chromium UI tests pass, including default fragment swap, keyboard access, escaped profile text and no-JavaScript form submission."
+    ]
+  },
+  "T7.2": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Isolated Luna implementation assigned with real test prerequisites; review and integration pending."
+      "Isolated Luna implementation covers input validation, staged generation and platform atomic no-replace finalization."
     ]
   }
 }
