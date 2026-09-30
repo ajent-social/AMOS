@@ -10,3 +10,4 @@ Decisions distinguish accepted product direction from proposed implementation po
 - [ADR 006: AMSL composition with evidence-driven upstream improvements](006-amsl-consumer-boundary.md)
 - [ADR 007: Complete planning with gated parallel execution](007-staged-parallel-delivery.md)
 - [ADR 008: Selectable AWS deployment profiles](008-selectable-aws-profiles.md)
+- [ADR 009: Freeze cross-lane semantic contracts](009-frozen-cross-lane-contracts.md)

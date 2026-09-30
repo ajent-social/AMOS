@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://amos.dev/schemas/operation-policy-v1.json",
+  "title": "AMOS operation policy metadata v1",
+  "description": "Required authorization, assurance, retry and MCP metadata for each API operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operationId", "permissions", "entitlements", "assurance", "sideEffect", "idempotency", "mcp"],
+  "properties": {
+    "operationId": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$", "minLength": 3, "maxLength": 120},
+    "permissions": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/requirementName"}},
+    "entitlements": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/requirementName"}},
+    "assurance": {"enum": ["aal1", "aal2", "aal3"]},
+    "sideEffect": {"enum": ["read", "write", "external"]},
+    "idempotency": {"enum": ["required", "natural", "forbidden"]},
+    "mcp": {"enum": ["never", "eligible", "challenge"]}
+  },
+  "$defs": {
+    "requirementName": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.:_-][a-z0-9]+)*$", "minLength": 2, "maxLength": 120}
+  }
+}

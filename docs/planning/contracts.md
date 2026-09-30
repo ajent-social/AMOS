@@ -1,58 +1,102 @@
-# Cross-lane contract and ownership baseline
+# Cross-lane semantic contracts
 
-Date: 2026 09 30 UTC. Version: `amos-contract-draft-1`. Status: proposed; T1.2 must freeze this contract before dependent implementation dispatch. No Go interface or API here is claimed implemented.
+Date: 2026-09-30 UTC. Contract: `amos-contract-v1`. Status: frozen for implementation; root review pending. This is a design contract, not evidence that runtime code, providers, release gates, or certification exist. Amendments require an ADR, an integrator review, a version increment, and updates to affected task acceptance criteria before those tasks dispatch. Patch releases clarify wording without changing wire or storage meaning; any semantic or compatibility change increments the minor contract version and calls out migration needs.
 
-## Authority and consumers
+## Ownership and package shapes
 
-Read VISION, RFC 0001 and the assigned task contract. The public planning record contains no restricted source locators or consumer details. Runtime APIs enforce authority consistently for web, REST, API-key and MCP callers. Independent agent governance stays outside the product runtime.
-
-The integrator alone owns root module/dependency files, the canonical OpenAPI bundle, shared identity/policy types, migration ordering, executable entrypoints, generated-registry wiring and required CI check names. Domain workers submit owned fragments and migration proposals; they do not silently amend shared contracts. A contract change invalidates affected unstarted tasks until the integrator updates both the contract and their acceptance criteria.
-
-## Proposed package seams
+The integrator owns root module/dependency files, `api/amos.openapi.yaml`, shared identity and policy types, migration ordering and registry, executable entrypoints, runtime composition, generated registry wiring, and root CI. Product lanes own domain packages and submit OpenAPI fragments and migration proposals against this contract. Generated code imports exported packages only; `internal/` is private.
 
 | Area | Public extension surface | Private implementation ownership |
 |---|---|---|
 | Runtime | `app/` composition and business handler registration | `internal/runtime/` wiring and lifecycle |
 | Configuration | `config/` schema and validated immutable configuration | CLI setup/planner adapters |
-| Identity | `identity/` principal/session/authentication contracts | Method-specific packages and durable adapters |
-| Workspaces | `workspace/` membership and authorization | Lifecycle, invitations and store adapters |
+| Identity and policy | `identity/` principal/authentication contracts; `policy/` evaluator contracts | Method adapters, durable stores, authorization query implementation |
+| Workspaces | `workspace/` membership and authorization operations | Lifecycle, invitations, store adapters |
 | Billing | `billing/` provider and entitlement contracts | Stripe adapter, durable intents, usage/seat reconciliation |
-| Generated API | Versioned `api/` operation fragments and generated types | `internal/codegen/` plus transport implementation |
+| Generated API | Domain files under `api/fragments/`; operation metadata in `api/policy.schema.json` | `internal/codegen/`, transport implementation, root bundle generation |
 | Agent interface | `mcp/` adapter using a maintained SDK | OAuth/store integration and exposure registry |
-| Business routing | `app/` registered integrated routes or `proxy/` private service adapter | Header stripping, identity binding, origin allowlists |
-| Presentation | `ui/` default views, theme and override contract | Page-specific rendering and browser tests |
+| Business routing | `app/` registered integrated routes or `proxy/` private-service adapter | Header stripping, identity binding, origin allowlists |
+| Presentation | `ui/` default views, theme, and override contract | Page rendering and browser behavior |
 | Tooling | `cmd/amos/` stable commands | `internal/cli/`, templates and generation journal |
 | Infrastructure | `infra/` owner-controlled programs/recipes | Provider-specific components and policy attachment |
 | Operations | `observability/`, `operations/` contracts | Diagnostic pipeline, backups and recovery jobs |
 | Maintenance | `maintenance/` job, verifier and policy contracts | Runtime adapters, evidence, rollout and upstream intake |
 
-These are a baseline, not permission for two lanes to create competing models. Some task drafts use narrower package names; T1.2 resolves any mismatch before workers start. Generated consumer code imports supported exported packages, never AMOS `internal/` implementation.
+These names define ownership seams, not implemented packages or permission for multiple lanes to create competing models. A narrower task may own only its listed leaf files. No implementation lane owns `internal/` APIs as shared contracts.
 
-## Semantic contracts to freeze
+Exported Go contract surfaces (proposed exact names, owned by the integrator when implemented):
 
-1. Principal: installation/application/environment, person or machine identity, current workspace, grant scopes, authentication assurance and current-state authorization source. Untrusted request fields cannot construct a principal.
-2. Identity separation: personal workspace is a billing/resource container, not a global credential; organizations share resources only through verified membership. No cross-app email linking.
-3. Policy result: allowed, denied or unavailable; stable reason code, evaluated policy revision and freshness/expiry. Products own resource semantics.
-4. Operations: stable operation ID, request/response schemas, errors, pagination, side effects, idempotency, required permissions, entitlements, assurance and MCP exposure. Freeze exact OpenAPI version and generator SDK profile through evidence.
-5. Database: transaction ownership, migration sequencing/checksums, immutable IDs, clock semantics, concurrency constraints, outbox/inbox and retention. Migrations are proposals until the integrator assigns the sequence.
-6. Provider effects: durable intent, explicit unknown outcomes, provider idempotency bounds and reconciliation ownership. Do not claim exactly-once remote execution.
-7. Business extension: integrated domain handlers versus privately routed upstream services; exact routing/prefix/cookie/redirect/streaming behavior and origin-authenticated identity propagation. Same-domain appearance never makes an upstream request trusted by itself.
-8. UI: default templates, override lookup, view-model/API compatibility, escaping and security challenge flow. Upgrade tooling can identify incompatible customizations without overwriting them.
-9. Deployment: owner-reviewed desired state, artifact/source identity, credentials, schema compatibility, release receipts and recovery. No mandatory hosted AMOS control plane.
-10. Maintenance: immutable evidence/plan/artifact binding, separate proposer/verifier/releaser, policy version, spend/time/retry bounds, egress boundaries, rollback eligibility and manual suspension.
-11. Privacy: allowlisted upstream diagnostic fields, bounded cardinality and size, source-path scrubbing, synthetic reproductions, private vulnerability handling, retention and owner disablement.
-12. Compatibility: core/UI/generator/configuration/API/database/agent-client version matrix. OpenAPI generation is not protocol conformance evidence.
+```go
+// package identity
+type ID string // immutable, opaque, UUIDv7 text; never reused
+type Principal struct {
+    InstallationID ID; ApplicationID ID; EnvironmentID ID
+    Actor Actor; WorkspaceID ID; Grant Grant; Assurance Assurance
+    AuthenticatedAt time.Time
+}
+type Actor struct { Kind ActorKind; PersonID *ID; MachineID *ID }
+type ActorKind string // "person" | "machine"
+type Grant struct { ID ID; Scopes []string; Revision string; ExpiresAt time.Time }
+type Assurance struct { Level AssuranceLevel; Methods []string; VerifiedAt time.Time; ExpiresAt time.Time }
+type AssuranceLevel string // "aal1" | "aal2" | "aal3"
+type Credential interface { credentialKind() string } // sealed package input, never request JSON
+type RequestContext struct { RequestID string; ApplicationID ID; EnvironmentID ID }
+type PrincipalResolver interface { Resolve(context.Context, Credential, RequestContext) (Principal, error) }
 
-## Reserved shared files
+// package policy
+type Decision interface { isDecision() }
+type Resource struct { Type string; ID identity.ID; WorkspaceID identity.ID }
+type Allowed struct { PolicyRevision string; EvaluatedAt time.Time; ExpiresAt time.Time }
+type Denied struct { Code string; PolicyRevision string; EvaluatedAt time.Time }
+type Unavailable struct { Code string; Retryable bool; RetryAfter time.Duration }
+type MCPExposure string // "never" | "eligible" | "challenge"
+type Requirements struct { Permissions []string; Entitlements []string; Assurance identity.AssuranceLevel; MCPExposure MCPExposure }
+type Evaluator interface { Evaluate(context.Context, identity.Principal, Resource, Requirements) Decision }
 
-`go.mod`, `go.sum`, `api/amos.openapi.yaml`, `api/policy.schema.json`, `config/schema.json`, root `migrations/` ordering/registry, `cmd/amos/main.go`, runtime top-level composition and root `.github/workflows/` gate wiring are integrator-owned until delegated for an exclusive task. Isolated worktrees do not eliminate semantic conflicts. Shared changes land before dependent tasks.
+// package api metadata (serialized by api/policy.schema.json)
+type OperationPolicy struct { OperationID string; Permissions []string; Entitlements []string; Assurance string; MCP MCPExposure; SideEffect string; Idempotency string }
+```
 
-## Test and release seams
+Names and fields above are the required semantic surface, not a claim that these Go declarations already exist. Implementations may add private fields and methods. Changes to exported meaning require an amendment. `ID` values are generated by trusted application code; parsing validates canonical lower-case UUIDv7 text, and callers cannot select IDs for authority-bearing records. Timestamps are UTC RFC 3339 with `Z`, stored as PostgreSQL `timestamptz`; database transaction time is authoritative for persisted `created_at`/`updated_at`. Do not use wall clocks for ordering concurrent mutations.
 
-Domain code gets scoped behavior and denied-path checks. API tests hit the real registered boundary and assert status plus response; UI tests exercise actual pages and an edge case. Durable concurrency tests use a real test database and fail visibly when a required test service is absent. Provider fixtures cannot satisfy provider acceptance gates.
+The `Credential` interface is sealed to `identity` package implementations, such as verified session and machine-key credentials; callers cannot provide arbitrary implementations. `RequestContext` is transport-derived correlation and installation/app/environment scope only, never an authority source. `Principal` is immutable after resolution and has exactly one actor branch. A grant contains the resolved permission scope snapshot and revision; current membership/grant state is rechecked at the authorization boundary. Assurance expires at `ExpiresAt`; `aal1` means a verified sign-in session, `aal2` means recent second-factor or equivalent phishing-resistant proof, and `aal3` means hardware-bound proof. Product tasks may require stricter assurance; they may not reinterpret these levels. The policy `Decision` is sealed to the three listed result variants. Stable codes use lowercase dotted names and must not embed resource existence, secrets, or provider text. `Unavailable` may carry a retry hint only when the evaluator knows that retry is safe.
 
-Task verification commands are prescriptions to implement and run, not current executable capabilities. No contract is execution-certified until the intended inexpensive agent tier completes it under these checks and evidence is reviewed. Shared integration checks and live deployment acceptance belong to E16; a unit task cannot claim the whole release shipped.
+Principal authority is created only after credential verification and current-state lookups by the server. Installation, application, environment, actor, workspace, grant, and assurance are distinct. Exactly one actor identity is present. Person and machine principals are disjoint. A selected workspace must be a personal workspace owned by the person or an organization workspace with currently active membership and applicable grant. Request headers, URL parameters, MCP arguments, API keys, email matches, and cached identity claims cannot construct or elevate a principal. API keys identify a machine credential and may narrow existing authority only. Every boundary rechecks revocation, membership, grant expiry, and resource tenancy against the current authoritative source; cache staleness must fail closed when freshness cannot be established. Personal workspaces are resource/billing containers, not global credentials; email equality never links identities.
 
-## Deployment and write authority
+## Policy, errors, and operations
 
-Planning is not infrastructure spending, publication or migration authorization. External prerequisites have named human/owner gates. AWS, Cloudflare, email, payment and identity-provider credentials never enter model-visible artifacts. Repository and cloud permissions are distinct; customer organization ownership cannot grant deployment authority.
+An evaluation has exactly one result: `Allowed`, `Denied`, or `Unavailable`. Allowed includes policy revision and bounded validity; denied includes a stable non-sensitive reason code and policy revision; unavailable means the decision could not be safely established. Unavailable is never converted to allow or deny. `Denied` maps to HTTP 403, with 404/non-enumerating behavior at resource lookup boundaries when existence is sensitive. Missing/invalid authentication maps to 401. Unavailable maps to 503 and may include bounded `Retry-After`. Invalid input maps to 400/422, conflict to 409, and dependency unavailability to 503. Public error bodies contain stable `code`, human-safe `message`, and request `id`, never raw provider/database diagnostics. Sensitive identity flows use non-enumerating outcomes.
+
+Every operation declares stable globally unique `operationId`, input and output schemas, permission and entitlement requirements (empty arrays mean explicitly none), minimum assurance, side-effect class (`read`, `write`, `external`), retry/idempotency semantics, and MCP exposure (`never`, `eligible`, `challenge`). Missing fields and unknown fields are rejected. The extension schema is `api/policy.schema.json`; it does not implement authorization. Eligible MCP operations still use the same application handler and policy evaluation as web and REST. `challenge` means the call returns a resumable human proof challenge; it does not bypass assurance. `never` excludes the operation from MCP discovery and invocation. Required permissions/entitlements/assurance cannot be inferred from prose or generator defaults.
+
+Mutations must declare one of `required` (stable idempotency key, same key and request hash returns the original result; changed hash conflicts), `natural` (domain uniqueness makes retry safe), or `forbidden` (clients must not retry automatically). External effects use durable intent and reconciliation; unknown provider outcomes remain unknown until reconciled. Never promise exactly-once remote execution.
+
+OpenAPI source is pinned to OpenAPI 3.2.1, the latest published version at this freeze, with that version's JSON Schema dialect for Schema Objects. Official spec and version index: [OpenAPI 3.2.1](https://spec.openapis.org/oas/v3.2.1.html), [version index](https://spec.openapis.org/oas/). Keep root bundle at `api/amos.openapi.yaml`, domain fragments under `api/fragments/<domain>.yaml`; the integrator alone assembles and generates. Fragments cannot redefine security schemes, shared errors, servers, or reserved path roots. Generator and SDK versions must be pinned by the integrating task before code generation; this freeze does not imply generator qualification.
+
+## Persistence and migrations
+
+All durable entities use immutable UUIDv7 IDs and UTC `timestamptz`. IDs are never updated, recycled, or derived from email/provider identifiers. Domain lane owns its migration contents and rollback/forward-repair notes; integrator assigns a single monotonically increasing sequence, updates the registry, and owns cross-domain ordering. Migration application is serialized, one database transaction per migration, and the migration ID plus SHA-256 of exact source bytes are recorded atomically with schema changes; the record becomes visible only on successful commit. Nontransactional database operations are excluded from v1 migration scripts. An existing ID with a different checksum is a hard stop. Migrations are expand/contract by default; destructive cleanup, data loss, or external side effects require a separate owner gate and are not automated rollback. No lane edits the root migration registry or sequence without explicit assignment. Outbox records commit atomically with domain state; delivery is at-least-once and consumers deduplicate by immutable event ID. Retention requires domain and privacy review.
+
+## Routes and extensions
+
+AMOS owns `/signin`, `/signout`, `/account`, `/workspaces`, `/billing`, `/api`, `/mcp`, `/healthz`, and `/readyz`, including all descendants. These prefixes are reserved case-insensitively after URL path normalization; reject ambiguous encodings, dot segments, and duplicate separators before matching. Business routes register explicitly outside reserved prefixes; startup fails on duplicate normalized method/path, wildcard shadowing, or reserved-prefix collision. A separate upstream uses a private origin and exact route allowlist; strip credentials and client-supplied identity headers, authenticate propagated identity, and constrain redirects, forwarded host, timeout, body size, and streaming. Same-domain presentation does not confer trust.
+
+Integrated business handlers call domain services directly. Upstream proxy adapters authenticate propagated identity and authorize before forwarding. Default UI pages consume application view models; overrides declare the UI contract version, are escaped at output, and cannot bypass the same policy checks. Upgrade tooling reports incompatible overrides and never overwrites them without an owner-controlled action.
+
+## Configuration and providers
+
+`config/schema.json` is the canonical strict configuration schema. `mode` is explicitly `development` or `production`; development mode is local-only and cannot silently become production. Deployment profile is `aws_managed`, `aws_vm`, or `cloudflare`; provider availability is a runtime capability state (`available`/`unavailable`), never inferred from missing credentials as a successful no-op. A provider `state` of `required` means startup must resolve its credential reference and readiness fails if that capability is unavailable; `disabled` is an explicit absent capability and callers return an unavailable result for operations that depend on it. AWS-backed profiles require AWS state `required`; Cloudflare state is always `required` because it is in confirmed product scope. Email, payment, and identity capabilities may be explicitly disabled where the installation stage permits it. Local development may explicitly disable adapters.
+
+AWS choices are the two confirmed deployment shapes: managed containers with managed PostgreSQL (`aws_managed`) and one VM hosting app plus PostgreSQL (`aws_vm`). Cloudflare is required by product scope but exact DNS/proxy behavior remains unqualified; configuration must state `proxy_mode` as `dns_only` or `proxied`, and `proxied` remains unavailable until qualified. This contract does not choose account resources or authorize spending. Secrets are represented only by references (`env://NAME`, `file:///absolute/path`, or provider secret reference objects); literal credential-bearing values are prohibited. Values in schema examples/fixtures are synthetic. Missing/invalid secret references yield explicit configuration/provider unavailable errors and never trigger anonymous or weaker fallback.
+
+There is no mandatory hosted control plane. Deployment state, artifact/source identity, credential scope, schema compatibility, release receipts, and recovery evidence are installation-owner controlled. Choosing a profile is an explicit migration decision, never an automatic config toggle. Cloud accounts, DNS, certificates, email, payments, and identity-provider setup remain external owner gates.
+
+## Privacy, maintenance, and compatibility seams
+
+Diagnostics crossing an installation boundary use allowlisted, bounded, structured fields; exclude raw logs, business data, secrets, identifying infrastructure details, and unreviewed source paths. Synthetic reproductions and private vulnerability handling remain separate from product telemetry. Owners can inspect, disable, and set retention for reporting. Maintenance plans bind immutable evidence, source/artifact identity, policy version, time/spend/retry limits, egress boundary, rollback eligibility, and manual suspension. Proposer, verifier, and releaser authority stay separate; coding jobs have no production credentials and cannot alter acceptance or release policy. No contract here grants autonomous production deployment authority.
+
+The integrator maintains the compatibility matrix for core, UI, generator, configuration, API, database, and agent-client versions. OpenAPI generation or schema validation alone does not prove protocol conformance. Dependent lanes add scoped behavior and denied-path tests; integration proves the registered boundary, persistence behavior, and intended provider tier. A missing required service is a visible failure, not a skipped pass. Provider fixtures cannot satisfy provider gates.
+
+## Deferred decisions and evidence
+
+License for original AMOS work and reuse provenance remain unresolved. AWS, Cloudflare, email, payment, identity-provider, and database/session implementations retain their owner/provider qualification gates. This contract, local schema validation, and synthetic fixtures are design evidence only; they do not establish provider behavior, deployment, release, security certification, or production readiness. Root review is pending.

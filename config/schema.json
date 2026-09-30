@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://amos.dev/schemas/config-v1.json",
+  "title": "AMOS installation configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "profile", "database", "providers"],
+  "properties": {
+    "mode": {"enum": ["development", "production"]},
+    "profile": {"enum": ["aws_managed", "aws_vm", "cloudflare"]},
+    "database": {"$ref": "#/$defs/database"},
+    "providers": {"$ref": "#/$defs/providers"},
+    "development": {"$ref": "#/$defs/development"}
+  },
+  "allOf": [
+    {"if": {"properties": {"mode": {"const": "development"}}, "required": ["mode"]}, "then": {"required": ["development"]}, "else": {"not": {"required": ["development"]}}},
+    {"if": {"properties": {"profile": {"enum": ["aws_managed", "aws_vm"]}}, "required": ["profile"]}, "then": {"properties": {"providers": {"properties": {"aws": {"properties": {"state": {"const": "required"}}}}}}}},
+    {"properties": {"providers": {"properties": {"cloudflare": {"properties": {"state": {"const": "required"}}}}}}}
+  ],
+  "$defs": {
+    "secretRef": {
+      "oneOf": [
+        {"type": "string", "pattern": "^env://[A-Z][A-Z0-9_]{0,127}$"},
+        {"type": "string", "pattern": "^file:///[^\\s]+$"},
+        {"type": "object", "additionalProperties": false, "required": ["provider", "name"], "properties": {"provider": {"enum": ["aws_secrets_manager", "cloudflare_secret_store"]}, "name": {"type": "string", "minLength": 1, "maxLength": 256}}}
+      ]
+    },
+    "database": {"type": "object", "additionalProperties": false, "required": ["urlRef"], "properties": {"urlRef": {"$ref": "#/$defs/secretRef"}}},
+    "providerState": {"type": "object", "additionalProperties": false, "required": ["state"], "properties": {"state": {"enum": ["required", "disabled"]}, "credentialRef": {"$ref": "#/$defs/secretRef"}, "proxyMode": {"enum": ["dns_only", "proxied"]}}},
+    "providers": {"type": "object", "additionalProperties": false, "required": ["aws", "cloudflare", "email", "payments", "identity"], "properties": {"aws": {"$ref": "#/$defs/providerState"}, "cloudflare": {"$ref": "#/$defs/providerState"}, "email": {"$ref": "#/$defs/providerState"}, "payments": {"$ref": "#/$defs/providerState"}, "identity": {"$ref": "#/$defs/providerState"}}},
+    "development": {"type": "object", "additionalProperties": false, "required": ["allowInsecureLocalAuth"], "properties": {"allowInsecureLocalAuth": {"type": "boolean"}}}
+  }
+}
