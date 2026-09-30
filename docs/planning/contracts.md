@@ -96,7 +96,7 @@ All durable entities use immutable UUIDv7 IDs and UTC `timestamptz`. IDs are nev
 
 ## Routes and extensions
 
-AMOS owns `/signin`, `/signout`, `/account`, `/workspaces`, `/billing`, `/api`, `/mcp`, `/healthz`, and `/readyz`, including all descendants. These prefixes are reserved case-insensitively after URL path normalization; reject ambiguous encodings, dot segments, and duplicate separators before matching. Business routes register explicitly outside reserved prefixes; startup fails on duplicate normalized method/path, wildcard shadowing, or reserved-prefix collision. A separate upstream uses a private origin and exact route allowlist; strip credentials and client-supplied identity headers, authenticate propagated identity, and constrain redirects, forwarded host, timeout, body size, and streaming. Same-domain presentation does not confer trust.
+AMOS owns `/signin`, `/signup`, `/signout`, `/auth`, `/verify-email`, `/forgot-password`, `/reset-password`, `/oauth`, `/.well-known`, `/account`, `/workspaces`, `/billing`, `/api`, `/mcp`, `/healthz`, and `/readyz`, including all descendants. These prefixes are reserved case-insensitively after URL path normalization; reject ambiguous encodings, dot segments, and duplicate separators before matching. Business routes register explicitly outside reserved prefixes; startup fails on duplicate normalized method/path, wildcard shadowing, or reserved-prefix collision. A separate upstream uses a private origin and exact route allowlist; strip credentials and client-supplied identity headers, authenticate propagated identity, and constrain redirects, forwarded host, timeout, body size, and streaming. Same-domain presentation does not confer trust.
 
 Integrated business handlers call domain services directly. Upstream proxy adapters authenticate propagated identity and authorize before forwarding. Default UI pages consume application view models; overrides declare the UI contract version, are escaped at output, and cannot bypass the same policy checks. Upgrade tooling reports incompatible overrides and never overwrites them without an owner-controlled action.
 
@@ -119,3 +119,7 @@ The integrator maintains the compatibility matrix for core, UI, generator, confi
 ## Deferred decisions and evidence
 
 The project license is Apache-2.0, selected by the owner. AWS, Cloudflare, email, payment, identity-provider, and database/session implementations retain their owner/provider qualification gates. This contract, local schema validation, and synthetic fixtures are design evidence only; they do not establish provider behavior, deployment, release, security certification, or production readiness. Root review is pending.
+
+## Contract amendment v1.1
+
+Reserve all selected authentication and protocol discovery route roots before business registration. Runtime errors carry a server-generated request ID that agrees with the response header; client-supplied correlation headers confer no authority and are not reused as trusted IDs. Reject control characters, invalid UTF-8, and repeated percent decoding at ingress. Task T2.2 includes actual rejection tests; downstream route and generator tasks consume this revision.

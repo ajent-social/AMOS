@@ -45,10 +45,12 @@
     ]
   },
   "T1.5": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dispatched after prerequisite acceptance; independent review pending."
+      "HTTP unit and real PostgreSQL integration boundary checks independently passed.",
+      "Pinned and locked Playwright fixture suite executed in Chrome: two tests passed.",
+      "Unknown/unimplemented/zero-test suite selections fail explicitly; fixtures do not qualify product routes or providers."
     ]
   },
   "T15.1": {
@@ -61,17 +63,21 @@
     ]
   },
   "T1.7": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Implementation or policy drafting in an isolated worktree; review and acceptance pending."
+      "Owner-approved Apache 2.0 license and accurate dependency notices integrated.",
+      "Contribution, security-reporting and agent instructions reviewed; no invented reporting service or SLA.",
+      "Positive artifact checks and rejected private-source fixture passed."
     ]
   },
   "T2.2": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Implementation or policy drafting in an isolated worktree; review and acceptance pending."
+      "Shared/business HTTP composition independently reviewed and corrected.",
+      "Reserved-route collisions, ambiguous paths and trusted request-ID/error tests passed.",
+      "Required real listener and graceful shutdown test passed in the unrestricted integration process."
     ]
   },
   "T3.1": {
@@ -81,6 +87,34 @@
       "Identity contract independently reviewed against frozen authority and operation seams.",
       "Explicit password, email comparison, linking, session, MFA, callback and recovery policies recorded.",
       "Public artifact and whitespace checks passed; runtime and provider verification remain future tasks."
+    ]
+  },
+  "T1.8": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
+    ]
+  },
+  "T1.10": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
+    ]
+  },
+  "T2.1": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
+    ]
+  },
+  "T3.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
     ]
   }
 }
