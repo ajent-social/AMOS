@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -19,6 +20,11 @@ func TestReservedAndCanonicalRouteConflicts(t *testing.T) {
 	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
 	if err := a.RegisterBusinessRoute("GET", "/SiGnIn/reauth", h); !errors.Is(err, ErrReservedRoute) {
 		t.Fatalf("reserved registration: %v", err)
+	}
+	for _, path := range []string{"/signup", "/auth/callback", "/verify-email", "/forgot-password", "/reset-password", "/oauth/return", "/.well-known/openid-configuration"} {
+		if err := a.RegisterBusinessRoute("GET", path, h); !errors.Is(err, ErrReservedRoute) {
+			t.Errorf("%s registration error=%v", path, err)
+		}
 	}
 	if err := a.RegisterBusinessRoute("get", "/catalog/", h); err != nil {
 		t.Fatal(err)
@@ -47,7 +53,7 @@ func TestHealthReadinessAndReservedUnavailable(t *testing.T) {
 		path string
 		want int
 		body string
-	}{{"/healthz", 200, "ok"}, {"/readyz", 503, "dependency_unavailable"}, {"/signin", 503, "route_unavailable"}, {"/catalog", 201, ""}} {
+	}{{"/healthz", 200, "ok"}, {"/readyz", 503, "dependency.unavailable"}, {"/signin", 503, "route.unavailable"}, {"/catalog", 201, ""}} {
 		req := httptest.NewRequest(http.MethodGet, tc.path, nil)
 		w := httptest.NewRecorder()
 		a.Handler().ServeHTTP(w, req)
@@ -64,6 +70,36 @@ func TestHealthReadinessAndReservedUnavailable(t *testing.T) {
 	}
 }
 
+func TestErrorsUseServerGeneratedRequestID(t *testing.T) {
+	a, err := New(Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := map[string]bool{}
+	for _, path := range []string{"/unknown", "/signin"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Header.Set("X-Request-ID", "attacker-chosen")
+		w := httptest.NewRecorder()
+		a.Handler().ServeHTTP(w, req)
+		if w.Header().Get("X-Request-ID") == "attacker-chosen" || w.Header().Get("X-Request-ID") == "" {
+			t.Fatalf("untrusted or missing response request ID: %q", w.Header().Get("X-Request-ID"))
+		}
+		var body struct {
+			RequestID string `json:"request_id"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if body.RequestID != w.Header().Get("X-Request-ID") {
+			t.Fatalf("body/header request IDs differ: %#v %q", body, w.Header().Get("X-Request-ID"))
+		}
+		if ids[body.RequestID] {
+			t.Fatalf("request ID reused: %q", body.RequestID)
+		}
+		ids[body.RequestID] = true
+	}
+}
+
 func TestServeContextGracefullyDrainsActiveRequest(t *testing.T) {
 	started, release, done := make(chan struct{}), make(chan struct{}), make(chan error, 1)
 	a, err := New(Options{ShutdownTimeout: 3 * time.Second})
@@ -75,7 +111,7 @@ func TestServeContextGracefullyDrainsActiveRequest(t *testing.T) {
 	}
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		t.Skipf("local listener unavailable for graceful HTTP test: %v", err)
+		t.Fatalf("required real HTTP listener unavailable: %v", err)
 	}
 	addr := ln.Addr().String()
 	ctx, cancel := context.WithCancel(context.Background())

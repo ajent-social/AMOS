@@ -3,6 +3,8 @@ package runtime
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 var (
@@ -23,7 +27,7 @@ var (
 	ErrNotServing     = errors.New("runtime is not serving")
 )
 
-var reservedRoots = []string{"/signin", "/signout", "/account", "/workspaces", "/billing", "/api", "/mcp", "/healthz", "/readyz"}
+var reservedRoots = []string{"/signin", "/signout", "/signup", "/auth", "/verify-email", "/forgot-password", "/reset-password", "/oauth", "/.well-known", "/account", "/workspaces", "/billing", "/api", "/mcp", "/healthz", "/readyz"}
 
 type Options struct {
 	ReadinessChecks  []func(context.Context) error
@@ -125,15 +129,23 @@ func validMethod(s string) bool {
 }
 
 func normalizePath(raw string, registration bool) (string, error) {
-	if raw == "" || raw[0] != '/' || strings.ContainsAny(raw, "?#\\") || strings.Contains(raw, "//") {
+	if raw == "" || !utf8.ValidString(raw) || raw[0] != '/' || strings.ContainsAny(raw, "?#\\") || strings.Contains(raw, "//") {
+		return "", ErrInvalidRoute
+	}
+	if registration && strings.Contains(raw, "%") {
 		return "", ErrInvalidRoute
 	}
 	if strings.Contains(strings.ToLower(raw), "%2f") || strings.Contains(strings.ToLower(raw), "%5c") {
 		return "", ErrInvalidRoute
 	}
 	decoded, err := url.PathUnescape(raw)
-	if err != nil || strings.ContainsAny(decoded, "?#\\") || strings.Contains(decoded, "//") {
+	if err != nil || !utf8.ValidString(decoded) || strings.ContainsAny(decoded, "?#\\%") || strings.Contains(decoded, "//") {
 		return "", ErrInvalidRoute
+	}
+	for _, r := range decoded {
+		if unicode.IsControl(r) {
+			return "", ErrInvalidRoute
+		}
 	}
 	for _, part := range strings.Split(decoded, "/") {
 		if part == "." || part == ".." {
@@ -146,7 +158,6 @@ func normalizePath(raw string, registration bool) (string, error) {
 	if decoded == "" {
 		decoded = "/"
 	}
-	_ = registration
 	return decoded, nil
 }
 
@@ -161,6 +172,8 @@ func isReserved(path string) bool {
 }
 
 func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	requestID := newRequestID()
+	w.Header().Set("X-Request-ID", requestID)
 	raw := req.RequestURI
 	if raw == "" {
 		raw = req.URL.EscapedPath()
@@ -170,14 +183,14 @@ func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	path, err := normalizePath(raw, false)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_path", "request path is ambiguous")
+		writeError(w, http.StatusBadRequest, requestID, "path.invalid", "request path is ambiguous")
 		return
 	}
 	if isReserved(path) {
 		if path == "/healthz" || path == "/readyz" {
 			if req.Method != http.MethodGet && req.Method != http.MethodHead {
 				w.Header().Set("Allow", "GET, HEAD")
-				writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method is not allowed")
+				writeError(w, http.StatusMethodNotAllowed, requestID, "method.not_allowed", "method is not allowed")
 				return
 			}
 			if path == "/healthz" {
@@ -187,7 +200,7 @@ func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			r.readiness(w, req)
 			return
 		}
-		writeError(w, http.StatusServiceUnavailable, "route_unavailable", "this AMOS route is reserved but unavailable")
+		writeError(w, http.StatusServiceUnavailable, requestID, "route.unavailable", "this AMOS route is reserved but unavailable")
 		return
 	}
 	r.mu.RLock()
@@ -203,7 +216,7 @@ func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		handler.ServeHTTP(w, req)
 		return
 	}
-	http.NotFound(w, req)
+	writeError(w, http.StatusNotFound, requestID, "route.not_found", "route was not found")
 }
 
 func (r *Runtime) readiness(w http.ResponseWriter, req *http.Request) {
@@ -211,15 +224,22 @@ func (r *Runtime) readiness(w http.ResponseWriter, req *http.Request) {
 	defer cancel()
 	for _, check := range r.checks {
 		if err := check(ctx); err != nil {
-			writeError(w, http.StatusServiceUnavailable, "dependency_unavailable", "a required service is unavailable")
+			writeError(w, http.StatusServiceUnavailable, w.Header().Get("X-Request-ID"), "dependency.unavailable", "a required service is unavailable")
 			return
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ready"})
 }
 
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, map[string]string{"code": code, "message": message})
+func writeError(w http.ResponseWriter, status int, requestID, code, message string) {
+	writeJSON(w, status, map[string]string{"code": code, "message": message, "request_id": requestID})
+}
+func newRequestID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "unavailable"
+	}
+	return hex.EncodeToString(b[:])
 }
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
