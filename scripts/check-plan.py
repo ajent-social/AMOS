@@ -17,6 +17,8 @@ def main():
     args=parser.parse_args()
     d=json.loads(args.data.read_text())
     epics=d['epics']; ts=[t for e in epics for t in e['tasks']]; us=d['use_cases']
+    progress_path=ROOT/'docs/planning/execution-state.json'
+    progress=json.loads(progress_path.read_text()) if progress_path.exists() else {}
     ids=[t['id'] for t in ts]; uids=[u['id'] for u in us]; lookup={t['id']:t for t in ts}
     check(len(ids)==len(set(ids)),'Duplicate task ID')
     check(len(uids)==len(set(uids)),'Duplicate use-case ID')
@@ -35,10 +37,19 @@ def main():
         check(p.is_file(),f"Missing task contract {t['id']}")
         if p.exists():
             text=p.read_text()
-            for h in ['## Objective','## Scope','## Acceptance criteria','## Verification','## Negative verification','Certification: NOT_RUN']:
+            for h in ['## Objective','## Scope','## Acceptance criteria','## Verification','## Negative verification','Certification: ']:
                 check(h in text,f"{t['id']}: missing contract section {h}")
             check(t['title'] in text,f"{t['id']}: stale contract title")
         check(not any('REQUIRES:' in str(v) for v in t.values()),f"{t['id']}: unresolved semantic dependency")
+    for tid,state in progress.items():
+        check(tid in lookup, f'Unknown execution task {tid}')
+        check(state.get('status') in {'PLANNED','IN_PROGRESS','BLOCKED','ACCEPTED'},f'{tid}: invalid execution status')
+        if state.get('status')=='ACCEPTED':
+            check(bool(state.get('evidence')),f'{tid}: acceptance requires evidence')
+            check(state.get('certification')=='REVIEWED',f'{tid}: acceptance requires reviewed certification')
+            if tid in lookup:
+                for dep in lookup[tid]['deps']:
+                    check(progress.get(dep,{}).get('status')=='ACCEPTED',f'{tid}: unaccepted dependency {dep}')
     for u in uids: check(any(u in t['use_cases'] for t in ts),f"Uncovered use case {u}")
     seen=[]
     for w in d['waves']:
@@ -57,7 +68,7 @@ def main():
         p=ROOT/f"docs/plans/{e['id']}.md"
         check(p.exists(),f"Missing epic {e['id']}")
         if p.exists():
-            marks=re.findall(r'^- \[ \] (T\d+\.\d+) ',p.read_text(),re.M)
+            marks=re.findall(r'^- \[[ x]\] (T\d+\.\d+) ',p.read_text(),re.M)
             check(marks==[t['id'] for t in e['tasks']],f"Epic task inventory mismatch {e['id']}")
     for p in (ROOT/'docs').rglob('*.md'):
         text=p.read_text()

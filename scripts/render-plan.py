@@ -16,18 +16,25 @@ def lines(values):
 
 def main():
     data = json.loads(DATA.read_text())
+    progress_path = ROOT / 'docs/planning/execution-state.json'
+    progress = json.loads(progress_path.read_text()) if progress_path.exists() else {}
     usecases = data['use_cases']
     tasks = [t for e in data['epics'] for t in e['tasks']]
     for e in data['epics']:
         body = [f"# {e['id']} -- {e['title']}", '', 'fidelity: executable',
-                'Contract maturity: detailed draft; prerequisite and stage revalidation required. No task is execution-certified.', '',
+                'Contract maturity: detailed draft; prerequisite and stage revalidation required. Execution certification is recorded individually in task contracts.', '',
                 'Acceptance: ' + ' '.join(e['exit_criteria']), '', e['intent'], '',
-                'All checkboxes describe future implementation. The complete inventory is intentional; later-stage tasks may not dispatch before their prerequisites and external gates.', '']
+                'Checked tasks have accepted execution evidence; unchecked tasks remain incomplete. The complete inventory is intentional; later-stage tasks may not dispatch before their prerequisites and external gates.', '']
         for t in e['tasks']:
+            state = progress.get(t['id'], {})
+            status = state.get('status', 'PLANNED')
+            certified = state.get('certification', 'NOT_RUN')
+            mark = 'x' if status == 'ACCEPTED' else ' '
+            evidence = state.get('evidence', [])
             deps = ', '.join(t['deps']) or 'none'
             outcome = ('verifies: [' + ', '.join(t['use_cases']) + ']') if t['kind'] == 'engineering' else ('delivers: [' + t['objective'] + ']')
             acc = f"  acc: [{t['acceptance'][0]}]" if t['kind'] == 'engineering' else '  lane: agent'
-            body += [f"- [ ] {t['id']} {t['title']}  Owner: {t['lane']}  Est: {t['estimate_minutes']}m  {outcome}{acc}",
+            body += [f"- [{mark}] {t['id']} {t['title']}  Owner: {t['lane']}  Est: {t['estimate_minutes']}m  {outcome}{acc}",
                      f"  - Stage: {t['stage']}; Wave: {t['wave']}; deps: [{deps}]; kind: {'human' if t['kind']=='human' else 'agent'}.",
                      '  - Scope: ' + ', '.join('`' + p + '`' for p in t['owned_paths']) + '.',
                      '  - Acceptance: ' + ' '.join(t['acceptance']),
@@ -37,7 +44,7 @@ def main():
             body += ['']
             text = f"""# {t['id']}: {t['title']}
 
-Status: PLANNED. Detailed draft, not execution-certified. Stage {t['stage']}; wave {t['wave']}; owning lane {t['lane']}; estimate {t['estimate_minutes']} minutes (planning hypothesis).
+Status: {status}. Execution evidence is recorded below; release acceptance remains separate. Stage {t['stage']}; wave {t['wave']}; owning lane {t['lane']}; estimate {t['estimate_minutes']} minutes (planning hypothesis).
 
 ## Objective
 
@@ -95,7 +102,11 @@ Report changed paths, commands actually executed, genuine negative evidence, rem
 - [Execution guide](../planning/execution.md)
 - [Epic](../plans/{e['id']}.md)
 
-Certification: NOT_RUN. Required intended-tier execution and review have not occurred.
+Certification: {certified}.
+
+## Execution evidence
+
+{lines(evidence) if evidence else 'No execution evidence recorded.'}
 """
             write('docs/tasks/' + t['id'] + '.md', text)
         write('docs/plans/' + e['id'] + '.md', '\n'.join(body))

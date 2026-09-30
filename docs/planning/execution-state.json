@@ -1,0 +1,23 @@
+{
+  "T1.1": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dispatched to an isolated implementation worker; acceptance pending independent review."
+    ]
+  },
+  "T1.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dispatched to an isolated implementation worker; acceptance pending independent review."
+    ]
+  },
+  "T1.4": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dispatched to an isolated implementation worker; acceptance pending independent review."
+    ]
+  }
+}
