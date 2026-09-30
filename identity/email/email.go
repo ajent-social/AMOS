@@ -41,6 +41,8 @@ const (
 )
 
 type Config struct {
+	InstallationID    uuid.UUID
+	ApplicationID     uuid.UUID
 	ApplicationOrigin string
 	ChallengeLifetime time.Duration
 }
@@ -53,12 +55,14 @@ type ProtectedMaterialWriter interface {
 }
 
 type Service struct {
-	db        *storage.DB
-	outbox    *sqlstore.Store
-	renderer  *deliveryemail.Renderer
-	materials ProtectedMaterialWriter
-	origin    *url.URL
-	ttl       time.Duration
+	db             *storage.DB
+	outbox         *sqlstore.Store
+	renderer       *deliveryemail.Renderer
+	materials      ProtectedMaterialWriter
+	origin         *url.URL
+	installationID uuid.UUID
+	applicationID  uuid.UUID
+	ttl            time.Duration
 }
 
 type Acknowledgement struct {
@@ -70,7 +74,7 @@ type Page struct {
 }
 
 func New(db *storage.DB, outbox *sqlstore.Store, renderer *deliveryemail.Renderer, materials ProtectedMaterialWriter, cfg Config) (*Service, error) {
-	if db == nil || cfg.ChallengeLifetime < MinChallengeLifetime || cfg.ChallengeLifetime > MaxChallengeLifetime || cfg.ChallengeLifetime%time.Second != 0 {
+	if db == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || cfg.ChallengeLifetime < MinChallengeLifetime || cfg.ChallengeLifetime > MaxChallengeLifetime || cfg.ChallengeLifetime%time.Second != 0 {
 		return nil, ErrInvalidRequest
 	}
 	origin, err := parseOrigin(cfg.ApplicationOrigin)
@@ -102,7 +106,7 @@ func New(db *storage.DB, outbox *sqlstore.Store, renderer *deliveryemail.Rendere
 			return nil, ErrInvalidRequest
 		}
 	}
-	return &Service{db: db, outbox: outbox, renderer: renderer, materials: materials, origin: origin, ttl: cfg.ChallengeLifetime}, nil
+	return &Service{db: db, outbox: outbox, renderer: renderer, materials: materials, origin: origin, installationID: cfg.InstallationID, applicationID: cfg.ApplicationID, ttl: cfg.ChallengeLifetime}, nil
 }
 
 // IssueVerification creates a new challenge for a pending, unverified contact.
@@ -117,7 +121,7 @@ func (s *Service) IssueVerification(ctx context.Context, personID, emailID, requ
 	}
 	ack := Acknowledgement{}
 	err := s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
-		_, _, found, err := lockPendingContact(ctx, tx, personID, emailID)
+		_, found, err := lockPendingContact(ctx, tx, s.installationID, s.applicationID, personID, emailID)
 		if err != nil {
 			return ErrUnavailable
 		}
@@ -125,7 +129,7 @@ func (s *Service) IssueVerification(ctx context.Context, personID, emailID, requ
 			ack.Received = true
 			return nil
 		}
-		count, err := recentChallengeCount(ctx, tx, personID, emailID)
+		count, err := recentChallengeCount(ctx, tx, s.installationID, s.applicationID, personID, emailID)
 		if err != nil {
 			return ErrUnavailable
 		}
@@ -215,9 +219,11 @@ func (s *Service) queueChallengeTx(ctx context.Context, tx *sql.Tx, personID, em
 		JOIN identity_persons p ON p.id=c.person_id
 		JOIN identity_emails e ON e.id=c.email_id AND e.person_id=c.person_id
 		WHERE c.id=$1 AND c.person_id=$2 AND c.email_id=$3 AND c.purpose=$4 AND c.token_digest=$5
+		  AND p.installation_id=$6 AND p.application_id=$7
+		  AND e.installation_id=$6 AND e.application_id=$7
 		  AND c.consumed_at IS NULL AND c.expires_at > transaction_timestamp()
 		  AND p.state='pending_verification' AND e.verified_at IS NULL
-		FOR UPDATE OF c,p,e`, challengeID, personID, emailID, verificationPurpose, digest).Scan(
+		FOR UPDATE OF c,p,e`, challengeID, personID, emailID, verificationPurpose, digest, s.installationID, s.applicationID).Scan(
 		&installationID, &applicationID, &address, &challengeExpiry)
 	if errors.Is(err, sql.ErrNoRows) {
 		return uuid.Nil, "", false, ErrChallengeUnavailable
@@ -225,7 +231,7 @@ func (s *Service) queueChallengeTx(ctx context.Context, tx *sql.Tx, personID, em
 	if err != nil {
 		return uuid.Nil, "", false, ErrUnavailable
 	}
-	count, err := recentChallengeCount(ctx, tx, personID, emailID)
+	count, err := recentChallengeCount(ctx, tx, s.installationID, s.applicationID, personID, emailID)
 	if err != nil {
 		return uuid.Nil, "", false, ErrUnavailable
 	}
@@ -270,9 +276,11 @@ func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, rawToken s
 		JOIN identity_persons p ON p.id=c.person_id
 		JOIN identity_emails e ON e.id=c.email_id AND e.person_id=c.person_id
 		WHERE c.id=$1 AND c.purpose=$2 AND c.token_digest=$3
+		  AND p.installation_id=$4 AND p.application_id=$5
+		  AND e.installation_id=$4 AND e.application_id=$5
 		  AND c.consumed_at IS NULL AND c.expires_at > transaction_timestamp()
 		  AND p.state='pending_verification' AND e.verified_at IS NULL
-	)`, challengeID, verificationPurpose, digest[:]).Scan(&available)
+	)`, challengeID, verificationPurpose, digest[:], s.installationID, s.applicationID).Scan(&available)
 	})
 	if err != nil {
 		return Page{}, ErrUnavailable
@@ -292,26 +300,37 @@ func (s *Service) Confirm(ctx context.Context, challengeID uuid.UUID, rawToken s
 		return ErrChallengeUnavailable
 	}
 	err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
-		identityStore, err := store.New(tx)
+		var personID, emailID uuid.UUID
+		err := tx.QueryRowContext(ctx, `UPDATE identity_challenges c
+			SET consumed_at=transaction_timestamp()
+			FROM identity_persons p, identity_emails e
+			WHERE c.id=$1 AND c.purpose=$2 AND c.token_digest=$3
+			  AND c.consumed_at IS NULL AND c.expires_at > transaction_timestamp()
+			  AND p.id=c.person_id AND p.state='pending_verification'
+			  AND p.installation_id=$4 AND p.application_id=$5
+			  AND e.id=c.email_id AND e.person_id=c.person_id
+			  AND e.installation_id=$4 AND e.application_id=$5 AND e.verified_at IS NULL
+			RETURNING c.person_id,c.email_id`, challengeID, verificationPurpose, digest[:], s.installationID, s.applicationID).Scan(&personID, &emailID)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrChallengeUnavailable
+		}
 		if err != nil {
 			return ErrUnavailable
 		}
-		consumed, err := identityStore.ConsumeChallenge(ctx, challengeID, verificationPurpose, digest[:])
+		verified, err := tx.ExecContext(ctx, `UPDATE identity_emails
+			SET verified_at=transaction_timestamp()
+			WHERE id=$1 AND person_id=$2 AND installation_id=$3 AND application_id=$4 AND verified_at IS NULL`,
+			emailID, personID, s.installationID, s.applicationID)
 		if err != nil {
-			if errors.Is(err, store.ErrChallengeUnavailable) {
-				return ErrChallengeUnavailable
-			}
 			return ErrUnavailable
 		}
-		if err := identityStore.MarkEmailVerified(ctx, consumed.PersonID, consumed.EmailID); err != nil {
-			if errors.Is(err, store.ErrPersonUnavailable) {
-				return ErrChallengeUnavailable
-			}
-			return ErrUnavailable
+		verifiedCount, err := verified.RowsAffected()
+		if err != nil || verifiedCount != 1 {
+			return ErrChallengeUnavailable
 		}
 		result, err := tx.ExecContext(ctx, `UPDATE identity_persons
 			SET state='active',updated_at=transaction_timestamp()
-			WHERE id=$1 AND state='pending_verification'`, consumed.PersonID)
+			WHERE id=$1 AND installation_id=$2 AND application_id=$3 AND state='pending_verification'`, personID, s.installationID, s.applicationID)
 		if err != nil {
 			return ErrUnavailable
 		}
@@ -405,27 +424,32 @@ func (s *Service) deliveryReady() bool {
 	return s != nil && s.db != nil && s.outbox != nil && s.renderer != nil && s.materials != nil && s.origin != nil
 }
 
-func lockPendingContact(ctx context.Context, tx *sql.Tx, personID, emailID uuid.UUID) (uuid.UUID, string, bool, error) {
-	var installationID, applicationID uuid.UUID
+func lockPendingContact(ctx context.Context, tx *sql.Tx, installationID, applicationID, personID, emailID uuid.UUID) (string, bool, error) {
 	var address string
-	err := tx.QueryRowContext(ctx, `SELECT p.installation_id,p.application_id,e.display_address
+	err := tx.QueryRowContext(ctx, `SELECT e.display_address
 		FROM identity_persons p JOIN identity_emails e ON e.person_id=p.id
-		WHERE p.id=$1 AND e.id=$2 AND p.state='pending_verification' AND e.verified_at IS NULL
-		FOR UPDATE OF p,e`, personID, emailID).Scan(&installationID, &applicationID, &address)
+		WHERE p.id=$1 AND e.id=$2 AND p.installation_id=$3 AND p.application_id=$4
+		  AND e.installation_id=$3 AND e.application_id=$4
+		  AND p.state='pending_verification' AND e.verified_at IS NULL
+		FOR UPDATE OF p,e`, personID, emailID, installationID, applicationID).Scan(&address)
 	if errors.Is(err, sql.ErrNoRows) {
-		return uuid.Nil, "", false, nil
+		return "", false, nil
 	}
 	if err != nil {
-		return uuid.Nil, "", false, err
+		return "", false, err
 	}
-	return installationID, address, true, nil
+	return address, true, nil
 }
 
-func recentChallengeCount(ctx context.Context, tx *sql.Tx, personID, emailID uuid.UUID) (int, error) {
+func recentChallengeCount(ctx context.Context, tx *sql.Tx, installationID, applicationID, personID, emailID uuid.UUID) (int, error) {
 	var count int
-	err := tx.QueryRowContext(ctx, `SELECT count(*) FROM identity_challenges
-		WHERE person_id=$1 AND email_id=$2 AND purpose=$3
-		  AND created_at >= transaction_timestamp() - interval '1 hour'`, personID, emailID, verificationPurpose).Scan(&count)
+	err := tx.QueryRowContext(ctx, `SELECT count(*) FROM identity_challenges c
+		JOIN identity_persons p ON p.id=c.person_id
+		JOIN identity_emails e ON e.id=c.email_id AND e.person_id=c.person_id
+		WHERE c.person_id=$1 AND c.email_id=$2 AND c.purpose=$3
+		  AND p.installation_id=$4 AND p.application_id=$5
+		  AND e.installation_id=$4 AND e.application_id=$5
+		  AND c.created_at >= transaction_timestamp() - interval '1 hour'`, personID, emailID, verificationPurpose, installationID, applicationID).Scan(&count)
 	return count, err
 }
 

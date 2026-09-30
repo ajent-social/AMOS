@@ -26,8 +26,9 @@ import (
 
 func TestT3_6_PreviewDoesNotConsumeAndConfirmActivatesBoundContactOnce(t *testing.T) {
 	db := newEmailDB(t)
-	account, token := createEmailAccount(t, db, store.ChallengeEmailVerification, time.Hour)
-	service, err := New(db, nil, nil, nil, Config{ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
+	installationID, applicationID := emailID(t), emailID(t)
+	account, token := createEmailAccount(t, db, installationID, applicationID, store.ChallengeEmailVerification, time.Hour)
+	service, err := New(db, nil, nil, nil, Config{InstallationID: installationID, ApplicationID: applicationID, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,9 +69,10 @@ func TestT3_6_PreviewDoesNotConsumeAndConfirmActivatesBoundContactOnce(t *testin
 
 func TestT3_6_RejectsWrongPurposeAndExpiredChallenges(t *testing.T) {
 	db := newEmailDB(t)
-	wrongPurpose, wrongToken := createEmailAccount(t, db, store.ChallengePasswordReset, time.Hour)
-	expired, expiredToken := createEmailAccount(t, db, store.ChallengeEmailVerification, -time.Minute)
-	service, err := New(db, nil, nil, nil, Config{ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
+	installationID, applicationID := emailID(t), emailID(t)
+	wrongPurpose, wrongToken := createEmailAccount(t, db, installationID, applicationID, store.ChallengePasswordReset, time.Hour)
+	expired, expiredToken := createEmailAccount(t, db, installationID, applicationID, store.ChallengeEmailVerification, -time.Minute)
+	service, err := New(db, nil, nil, nil, Config{InstallationID: installationID, ApplicationID: applicationID, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,10 +88,56 @@ func TestT3_6_RejectsWrongPurposeAndExpiredChallenges(t *testing.T) {
 	}
 }
 
+func TestT3_6_ChallengeCannotCrossInstallationOrApplicationRealm(t *testing.T) {
+	db, raw := newEmailDBWithJobs(t)
+	ownerInstallation, ownerApplication := emailID(t), emailID(t)
+	account, token := createEmailAccount(t, db, ownerInstallation, ownerApplication, store.ChallengeEmailVerification, time.Hour)
+	wrongInstallation, wrongApplication := emailID(t), emailID(t)
+	renderer, err := deliveryemail.NewRenderer(deliveryemail.RenderConfig{FromAddress: "no-reply@example.test", ApplicationOrigin: "https://app.example.test", MaxBodyBytes: 4096})
+	if err != nil {
+		t.Fatalf("build safe email renderer: %v", err)
+	}
+	outbox, err := sqlstore.New(raw, sqlstore.Config{MaxPayloadBytes: 4096, MaxAttempts: 5, MaxReconciliationAttempts: 3, MaxLease: time.Minute, MaxRetryDelay: time.Minute})
+	if err != nil {
+		t.Fatalf("build outbox store: %v", err)
+	}
+	for _, realm := range []struct {
+		name           string
+		installationID uuid.UUID
+		applicationID  uuid.UUID
+	}{
+		{name: "different installation", installationID: wrongInstallation, applicationID: ownerApplication},
+		{name: "different application", installationID: ownerInstallation, applicationID: wrongApplication},
+	} {
+		t.Run(realm.name, func(t *testing.T) {
+			service, err := New(db, outbox, renderer, &memoryMaterialWriter{}, Config{InstallationID: realm.installationID, ApplicationID: realm.applicationID, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
+			if err != nil {
+				t.Fatalf("build other-realm verification service: %v", err)
+			}
+			preview, err := service.Preview(context.Background(), account.ChallengeID, token)
+			if err != nil || preview.Available {
+				t.Fatalf("other-realm Preview() = (%+v, %v), want unavailable", preview, err)
+			}
+			if err := service.Confirm(context.Background(), account.ChallengeID, token); err != ErrChallengeUnavailable {
+				t.Fatalf("other-realm Confirm() = %v, want generic challenge unavailable", err)
+			}
+			before := countChallenges(t, db, account.PersonID)
+			ack, err := service.IssueVerification(context.Background(), account.PersonID, account.EmailID, emailID(t))
+			if err != nil || !ack.Received {
+				t.Fatalf("other-realm IssueVerification() = (%+v, %v), want generic acknowledgement", ack, err)
+			}
+			if after := countChallenges(t, db, account.PersonID); after != before {
+				t.Fatalf("other-realm issue created %d challenges, want unchanged count %d", after, before)
+			}
+		})
+	}
+}
+
 func TestT3_6_HandlerGETIsPreviewAndPOSTRequiresSameOrigin(t *testing.T) {
 	db := newEmailDB(t)
-	account, token := createEmailAccount(t, db, store.ChallengeEmailVerification, time.Hour)
-	service, err := New(db, nil, nil, nil, Config{ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
+	installationID, applicationID := emailID(t), emailID(t)
+	account, token := createEmailAccount(t, db, installationID, applicationID, store.ChallengeEmailVerification, time.Hour)
+	service, err := New(db, nil, nil, nil, Config{InstallationID: installationID, ApplicationID: applicationID, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +151,7 @@ func TestT3_6_HandlerGETIsPreviewAndPOSTRequiresSameOrigin(t *testing.T) {
 		t.Fatalf("confirmation after GET preview: %v", err)
 	}
 
-	other, otherToken := createEmailAccount(t, db, store.ChallengeEmailVerification, time.Hour)
+	other, otherToken := createEmailAccount(t, db, installationID, applicationID, store.ChallengeEmailVerification, time.Hour)
 	body := url.Values{"challenge": {other.ChallengeID.String()}, "token": {otherToken}}
 	rejected := httptest.NewRecorder()
 	post := httptest.NewRequest("POST", "/verify-email", strings.NewReader(body.Encode()))
@@ -120,7 +168,8 @@ func TestT3_6_HandlerGETIsPreviewAndPOSTRequiresSameOrigin(t *testing.T) {
 
 func TestT3_6_IssueWritesOnlyOpaqueOutboxIntentAndRollsBackOnOutboxFailure(t *testing.T) {
 	db, raw := newEmailDBWithJobs(t)
-	account, _ := createEmailAccount(t, db, store.ChallengeEmailVerification, time.Hour)
+	installationID, applicationID := emailID(t), emailID(t)
+	account, _ := createEmailAccount(t, db, installationID, applicationID, store.ChallengeEmailVerification, time.Hour)
 	renderer, err := deliveryemail.NewRenderer(deliveryemail.RenderConfig{FromAddress: "no-reply@example.test", ApplicationOrigin: "https://app.example.test", MaxBodyBytes: 4096})
 	if err != nil {
 		t.Fatalf("build safe email renderer: %v", err)
@@ -130,7 +179,7 @@ func TestT3_6_IssueWritesOnlyOpaqueOutboxIntentAndRollsBackOnOutboxFailure(t *te
 	if err != nil {
 		t.Fatalf("build outbox store: %v", err)
 	}
-	service, err := New(db, goodOutbox, renderer, writer, Config{ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
+	service, err := New(db, goodOutbox, renderer, writer, Config{InstallationID: installationID, ApplicationID: applicationID, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
 	if err != nil {
 		t.Fatalf("build verification service: %v", err)
 	}
@@ -161,11 +210,11 @@ func TestT3_6_IssueWritesOnlyOpaqueOutboxIntentAndRollsBackOnOutboxFailure(t *te
 	if err != nil {
 		t.Fatalf("build constrained outbox: %v", err)
 	}
-	rollbackService, err := New(db, limitedOutbox, renderer, writer, Config{ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
+	rollbackService, err := New(db, limitedOutbox, renderer, writer, Config{InstallationID: installationID, ApplicationID: applicationID, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: DefaultChallengeLifetime})
 	if err != nil {
 		t.Fatalf("build rollback verification service: %v", err)
 	}
-	second, _ := createEmailAccount(t, db, store.ChallengeEmailVerification, time.Hour)
+	second, _ := createEmailAccount(t, db, installationID, applicationID, store.ChallengeEmailVerification, time.Hour)
 	before := countChallenges(t, db, second.PersonID)
 	if _, err := rollbackService.IssueVerification(context.Background(), second.PersonID, second.EmailID, emailID(t)); !errors.Is(err, ErrUnavailable) {
 		t.Fatalf("IssueVerification with undersized outbox = %v, want unavailable", err)
@@ -229,10 +278,10 @@ func newEmailDBWithJobs(t *testing.T) (*storage.DB, *sql.DB) {
 	return db, raw
 }
 
-func createEmailAccount(t *testing.T, db *storage.DB, purpose string, lifetime time.Duration) (store.PendingAccount, string) {
+func createEmailAccount(t *testing.T, db *storage.DB, installationID, applicationID uuid.UUID, purpose string, lifetime time.Duration) (store.PendingAccount, string) {
 	t.Helper()
 	personID, contactID, credentialID := emailID(t), emailID(t), emailID(t)
-	challengeID, installationID, applicationID := emailID(t), emailID(t), emailID(t)
+	challengeID := emailID(t)
 	token, digest, err := newToken()
 	if err != nil {
 		t.Fatal("generate fixture challenge")
@@ -251,7 +300,7 @@ func createEmailAccount(t *testing.T, db *storage.DB, purpose string, lifetime t
 		}
 		if purpose != store.ChallengeEmailVerification || lifetime != time.Hour {
 			expiresAt := time.Now().Add(lifetime)
-			_, err := tx.ExecContext(ctx, `UPDATE identity_challenges SET purpose=$2,expires_at=$3 WHERE id=$1`, challengeID, purpose, expiresAt)
+			_, err := tx.ExecContext(ctx, `UPDATE identity_challenges SET purpose=$2,expires_at=$3,created_at=LEAST(created_at,$3::timestamptz - interval '1 second') WHERE id=$1`, challengeID, purpose, expiresAt)
 			return err
 		}
 		return nil
