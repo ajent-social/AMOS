@@ -20,7 +20,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 IPV4_OCTET = r"(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})"
 PRIVATE_IPV4 = (
-    rf"127\.{IPV4_OCTET}\.{IPV4_OCTET}\.{IPV4_OCTET}"
+    rf"127\.(?!0\.0\.1(?:$|[^0-9.])){IPV4_OCTET}\.{IPV4_OCTET}\.{IPV4_OCTET}"
     rf"|10\.{IPV4_OCTET}\.{IPV4_OCTET}\.{IPV4_OCTET}"
     rf"|192\.168\.{IPV4_OCTET}\.{IPV4_OCTET}"
     rf"|169\.254\.{IPV4_OCTET}\.{IPV4_OCTET}"

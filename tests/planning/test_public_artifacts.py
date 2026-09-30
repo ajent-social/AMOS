@@ -29,7 +29,7 @@ class PublicArtifactCheckerTests(unittest.TestCase):
                 'config = "C:' + "\\" + "Users" + "\\fixture\\private\\settings" + '"\n'
             ),
             "private-ip.txt": "host = \"" + ".".join(("192", "168", "44", "19")) + "\"\n",
-            "loopback-ip.txt": "host = \"" + ".".join(("127", "0", "0", "1")) + "\"\n",
+            "loopback-ip.txt": "host = \"" + ".".join(("127", "0", "0", "2")) + "\"\n",
             "private-ipv6.txt": "host = \"" + ":".join(("fd00", "", "1")) + "\"\n",
             "private-host.txt": 'server = "build-agent' + ".local" + '"\n',
             "private-key.txt": "-----BEGIN " + "OPENSSH PRIVATE KEY" + "-----\n",
@@ -60,7 +60,7 @@ class PublicArtifactCheckerTests(unittest.TestCase):
                     self.assertIn(category, result.stderr)
                     self.assertNotIn("Synthetic" * 4, result.stderr)
                     private_address = ".".join(("192", "168", "44", "19"))
-                    loopback_address = ".".join(("127", "0", "0", "1"))
+                    loopback_address = ".".join(("127", "0", "0", "2"))
                     private_ipv6 = ":".join(("fd00", "", "1"))
                     private_host = "build-agent" + ".local"
                     private_path = "/" + "Users" + "/fixture"
@@ -77,6 +77,11 @@ class PublicArtifactCheckerTests(unittest.TestCase):
                 'password: "<configured-at-deploy-time>"',
                 "example address: 203.0.113.12",
                 "example host: service.example.test",
+                'development bind addresses: "localhost", "'
+                + ".".join(("127", "0", "0", "1"))
+                + '", "::'
+                + "1"
+                + '"',
                 r"generic scanner regexes: /Users/|/home/ and \bAKIA[A-Z0-9]{16}\b",
                 "pattern examples use symbolic placeholders only",
             )
