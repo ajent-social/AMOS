@@ -1,16 +1,129 @@
 {
- "schemaVersion": 1,
- "cases": [
-  {"name":"local-valid","input":{"schemaVersion":1,"appSlug":"todo-demo","module":"example.test/todo-demo","target":"todo-demo","modules":["identity","workspace","billing"],"publicOrigin":"http://127.0.0.1:8080","businessMode":"integrated-go","mode":"evaluation","deploymentProfile":"managed"},"expected":"valid"},
-  {"name":"managed-valid-config-only","input":{"schemaVersion":1,"appSlug":"todo-demo","module":"example.test/todo-demo","target":"todo-demo","modules":["identity","workspace","billing"],"publicOrigin":"https://app.example.test","businessMode":"integrated-go","deploymentProfile":"managed","cloudflareRequired":true},"expected":"valid-provider-activation-pending"},
-  {"name":"small-vm-valid-config-only","input":{"schemaVersion":1,"appSlug":"todo-demo","module":"example.test/todo-demo","target":"todo-demo","modules":["identity","workspace","billing"],"publicOrigin":"https://app.example.test","businessMode":"private-service","deploymentProfile":"small-vm","cloudflareRequired":true},"expected":"valid-provider-activation-pending"},
-  {"name":"unknown-module","input":{"schemaVersion":1,"modules":["unknown-capability"]},"expected":"invalid-input"},
-  {"name":"escape-parent","input":{"schemaVersion":1,"target":"../foreign-app"},"expected":"invalid-path"},
-  {"name":"absolute-target","input":{"schemaVersion":1,"target":"/foreign-app"},"expected":"invalid-path"},
-  {"name":"existing-authored-directory","fixture":{"targetExists":true,"ownedResumeRecord":false},"expected":"target-conflict-preserve-content"},
-  {"name":"owned-interruption","fixture":{"interruptedBeforeFinalize":true,"ownedResumeRecord":true,"preimagesMatch":true},"expected":"resume-validation-before-finalization"},
-  {"name":"resume-modified-authored-file","fixture":{"ownedResumeRecord":true,"preimagesMatch":false},"expected":"conflict-preserve-content"},
-  {"name":"version-mismatch","input":{"schemaVersion":999},"expected":"unsupported-schema-before-write"},
-  {"name":"secret-value-forbidden","input":{"schemaVersion":1,"credentialValue":"<forbidden-config-placeholder>"},"expected":"invalid-field"}
- ]
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "local-valid",
+      "input": {
+        "schemaVersion": 1,
+        "appSlug": "todo-demo",
+        "module": "example.test/todo-demo",
+        "target": "todo-demo",
+        "modules": [
+          "identity",
+          "workspace",
+          "billing"
+        ],
+        "publicOrigin": "http://127.0.0.1:8080",
+        "businessMode": "integrated-go",
+        "mode": "evaluation"
+      },
+      "expected": "valid"
+    },
+    {
+      "name": "managed-valid-config-only",
+      "input": {
+        "schemaVersion": 1,
+        "appSlug": "todo-demo",
+        "module": "example.test/todo-demo",
+        "target": "todo-demo",
+        "modules": [
+          "identity",
+          "workspace",
+          "billing"
+        ],
+        "publicOrigin": "https://app.example.test",
+        "businessMode": "integrated-go",
+        "deploymentProfile": "managed",
+        "cloudflareRequired": true,
+        "mode": "production-target"
+      },
+      "expected": "valid-provider-activation-pending"
+    },
+    {
+      "name": "small-vm-valid-config-only",
+      "input": {
+        "schemaVersion": 1,
+        "appSlug": "todo-demo",
+        "module": "example.test/todo-demo",
+        "target": "todo-demo",
+        "modules": [
+          "identity",
+          "workspace",
+          "billing"
+        ],
+        "publicOrigin": "https://app.example.test",
+        "businessMode": "private-service",
+        "deploymentProfile": "small-vm",
+        "cloudflareRequired": true,
+        "mode": "production-target"
+      },
+      "expected": "valid-provider-activation-pending"
+    },
+    {
+      "name": "unknown-module",
+      "input": {
+        "schemaVersion": 1,
+        "modules": [
+          "unknown-capability"
+        ]
+      },
+      "expected": "invalid-input"
+    },
+    {
+      "name": "escape-parent",
+      "input": {
+        "schemaVersion": 1,
+        "target": "../foreign-app"
+      },
+      "expected": "invalid-path"
+    },
+    {
+      "name": "absolute-target",
+      "input": {
+        "schemaVersion": 1,
+        "target": "/foreign-app"
+      },
+      "expected": "invalid-path"
+    },
+    {
+      "name": "existing-authored-directory",
+      "fixture": {
+        "targetExists": true,
+        "ownedResumeRecord": false
+      },
+      "expected": "target-conflict-preserve-content"
+    },
+    {
+      "name": "owned-interruption",
+      "fixture": {
+        "interruptedBeforeFinalize": true,
+        "ownedResumeRecord": true,
+        "preimagesMatch": true
+      },
+      "expected": "resume-validation-before-finalization"
+    },
+    {
+      "name": "resume-modified-authored-file",
+      "fixture": {
+        "ownedResumeRecord": true,
+        "preimagesMatch": false
+      },
+      "expected": "conflict-preserve-content"
+    },
+    {
+      "name": "version-mismatch",
+      "input": {
+        "schemaVersion": 999
+      },
+      "expected": "unsupported-schema-before-write"
+    },
+    {
+      "name": "secret-value-forbidden",
+      "input": {
+        "schemaVersion": 1,
+        "credentialValue": "<forbidden-config-placeholder>"
+      },
+      "expected": "invalid-field"
+    }
+  ]
 }
