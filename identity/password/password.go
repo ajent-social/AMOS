@@ -35,11 +35,14 @@ type Budget interface {
 	Allow(context.Context, string) error
 }
 
+var processSlots = make(chan struct{}, 2)
+
 type Hasher struct {
-	blocklist Blocklist
-	budget    Budget
-	slots     chan struct{}
-	dummy     string
+	blocklist   Blocklist
+	budget      Budget
+	slots       chan struct{}
+	dummy       string
+	legacyDummy string
 }
 
 // New bounds concurrent verification operations for one application hasher.
@@ -53,6 +56,16 @@ func New(blocklist Blocklist, budget Budget, concurrency int) (*Hasher, error) {
 	h := &Hasher{blocklist: blocklist, budget: budget, slots: make(chan struct{}, concurrency)}
 	// The dummy has an independent random salt and is never an account credential.
 	var err error
+	select {
+	case processSlots <- struct{}{}:
+		defer func() { <-processSlots }()
+	default:
+		return nil, ErrBusy
+	}
+	h.legacyDummy, err = derive("amos unknown account dummy credential", 32768, 2)
+	if err != nil {
+		return nil, err
+	}
 	h.dummy, err = derive("amos unknown account dummy credential", 65536, 3)
 	if err != nil {
 		return nil, err
@@ -83,7 +96,13 @@ func (h *Hasher) acquire(ctx context.Context, key string) (func(), error) {
 	}
 	select {
 	case h.slots <- struct{}{}:
-		return func() { <-h.slots }, nil
+		select {
+		case processSlots <- struct{}{}:
+			return func() { <-processSlots; <-h.slots }, nil
+		default:
+			<-h.slots
+			return nil, ErrBusy
+		}
 	default:
 		return nil, ErrBusy
 	}
@@ -141,8 +160,18 @@ func (h *Hasher) Verify(ctx context.Context, key, secret, encoded string, persis
 		return Result{}, err
 	}
 	defer release()
-	actual := argon2.IDKey([]byte(s), p.salt, p.iterations, p.memory, 1, 32)
-	match := subtle.ConstantTimeCompare(actual, p.hash) == 1
+	legacyDummy, _ := parse(h.legacyDummy)
+	currentDummy, _ := parse(h.dummy)
+	plan := verificationPlan(p, legacyDummy, currentDummy)
+	legacy, current := plan[0], plan[1]
+	legacyActual := argon2.IDKey([]byte(s), legacy.salt, 2, 32768, 1, 32)
+	currentActual := argon2.IDKey([]byte(s), current.salt, 3, 65536, 1, 32)
+	legacyMatch := subtle.ConstantTimeCompare(legacyActual, legacy.hash) == 1
+	currentMatch := subtle.ConstantTimeCompare(currentActual, current.hash) == 1
+	match := currentMatch
+	if p.memory == 32768 {
+		match = legacyMatch
+	}
 	if !match || unknown {
 		return Result{}, nil
 	}
@@ -159,6 +188,18 @@ func (h *Hasher) Verify(ctx context.Context, key, secret, encoded string, persis
 type parameters struct {
 	memory, iterations uint32
 	salt, hash         []byte
+}
+
+// verificationPlan always executes the same ordered resource profiles. The
+// candidate replaces only the corresponding dummy salt/hash, never the cost.
+func verificationPlan(candidate, legacyDummy, currentDummy parameters) [2]parameters {
+	plan := [2]parameters{legacyDummy, currentDummy}
+	if candidate.memory == 32768 {
+		plan[0] = candidate
+	} else {
+		plan[1] = candidate
+	}
+	return plan
 }
 
 func parse(encoded string) (parameters, error) {
@@ -183,7 +224,7 @@ func parse(encoded string) (parameters, error) {
 	}
 	// Only explicitly approved profiles are accepted, rather than trusting stored
 	// arbitrary costs. The lower profile is verification-only for migration.
-	if !((m == 65536 && t == 3) || (m == 32768 && t == 2)) {
+	if (m != 65536 || t != 3) && (m != 32768 || t != 2) {
 		return parameters{}, ErrInvalid
 	}
 	salt, e := base64.RawStdEncoding.Strict().DecodeString(parts[4])

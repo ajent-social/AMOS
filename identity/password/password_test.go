@@ -94,3 +94,33 @@ func TestT3_4_LegacyUpgradePreservesProofOnPersistenceFailure(t *testing.T) {
 		t.Fatalf("failed upgrade destroyed proof: %+v %v", r, e)
 	}
 }
+
+func TestT3_4_ProcessBudgetCannotBeBypassedWithSecondHasher(t *testing.T) {
+	first := hasher(t)
+	second := hasher(t)
+	releaseFirst, err := first.acquire(context.Background(), "first")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer releaseFirst()
+	releaseSecond, err := second.acquire(context.Background(), "second")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer releaseSecond()
+	third, err := New(localList{true}, allowedBudget{}, 1)
+	if third != nil || !errors.Is(err, ErrBusy) {
+		t.Fatalf("constructor bypassed process budget: %v", err)
+	}
+}
+
+func TestT3_4_VerificationWorkPlanIsProfileIndependent(t *testing.T) {
+	legacy := parameters{memory: 32768, iterations: 2, salt: []byte("legacy dummy")}
+	current := parameters{memory: 65536, iterations: 3, salt: []byte("current dummy")}
+	for _, candidate := range []parameters{legacy, current, {memory: 32768, iterations: 2, salt: []byte("known legacy")}, {memory: 65536, iterations: 3, salt: []byte("known current")}} {
+		plan := verificationPlan(candidate, legacy, current)
+		if plan[0].memory != 32768 || plan[0].iterations != 2 || plan[1].memory != 65536 || plan[1].iterations != 3 {
+			t.Fatal("account profile changes work schedule")
+		}
+	}
+}
