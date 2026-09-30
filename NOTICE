@@ -1,0 +1,44 @@
+AMOS
+Copyright 2026 AMOS contributors
+
+This NOTICE file applies to the AMOS-authored work in this distribution. AMOS
+original work is licensed under the Apache License, Version 2.0; see LICENSE.
+
+Selected Go module dependencies retain their own licenses and copyright
+attributions. The versions, module checksums, and version-specific license
+sources are recorded in docs/dependencies.md. Preserve the full upstream
+LICENSE files and copyright notices when redistributing those modules or a
+binary containing them. This inventory excerpt is informational and does not
+replace the upstream license text.
+
+Selected dependency notices (all exact version and source details are in
+docs/dependencies.md):
+
+- github.com/jackc/pgx/v5 v5.11.0 — MIT License; Copyright (c) 2013–2021
+  Jack Christensen. [Upstream license](https://github.com/jackc/pgx/blob/v5.11.0/LICENSE)
+- github.com/jackc/pgpassfile v1.0.0 — MIT License; Copyright (c) 2019
+  Jack Christensen. [Upstream license](https://github.com/jackc/pgpassfile/blob/v1.0.0/LICENSE)
+- github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 — MIT
+  License; Copyright (c) 2020 Jack Christensen. [Upstream license](https://github.com/jackc/pgservicefile/blob/5a60cdf6a761/LICENSE)
+- github.com/jackc/puddle/v2 v2.2.2 — MIT License; Copyright (c) 2018
+  Jack Christensen. [Upstream license](https://github.com/jackc/puddle/blob/v2.2.2/LICENSE)
+- golang.org/x/sync v0.17.0 — BSD 3-Clause License; Copyright 2009 The Go
+  Authors. [Upstream license](https://github.com/golang/sync/blob/v0.17.0/LICENSE)
+- golang.org/x/text v0.29.0 — BSD 3-Clause License; Copyright 2009 The Go
+  Authors. [Upstream license](https://github.com/golang/text/blob/v0.29.0/LICENSE)
+
+MIT license excerpt: permission is granted to deal in the software without
+restriction, provided the copyright and permission notices are included in
+copies or substantial portions; the software is provided without warranty.
+BSD 3-Clause license excerpt: source and binary redistributions must retain
+the copyright, conditions, and disclaimer; project or contributor names may
+not endorse derived products without prior permission. These summaries do not
+replace the complete license texts.
+
+The Go toolchain and standard library are separately identified in
+docs/dependencies.md under the BSD 3-Clause license. Preserve their upstream
+license terms when redistributing them.
+
+No AMSL code or restricted donor source is included by this task. Reassess this
+file and include exact required notices if future work imports or distributes
+third-party source.
