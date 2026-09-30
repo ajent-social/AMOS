@@ -90,31 +90,46 @@
     ]
   },
   "T1.8": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
+      "Pinned formatting/lint and required real-service test entrypoints integrated.",
+      "Go formatting and golangci-lint 2.13.2 passed with zero issues after gate corrections.",
+      "Required integration target passed across all current packages; absent database produces explicit failure."
     ]
   },
   "T1.10": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
+      "Durable job/outbox implementation reviewed; PostgreSQL claim and empty-queue bugs corrected.",
+      "Real SQL tests passed for concurrent claims, fencing, unknown outcomes and bounded attempts.",
+      "Integrated formatting, lint and tagged tests passed; no remote exactly-once guarantee claimed."
     ]
   },
   "T2.1": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
+      "Pinned OpenAPI 3.1.1 parser and bounded strict operation-policy generator foundation reviewed.",
+      "Negative cases cover missing/unknown metadata, duplicate IDs, unsafe refs/cycles, version and resource bounds, and unowned-file preservation.",
+      "Integrated tests and lint passed; manifest generation does not qualify MCP clients or full transport generation."
     ]
   },
   "T3.2": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Identity persistence and migration fragment reviewed against installation/application scope.",
+      "Real PostgreSQL race suite passed after collision fixtures were corrected to share the intended scope.",
+      "Integrated lint and tagged suite passed; authentication HTTP methods and provider qualification remain future tasks."
+    ]
+  },
+  "T1.11": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Prerequisites accepted; implementation in progress in an isolated ownership scope."
+      "Maintained SES SDK pinned; provider adapter implementation dispatched after durable-job acceptance."
     ]
   }
 }
