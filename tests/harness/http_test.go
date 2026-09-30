@@ -63,7 +63,11 @@ func TestHTTPBoundaryFixture(t *testing.T) {
 
 func assertHTTPResponse(t *testing.T, response *http.Response, wantStatus int, wantBody string) {
 	t.Helper()
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Errorf("close fixture response: %v", err)
+		}
+	}()
 	if response.StatusCode != wantStatus {
 		t.Fatalf("HTTP status = %d, want %d", response.StatusCode, wantStatus)
 	}

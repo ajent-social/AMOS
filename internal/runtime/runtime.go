@@ -121,7 +121,10 @@ func validMethod(s string) bool {
 		return false
 	}
 	for _, c := range s {
-		if !(c >= 'A' && c <= 'Z' || strings.ContainsRune("!#$%&'*+-.^_`|~", c) || c >= '0' && c <= '9') {
+		letter := c >= 'A' && c <= 'Z'
+		digit := c >= '0' && c <= '9'
+		punctuation := strings.ContainsRune("!#$%&'*+-.^_`|~", c)
+		if !letter && !digit && !punctuation {
 			return false
 		}
 	}

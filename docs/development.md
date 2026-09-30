@@ -34,3 +34,11 @@ make test-integration
 Integration mode fails when the URL is missing or PostgreSQL is unreachable;
 it never silently skips or substitutes a fixture. Use a disposable database,
 because test cleanup drops its generated `amos_test_…` schemas with `CASCADE`.
+
+## Required Go quality gates
+
+Use `make fmt`, `make lint`, `make test`, and `make test-integration`. The lint tool is pinned to golangci-lint 2.13.2; the checked-in version-2 configuration enables error checks, vet, assignment checks, static analysis, and unused-code checks. Install that exact release from the [official distribution](https://golangci-lint.run/docs/welcome/install/); no command silently installs or substitutes a different tool.
+
+Both whole-module test targets require `AMOS_TEST_DATABASE_URL` and execute durable tests against real PostgreSQL. The integration target also includes tagged HTTP/schema checks. Missing required services fail; product/provider/browser suite selectors that are not implemented fail separately. `make test-api` executes the real HTTP fixture suite, and `make test-browser` executes the pinned Playwright fixture suite after `npm ci --prefix tests/browser`. Fixtures are harness evidence, not a product release.
+
+On a shared build host, check current load and acquire the configured shared build lease before whole-module tests, vet, or lint; release it immediately after the command. Parallel scoped package tests are bounded by the host policy. The script does not assume that every user's computer has a particular host or lease repository.

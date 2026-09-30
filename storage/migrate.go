@@ -147,7 +147,7 @@ func readApplied(ctx context.Context, tx *sql.Tx) ([]appliedMigration, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }() // Iteration errors are checked through rows.Err below.
 	var applied []appliedMigration
 	for rows.Next() {
 		var item appliedMigration
