@@ -1,3 +1,13 @@
+# Current implementation checkpoint
+
+Implementation is authorized and underway. Original AMOS code uses Apache 2.0. All Pulumi programs use Go. The owner has granted full command access and autonomous work; honor that grant and the actual runtime permissions without repeated confirmation questions.
+
+Read `docs/planning/execution-state.json` before dispatch. Accepted foundation tasks: T1.1, T1.2, T1.3, T1.4, T1.6, T15.1. Active work: T1.5, T1.7, T2.2, T3.1. The Go module, isolated PostgreSQL harness, durable migration ledger, strict contract schemas, artifact hygiene checker, and security inventory are integrated. Full current Go tests and vet pass with a required test database. No runnable complete app or production release is claimed yet.
+
+Use isolated task worktrees and atomic task claims. Shared builds require the build lease and load check. Recover failed worker turns explicitly; do not assume a running model survives connection failure. Three inexpensive-model workers plus an integrator is the current harness capacity. Preserve existing work and do not certify future controls from document validators.
+
+The historical planning handoff below explains architecture and full inventory; its planning-only status is superseded by this checkpoint.
+
 # Resume AMOS work
 
 This is a public, self-contained handoff. Product implementation has not been claimed by the planning artifacts.

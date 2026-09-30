@@ -13,3 +13,7 @@ The target experience is `amos init` followed by a reviewed `amos deploy`: a com
 - [AMSL reuse strategy](docs/planning/amsl-boundary.md)
 
 The public record contains no private application source or customer information. Dependency and original-work licensing/publication decisions are tracked in the plan before code imports or release.
+
+## Implementation status
+
+The foundation now includes the Go module, real PostgreSQL test harness and transactional migrations, strict configuration/policy schemas, and public-artifact checks. The complete application, developer commands, cloud deployments, and provider integrations remain under construction. See [development prerequisites](docs/development.md), [migration behavior](docs/migrations.md), and [current roadmap](docs/roadmap.md).

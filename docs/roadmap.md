@@ -12,10 +12,14 @@ Initial architecture and exhaustive staged plan have been drafted and structural
 
 ## In flight
 
-- T1.1: module and real PostgreSQL isolation harness in an isolated worker.
-- T1.2: cross-lane semantics and strict configuration/policy schemas in an isolated worker.
-- T1.4: public dependency and provenance qualification in an isolated worker.
-- Coordinator: persistent execution-state rendering and independent integration review.
+- T1.5: real API/browser test entrypoints.
+- T1.7: Apache 2.0 license, notices, and contributor/security instructions.
+- T2.2: application composition and shared/business routing.
+- T3.1: identity policy drafting and independent review.
+
+## Integrated foundation
+
+T1.1, T1.2, T1.3, T1.4, T1.6, and T15.1 have accepted task evidence. The current integrated Go suite and vet pass; migration checks use real PostgreSQL. This is foundation code, not a released SaaS app. Execution state is the per-task authority.
 
 ## Planned
 

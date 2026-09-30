@@ -36,10 +36,12 @@
     ]
   },
   "T1.3": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "PostgreSQL migration foundation dispatched after module and contract acceptance."
+      "Transactional PostgreSQL storage and ordered checksum migration ledger reviewed and integrated.",
+      "Real database tests passed for concurrent/repeated application, checksum mismatch, rollback, and durable ledger protection.",
+      "Integrated Go suite and vet passed under the shared build lease."
     ]
   },
   "T1.5": {
@@ -50,10 +52,33 @@
     ]
   },
   "T15.1": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Threat boundaries and control matrix independently reviewed and integrated.",
+      "Matrix validation passed including rejected missing-boundary and unowned-critical-control mutations.",
+      "Controls remain NOT_IMPLEMENTED; no runtime security certification claimed."
+    ]
+  },
+  "T1.7": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Dispatched after prerequisite acceptance; independent review pending."
+      "Implementation or policy drafting in an isolated worktree; review and acceptance pending."
+    ]
+  },
+  "T2.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Implementation or policy drafting in an isolated worktree; review and acceptance pending."
+    ]
+  },
+  "T3.1": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Implementation or policy drafting in an isolated worktree; review and acceptance pending."
     ]
   }
 }
