@@ -1,6 +1,14 @@
 // Package store provides transaction-scoped PostgreSQL persistence for
 // personal and organization workspaces. Authorization belongs to callers;
 // selectors and IDs passed here are never treated as proof of authority.
+// Account disablement may retain an active membership row for audit and
+// recovery, but reads used for business access reject disabled people and
+// callers must always check current person state at the authorization boundary.
+// Mutations acquire identity-person rows before workspace rows. Callers that
+// compose several resources in one transaction must use stable ascending ID
+// order; external SQL with a different order can deadlock and PostgreSQL will
+// abort one whole transaction. The person-disable owner trigger also locks
+// affected workspaces in UUID order.
 package store
 
 import (
@@ -98,6 +106,9 @@ func (s *Store) CreatePersonalWorkspace(ctx context.Context, in CreatePersonalIn
 	if !s.valid(ctx) || !validID(in.ID) || !validScope(in.Scope) || !validID(in.OwnerPersonID) {
 		return Workspace{}, ErrInvalidInput
 	}
+	if err := s.lockActivePerson(ctx, in.Scope, in.OwnerPersonID); err != nil {
+		return Workspace{}, err
+	}
 	var w Workspace
 	err := s.tx.QueryRowContext(ctx, `INSERT INTO workspaces (id,installation_id,application_id,kind,state,personal_owner_id)
 		SELECT $1,p.installation_id,p.application_id,'personal','active',p.id FROM identity_persons p
@@ -116,6 +127,9 @@ func (s *Store) CreatePersonalWorkspace(ctx context.Context, in CreatePersonalIn
 func (s *Store) CreateOrganizationWorkspace(ctx context.Context, in CreateOrganizationInput) (Workspace, Membership, error) {
 	if !s.valid(ctx) || !validID(in.ID) || !validID(in.OwnerMembershipID) || !validScope(in.Scope) || !validID(in.OwnerPersonID) {
 		return Workspace{}, Membership{}, ErrInvalidInput
+	}
+	if err := s.lockActivePerson(ctx, in.Scope, in.OwnerPersonID); err != nil {
+		return Workspace{}, Membership{}, err
 	}
 	var w Workspace
 	err := s.tx.QueryRowContext(ctx, `INSERT INTO workspaces (id,installation_id,application_id,kind,state)
@@ -143,6 +157,9 @@ func (s *Store) CreateOrganizationWorkspace(ctx context.Context, in CreateOrgani
 func (s *Store) AddMembership(ctx context.Context, in AddMembershipInput) (Membership, error) {
 	if !s.valid(ctx) || !validID(in.ID) || !validScope(in.Scope) || !validID(in.WorkspaceID) || !validID(in.PersonID) || !validRole(in.Role) || in.RoleVersion < 1 {
 		return Membership{}, ErrInvalidInput
+	}
+	if err := s.lockActivePerson(ctx, in.Scope, in.PersonID); err != nil {
+		return Membership{}, err
 	}
 	if err := s.lockActiveOrganization(ctx, in.Scope, in.WorkspaceID); err != nil {
 		return Membership{}, err
@@ -178,6 +195,9 @@ func (s *Store) insertMembership(ctx context.Context, m Membership) error {
 func (s *Store) UpdateMembership(ctx context.Context, in UpdateMembershipInput) (Membership, error) {
 	if !s.valid(ctx) || !validScope(in.Scope) || !validID(in.WorkspaceID) || !validID(in.PersonID) || !validRole(in.Role) || in.RoleVersion < 1 || !validMembershipState(in.State) {
 		return Membership{}, ErrInvalidInput
+	}
+	if err := s.lockPerson(ctx, in.Scope, in.PersonID); err != nil {
+		return Membership{}, err
 	}
 	if err := s.lockWorkspace(ctx, in.Scope, in.WorkspaceID); err != nil {
 		return Membership{}, err
@@ -237,7 +257,17 @@ func (s *Store) FindMembership(ctx context.Context, scope Scope, workspaceID, pe
 	if !s.valid(ctx) || !validScope(scope) || !validID(workspaceID) || !validID(personID) {
 		return Membership{}, ErrInvalidInput
 	}
-	return s.getMembership(ctx, scope, workspaceID, personID)
+	var m Membership
+	err := s.tx.QueryRowContext(ctx, `SELECT m.id,m.installation_id,m.application_id,m.workspace_id,m.person_id,m.role_key,m.role_version,m.state,m.membership_epoch,m.created_at,m.updated_at
+		FROM workspace_memberships m JOIN identity_persons p ON p.id=m.person_id AND p.installation_id=m.installation_id AND p.application_id=m.application_id
+		WHERE m.installation_id=$1 AND m.application_id=$2 AND m.workspace_id=$3 AND m.person_id=$4 AND p.state='active'`, scope.InstallationID, scope.ApplicationID, workspaceID, personID).Scan(&m.ID, &m.Scope.InstallationID, &m.Scope.ApplicationID, &m.WorkspaceID, &m.PersonID, &m.Role, &m.RoleVersion, &m.State, &m.Epoch, &m.CreatedAt, &m.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Membership{}, ErrMembershipUnavailable
+	}
+	if err != nil {
+		return Membership{}, ErrPersistence
+	}
+	return m, nil
 }
 
 func (s *Store) ReadWorkspaceEpoch(ctx context.Context, scope Scope, id uuid.UUID) (int64, error) {
@@ -260,7 +290,7 @@ func (s *Store) ReadMembershipEpoch(ctx context.Context, scope Scope, workspaceI
 		return 0, ErrInvalidInput
 	}
 	var epoch int64
-	err := s.tx.QueryRowContext(ctx, `SELECT membership_epoch FROM workspace_memberships WHERE installation_id=$1 AND application_id=$2 AND workspace_id=$3 AND person_id=$4 AND state='active'`, scope.InstallationID, scope.ApplicationID, workspaceID, personID).Scan(&epoch)
+	err := s.tx.QueryRowContext(ctx, `SELECT m.membership_epoch FROM workspace_memberships m JOIN identity_persons p ON p.id=m.person_id AND p.installation_id=m.installation_id AND p.application_id=m.application_id WHERE m.installation_id=$1 AND m.application_id=$2 AND m.workspace_id=$3 AND m.person_id=$4 AND m.state='active' AND p.state='active'`, scope.InstallationID, scope.ApplicationID, workspaceID, personID).Scan(&epoch)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, ErrMembershipUnavailable
 	}
@@ -291,6 +321,31 @@ func (s *Store) lockWorkspace(ctx context.Context, scope Scope, id uuid.UUID) er
 	}
 	if err != nil {
 		return ErrPersistence
+	}
+	return nil
+}
+func (s *Store) lockPerson(ctx context.Context, scope Scope, id uuid.UUID) error {
+	var state string
+	err := s.tx.QueryRowContext(ctx, `SELECT state FROM identity_persons WHERE id=$1 AND installation_id=$2 AND application_id=$3 FOR SHARE`, id, scope.InstallationID, scope.ApplicationID).Scan(&state)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrPersonUnavailable
+	}
+	if err != nil {
+		return ErrPersistence
+	}
+	return nil
+}
+func (s *Store) lockActivePerson(ctx context.Context, scope Scope, id uuid.UUID) error {
+	var state string
+	err := s.tx.QueryRowContext(ctx, `SELECT state FROM identity_persons WHERE id=$1 AND installation_id=$2 AND application_id=$3 FOR SHARE`, id, scope.InstallationID, scope.ApplicationID).Scan(&state)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrPersonUnavailable
+	}
+	if err != nil {
+		return ErrPersistence
+	}
+	if state != "active" {
+		return ErrPersonUnavailable
 	}
 	return nil
 }

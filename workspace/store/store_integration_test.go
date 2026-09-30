@@ -17,6 +17,7 @@ import (
 	"github.com/ajent-social/amos/storage"
 	workspacestore "github.com/ajent-social/amos/workspace/store"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func TestT4_2_TenantScopedWorkspacesMembershipAndPersonalUniqueness(t *testing.T) {
@@ -232,6 +233,98 @@ func TestT4_2_ConcurrentOwnerDisablementsCannotWriteSkew(t *testing.T) {
 	}
 	if activeOwners != 1 {
 		t.Fatalf("active person owner count=%d, want one", activeOwners)
+	}
+}
+
+func TestT4_2_DisabledOrdinaryMemberRowIsRetainedButCannotAuthorize(t *testing.T) {
+	db, scope, owner, member := newWorkspaceDB(t)
+	org := createOrg(t, db, scope, owner)
+	addMember(t, db, scope, org.ID, member, workspacestore.RoleMember)
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(context.Background(), `UPDATE identity_persons SET state='administratively_disabled' WHERE id=$1`, member)
+		return err
+	}); err != nil {
+		t.Fatalf("disable ordinary member: %v", err)
+	}
+	if _, err := getMembership(t, db, scope, org.ID, member); !errors.Is(err, workspacestore.ErrMembershipUnavailable) {
+		t.Fatalf("disabled person's membership read=%v, want unavailable", err)
+	}
+	err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		s, err := workspacestore.New(tx)
+		if err != nil {
+			return err
+		}
+		_, err = s.ReadMembershipEpoch(context.Background(), scope, org.ID, member)
+		return err
+	})
+	if !errors.Is(err, workspacestore.ErrMembershipUnavailable) {
+		t.Fatalf("disabled person's membership epoch read=%v", err)
+	}
+	var retained int
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(context.Background(), `SELECT count(*) FROM workspace_memberships WHERE installation_id=$1 AND application_id=$2 AND workspace_id=$3 AND person_id=$4 AND state='active'`, scope.InstallationID, scope.ApplicationID, org.ID, member).Scan(&retained)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if retained != 1 {
+		t.Fatalf("active membership audit row count=%d, want retained row", retained)
+	}
+}
+
+func TestT4_2_MembershipAdmissionLocksPersonAgainstDisable(t *testing.T) {
+	db, scope, owner, member := newWorkspaceDB(t)
+	org := createOrg(t, db, scope, owner)
+	acquired := make(chan struct{})
+	release := make(chan struct{})
+	result := make(chan error, 1)
+	membershipID := newID(t)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		result <- db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			s, err := workspacestore.New(tx)
+			if err != nil {
+				return err
+			}
+			if _, err = s.AddMembership(ctx, workspacestore.AddMembershipInput{ID: membershipID, Scope: scope, WorkspaceID: org.ID, PersonID: member, Role: workspacestore.RoleMember, RoleVersion: 1}); err != nil {
+				return err
+			}
+			close(acquired)
+			<-release
+			return nil
+		})
+	}()
+	select {
+	case <-acquired:
+	case err := <-result:
+		t.Fatalf("membership did not reach locked transaction: %v", err)
+	case <-time.After(15 * time.Second):
+		t.Fatal("timed out waiting for membership transaction")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	lockErr := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		var id uuid.UUID
+		return tx.QueryRowContext(ctx, `SELECT id FROM identity_persons WHERE id=$1 FOR UPDATE NOWAIT`, member).Scan(&id)
+	})
+	cancel()
+	var pgErr *pgconn.PgError
+	if !errors.As(lockErr, &pgErr) || pgErr.Code != "55P03" {
+		close(release)
+		<-result
+		t.Fatalf("person update lock did not conflict with admission's FOR SHARE: %v", lockErr)
+	}
+	close(release)
+	if err := <-result; err != nil {
+		t.Fatalf("commit membership after admission serialized: %v", err)
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(context.Background(), `UPDATE identity_persons SET state='administratively_disabled' WHERE id=$1`, member)
+		return err
+	}); err != nil {
+		t.Fatalf("disable ordinary member after admission: %v", err)
+	}
+	if _, err := getMembership(t, db, scope, org.ID, member); !errors.Is(err, workspacestore.ErrMembershipUnavailable) {
+		t.Fatalf("membership lookup after person disable=%v, want unavailable", err)
 	}
 }
 

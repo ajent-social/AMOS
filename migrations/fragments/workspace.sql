@@ -88,6 +88,7 @@ DECLARE target_workspace UUID;
 DECLARE target_kind TEXT;
 DECLARE target_person UUID;
 DECLARE target_state TEXT;
+DECLARE person_state TEXT;
 BEGIN
     IF TG_OP = 'DELETE' THEN
         target_workspace := OLD.workspace_id;
@@ -102,10 +103,13 @@ BEGIN
     IF target_kind IS NOT NULL AND target_kind <> 'organization' THEN
         RAISE EXCEPTION 'memberships are only valid for organization workspaces' USING ERRCODE = 'check_violation';
     END IF;
-    IF TG_OP <> 'DELETE' AND target_state = 'active' AND NOT EXISTS (
-        SELECT 1 FROM identity_persons p WHERE p.id = target_person AND p.state = 'active'
-    ) THEN
-        RAISE EXCEPTION 'active membership requires an active person' USING ERRCODE = 'check_violation';
+    IF TG_OP <> 'DELETE' AND target_state = 'active' THEN
+        -- FOR SHARE conflicts with identity state updates; admission and
+        -- account disable therefore serialize around the person's current row.
+        SELECT state INTO person_state FROM identity_persons WHERE id = target_person FOR SHARE;
+        IF person_state IS DISTINCT FROM 'active' THEN
+            RAISE EXCEPTION 'active membership requires an active person' USING ERRCODE = 'check_violation';
+        END IF;
     END IF;
     IF TG_OP = 'DELETE' THEN
         RETURN OLD;
@@ -171,6 +175,7 @@ BEGIN
         JOIN workspaces w ON w.id = m.workspace_id
         WHERE m.person_id = NEW.id AND m.role_key = 'owner' AND m.state = 'active'
           AND w.kind = 'organization' AND w.state = 'active'
+        ORDER BY m.workspace_id
     LOOP
         PERFORM workspace_assert_active_organization_owner(target_workspace);
     END LOOP;
