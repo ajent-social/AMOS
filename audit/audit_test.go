@@ -34,6 +34,14 @@ func TestValidateRejectsArbitraryMetadata(t *testing.T) {
 	}
 }
 
+func TestValidateRequiresRFC4122Variant(t *testing.T) {
+	event := validEvent(t)
+	event.WorkspaceID = nonRFCVariant(t)
+	if err := audit.Validate(event); !errors.Is(err, audit.ErrInvalidEvent) {
+		t.Fatalf("non-RFC UUID variant result=%v", err)
+	}
+}
+
 func validEvent(t *testing.T) audit.Event {
 	t.Helper()
 	newID := func() uuid.UUID {
@@ -49,4 +57,17 @@ func validEvent(t *testing.T) audit.Event {
 		ResourceType: audit.ResourceMaterial, ResourceID: newID(), Outcome: audit.OutcomeSucceeded,
 		CorrelationID: newID(), Attributes: []audit.Attribute{{Key: "category", Value: "secret"}, {Key: "state", Value: "created"}},
 	}
+}
+
+func nonRFCVariant(t *testing.T) uuid.UUID {
+	t.Helper()
+	id, err := uuid.NewV7()
+	if err != nil {
+		t.Fatal("generate synthetic UUIDv7")
+	}
+	id[8] = (id[8] & 0x3f) | 0x40
+	if id.Version() != 7 || id.Variant() == uuid.RFC4122 {
+		t.Fatal("invalid-variant UUID fixture is malformed")
+	}
+	return id
 }

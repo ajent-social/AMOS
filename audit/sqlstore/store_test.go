@@ -88,6 +88,11 @@ func TestAppendSharesMutationTransactionAndScopeCannotEnumerate(t *testing.T) {
 	if err != nil || len(denied) != 0 {
 		t.Fatalf("other-application result count=%d err=%v", len(denied), err)
 	}
+	badScope := scopeFor(event)
+	badScope.WorkspaceID = nonRFCVariant(t)
+	if _, err := store.List(ctx, badScope, nil, 10); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("non-RFC scope variant result=%v", err)
+	}
 	restricted, err := New(db, testAuthorizer{allowed: scopeFor(event)}, testAuthorizer{allowed: scopeFor(event)}, testActorResolver{actor: actor})
 	if err != nil {
 		t.Fatal("construct authorized audit reader")
@@ -198,6 +203,16 @@ func TestAppendRejectsUnsafeMetadataWithoutDatabaseWrite(t *testing.T) {
 			t.Fatal("database audit guard accepted or echoed unsafe metadata")
 		}
 	}
+	badActor := nonRFCVariant(t)
+	_, err = db.ExecContext(context.Background(), `INSERT INTO amos_security_audit_events
+		(id,installation_id,application_id,environment_id,workspace_id,actor_kind,actor_id,action,resource_type,resource_id,outcome,correlation_id,attributes)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb)`,
+		newID(t), event.InstallationID, event.ApplicationID, event.EnvironmentID, event.WorkspaceID,
+		actor.Kind, badActor, event.Action, event.ResourceType, event.ResourceID,
+		event.Outcome, event.CorrelationID, `[]`)
+	if err == nil {
+		t.Fatal("database accepted a non-RFC UUID variant")
+	}
 	assertCount(t, db, "amos_security_audit_events", 0)
 }
 
@@ -273,6 +288,16 @@ func newID(t *testing.T) uuid.UUID {
 	id, err := uuid.NewV7()
 	if err != nil {
 		t.Fatal("generate synthetic UUIDv7")
+	}
+	return id
+}
+
+func nonRFCVariant(t *testing.T) uuid.UUID {
+	t.Helper()
+	id := newID(t)
+	id[8] = (id[8] & 0x3f) | 0x40
+	if id.Version() != 7 || id.Variant() == uuid.RFC4122 {
+		t.Fatal("invalid-variant UUID fixture is malformed")
 	}
 	return id
 }

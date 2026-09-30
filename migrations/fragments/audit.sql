@@ -1,22 +1,22 @@
 -- Security audit events are immutable, tenant-scoped records. The integrator
 -- assigns this fragment's single global migration sequence in the registry.
 CREATE TABLE amos_security_audit_events (
-    id uuid PRIMARY KEY CHECK (get_byte(uuid_send(id), 6) >> 4 = 7),
-    installation_id uuid NOT NULL CHECK (get_byte(uuid_send(installation_id), 6) >> 4 = 7),
-    application_id uuid NOT NULL CHECK (get_byte(uuid_send(application_id), 6) >> 4 = 7),
-    environment_id uuid NOT NULL CHECK (get_byte(uuid_send(environment_id), 6) >> 4 = 7),
-    workspace_id uuid NOT NULL CHECK (get_byte(uuid_send(workspace_id), 6) >> 4 = 7),
+    id uuid PRIMARY KEY CHECK (get_byte(uuid_send(id), 6) >> 4 = 7 AND substring(id::text, 20, 1) IN ('8', '9', 'a', 'b')),
+    installation_id uuid NOT NULL CHECK (get_byte(uuid_send(installation_id), 6) >> 4 = 7 AND substring(installation_id::text, 20, 1) IN ('8', '9', 'a', 'b')),
+    application_id uuid NOT NULL CHECK (get_byte(uuid_send(application_id), 6) >> 4 = 7 AND substring(application_id::text, 20, 1) IN ('8', '9', 'a', 'b')),
+    environment_id uuid NOT NULL CHECK (get_byte(uuid_send(environment_id), 6) >> 4 = 7 AND substring(environment_id::text, 20, 1) IN ('8', '9', 'a', 'b')),
+    workspace_id uuid NOT NULL CHECK (get_byte(uuid_send(workspace_id), 6) >> 4 = 7 AND substring(workspace_id::text, 20, 1) IN ('8', '9', 'a', 'b')),
     actor_kind text NOT NULL CHECK (actor_kind IN ('person', 'machine')),
-    actor_id uuid NOT NULL CHECK (get_byte(uuid_send(actor_id), 6) >> 4 = 7),
+    actor_id uuid NOT NULL CHECK (get_byte(uuid_send(actor_id), 6) >> 4 = 7 AND substring(actor_id::text, 20, 1) IN ('8', '9', 'a', 'b')),
     action text NOT NULL CHECK (action IN (
         'material.created', 'material.updated', 'material.revoked',
         'session.issued', 'session.revoked', 'workspace.membership_changed',
         'policy.grant_changed', 'security.access_denied'
     )),
     resource_type text NOT NULL CHECK (resource_type IN ('material', 'session', 'workspace', 'grant', 'credential')),
-    resource_id uuid NOT NULL CHECK (get_byte(uuid_send(resource_id), 6) >> 4 = 7),
+    resource_id uuid NOT NULL CHECK (get_byte(uuid_send(resource_id), 6) >> 4 = 7 AND substring(resource_id::text, 20, 1) IN ('8', '9', 'a', 'b')),
     outcome text NOT NULL CHECK (outcome IN ('succeeded', 'denied', 'unavailable')),
-    correlation_id uuid NOT NULL CHECK (get_byte(uuid_send(correlation_id), 6) >> 4 = 7),
+    correlation_id uuid NOT NULL CHECK (get_byte(uuid_send(correlation_id), 6) >> 4 = 7 AND substring(correlation_id::text, 20, 1) IN ('8', '9', 'a', 'b')),
     attributes jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(attributes) = 'array' AND jsonb_array_length(attributes) <= 4),
     created_at timestamptz NOT NULL DEFAULT transaction_timestamp()
 );

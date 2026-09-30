@@ -114,7 +114,7 @@ func (s *Store) AppendTx(ctx context.Context, tx *sql.Tx, event audit.Event) (au
 // conveys no record-existence information. Callers must authorize the current
 // principal and workspace membership before invoking List.
 func (s *Store) List(ctx context.Context, scope audit.Scope, cursor *audit.Cursor, limit int) ([]audit.Record, error) {
-	if s == nil || s.db == nil || ctx == nil || !validScope(scope) || limit < 1 || limit > audit.MaxPageSize || cursor != nil && (cursor.CreatedAt.IsZero() || cursor.ID == uuid.Nil || cursor.ID.Version() != 7) {
+	if s == nil || s.db == nil || ctx == nil || !validScope(scope) || limit < 1 || limit > audit.MaxPageSize || cursor != nil && (cursor.CreatedAt.IsZero() || !validID(cursor.ID)) {
 		return nil, ErrInvalidQuery
 	}
 	if s.reader == nil {
@@ -139,7 +139,7 @@ func (s *Store) List(ctx context.Context, scope audit.Scope, cursor *audit.Curso
 	if err != nil {
 		return nil, unavailable(err)
 	}
-	defer func() { _ = rows.Close() }() // rows.Err is checked below; preserve the primary query failure.
+	defer func() { _ = rows.Close() }()
 	result := make([]audit.Record, 0, limit)
 	for rows.Next() {
 		record, scanErr := scanRecord(rows)
@@ -150,6 +150,9 @@ func (s *Store) List(ctx context.Context, scope audit.Scope, cursor *audit.Curso
 	}
 	if rows.Err() != nil {
 		return nil, unavailable(rows.Err())
+	}
+	if err := rows.Close(); err != nil {
+		return nil, unavailable(err)
 	}
 	return result, nil
 }
@@ -186,8 +189,10 @@ func scanRecord(row rowScanner) (audit.Record, error) {
 }
 
 func validScope(scope audit.Scope) bool {
-	return scope.InstallationID != uuid.Nil && scope.InstallationID.Version() == 7 &&
-		scope.ApplicationID != uuid.Nil && scope.ApplicationID.Version() == 7 &&
-		scope.EnvironmentID != uuid.Nil && scope.EnvironmentID.Version() == 7 &&
-		scope.WorkspaceID != uuid.Nil && scope.WorkspaceID.Version() == 7
+	return validID(scope.InstallationID) && validID(scope.ApplicationID) &&
+		validID(scope.EnvironmentID) && validID(scope.WorkspaceID)
+}
+
+func validID(id uuid.UUID) bool {
+	return id != uuid.Nil && id.Version() == 7 && id.Variant() == uuid.RFC4122
 }

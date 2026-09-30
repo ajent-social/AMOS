@@ -164,7 +164,9 @@ func ValidActor(actor Actor) bool {
 	return validID(actor.ID) && (actor.Kind == ActorPerson || actor.Kind == ActorMachine)
 }
 
-func validID(id uuid.UUID) bool { return id != uuid.Nil && id.Version() == 7 }
+func validID(id uuid.UUID) bool {
+	return id != uuid.Nil && id.Version() == 7 && id.Variant() == uuid.RFC4122
+}
 
 func validAction(value Action) bool {
 	switch value {
