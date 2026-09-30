@@ -148,10 +148,12 @@
     ]
   },
   "T3.3": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Implementation assigned to an isolated Luna task worktree; acceptance pending integration review."
+      "Immutable scoped principal and opaque session lifecycle independently reviewed.",
+      "Real PostgreSQL race tests passed for rotation, CSRF, signout, expiry, security epoch, account disablement and database outage.",
+      "Integrated lint and current database suite passed; elevated assurance persistence remains staged and middleware supplies AAL1 only."
     ]
   },
   "T4.2": {
@@ -166,6 +168,21 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Isolated Luna implementation assigned; integration and real-service verification pending."
+    ]
+  },
+  "T1.9": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Bounded T1.1 Luna trial reconciled against accepted execution evidence; independent review found no required correction.",
+      "Unresolved semantic-dependency fixture rejected by plan validation; remaining tasks remain individually uncertified."
+    ]
+  },
+  "T3.4": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Maintained Argon2 wrapper under independent security review; review corrections being verified."
     ]
   }
 }
