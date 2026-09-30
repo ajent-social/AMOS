@@ -1,0 +1,18 @@
+# Reuse and qualification matrix
+
+Status: source-informed candidate review, recorded 2026-09-29. No item below is claimed as an AMOS dependency or as security-mature. The AMOS checkout has no application code, dependency manifest, or consumer tests; therefore no shared capability reaches the consumer-qualified tier.
+
+| Public source | Potential reuse | Source, release, license and evidence state | AMOS verdict / remaining gate |
+|---|---|---|---|
+| [ajent-social/go](https://github.com/ajent-social/go) | Go identity, credentials, billing, usage and tenancy packages listed in the boundary proposal | Public repository link is known. No immutable version/revision, package-by-package license inventory, supported API contract, or AMOS consumer evidence is recorded in this task. | **Candidate.** Select only narrowly scoped packages after checking the actual public source, notices, package tests, threat boundaries and consumer behavior. |
+| [ajent-social/pulumi](https://github.com/ajent-social/pulumi) | AWS deployment components; Cloudflare DNS alias | Public repository link is known. No immutable component version/revision, exact license/notice review, selected topology, deployment test, or AMOS integration evidence is recorded here. | **Candidate.** Qualify the exact component and configuration against the selected AWS/Cloudflare topology, state/credential boundaries, and live isolation requirements. |
+| [ajent-social/capabilities](https://github.com/ajent-social/capabilities) | Shared capability contracts/catalog | Public [bootstrap RFC](https://github.com/ajent-social/capabilities/blob/main/docs/rfc/0001-amsl-bootstrap.md) gives architectural context. No immutable release, license inventory, or AMOS consumer evidence is recorded here. | **Candidate/reference.** A catalog or RFC establishes intent, not executable or production qualification. |
+| [ajent-social/workflows](https://github.com/ajent-social/workflows) | Reusable validation, release, container and preview workflows | Public repository link is known. No immutable action/workflow revision, exact license/notice review, caller-boundary test, or AMOS workflow evidence is recorded here. | **Candidate.** Pin exact reusable workflow commits and verify event trust, permissions, runner/builder selection and privileged credential boundaries in the AMOS caller. |
+| Go standard library | Baseline language/runtime packages | Go 1.27.1 is locally present; official distribution and license evidence are recorded in [dependencies](dependencies.md). | **Selected baseline.** Specific application use remains unimplemented and untested. |
+| `jackc/pgx` | PostgreSQL protocol driver and toolkit | Public upstream states MIT and publishes v5.10.0 in its changelog; details and links are in [dependencies](dependencies.md). No AMOS pin or database consumer check. | **Candidate only.** Pin after design choice; qualify TLS/authentication, pool behavior, supported server range, transitive notices and real PostgreSQL paths. |
+
+## Reuse decision
+
+Reuse is preferred where a public, versioned shared capability satisfies the contract and its consumer evidence fits AMOS. This inventory does not approve wholesale adoption, code copying, or a maturity/security claim. No source was copied into AMOS. Restricted donor material remains excluded pending the separately required source and publication clearance.
+
+The highest-value next comparison is the actual database boundary once the owner selects its topology and repository implementation tasks add a module manifest. Then compare pgx and standard-library-facing options against concrete transaction, pooling, migration and failure requirements; avoid adding an abstraction before that comparison.
