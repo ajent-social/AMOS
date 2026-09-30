@@ -19,17 +19,20 @@
     ]
   },
   "T1.4": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dispatched to an isolated implementation worker; acceptance pending independent review."
+      "Selected Go and PostgreSQL dependencies pinned with license and checksum provenance.",
+      "Apache 2.0 original-work choice recorded; restricted source excluded; AMSL candidates remain subject to consumer qualification.",
+      "Inventory reviewed and repository artifact scan passed."
     ]
   },
   "T1.6": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Artifact hygiene checker dispatched after reviewed module acceptance."
+      "Public artifact checker independently reviewed and integrated after canonical loopback correction.",
+      "Six positive and negative hygiene tests passed; entire merged checkout scan passed without matched-value disclosure."
     ]
   },
   "T1.3": {
@@ -37,6 +40,20 @@
     "certification": "NOT_RUN",
     "evidence": [
       "PostgreSQL migration foundation dispatched after module and contract acceptance."
+    ]
+  },
+  "T1.5": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dispatched after prerequisite acceptance; independent review pending."
+    ]
+  },
+  "T15.1": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dispatched after prerequisite acceptance; independent review pending."
     ]
   }
 }
