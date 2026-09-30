@@ -10,10 +10,12 @@
     ]
   },
   "T1.2": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dispatched to an isolated implementation worker; acceptance pending independent review."
+      "Frozen amos-contract-v1 reviewed and integrated after corrections.",
+      "Two strict JSON Schemas and twelve accepted/rejected fixtures independently passed.",
+      "OpenAPI 3.1.1 baseline; generator qualification remains required."
     ]
   },
   "T1.4": {
@@ -28,6 +30,13 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Artifact hygiene checker dispatched after reviewed module acceptance."
+    ]
+  },
+  "T1.3": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "PostgreSQL migration foundation dispatched after module and contract acceptance."
     ]
   }
 }
