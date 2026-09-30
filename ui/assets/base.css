@@ -1,0 +1,22 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+body { margin: 0 auto; max-width: 64rem; padding: 1rem; }
+a, button, input, [tabindex="-1"] { border-radius: .2rem; }
+a:focus-visible, button:focus-visible, input:focus-visible, main:focus-visible, .error-summary:focus-visible {
+  outline: .2rem solid #2563eb;
+  outline-offset: .2rem;
+}
+.skip-link { position: absolute; left: -10000px; top: 0; }
+.skip-link:focus { left: 1rem; top: 1rem; z-index: 2; background: Canvas; padding: .5rem; }
+.site-header { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; border-bottom: 1px solid currentColor; padding-bottom: .75rem; }
+.site-header nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+main { padding-block: 1rem; }
+form { display: grid; gap: .75rem; max-width: 32rem; }
+input, button { font: inherit; padding: .5rem; }
+.error-summary, .flash-error, .field-error { border-inline-start: .25rem solid #b91c1c; padding: .5rem .75rem; }
+.flash-status { border-inline-start: .25rem solid #15803d; padding: .5rem .75rem; }
+footer { margin-top: 2rem; border-top: 1px solid currentColor; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
