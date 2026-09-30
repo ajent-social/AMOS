@@ -235,5 +235,14 @@
       "Cloud-disabled local case corrected to omit deployment profile; explicit production profiles remain separate.",
       "Executable validator/generator and deployment qualification remain downstream."
     ]
+  },
+  "T4.3": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Integrator reviewed principal-bound bootstrap and current person/security-epoch transaction checks.",
+      "Real PostgreSQL race tests passed for concurrent idempotency, owner/scope mismatch, rollback and repair-needed workspace state.",
+      "Disposable owner-mismatch mutation failed the negative test and was restored; scoped vet/lint passed."
+    ]
   }
 }
