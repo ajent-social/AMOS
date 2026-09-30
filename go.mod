@@ -4,7 +4,10 @@ go 1.27.0
 
 toolchain go1.27.1
 
-require github.com/jackc/pgx/v5 v5.11.0
+require (
+	github.com/google/uuid v1.6.0
+	github.com/jackc/pgx/v5 v5.11.0
+)
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
