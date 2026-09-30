@@ -35,7 +35,7 @@ case "$mode" in
     run_go_tests ./tests/harness
     ;;
   integration)
-    if [[ ! -v AMOS_TEST_DATABASE_URL ]] || [[ -z "$AMOS_TEST_DATABASE_URL" ]]; then
+    if [[ -z "${AMOS_TEST_DATABASE_URL+x}" ]] || [[ -z "$AMOS_TEST_DATABASE_URL" ]]; then
       printf 'AMOS_TEST_DATABASE_URL is required for the API integration suite.\n' >&2
       exit 2
     fi
