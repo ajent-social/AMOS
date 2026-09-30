@@ -1,0 +1,11 @@
+{
+  "name": "amos-browser-harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:fixtures": "playwright test --config=playwright.config.ts --project=chromium --grep=@fixtures"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
