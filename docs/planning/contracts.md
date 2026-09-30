@@ -1,6 +1,6 @@
 # Cross-lane semantic contracts
 
-Date: 2026-09-30 UTC. Contract: `amos-contract-v1`. Status: frozen for implementation; root review pending. This is a design contract, not evidence that runtime code, providers, release gates, or certification exist. Amendments require an ADR, an integrator review, a version increment, and updates to affected task acceptance criteria before those tasks dispatch. Patch releases clarify wording without changing wire or storage meaning; any semantic or compatibility change increments the minor contract version and calls out migration needs.
+Date: 2026-09-30 UTC. Contract: `amos-contract-v1`. Status: frozen for implementation; foundation reconciliation reviewed. This is a design contract, not evidence that runtime code, providers, release gates, or certification exist. Amendments require an ADR, an integrator review, a version increment, and updates to affected task acceptance criteria before those tasks dispatch. Patch releases clarify wording without changing wire or storage meaning; any semantic or compatibility change increments the minor contract version and calls out migration needs.
 
 ## Ownership and package shapes
 
