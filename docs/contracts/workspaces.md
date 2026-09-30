@@ -37,6 +37,8 @@ Roles are `owner`, `admin`, and `member`. Role meaning is versioned and defined 
 
 The first release does not introduce customer agent governance or an approval inbox. An independently governed agent uses the same permission, entitlement, and assurance rules. A machine cannot bypass required human proof; it receives the same resumable operation-bound challenge.
 
+All role and person labels in the matrix also permit a machine with an explicit current grant derived from that authority, subject to operation exposure policy. Required human proof remains bound to the machine principal, exact operation/input, and current owner policy; a machine key or old grant is not that proof. Authentication-secret enrollment flows may remain proof challenges rather than accepting secrets through agent tools.
+
 ## Invitations and seats
 
 Only an authorized inviter can create an invitation, and the requested role cannot exceed their allowed assignment authority. Invitations bind installation/application, organization, a canonical intended recipient, intended role, expiry, inviter, and purpose. Secrets are random, stored only as digests, and never logged. Initial expiry is seven days, owner policy may shorten it, and accepted/revoked/expired invitations cannot be replayed. A GET or email preview does not accept an invitation.
