@@ -44,17 +44,19 @@ const (
 type Reason string
 
 const (
-	ReasonEntitled         Reason = "entitled"
-	ReasonEssentialPath    Reason = "essential_path"
-	ReasonFeatureNotInPlan Reason = "feature_not_in_plan"
-	ReasonPermissionDenied Reason = "tenant_permission_denied"
-	ReasonScopeMismatch    Reason = "scope_mismatch"
-	ReasonNoProjection     Reason = "projection_missing"
-	ReasonStaleProjection  Reason = "projection_stale"
-	ReasonUnknownPrice     Reason = "price_unrecognized"
-	ReasonUnconfirmed      Reason = "subscription_unconfirmed"
-	ReasonOutsidePeriod    Reason = "outside_paid_period"
-	ReasonDelinquent       Reason = "delinquent"
+	ReasonEntitled          Reason = "entitled"
+	ReasonEssentialPath     Reason = "essential_path"
+	ReasonFeatureNotInPlan  Reason = "feature_not_in_plan"
+	ReasonPermissionDenied  Reason = "tenant_permission_denied"
+	ReasonScopeMismatch     Reason = "scope_mismatch"
+	ReasonNoProjection      Reason = "projection_missing"
+	ReasonStaleProjection   Reason = "projection_stale"
+	ReasonUnknownPrice      Reason = "price_unrecognized"
+	ReasonUnconfirmed       Reason = "subscription_unconfirmed"
+	ReasonOutsidePeriod     Reason = "outside_paid_period"
+	ReasonDelinquent        Reason = "delinquent"
+	ReasonCanceled          Reason = "subscription_canceled"
+	ReasonPriceNotEffective Reason = "price_not_effective"
 )
 
 type Scope struct {
@@ -302,6 +304,10 @@ func (c *Catalog) Evaluate(scope Scope, projection *billingstore.SubscriptionPro
 	base.MinorUnit = entry.plan.MinorUnit
 	base.AmountMinor = entry.price.AmountMinor
 	base.Interval = entry.price.Interval
+	if now.Before(entry.plan.EffectiveAt) {
+		base.Reason = ReasonPriceNotEffective
+		return base
+	}
 	if !contains(entry.plan.Features, feature) {
 		base.Outcome = OutcomeDenied
 		base.Reason = ReasonFeatureNotInPlan
@@ -314,7 +320,10 @@ func (c *Catalog) Evaluate(scope Scope, projection *billingstore.SubscriptionPro
 	}
 	switch projection.State {
 	case "confirmed":
-	case "canceled": // period-end cancellation preserves access to its paid-through boundary
+	case "canceled":
+		base.Outcome = OutcomeDenied
+		base.Reason = ReasonCanceled
+		return base
 	default:
 		if projection.State == "past_due" {
 			base.Outcome = OutcomeDenied

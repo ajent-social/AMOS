@@ -162,3 +162,30 @@ func TestT5_4_RejectsIncompleteOrMutatedCatalog(t *testing.T) {
 		t.Fatalf("mutated unauthorized price accepted: %v", err)
 	}
 }
+
+func TestT5_4_FutureEffectivePlanCannotGrantEntitlement(t *testing.T) {
+	scope := testScope()
+	plan := testPlan(scope)
+	plan.EffectiveAt = time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	c, err := New(Config{Revision: "catalog-future", Plans: []Plan{plan}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 2, 10, 12, 0, 0, 0, time.UTC)
+	p := testProjection(scope, "confirmed", "price_month", now, now.Add(-time.Hour), now.Add(time.Hour))
+	got := c.Evaluate(scope, p, "projects", now)
+	if got.Outcome != OutcomeUnavailable || got.Reason != ReasonPriceNotEffective {
+		t.Fatalf("future plan granted access: %+v", got)
+	}
+}
+
+func TestT5_4_CanceledProjectionDoesNotPreservePaidAccess(t *testing.T) {
+	c := testCatalog(t)
+	scope := testScope()
+	now := time.Date(2026, 2, 10, 12, 0, 0, 0, time.UTC)
+	p := testProjection(scope, "canceled", "price_month", now, now.Add(-time.Hour), now.Add(time.Hour))
+	got := c.Evaluate(scope, p, "projects", now)
+	if got.Outcome != OutcomeDenied || got.Reason != ReasonCanceled {
+		t.Fatalf("ambiguous cancellation granted access: %+v", got)
+	}
+}
