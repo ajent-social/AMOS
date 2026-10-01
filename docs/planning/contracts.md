@@ -141,3 +141,11 @@ ADR 012 defines the finite startup `app.IdentityHandlers` seam. It binds exact
 implemented authentication routes while preserving business prefix reservations,
 built-in health/readiness and ingress normalization. Nil handlers remain
 unavailable; supplying one grants no authentication authority or CSRF exemption.
+
+## Contract amendment v1.4: explicit loopback email evaluation
+
+ADR 013 permits HTTP email action origins only with an explicit
+`DevelopmentLoopback` configuration and canonical loopback host. The default and
+remote origins remain HTTPS-only. Generated composition must validate local-only
+development mode and listener before enabling this flag; a local capture transport
+is a distinct, visibly unqualified capability. No production migration is needed.

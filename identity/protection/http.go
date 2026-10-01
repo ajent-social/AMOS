@@ -107,6 +107,7 @@ func (g Guard) PublicJSON(op Operation, next http.Handler) (http.Handler, error)
 			return
 		}
 		r.Body = io.NopCloser(bytes.NewReader(body))
+		r = r.WithContext(g.admittedContext(r.Context(), op, key.Email))
 		next.ServeHTTP(w, r)
 	}), nil
 }

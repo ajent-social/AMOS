@@ -66,16 +66,17 @@ type Request struct {
 
 type SecretReference string
 
-// PrivateMaterial is resolved only for the send operation. Never persist or log it.
+// PrivateMaterial is resolved only for the send operation. Never persist plaintext or log it.
 type PrivateMaterial struct {
 	Recipient string
 	ActionURL string
 }
 
 type RenderConfig struct {
-	FromAddress       string
-	ApplicationOrigin string
-	MaxBodyBytes      int
+	DevelopmentLoopback bool
+	FromAddress         string
+	ApplicationOrigin   string
+	MaxBodyBytes        int
 }
 
 type Renderer struct {
@@ -107,8 +108,8 @@ func NewRenderer(cfg RenderConfig) (*Renderer, error) {
 	if cfg.MaxBodyBytes <= 0 || cfg.MaxBodyBytes > MaxBodyBytes || !validAddress(cfg.FromAddress) {
 		return nil, ErrSetupRequired
 	}
-	origin, err := url.Parse(cfg.ApplicationOrigin)
-	if err != nil || origin.Scheme != "https" || origin.Host == "" || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" && origin.Path != "/" || strings.ContainsAny(cfg.ApplicationOrigin, "\r\n\t ") {
+	origin, err := ParseApplicationOrigin(cfg.ApplicationOrigin, cfg.DevelopmentLoopback)
+	if err != nil {
 		return nil, ErrSetupRequired
 	}
 	origin.Path = ""
@@ -174,7 +175,7 @@ func (r *Renderer) allowedActionURL(raw string) bool {
 		return false
 	}
 	u, err := url.Parse(raw)
-	return err == nil && u.Scheme == "https" && strings.EqualFold(u.Host, r.origin.Host) && u.User == nil && u.Fragment == "" && u.Host != ""
+	return err == nil && u.Scheme == r.origin.Scheme && strings.EqualFold(u.Host, r.origin.Host) && u.User == nil && u.Fragment == "" && u.Host != ""
 }
 
 func validAddress(value string) bool {

@@ -41,10 +41,11 @@ const (
 )
 
 type Config struct {
-	InstallationID    uuid.UUID
-	ApplicationID     uuid.UUID
-	ApplicationOrigin string
-	ChallengeLifetime time.Duration
+	DevelopmentLoopback bool
+	InstallationID      uuid.UUID
+	ApplicationID       uuid.UUID
+	ApplicationOrigin   string
+	ChallengeLifetime   time.Duration
 }
 
 // ProtectedMaterialWriter must store encrypted/protected delivery material in
@@ -77,7 +78,7 @@ func New(db *storage.DB, outbox *sqlstore.Store, renderer *deliveryemail.Rendere
 	if db == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || cfg.ChallengeLifetime < MinChallengeLifetime || cfg.ChallengeLifetime > MaxChallengeLifetime || cfg.ChallengeLifetime%time.Second != 0 {
 		return nil, ErrInvalidRequest
 	}
-	origin, err := parseOrigin(cfg.ApplicationOrigin)
+	origin, err := parseOrigin(cfg.ApplicationOrigin, cfg.DevelopmentLoopback)
 	if err != nil {
 		return nil, ErrInvalidRequest
 	}
@@ -487,12 +488,11 @@ func validID(id uuid.UUID) bool {
 	return id != uuid.Nil && id.Version() == 7 && id.Variant() == uuid.RFC4122
 }
 
-func parseOrigin(value string) (*url.URL, error) {
-	origin, err := url.Parse(value)
-	if err != nil || origin.Scheme != "https" || origin.Host == "" || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" && origin.Path != "/" || strings.ContainsAny(value, "\r\n\t ") {
+func parseOrigin(value string, developmentLoopback bool) (*url.URL, error) {
+	origin, err := deliveryemail.ParseApplicationOrigin(value, developmentLoopback)
+	if err != nil {
 		return nil, ErrInvalidRequest
 	}
-	origin.Path = ""
 	return origin, nil
 }
 

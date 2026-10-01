@@ -353,3 +353,40 @@ func TestT3_7_PruneIsBoundedScopedAndPreservesLiveBudgets(t *testing.T) {
 		t.Fatal("unbounded prune accepted")
 	}
 }
+
+func TestT3_7_PasswordWorkNeedsOneMatchingDurableAdmission(t *testing.T) {
+	l, s := fixture(t, 2)
+	budget := l.PasswordBudget()
+	if e := budget.Allow(context.Background(), "signin:x@example.test"); e != ErrUnavailable {
+		t.Fatal("unadmitted expensive work accepted")
+	}
+	called := 0
+	h, e := (Guard{l, s}).PublicJSON(Signin, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called++
+		if e := budget.Allow(r.Context(), "register:x@example.test"); e != ErrUnavailable {
+			t.Fatal("wrong operation admitted")
+		}
+		if e := budget.Allow(r.Context(), "signin:other@example.test"); e != ErrUnavailable {
+			t.Fatal("wrong account admitted")
+		}
+		if e := budget.Allow(r.Context(), "signin:x@example.test"); e != nil {
+			t.Fatal("matching work denied", e)
+		}
+		if e := budget.Allow(r.Context(), "signin:x@example.test"); e != ErrUnavailable {
+			t.Fatal("repeated expensive work admitted")
+		}
+		w.WriteHeader(204)
+	}))
+	if e != nil {
+		t.Fatal(e)
+	}
+	r := httptest.NewRequest("POST", "https://app.example.test/auth", strings.NewReader(`{"email":" X@example.test "}`))
+	r.RemoteAddr = "192.0.2.8:987"
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Origin", "https://app.example.test")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != 204 || called != 1 {
+		t.Fatal(w.Code, called)
+	}
+}
