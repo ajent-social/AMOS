@@ -105,9 +105,10 @@ func eventBody(t *testing.T) []byte {
 	return body
 }
 
-func serveSigned(t *testing.T, h http.Handler, body []byte, secret string, timestamp time.Time) *httptest.ResponseRecorder {
+func serveSigned(t *testing.T, h http.Handler, body []byte, signingValue string, timestamp time.Time) *httptest.ResponseRecorder {
 	t.Helper()
-	signed := stripewebhook.GenerateTestSignedPayload(&stripewebhook.UnsignedPayload{Payload: body, Secret: secret, Timestamp: timestamp})
+	config := signingValue
+	signed := stripewebhook.GenerateTestSignedPayload(&stripewebhook.UnsignedPayload{Payload: body, Secret: config, Timestamp: timestamp})
 	r := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", strings.NewReader(string(body)))
 	r.Header.Set("Stripe-Signature", signed.Header)
 	w := httptest.NewRecorder()
@@ -117,17 +118,17 @@ func serveSigned(t *testing.T, h http.Handler, body []byte, secret string, times
 
 func TestT5_7_ValidSignaturePersistsBeforeAcknowledgementAndSupportsRotation(t *testing.T) {
 	for _, tc := range []struct {
-		name   string
-		secret string
+		name         string
+		signingValue string
 	}{
-		{name: "current secret", secret: currentSecret},
-		{name: "previous secret during rotation", secret: previousSecret},
+		{name: "current signingValue", signingValue: currentSecret},
+		{name: "previous signingValue during rotation", signingValue: previousSecret},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			router, inbox := testRouter(), &memoryInbox{receipt: VerifiedWebhookReceipt{State: "received"}}
 			h := testHandler(t, router, inbox, SigningSecret{Value: currentSecret}, SigningSecret{Value: previousSecret, RetireAt: time.Now().Add(time.Hour)})
 			body := eventBody(t)
-			w := serveSigned(t, h, body, tc.secret, time.Now())
+			w := serveSigned(t, h, body, tc.signingValue, time.Now())
 			if w.Code != http.StatusNoContent || inbox.calls != 1 || router.calls != 1 {
 				t.Fatalf("valid receipt response=%d inbox=%d router=%d body=%s", w.Code, inbox.calls, router.calls, w.Body.String())
 			}
@@ -157,7 +158,8 @@ func TestT5_7_TamperedSignatureAndStaleTimestampNeverPersist(t *testing.T) {
 			if tc.tamper {
 				original := append([]byte(nil), body...)
 				body = append(body, ' ')
-				signed := stripewebhook.GenerateTestSignedPayload(&stripewebhook.UnsignedPayload{Payload: original, Secret: currentSecret, Timestamp: tc.timestamp})
+				config := currentSecret
+				signed := stripewebhook.GenerateTestSignedPayload(&stripewebhook.UnsignedPayload{Payload: original, Secret: config, Timestamp: tc.timestamp})
 				r := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", strings.NewReader(string(body)))
 				r.Header.Set("Stripe-Signature", signed.Header)
 				w := httptest.NewRecorder()
@@ -179,7 +181,8 @@ func TestT5_7_BodyLimitAndDuplicateSignatureHeadersReject(t *testing.T) {
 	router, inbox := testRouter(), &memoryInbox{}
 	h := testHandler(t, router, inbox)
 	body := eventBody(t)
-	signed := stripewebhook.GenerateTestSignedPayload(&stripewebhook.UnsignedPayload{Payload: body, Secret: currentSecret, Timestamp: time.Now()})
+	config := currentSecret
+	signed := stripewebhook.GenerateTestSignedPayload(&stripewebhook.UnsignedPayload{Payload: body, Secret: config, Timestamp: time.Now()})
 	r := httptest.NewRequest(http.MethodPost, "/webhooks/stripe", strings.NewReader(strings.Repeat("x", DefaultBodyLimit+1)))
 	r.Header.Set("Stripe-Signature", signed.Header)
 	w := httptest.NewRecorder()
@@ -304,7 +307,7 @@ func TestT5_7_ConfigRejectsUnboundedOrAmbiguousSecretRotation(t *testing.T) {
 		{{Value: currentSecret}, {Value: previousSecret, RetireAt: time.Now().Add(time.Hour)}, {Value: "whsec_third_secret_value"}},
 	} {
 		if _, err := New(Config{Scope: testScope(), Secrets: secrets, Router: testRouter(), Inbox: &memoryInbox{}}); err == nil {
-			t.Fatalf("invalid secret rotation accepted: count=%d", len(secrets))
+			t.Fatalf("invalid signingValue rotation accepted: count=%d", len(secrets))
 		}
 	}
 }
@@ -320,11 +323,11 @@ func TestT5_7_PreviousSecretStopsVerifyingAtConfiguredRetirement(t *testing.T) {
 	body := eventBody(t)
 	w := serveSigned(t, h, body, previousSecret, time.Now())
 	if w.Code != http.StatusNoContent {
-		t.Fatalf("previous secret rejected inside rotation window: %d %s", w.Code, w.Body.String())
+		t.Fatalf("previous signingValue rejected inside rotation window: %d %s", w.Code, w.Body.String())
 	}
 	now = now.Add(time.Hour)
 	w = serveSigned(t, h, body, previousSecret, time.Now())
 	if w.Code < 400 || inbox.calls != 1 {
-		t.Fatalf("retired signing secret remained valid: status=%d inbox_calls=%d", w.Code, inbox.calls)
+		t.Fatalf("retired signing signingValue remained valid: status=%d inbox_calls=%d", w.Code, inbox.calls)
 	}
 }

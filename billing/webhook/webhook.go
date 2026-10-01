@@ -60,7 +60,7 @@ type EndpointScope = billingstore.EndpointScope
 // errors.
 type SigningSecret struct {
 	Value    string
-	RetireAt time.Time // required only for the previous secret; bounded to 24 hours
+	RetireAt time.Time // required only for the previous signingValue; bounded to 24 hours
 }
 
 type Config struct {
@@ -248,17 +248,17 @@ func New(cfg Config) (*Handler, error) {
 		return nil, ErrInvalidConfig
 	}
 	seen := make(map[string]struct{}, len(cfg.Secrets))
-	for index, secret := range cfg.Secrets {
-		if len(secret.Value) < 16 || len(secret.Value) > 256 || strings.TrimSpace(secret.Value) != secret.Value {
+	for index, signingValue := range cfg.Secrets {
+		if len(signingValue.Value) < 16 || len(signingValue.Value) > 256 || strings.TrimSpace(signingValue.Value) != signingValue.Value {
 			return nil, ErrInvalidConfig
 		}
-		if index == 0 && !secret.RetireAt.IsZero() || index == 1 && (secret.RetireAt.IsZero() || !secret.RetireAt.After(now) || secret.RetireAt.After(now.Add(maxRotationGrace))) {
+		if index == 0 && !signingValue.RetireAt.IsZero() || index == 1 && (signingValue.RetireAt.IsZero() || !signingValue.RetireAt.After(now) || signingValue.RetireAt.After(now.Add(maxRotationGrace))) {
 			return nil, ErrInvalidConfig
 		}
-		if _, exists := seen[secret.Value]; exists {
+		if _, exists := seen[signingValue.Value]; exists {
 			return nil, ErrInvalidConfig
 		}
-		seen[secret.Value] = struct{}{}
+		seen[signingValue.Value] = struct{}{}
 	}
 	if cfg.BodyLimit == 0 {
 		cfg.BodyLimit = DefaultBodyLimit
@@ -318,11 +318,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var event stripe.Event
 	verified := false
 	now := h.cfg.Now()
-	for index, secret := range h.cfg.Secrets {
-		if index > 0 && !now.Before(secret.RetireAt) {
+	for index, signingValue := range h.cfg.Secrets {
+		if index > 0 && !now.Before(signingValue.RetireAt) {
 			continue
 		}
-		event, err = stripewebhook.ConstructEventWithOptions(body, signatures[0], secret.Value,
+		event, err = stripewebhook.ConstructEventWithOptions(body, signatures[0], signingValue.Value,
 			stripewebhook.ConstructEventOptions{Tolerance: h.cfg.SignatureTolerance})
 		if err == nil {
 			verified = true
