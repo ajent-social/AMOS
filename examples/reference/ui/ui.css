@@ -13,6 +13,8 @@
   --space: 1rem;
 }
 
+html { color-scheme: light dark; }
+
 * { box-sizing: border-box; }
 body { margin: 0; color: var(--text); background: var(--surface); }
 header, footer, main { width: min(100% - 2rem, 68rem); margin-inline: auto; }
