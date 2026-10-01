@@ -46,7 +46,7 @@ func fixture(t *testing.T, limit int) (*Limiter, *session.Service) {
 	}
 	t.Cleanup(func() { _ = db.Close() })
 	var fragments []migrations.Fragment
-	for i, name := range []string{"identity", "identity-protection"} {
+	for i, name := range []string{"identity", "identity-protection", "identity-mfa-protection"} {
 		b, e := os.ReadFile(filepath.Join("..", "..", "migrations", "fragments", name+".sql"))
 		if e != nil {
 			t.Fatal(e)
@@ -448,5 +448,56 @@ func TestMFAAdmissionIsBoundToCurrentPersonAndUsedOnce(t *testing.T) {
 	}
 	if err := budget.Allow(proof, "mfa-current:"+person.String()); err == nil {
 		t.Fatal("primary password verification repeated")
+	}
+}
+
+func TestMFACookieMutationPassesFinitePrimaryVerificationBudget(t *testing.T) {
+	limiter, sessions := fixture(t, 10)
+	person, err := uuid.NewV7()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := limiter.cfg.DB.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.Exec(`INSERT INTO identity_persons(id,installation_id,application_id,state) VALUES($1,$2,$3,'active')`, person, limiter.cfg.InstallationID, limiter.cfg.ApplicationID)
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	proof, err := authproof.NewVerifiedCredential(person, limiter.cfg.InstallationID, limiter.cfg.ApplicationID, limiter.cfg.EnvironmentID, 0, "email_password", now, "aal1", now.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	issued, err := sessions.Issue(context.Background(), proof, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		budget := limiter.PasswordBudget()
+		if err := budget.Allow(r.Context(), "mfa-current:"+person.String()); err != nil {
+			t.Error("MFA guard omitted admitted primary budget")
+			w.WriteHeader(503)
+			return
+		}
+		if err := budget.Allow(r.Context(), "mfa-current:"+person.String()); err == nil {
+			t.Error("MFA guard allowed repeated primary verification")
+			w.WriteHeader(503)
+			return
+		}
+		w.WriteHeader(204)
+	})
+	guarded, err := (Guard{limiter, sessions}).CookieMutation(MFA, next)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest("POST", "https://app.example.test/account/mfa/totp/enroll", strings.NewReader("{}"))
+	request.RemoteAddr = "192.0.2.5:1234"
+	request.AddCookie(issued.Cookie)
+	request.Header.Set("Origin", "https://app.example.test")
+	request.Header.Set("X-CSRF-Token", issued.CSRFToken)
+	response := httptest.NewRecorder()
+	sessions.Middleware(guarded).ServeHTTP(response, request)
+	if response.Code != 204 {
+		t.Fatalf("MFA guarded primary work status=%d want204", response.Code)
 	}
 }

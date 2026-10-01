@@ -185,7 +185,7 @@ func (g Guard) CookieMutation(op Operation, next http.Handler) (http.Handler, er
 			return
 		}
 		r.Body = io.NopCloser(bytes.NewReader(body))
-		if op == PasswordChange {
+		if op == PasswordChange || op == MFA {
 			r = r.WithContext(g.admittedContext(r.Context(), op, person.String()))
 		}
 		next.ServeHTTP(w, r)
