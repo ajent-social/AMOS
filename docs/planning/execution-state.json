@@ -387,10 +387,15 @@
     ]
   },
   "T5.4": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Flat-price catalog implementation integrated; named tests and vet passed; independent final review pending."
+      "Independent source review cleared immutable versioned flat-price catalog and separate tenant-permission evaluation after future-effective and canceled-state corrections.",
+      "Integrator nine TestT5_4 checks and scoped vet passed; worker lint reported zero issues.",
+      "Genuine future-effective predicate mutation granted premature access and failed the regression; restored checks passed.",
+      "USD with two minor-unit digits is the initial qualified currency mapping; other currency/provider scales fail closed pending extension checks.",
+      "Missing, stale, unconfirmed, wrong-scope and unknown-price projections fail closed; essential recovery/account/billing restoration paths retain their own authorization requirements.",
+      "Catalog boundary checks do not qualify live subscriptions, billing reconciliation or deployment."
     ]
   },
   "T7.5": {
@@ -398,6 +403,13 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Development runner worker assigned exclusive internal/devrunner implementation and tests; process ownership, graceful cleanup and generated executable checks pending."
+    ]
+  },
+  "T8.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependency-ready cloud authentication contract assigned exclusive configuration and documentation paths to isolated Luna worker; identity references and least-privilege validation pending."
     ]
   }
 }
