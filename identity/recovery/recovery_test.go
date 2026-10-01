@@ -231,6 +231,59 @@ func TestT3_8_RequiredStorageOutageFailsBeforeEligibilityLookup(t *testing.T) {
 	}
 }
 
+func TestT3_8_ReadOnlyDatabaseFailsBeforeEligibilityLookup(t *testing.T) {
+	db, service, ids := recoveryFixture(t)
+	activeRecoveryAccount(t, db, service, ids, "person@example.test", oldPassword, false)
+	var schema string
+	if err := db.WithTx(context.Background(), &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT current_schema()`).Scan(&schema)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	dsn, err := testkit.DatabaseURL()
+	if err != nil {
+		t.Fatal("read local PostgreSQL test connection")
+	}
+	parsed, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal("parse local PostgreSQL test connection")
+	}
+	query := parsed.Query()
+	query.Set("search_path", schema)
+	query.Set("default_transaction_read_only", "on")
+	parsed.RawQuery = query.Encode()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	readOnlyDB, err := storage.Open(ctx, parsed.String())
+	if err != nil {
+		t.Fatalf("open read-only PostgreSQL connection: %v", err)
+	}
+	defer func() { _ = readOnlyDB.Close() }()
+	service.cfg.DB = readOnlyDB
+	call := func(address string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/forgot-password", strings.NewReader(`{"email":"`+address+`"}`))
+		req.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		service.RequestHandler().ServeHTTP(response, req)
+		return response
+	}
+	known := call("person@example.test")
+	unknown := call("missing@example.test")
+	if known.Code != http.StatusServiceUnavailable || unknown.Code != known.Code {
+		t.Fatalf("read-only database statuses known=%d unknown=%d", known.Code, unknown.Code)
+	}
+	var knownResponse, unknownResponse response
+	if err := json.Unmarshal(known.Body.Bytes(), &knownResponse); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(unknown.Body.Bytes(), &unknownResponse); err != nil {
+		t.Fatal(err)
+	}
+	if knownResponse.Code != unknownResponse.Code || knownResponse.Message != unknownResponse.Message || knownResponse.Code != "dependency.unavailable" {
+		t.Fatalf("read-only database disclosed eligibility: known=%+v unknown=%+v", knownResponse, unknownResponse)
+	}
+}
+
 func TestT3_8_ExpiredAndDisabledResetProofsDoNotMutate(t *testing.T) {
 	db, service, ids := recoveryFixture(t)
 	account := activeRecoveryAccount(t, db, service, ids, "person@example.test", oldPassword, false)

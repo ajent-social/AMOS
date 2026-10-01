@@ -161,7 +161,15 @@ func (s *Service) ready(ctx context.Context) error {
 		return ErrUnavailable
 	}
 	var ready bool
-	err := s.cfg.DB.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+	err := s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		var readOnly, defaultReadOnly, recovery bool
+		if err := tx.QueryRowContext(ctx, `SELECT current_setting('transaction_read_only')::boolean,
+			current_setting('default_transaction_read_only')::boolean, pg_is_in_recovery()`).Scan(&readOnly, &defaultReadOnly, &recovery); err != nil {
+			return err
+		}
+		if readOnly || defaultReadOnly || recovery {
+			return ErrUnavailable
+		}
 		return tx.QueryRowContext(ctx, `SELECT
 			COALESCE(has_table_privilege(current_user,to_regclass('identity_persons'),'SELECT'),false) AND
 			COALESCE(has_table_privilege(current_user,to_regclass('identity_persons'),'UPDATE'),false) AND
