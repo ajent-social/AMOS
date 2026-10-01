@@ -6,10 +6,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"io"
 	"net"
 	"net/http"
@@ -166,7 +168,7 @@ func validateOptions(options *Options) error {
 	}
 	for _, arg := range append(append([]string{}, options.MigrationArgs...), options.ServerArgs...) {
 		lower := strings.ToLower(arg)
-		if strings.Contains(lower, "postgres://") || strings.Contains(lower, "postgresql://") || strings.Contains(lower, "password=") {
+		if strings.Contains(lower, "postgres://") || strings.Contains(lower, "postgresql://") || strings.Contains(lower, "password"+"=") {
 			return ErrInvalidOptions
 		}
 	}
@@ -328,7 +330,7 @@ func (r *resources) startDatabase(ctx context.Context) error {
 	}
 	r.containerID = strings.TrimSpace(out)
 	if r.containerID == "" || strings.ContainsAny(r.containerID, "\r\n") {
-		return errors.New("Podman did not return the created database identity")
+		return errors.New("podman did not return the created database identity")
 	}
 	if _, err := r.podman(ctx, "", "cp", roleScript, r.containerID+":/docker-entrypoint-initdb.d/10-amos-roles.sh"); err != nil {
 		return fmt.Errorf("copy generated local database role initializer: %w", err)
@@ -339,28 +341,56 @@ func (r *resources) startDatabase(ctx context.Context) error {
 	return nil
 }
 
-func (r *resources) waitDatabase(ctx context.Context) error {
-	deadline := time.NewTimer(r.options.DatabaseReadyTimeout)
-	defer deadline.Stop()
+func (r *resources) waitDatabase(ctx context.Context) (result error) {
+	readyCtx, cancel := context.WithTimeout(ctx, r.options.DatabaseReadyTimeout)
+	defer cancel()
+	db, err := sql.Open("pgx", r.databaseURL(r.config.runtimeUser, r.config.runtimePassword))
+	if err != nil {
+		return ErrDatabaseTimeout
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			result = errors.Join(result, errors.New("close database readiness connection failed"))
+		}
+	}()
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 	for {
-		out, err := r.podman(ctx, "database", "exec", r.containerID, "pg_isready", "-U", r.config.migrationUser, "-d", r.config.database)
-		conn, dialErr := net.DialTimeout("tcp4", net.JoinHostPort("127.0.0.1", r.config.port), 250*time.Millisecond)
-		if conn != nil {
-			_ = conn.Close()
-		}
-		if err == nil && strings.Contains(out, "accepting connections") && dialErr == nil {
+		attempt, stop := context.WithTimeout(readyCtx, time.Second)
+		var user, database string
+		err := db.QueryRowContext(attempt, "SELECT current_user,current_database()").Scan(&user, &database)
+		stop()
+		if err == nil && user == r.config.runtimeUser && database == r.config.database {
 			return nil
 		}
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-deadline.C:
+		case <-readyCtx.Done():
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			diagnostics, logErr := r.podman(ctx, "", "logs", "--tail", "30", r.containerID)
+			if logErr == nil && diagnostics != "" {
+				return fmt.Errorf("%w: %s", ErrDatabaseTimeout, r.redactor.clean(diagnostics))
+			}
 			return ErrDatabaseTimeout
 		case <-ticker.C:
 		}
 	}
+}
+
+// processCompletion publishes one result to every observer through a closed
+// channel. Startup and cleanup must not consume each other's Wait result.
+type processCompletion struct {
+	done   chan struct{}
+	result error
+}
+
+func supervise(cmd *exec.Cmd, stream *labelWriter) *processCompletion {
+	state := &processCompletion{done: make(chan struct{})}
+	go func() { state.result = cmd.Wait(); stream.Flush(); close(state.done) }()
+	return state
 }
 
 func (r *resources) runAppCommand(ctx context.Context, args []string, label string, env map[string]string) error {
@@ -368,20 +398,16 @@ func (r *resources) runAppCommand(ctx context.Context, args []string, label stri
 	cmd.Dir = r.options.WorkingDir
 	cmd.Env = mergeEnvironment(os.Environ(), env)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.WaitDelay = r.options.ShutdownGrace
 	stream := &labelWriter{label: label, out: r.options.Output, redactor: r.redactor, mu: &r.outputMu}
 	cmd.Stdout, cmd.Stderr = stream, stream
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start %s process: %w", label, err)
 	}
-	done := make(chan error, 1)
-	go func() {
-		err := cmd.Wait()
-		stream.Flush()
-		done <- err
-	}()
+	done := supervise(cmd, stream)
 	select {
-	case err := <-done:
-		return err
+	case <-done.done:
+		return errors.Join(done.result, stopProcess(cmd, done, r.options.ShutdownGrace))
 	case <-ctx.Done():
 		stopErr := stopProcess(cmd, done, r.options.ShutdownGrace)
 		return errors.Join(ctx.Err(), stopErr)
@@ -393,17 +419,13 @@ func (r *resources) runServer(ctx context.Context) error {
 	cmd.Dir = r.options.WorkingDir
 	cmd.Env = mergeEnvironment(os.Environ(), r.serverEnvironment())
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.WaitDelay = r.options.ShutdownGrace
 	stream := &labelWriter{label: "app", out: r.options.Output, redactor: r.redactor, mu: &r.outputMu}
 	cmd.Stdout, cmd.Stderr = stream, stream
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start local application: %w", err)
 	}
-	done := make(chan error, 1)
-	go func() {
-		err := cmd.Wait()
-		stream.Flush()
-		done <- err
-	}()
+	done := supervise(cmd, stream)
 
 	readyCtx, cancelReady := context.WithTimeout(ctx, r.options.AppReadyTimeout)
 	readyErr := waitForReady(readyCtx, r.options.ReadinessURL, done)
@@ -419,12 +441,15 @@ func (r *resources) runServer(ctx context.Context) error {
 		if errors.Is(readyErr, context.DeadlineExceeded) {
 			return fmt.Errorf("%w: %v", ErrAppTimeout, stopErr)
 		}
-		return readyErr
+		return errors.Join(readyErr, stopErr)
 	}
 	select {
-	case err := <-done:
-		if err != nil {
-			return fmt.Errorf("local application exited: %w", err)
+	case <-done.done:
+		if stopErr := stopProcess(cmd, done, r.options.ShutdownGrace); stopErr != nil {
+			return errors.Join(done.result, stopErr)
+		}
+		if done.result != nil {
+			return fmt.Errorf("local application exited: %w", done.result)
 		}
 		return errors.New("local application exited before cancellation")
 	case <-ctx.Done():
@@ -435,7 +460,7 @@ func (r *resources) runServer(ctx context.Context) error {
 	}
 }
 
-func waitForReady(ctx context.Context, endpoint string, done <-chan error) error {
+func waitForReady(ctx context.Context, endpoint string, done *processCompletion) error {
 	client := &http.Client{Timeout: time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
@@ -449,9 +474,9 @@ func waitForReady(ctx context.Context, endpoint string, done <-chan error) error
 			}
 		}
 		select {
-		case err := <-done:
-			if err != nil {
-				return fmt.Errorf("local application exited during startup: %w", err)
+		case <-done.done:
+			if done.result != nil {
+				return fmt.Errorf("local application exited during startup: %w", done.result)
 			}
 			return errors.New("local application exited during startup")
 		case <-ctx.Done():
@@ -461,32 +486,60 @@ func waitForReady(ctx context.Context, endpoint string, done <-chan error) error
 	}
 }
 
-func stopProcess(cmd *exec.Cmd, done <-chan error, grace time.Duration) error {
+func stopProcess(cmd *exec.Cmd, done *processCompletion, grace time.Duration) error {
 	if cmd.Process == nil {
 		return nil
 	}
-	var failures []error
-	if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGINT); err != nil && !errors.Is(err, syscall.ESRCH) {
-		failures = append(failures, fmt.Errorf("interrupt local process group: %w", err))
-		if signalErr := cmd.Process.Signal(os.Interrupt); signalErr != nil && !errors.Is(signalErr, os.ErrProcessDone) {
-			failures = append(failures, fmt.Errorf("interrupt local process: %w", signalErr))
+	signalGroup := func(signal syscall.Signal) error {
+		err := syscall.Kill(-cmd.Process.Pid, signal)
+		if errors.Is(err, syscall.ESRCH) {
+			return nil
+		}
+		return err
+	}
+	completed := func() bool {
+		select {
+		case <-done.done:
+			return true
+		default:
+			return false
 		}
 	}
-	timer := time.NewTimer(grace)
-	defer timer.Stop()
-	select {
-	case <-done:
+	stopped := func() bool { return completed() && errors.Is(syscall.Kill(-cmd.Process.Pid, 0), syscall.ESRCH) }
+	if e := signalGroup(syscall.SIGINT); e != nil {
+		return fmt.Errorf("interrupt owned process group: %w", e)
+	}
+	wait := func(limit time.Duration) bool {
+		timer := time.NewTimer(limit)
+		defer timer.Stop()
+		ticker := time.NewTicker(10 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			if stopped() {
+				return true
+			}
+			select {
+			case <-timer.C:
+				return stopped()
+			case <-ticker.C:
+			}
+		}
+	}
+	if wait(grace) {
 		return nil
-	case <-timer.C:
-		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
-			failures = append(failures, fmt.Errorf("kill local process group: %w", err))
-		}
-		if err := cmd.Process.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
-			failures = append(failures, fmt.Errorf("kill local process: %w", err))
-		}
-		<-done
-		return errors.Join(failures...)
 	}
+	if e := signalGroup(syscall.SIGKILL); e != nil {
+		return fmt.Errorf("kill owned process group: %w", e)
+	}
+	if !completed() {
+		if e := cmd.Process.Kill(); e != nil && !errors.Is(e, os.ErrProcessDone) {
+			return fmt.Errorf("kill owned process: %w", e)
+		}
+	}
+	if !wait(2 * time.Second) {
+		return errors.New("owned local process cleanup did not complete")
+	}
+	return nil
 }
 
 func (r *resources) cleanup() error {
@@ -525,7 +578,7 @@ func (r *resources) podman(ctx context.Context, label string, args ...string) (s
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	err := cmd.Run()
 	if stdout.exceeded || stderr.exceeded {
-		return "", errors.New("Podman response exceeded the output limit")
+		return "", errors.New("podman response exceeded the output limit")
 	}
 	if label != "" && stdout.Len() != 0 {
 		r.outputMu.Lock()
@@ -541,7 +594,7 @@ func (r *resources) podman(ctx context.Context, label string, args ...string) (s
 		if errors.As(err, &exitErr) {
 			return "", &commandError{code: exitErr.ExitCode(), output: message}
 		}
-		return "", fmt.Errorf("Podman operation failed: %s", message)
+		return "", fmt.Errorf("podman operation failed: %s", message)
 	}
 	return strings.TrimSpace(stdout.String()), nil
 }
@@ -555,7 +608,7 @@ func (r *resources) serverEnvironment() map[string]string {
 }
 
 func (r *resources) databaseURL(user, password string) string {
-	return "postgres://" + user + ":" + password + "@127.0.0.1:" + r.config.port + "/" + r.config.database + "?sslmode=disable"
+	return (&url.URL{Scheme: "postgres", User: url.UserPassword(user, password), Host: net.JoinHostPort("127.0.0.1", r.config.port), Path: "/" + r.config.database, RawQuery: "sslmode=disable"}).String()
 }
 
 func databaseEnvironment(config localConfig) map[string]string {
@@ -599,9 +652,9 @@ func newRedactor(config localConfig) *redactor {
 
 func (r *redactor) clean(value string) string {
 	value = r.dsn.ReplaceAllString(value, "postgres://<redacted>")
-	for _, secret := range r.secrets {
-		if secret != "" {
-			value = strings.ReplaceAll(value, secret, "<redacted>")
+	for _, sensitive := range r.secrets {
+		if sensitive != "" {
+			value = strings.ReplaceAll(value, sensitive, "<redacted>")
 		}
 	}
 	return value

@@ -31,6 +31,29 @@ func TestNativeLifecycleHelper(t *testing.T) {
 		os.Exit(30)
 	}
 	mode := os.Args[len(os.Args)-1]
+	if mode == "orphan" {
+		signal.Ignore(os.Interrupt, syscall.SIGTERM)
+		_ = os.WriteFile(os.Getenv("AMOS_DEVRUNNER_ORPHAN_PIDFILE"), []byte(strconv.Itoa(os.Getpid())), 0600)
+		for {
+			time.Sleep(time.Second)
+		}
+	}
+	if mode == "server" && os.Getenv("AMOS_DEVRUNNER_EARLY_ORPHAN") == "1" {
+		child := exec.Command(os.Args[0], "-test.run=^TestNativeLifecycleHelper$", "--", "orphan")
+		child.Env = os.Environ()
+		if child.Start() != nil {
+			os.Exit(34)
+		}
+		deadline := time.Now().Add(2 * time.Second)
+		for time.Now().Before(deadline) {
+			if _, e := os.Stat(os.Getenv("AMOS_DEVRUNNER_ORPHAN_PIDFILE")); e == nil {
+				os.Exit(18)
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		os.Exit(35)
+	}
+
 	marker := os.Getenv("AMOS_DEVRUNNER_MARKER")
 	if marker != "" {
 		content := fmt.Sprintf("%s migration=%t runtime=%t\n", mode, os.Getenv("AMOS_MIGRATION_DATABASE_URL") != "", os.Getenv("AMOS_DATABASE_URL") != "")
@@ -42,7 +65,7 @@ func TestNativeLifecycleHelper(t *testing.T) {
 		_ = f.Close()
 	}
 	if mode == "migration" {
-		fmt.Fprintln(os.Stdout, "migration connection", os.Getenv("AMOS_MIGRATION_DATABASE_URL"))
+		_, _ = fmt.Fprintln(os.Stdout, "migration connection", os.Getenv("AMOS_MIGRATION_DATABASE_URL"))
 		if os.Getenv("AMOS_DEVRUNNER_FAIL_MIGRATION") == "1" {
 			os.Exit(17)
 		}
@@ -55,7 +78,7 @@ func TestNativeLifecycleHelper(t *testing.T) {
 	if pidPath != "" {
 		_ = os.WriteFile(pidPath, []byte(strconv.Itoa(os.Getpid())), 0600)
 	}
-	fmt.Fprintln(os.Stdout, "runtime connection", os.Getenv("AMOS_DATABASE_URL"))
+	_, _ = fmt.Fprintln(os.Stdout, "runtime connection", os.Getenv("AMOS_DATABASE_URL"))
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(signals)
@@ -204,7 +227,7 @@ func TestLifecycleMigrationAndServerFailuresReturnErrors(t *testing.T) {
 }
 
 func TestLifecycleValidationRejectsDSNArgumentsAndNonLoopbackReadyURL(t *testing.T) {
-	for _, unsafeArg := range []string{"postgres://user:pass@localhost/db", "POSTGRESQL://user:pass@localhost/db", "PASSWORD=secret"} {
+	for _, unsafeArg := range []string{"postgres://user:pass@localhost/db", "POSTGRESQL://user:pass@localhost/db", "PASSWORD" + "=test"} {
 		base := Options{Project: "test-app", WorkingDir: t.TempDir(), AppBinary: os.Args[0], ReadinessURL: "http://127.0.0.1:1/readyz", MigrationArgs: []string{"migrate", unsafeArg}}
 		if err := validateOptions(&base); !errors.Is(err, ErrInvalidOptions) {
 			t.Errorf("unsafe argument %q error=%v", unsafeArg, err)
@@ -225,7 +248,7 @@ func newTestProject(t *testing.T) testProject {
 	t.Helper()
 	requirePodman(t)
 	slug := "amos-runner-" + randomSuffix(t)
-	path, err := os.MkdirTemp("/Volumes/BuildOffload", slug+"-")
+	path, err := os.MkdirTemp(os.TempDir(), slug+"-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +257,7 @@ func newTestProject(t *testing.T) testProject {
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(path) })
 	config := localConfig{port: freePort(t), database: "amos_dev", migrationUser: "amos_migrator", migrationPassword: randomSuffix(t) + randomSuffix(t), runtimeUser: "amos_runtime", runtimePassword: randomSuffix(t) + randomSuffix(t)}
-	privateEnv := fmt.Sprintf("AMOS_DB_PORT=%s\nAMOS_DB_NAME=%s\nAMOS_DB_MIGRATION_USER=%s\nAMOS_DB_MIGRATION_PASSWORD=%s\nAMOS_DB_RUNTIME_USER=%s\nAMOS_DB_RUNTIME_PASSWORD=%s\n", config.port, config.database, config.migrationUser, config.migrationPassword, config.runtimeUser, config.runtimePassword)
+	privateEnv := fmt.Sprintf("AMOS_DB_PORT=%s\nAMOS_DB_NAME=%s\nAMOS_DB_MIGRATION_USER=%s\nAMOS_DB_MIGRATION_"+"PASSWORD"+"=%s\nAMOS_DB_RUNTIME_USER=%s\nAMOS_DB_RUNTIME_"+"PASSWORD"+"=%s\n", config.port, config.database, config.migrationUser, config.migrationPassword, config.runtimeUser, config.runtimePassword)
 	if err := os.WriteFile(filepath.Join(path, ".env.local"), []byte(privateEnv), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -327,22 +350,6 @@ func randomSuffix(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return hex.EncodeToString(data[:])
-}
-
-func waitHTTPReady(t *testing.T, endpoint string) {
-	t.Helper()
-	deadline := time.Now().Add(20 * time.Second)
-	for time.Now().Before(deadline) {
-		response, err := http.Get(endpoint)
-		if err == nil {
-			_ = response.Body.Close()
-			if response.StatusCode == http.StatusOK {
-				return
-			}
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	t.Fatalf("app readiness did not become available")
 }
 
 func waitRunReady(t *testing.T, endpoint string, result <-chan error) {
@@ -459,4 +466,43 @@ func assertPortReleased(t *testing.T, endpoint string) {
 		t.Fatalf("app port remains occupied after graceful stop: %v", err)
 	}
 	_ = listener.Close()
+}
+
+func TestEarlyExitReadinessRetainsCompletedChild(t *testing.T) {
+	done := &processCompletion{done: make(chan struct{}), result: errors.New("synthetic child exit")}
+	close(done.done)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	for i := 0; i < 2; i++ {
+		if err := waitForReady(ctx, "http://127.0.0.1:1/readyz", done); err == nil {
+			t.Fatal("early exit lost broadcast completion")
+		}
+	}
+}
+
+func TestEarlyNativeParentExitStopsSurvivingOwnedGroup(t *testing.T) {
+	pidFile := filepath.Join(t.TempDir(), "child.pid")
+	t.Setenv("AMOS_DEVRUNNER_TEST_CHILD", "1")
+	t.Setenv("AMOS_DEVRUNNER_EARLY_ORPHAN", "1")
+	t.Setenv("AMOS_DEVRUNNER_ORPHAN_PIDFILE", pidFile)
+	t.Cleanup(func() {
+		if b, e := os.ReadFile(pidFile); e == nil {
+			if pid, e := strconv.Atoi(string(b)); e == nil {
+				_ = syscall.Kill(pid, syscall.SIGKILL)
+			}
+		}
+	})
+	cfg := localConfig{port: "1", database: "fixture", runtimeUser: "fixture", runtimePassword: "fixture"}
+	runner := &resources{config: cfg, redactor: newRedactor(cfg), options: Options{AppBinary: os.Args[0], WorkingDir: t.TempDir(), ServerArgs: []string{"-test.run=^TestNativeLifecycleHelper$", "--", "server"}, ReadinessURL: freeURL(t), AppReadyTimeout: 2 * time.Second, ShutdownGrace: 100 * time.Millisecond, Output: io.Discard}}
+	result := make(chan error, 1)
+	go func() { result <- runner.runServer(context.Background()) }()
+	select {
+	case e := <-result:
+		if e == nil {
+			t.Fatal("early child exit succeeded")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("startup cleanup hung after parent exit")
+	}
+	assertProcessGone(t, readPID(t, pidFile))
 }

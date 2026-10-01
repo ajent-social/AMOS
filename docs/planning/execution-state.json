@@ -404,10 +404,13 @@
     ]
   },
   "T7.5": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Development runner worker assigned exclusive internal/devrunner implementation and tests; process ownership, graceful cleanup and generated executable checks pending."
+      "Luna local runner independently reviewed and integrated with root corrections for broadcast process completion and bounded owned process-group cleanup.",
+      "Real Podman PostgreSQL native lifecycle suite passed, including migration/server failure, graceful cancellation, startup timeout, retained volume and unrelated-container preservation; host TCP readiness authenticates the runtime role and database.",
+      "Genuine mutation disabling failed-startup group cleanup failed the orphan-child regression; source restored and regression plus graceful lifecycle passed. Scoped vet and lint passed.",
+      "Generated executable and CLI integration remain separate; local database/container evidence does not qualify a cloud deployment."
     ]
   },
   "T8.2": {
@@ -434,6 +437,20 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Dependency-ready Luna implementation assigned exclusive billing/checkout and billing checkout API fragment; integration, independent review and obtained named acceptance evidence pending."
+    ]
+  },
+  "T3.9": {
+    "status": "IN_PROGRESS",
+    "certification": "UNQUALIFIED",
+    "evidence": [
+      "Claimed for isolated Luna implementation of scanner-safe magic-link authentication. Shared session/material composition seams and independent review remain required."
+    ]
+  },
+  "T5.7": {
+    "status": "IN_PROGRESS",
+    "certification": "UNQUALIFIED",
+    "evidence": [
+      "Claimed for isolated Luna signature-verified durable webhook ingress. Root additive normalized inbox and authoritative customer-routing seams are under review; no live provider qualification."
     ]
   }
 }
