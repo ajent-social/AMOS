@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"mime"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -71,6 +72,10 @@ func (s *Service) Handler() http.Handler {
 		}
 		if r.Method != http.MethodPost {
 			write(w, r, http.StatusMethodNotAllowed, "method.not_allowed", "Method not allowed.")
+			return
+		}
+		if !s.cfg.Sessions.AllowsOrigin(r) {
+			write(w, r, http.StatusForbidden, "auth.forbidden", "Request origin is unavailable.")
 			return
 		}
 		h(w, r)
@@ -213,7 +218,7 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 		return
 	}
-	if !known || !result.Verified || state != "active" || !verified.Valid {
+	if !valid || !known || !result.Verified || state != "active" || !verified.Valid {
 		write(w, r, http.StatusUnauthorized, "auth.unauthenticated", "Email or password is incorrect.")
 		return
 	}
@@ -223,7 +228,7 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 		return
 	}
-	issued, err := s.cfg.Sessions.Issue(r.Context(), proof, "")
+	issued, err := s.cfg.Sessions.IssueForRequest(r.Context(), proof, r)
 	if err != nil {
 		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 		return
@@ -239,7 +244,8 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func decode(w http.ResponseWriter, r *http.Request, dst any) bool {
-	if r.Body == nil || r.ContentLength > MaxRequestBytes {
+	mediaType, _, mediaErr := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if mediaErr != nil || mediaType != "application/json" || len(r.Header.Values("Content-Type")) != 1 || r.Body == nil || r.ContentLength > MaxRequestBytes {
 		return false
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, MaxRequestBytes)
@@ -270,8 +276,8 @@ func normalizeAddress(value string) (string, bool) {
 	return strings.ToLower(value), true
 }
 func write(w http.ResponseWriter, r *http.Request, status int, code, message string) {
-	id := r.Header.Get("X-Request-ID")
-	if parsed, err := uuid.Parse(id); err != nil || parsed.String() != id {
+	id := w.Header().Get("X-Request-ID")
+	if parsed, err := uuid.Parse(id); err != nil || parsed.String() != id || !validID(parsed) {
 		generated, err := store.NewID()
 		if err != nil {
 			id = "unavailable"
@@ -279,6 +285,7 @@ func write(w http.ResponseWriter, r *http.Request, status int, code, message str
 			id = generated.String()
 		}
 	}
+	w.Header().Set("X-Request-ID", id)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)

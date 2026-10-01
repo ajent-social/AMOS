@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -168,12 +169,12 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if unsafeMethod(r.Method) {
-			if !s.allowedOrigin(r) {
+			if !s.AllowsOrigin(r) {
 				writeError(w, r, http.StatusForbidden, "request.origin_denied")
 				return
 			}
 			raw, _ := base64.RawURLEncoding.DecodeString(cookie.Value)
-			provided := r.Header.Get("X-CSRF-Token")
+			provided := csrfFromRequest(w, r)
 			if len(raw) != 32 || !hmac.Equal([]byte(provided), []byte(csrf(raw))) {
 				writeError(w, r, http.StatusForbidden, "request.csrf_denied")
 				return
@@ -192,14 +193,14 @@ func (s *Service) SignOut(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, http.StatusMethodNotAllowed, "method.not_allowed")
 		return
 	}
-	if !s.allowedOrigin(r) {
+	if !s.AllowsOrigin(r) {
 		writeError(w, r, http.StatusForbidden, "request.origin_denied")
 		return
 	}
 	cookie, err := r.Cookie(s.cookieName)
 	if err == nil {
 		raw, _ := base64.RawURLEncoding.DecodeString(cookie.Value)
-		if len(raw) != 32 || !hmac.Equal([]byte(r.Header.Get("X-CSRF-Token")), []byte(csrf(raw))) {
+		if len(raw) != 32 || !hmac.Equal([]byte(csrfFromRequest(w, r)), []byte(csrf(raw))) {
 			writeError(w, r, http.StatusForbidden, "request.csrf_denied")
 			return
 		}
@@ -300,4 +301,50 @@ func writeError(w http.ResponseWriter, r *http.Request, status int, code string)
 	w.Header().Set("X-Request-ID", id)
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(`{"code":"` + code + `","message":"request could not be completed","request_id":"` + id + `"}`))
+}
+
+// csrfFromRequest accepts the existing API header or a single body-only token
+// from bounded ordinary HTML forms. Query parameters never supply proof.
+func csrfFromRequest(w http.ResponseWriter, r *http.Request) string {
+	values := r.Header.Values("X-CSRF-Token")
+	if len(values) > 0 {
+		if len(values) != 1 {
+			return ""
+		}
+		return values[0]
+	}
+	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || media != "application/x-www-form-urlencoded" {
+		return ""
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+	if err = r.ParseForm(); err != nil {
+		return ""
+	}
+	values = r.PostForm["_csrf"]
+	if len(values) != 1 {
+		return ""
+	}
+	return values[0]
+}
+
+// IssueForRequest rotates the existing browser cookie while establishing a new
+// authenticated session. Invalid/missing cookies cannot choose session IDs.
+func (s *Service) IssueForRequest(ctx context.Context, proof authproof.VerifiedCredential, r *http.Request) (Issued, error) {
+	if s == nil || r == nil {
+		return Issued{}, ErrUnavailable
+	}
+	var prior string
+	if cookie, err := r.Cookie(s.cookieName); err == nil {
+		prior = cookie.Value
+	}
+	return s.Issue(ctx, proof, prior)
+}
+
+// AllowsOrigin applies the configured browser origin boundary before authentication.
+func (s *Service) AllowsOrigin(r *http.Request) bool {
+	if s == nil || r == nil || len(r.Header.Values("Origin")) > 1 || len(r.Header.Values("Referer")) > 1 {
+		return false
+	}
+	return s.allowedOrigin(r)
 }

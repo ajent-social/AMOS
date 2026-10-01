@@ -1,4 +1,7 @@
 openapi: 3.1.1
+info:
+  title: AMOS password identity operations
+  version: 1.0.0
 paths:
   /signup:
     post:

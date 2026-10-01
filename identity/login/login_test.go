@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -35,6 +36,8 @@ func TestT3_5_RegistrationConcurrentReplayCreatesOnePendingPersonAndWorkspace(t 
 		go func() {
 			<-start
 			req := httptest.NewRequest(http.MethodPost, "/signup", strings.NewReader(request))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Origin", "https://app.example.test")
 			rec := httptest.NewRecorder()
 			svc.Handler().ServeHTTP(rec, req)
 			results <- rec
@@ -85,6 +88,8 @@ func TestT3_5_SignInUsesGenericFailureAndOnlyVerifiedActiveAccountGetsSession(t 
 	// Seed via the public signup path, then prove its pending account is denied.
 	post := func(body string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest(http.MethodPost, "/signup", strings.NewReader(body))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Origin", "https://app.example.test")
 		w := httptest.NewRecorder()
 		svc.Handler().ServeHTTP(w, r)
 		return w
@@ -95,6 +100,8 @@ func TestT3_5_SignInUsesGenericFailureAndOnlyVerifiedActiveAccountGetsSession(t 
 	call := func(address, pw string) *httptest.ResponseRecorder {
 		body, _ := json.Marshal(map[string]string{"email": address, "password": pw})
 		r := httptest.NewRequest(http.MethodPost, "/auth", strings.NewReader(string(body)))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Origin", "https://app.example.test")
 		w := httptest.NewRecorder()
 		svc.Handler().ServeHTTP(w, r)
 		return w
@@ -119,18 +126,26 @@ func TestT3_5_SignInUsesGenericFailureAndOnlyVerifiedActiveAccountGetsSession(t 
 		t.Fatalf("failure disclosure differs: unverified=%+v wrong=%+v unknown=%+v", unverifiedBody, wrongBody, unknownBody)
 	}
 	var personID uuid.UUID
+
 	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
-		if err := tx.QueryRow(`SELECT id FROM identity_persons WHERE installation_id=$1 AND application_id=$2`, ids.installation, ids.application).Scan(&personID); err != nil {
-			return err
-		}
-		_, err := tx.Exec(`UPDATE identity_emails SET verified_at=transaction_timestamp() WHERE person_id=$1`, personID)
-		if err != nil {
-			return err
-		}
-		_, err = tx.Exec(`UPDATE identity_persons SET state='active' WHERE id=$1`, personID)
-		return err
+		return tx.QueryRow(`SELECT id FROM identity_persons WHERE installation_id=$1 AND application_id=$2`, ids.installation, ids.application).Scan(&personID)
 	}); err != nil {
 		t.Fatal(err)
+	}
+	writer := svc.cfg.Email
+	ids.materials.mu.Lock()
+	material := ids.materials.latest
+	ids.materials.mu.Unlock()
+	action, err := url.Parse(material.ActionURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	challenge, err := uuid.Parse(action.Query().Get("challenge"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Confirm(context.Background(), challenge, action.Query().Get("token")); err != nil {
+		t.Fatalf("real verification: %v", err)
 	}
 	good := call("pending@example.test", "a sufficiently long password")
 	if good.Code != http.StatusOK || good.Header().Get("Set-Cookie") == "" {
@@ -145,6 +160,38 @@ func TestT3_5_SignInUsesGenericFailureAndOnlyVerifiedActiveAccountGetsSession(t 
 	if sessions != 1 {
 		t.Fatalf("persisted sessions=%d", sessions)
 	}
+
+	body := `{"email":"pending@example.test","password":"a sufficiently long password"}`
+	req := httptest.NewRequest(http.MethodPost, "/auth", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://app.example.test")
+	for _, cookie := range good.Result().Cookies() {
+		req.AddCookie(cookie)
+	}
+	rotated := httptest.NewRecorder()
+	svc.Handler().ServeHTTP(rotated, req)
+	if rotated.Code != http.StatusOK {
+		t.Fatalf("rotation: %d", rotated.Code)
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT count(*) FROM identity_sessions WHERE person_id=$1 AND revoked_at IS NULL`, personID).Scan(&sessions)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if sessions != 1 {
+		t.Fatalf("active sessions after rotation: %d", sessions)
+	}
+
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.Exec(`UPDATE identity_emails SET display_address='invalid@example.invalid',comparison_key='invalid@example.invalid' WHERE person_id=$1`, personID)
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	denied := call("malformed email address", "a sufficiently long password")
+	if denied.Code != http.StatusUnauthorized || denied.Header().Get("Set-Cookie") != "" {
+		t.Fatalf("malformed address authenticated: %d", denied.Code)
+	}
 }
 
 type list struct{}
@@ -156,17 +203,26 @@ type budget struct{}
 
 func (budget) Allow(context.Context, string) error { return nil }
 
-type materials struct{}
+type materials struct {
+	mu     sync.Mutex
+	latest email.PrivateMaterial
+}
 
-func (materials) PutVerificationMaterial(_ context.Context, _ *sql.Tx, _ email.SecretReference, _ email.PrivateMaterial, _ time.Time) error {
+func (m *materials) PutVerificationMaterial(_ context.Context, _ *sql.Tx, _ email.SecretReference, material email.PrivateMaterial, _ time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.latest = material
 	return nil
 }
 
-type testIDs struct{ installation, application, environment uuid.UUID }
+type testIDs struct {
+	installation, application, environment uuid.UUID
+	materials                              *materials
+}
 
 func loginService(t *testing.T, db *storage.DB, raw *sql.DB) (*Service, testIDs) {
 	t.Helper()
-	ids := testIDs{newID(t), newID(t), newID(t)}
+	ids := testIDs{newID(t), newID(t), newID(t), &materials{}}
 	hasher, err := password.New(list{}, budget{}, 2)
 	if err != nil {
 		t.Fatal(err)
@@ -179,7 +235,7 @@ func loginService(t *testing.T, db *storage.DB, raw *sql.DB) (*Service, testIDs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mailer, err := identityemail.New(db, outbox, renderer, materials{}, identityemail.Config{InstallationID: ids.installation, ApplicationID: ids.application, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: identityemail.DefaultChallengeLifetime})
+	mailer, err := identityemail.New(db, outbox, renderer, ids.materials, identityemail.Config{InstallationID: ids.installation, ApplicationID: ids.application, ApplicationOrigin: "https://app.example.test", ChallengeLifetime: identityemail.DefaultChallengeLifetime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,4 +307,51 @@ func newID(t *testing.T) uuid.UUID {
 		t.Fatal(err)
 	}
 	return id
+}
+
+func TestRequestIDNeverTrustsClientHeader(t *testing.T) {
+	request := httptest.NewRequest(http.MethodPost, "/auth", strings.NewReader("{}"))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Origin", "https://app.example.test")
+	client := newID(t).String()
+	request.Header.Set("X-Request-ID", client)
+	recorder := httptest.NewRecorder()
+	write(recorder, request, http.StatusUnauthorized, "auth.unauthenticated", "Authentication failed.")
+	var result response
+	if err := json.Unmarshal(recorder.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	id, err := uuid.Parse(result.RequestID)
+	if err != nil || !validID(id) || result.RequestID == client || recorder.Header().Get("X-Request-ID") != result.RequestID {
+		t.Fatal("client controlled or inconsistent request ID")
+	}
+}
+
+func TestCrossOriginAndSimpleContentTypeCannotCreateAccountOrSession(t *testing.T) {
+	db, raw := loginDB(t)
+	svc, _ := loginService(t, db, raw)
+	for _, path := range []string{"/signup", "/auth"} {
+		for _, origin := range []string{"https://evil.example.test", "https://app.example.test"} {
+			for _, contentType := range []string{"text/plain", "application/json"} {
+				if origin == "https://app.example.test" && contentType == "application/json" {
+					continue
+				}
+				req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"email":"attacker@example.test","password":"a sufficiently long password"}`))
+				req.Header.Set("Origin", origin)
+				req.Header.Set("Content-Type", contentType)
+				rec := httptest.NewRecorder()
+				svc.Handler().ServeHTTP(rec, req)
+				if rec.Code < 400 || rec.Header().Get("Set-Cookie") != "" {
+					t.Fatalf("unsafe request accepted: %s %s %d", path, origin, rec.Code)
+				}
+			}
+		}
+	}
+	var count int
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error { return tx.QueryRow(`SELECT count(*) FROM identity_persons`).Scan(&count) }); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatal("unsafe request persisted account")
+	}
 }
