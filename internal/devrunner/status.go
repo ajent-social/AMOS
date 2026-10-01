@@ -22,9 +22,12 @@ import (
 const (
 	stateVersion   = 1
 	stateFileName  = "state.json"
+	stateLockName  = "state.update.lock"
 	maxStateBytes  = 16 << 10
 	maxProbeOutput = 64 << 10
 	probeTimeout   = 2 * time.Second
+	stateLockWait  = 5 * time.Second
+	stateLockPoll  = 10 * time.Millisecond
 	projectLabel   = "io.amos.project"
 	projectIDLabel = "io.amos.project_id"
 	resourceLabel  = "io.amos.resource"
@@ -151,6 +154,11 @@ type privateStateStore struct {
 	project string
 }
 
+type processUpdateHooks struct {
+	afterClearCheck func()
+	onRecordWait    func()
+}
+
 func InitializeProject(ctx context.Context, workingDir, project string) (ProjectIdentity, error) {
 	return initializeProject(ctx, workingDir, project, nil)
 }
@@ -195,6 +203,10 @@ func initializeProject(ctx context.Context, workingDir, project string, beforePu
 // RecordOwnedProcess persists an exact process identity after verifying the
 // current process image, kernel start token and working directory.
 func RecordOwnedProcess(ctx context.Context, workingDir, project string, pid int, executable string) (ProcessIdentity, error) {
+	return recordOwnedProcess(ctx, workingDir, project, pid, executable, defaultProcessProbe, processUpdateHooks{})
+}
+
+func recordOwnedProcess(ctx context.Context, workingDir, project string, pid int, executable string, probe func(context.Context, int, string, string) (ProcessIdentity, error), hooks processUpdateHooks) (ProcessIdentity, error) {
 	if ctx == nil || ctx.Err() != nil || pid < 2 {
 		return ProcessIdentity{}, ErrProcessIdentityMismatch
 	}
@@ -202,26 +214,30 @@ func RecordOwnedProcess(ctx context.Context, workingDir, project string, pid int
 	if err != nil {
 		return ProcessIdentity{}, ErrProjectStateUnavailable
 	}
-	state, err := store.load()
+	stateRoot, unlock, err := store.lockProcessUpdate(ctx, hooks.onRecordWait)
+	if err != nil {
+		return ProcessIdentity{}, err
+	}
+	defer unlock()
+	state, err := store.loadFromRoot(stateRoot)
 	if err != nil {
 		return ProcessIdentity{}, ErrProjectStateUnavailable
 	}
-	root, err := canonicalPath(workingDir)
-	if err != nil || root != state.Root {
+	rootPath, err := canonicalPath(workingDir)
+	if err != nil || rootPath != state.Root {
 		return ProcessIdentity{}, ErrProjectIdentityMismatch
 	}
 	executable, err = canonicalExecutablePath(executable)
 	if err != nil {
 		return ProcessIdentity{}, ErrProcessIdentityMismatch
 	}
-	probe := defaultProcessProbe
-	identity, err := probe(ctx, pid, executable, root)
-	if err != nil || identity.PID != pid || identity.Executable != executable || identity.OwnedRoot != root {
+	identity, err := probe(ctx, pid, executable, rootPath)
+	if err != nil || identity.PID != pid || identity.Executable != executable || identity.OwnedRoot != rootPath {
 		return ProcessIdentity{}, ErrProcessIdentityMismatch
 	}
 	state.Process = &processRecord{Identity: identity}
 	state.UpdatedAt = time.Now().UTC()
-	if err := store.write(state); err != nil {
+	if err := store.writeToRoot(stateRoot, state); err != nil {
 		return ProcessIdentity{}, err
 	}
 	return identity, nil
@@ -230,6 +246,10 @@ func RecordOwnedProcess(ctx context.Context, workingDir, project string, pid int
 // ClearOwnedProcess removes only the exact process record that the caller
 // previously persisted. A stale PID cannot clear a newer process identity.
 func ClearOwnedProcess(ctx context.Context, workingDir, project string, expected ProcessIdentity) error {
+	return clearOwnedProcess(ctx, workingDir, project, expected, processUpdateHooks{})
+}
+
+func clearOwnedProcess(ctx context.Context, workingDir, project string, expected ProcessIdentity, hooks processUpdateHooks) error {
 	if ctx == nil || ctx.Err() != nil {
 		return ErrProjectStateUnavailable
 	}
@@ -237,16 +257,24 @@ func ClearOwnedProcess(ctx context.Context, workingDir, project string, expected
 	if err != nil {
 		return ErrProjectStateUnavailable
 	}
-	state, err := store.load()
+	root, unlock, err := store.lockProcessUpdate(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	state, err := store.loadFromRoot(root)
 	if err != nil || state.Process == nil {
 		return ErrProjectStateUnavailable
 	}
 	if !sameProcessIdentity(state.Process.Identity, expected) {
 		return ErrProcessIdentityMismatch
 	}
+	if hooks.afterClearCheck != nil {
+		hooks.afterClearCheck()
+	}
 	state.Process = nil
 	state.UpdatedAt = time.Now().UTC()
-	return store.write(state)
+	return store.writeToRoot(root, state)
 }
 
 func ResourceLabels(identity ProjectIdentity, kind ResourceKind) (map[string]string, error) {
@@ -444,6 +472,13 @@ func (s *privateStateStore) load() (privateProjectState, error) {
 		return privateProjectState{}, ErrProjectStateUnavailable
 	}
 	defer func() { _ = root.Close() }()
+	return s.loadFromRoot(root)
+}
+
+func (s *privateStateStore) loadFromRoot(root *os.Root) (privateProjectState, error) {
+	if s == nil || root == nil {
+		return privateProjectState{}, ErrProjectStateUnavailable
+	}
 	data, err := readPrivateStateFile(root, stateFileName, nil)
 	if errors.Is(err, os.ErrNotExist) {
 		if s.verifyStateRootPath(root) != nil {
@@ -471,15 +506,22 @@ func (s *privateStateStore) load() (privateProjectState, error) {
 }
 
 func (s *privateStateStore) write(state privateProjectState) error {
-	data, err := s.encode(state)
-	if err != nil {
-		return ErrProjectStateUnavailable
-	}
 	root, err := s.openStateRoot(false)
 	if err != nil {
 		return ErrProjectStateUnavailable
 	}
 	defer func() { _ = root.Close() }()
+	return s.writeToRoot(root, state)
+}
+
+func (s *privateStateStore) writeToRoot(root *os.Root, state privateProjectState) error {
+	if s == nil || root == nil {
+		return ErrProjectStateUnavailable
+	}
+	data, err := s.encode(state)
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
 	if err := writePrivateStateFile(root, stateFileName, data, nil); err != nil {
 		return ErrProjectStateUnavailable
 	}
@@ -517,6 +559,93 @@ func (s *privateStateStore) encode(state privateProjectState) ([]byte, error) {
 		return nil, ErrProjectStateUnavailable
 	}
 	return data, nil
+}
+
+func (s *privateStateStore) lockProcessUpdate(ctx context.Context, onWait func()) (*os.Root, func(), error) {
+	if ctx == nil || ctx.Err() != nil || s == nil {
+		return nil, nil, ErrProjectStateUnavailable
+	}
+	lockCtx, cancel := context.WithTimeout(ctx, stateLockWait)
+	root, err := s.openStateRoot(false)
+	if err != nil {
+		cancel()
+		return nil, nil, ErrProjectStateUnavailable
+	}
+	file, err := openPrivateStateUpdateLock(root)
+	if err != nil || verifyPrivateStateUpdateLock(s, root, file) != nil {
+		if file != nil {
+			_ = file.Close()
+		}
+		_ = root.Close()
+		cancel()
+		return nil, nil, ErrProjectStateUnavailable
+	}
+	closeResources := func() {
+		_ = file.Close()
+		_ = root.Close()
+		cancel()
+	}
+	ticker := time.NewTicker(stateLockPoll)
+	defer ticker.Stop()
+	for {
+		if lockCtx.Err() != nil {
+			closeResources()
+			return nil, nil, ErrProjectStateUnavailable
+		}
+		locked, lockErr := tryLockPrivateStateUpdate(file)
+		if lockErr != nil {
+			closeResources()
+			return nil, nil, ErrProjectStateUnavailable
+		}
+		if locked {
+			if lockCtx.Err() != nil || verifyPrivateStateUpdateLock(s, root, file) != nil {
+				_ = unlockPrivateStateUpdate(file)
+				closeResources()
+				return nil, nil, ErrProjectStateUnavailable
+			}
+			unlock := func() {
+				_ = unlockPrivateStateUpdate(file)
+				closeResources()
+			}
+			return root, unlock, nil
+		}
+		if onWait != nil {
+			onWait()
+			onWait = nil
+		}
+		select {
+		case <-lockCtx.Done():
+			closeResources()
+			return nil, nil, ErrProjectStateUnavailable
+		case <-ticker.C:
+		}
+	}
+}
+
+func verifyPrivateStateUpdateLock(store *privateStateStore, root *os.Root, file *os.File) error {
+	if store == nil || root == nil || file == nil {
+		return ErrProjectStateUnavailable
+	}
+	opened, err := file.Stat()
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
+	openedStat, statOK := opened.Sys().(*syscall.Stat_t)
+	if !statOK || openedStat.Nlink != 1 || opened.Size() != 0 || !opened.Mode().IsRegular() || opened.Mode().Perm() != 0600 || opened.Mode()&^os.ModePerm != 0 || !ownedByCurrentUser(opened) {
+		return ErrProjectStateUnavailable
+	}
+	entry, err := root.Lstat(stateLockName)
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
+	entryStat, statOK := entry.Sys().(*syscall.Stat_t)
+	if !statOK || entryStat.Nlink != 1 || entry.Size() != 0 || !entry.Mode().IsRegular() || entry.Mode()&os.ModeSymlink != 0 || entry.Mode().Perm() != 0600 || entry.Mode()&^os.ModePerm != 0 || !ownedByCurrentUser(entry) || !os.SameFile(opened, entry) {
+		return ErrProjectStateUnavailable
+	}
+	if store.verifyStateRootPath(root) != nil {
+		return ErrProjectStateUnavailable
+	}
+	return nil
 }
 
 func (s *privateStateStore) openStateRoot(create bool) (*os.Root, error) {

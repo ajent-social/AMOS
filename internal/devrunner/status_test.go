@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -216,6 +217,232 @@ func TestStatusConcurrentCrossProcessInitializationUsesOneIdentity(t *testing.T)
 	persisted, err := store.load()
 	if err != nil || persisted.Identity.ID != winner {
 		t.Fatalf("persisted identity disagrees with processes: state=%+v err=%v", persisted.Identity, err)
+	}
+}
+
+func TestStatusConcurrentClearAndRecordKeepsNewIdentity(t *testing.T) {
+	projectRoot := t.TempDir()
+	if _, err := InitializeProject(context.Background(), projectRoot, "clear-record-race"); err != nil {
+		t.Fatal(err)
+	}
+	store, err := newPrivateStateStore(projectRoot, "clear-record-race", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, err := store.load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	executable := filepath.Join(projectRoot, "app")
+	if err := os.WriteFile(executable, []byte("test-owned executable"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	oldIdentity := ProcessIdentity{PID: 61001, StartSeconds: 100, StartMicroseconds: 1, Executable: executable, OwnedRoot: projectRoot}
+	newIdentity := ProcessIdentity{PID: 61002, StartSeconds: 200, StartMicroseconds: 2, Executable: executable, OwnedRoot: projectRoot}
+	state.Process = &processRecord{Identity: oldIdentity}
+	if err := store.write(state); err != nil {
+		t.Fatal(err)
+	}
+
+	clearChecked := make(chan struct{})
+	releaseClear := make(chan struct{})
+	clearResult := make(chan error, 1)
+	go func() {
+		clearResult <- clearOwnedProcess(context.Background(), projectRoot, "clear-record-race", oldIdentity, processUpdateHooks{
+			afterClearCheck: func() {
+				close(clearChecked)
+				<-releaseClear
+			},
+		})
+	}()
+	select {
+	case <-clearChecked:
+	case <-time.After(stateLockWait + time.Second):
+		t.Fatal("clear did not reach the held-update regression point")
+	}
+	recordWaiting := make(chan struct{}, 1)
+	type recordOutcome struct {
+		identity ProcessIdentity
+		err      error
+	}
+	recordResult := make(chan recordOutcome, 1)
+	probe := func(_ context.Context, pid int, exe, root string) (ProcessIdentity, error) {
+		if pid != newIdentity.PID || exe != newIdentity.Executable || root != newIdentity.OwnedRoot {
+			return ProcessIdentity{}, ErrProcessIdentityMismatch
+		}
+		return newIdentity, nil
+	}
+	go func() {
+		identity, recordErr := recordOwnedProcess(context.Background(), projectRoot, "clear-record-race", newIdentity.PID, executable, probe, processUpdateHooks{
+			onRecordWait: func() {
+				select {
+				case recordWaiting <- struct{}{}:
+				default:
+				}
+			},
+		})
+		recordResult <- recordOutcome{identity: identity, err: recordErr}
+	}()
+	var earlyRecord *recordOutcome
+	select {
+	case <-recordWaiting:
+	case outcome := <-recordResult:
+		earlyRecord = &outcome
+	case <-time.After(stateLockWait + time.Second):
+		close(releaseClear)
+		t.Fatal("record did not block on the held process-update lock")
+	}
+	close(releaseClear)
+	if err := <-clearResult; err != nil {
+		t.Fatalf("clear of the old exact identity failed: %v", err)
+	}
+	var outcome recordOutcome
+	if earlyRecord != nil {
+		outcome = *earlyRecord
+	} else {
+		outcome = <-recordResult
+	}
+	if outcome.err != nil || !sameProcessIdentity(outcome.identity, newIdentity) {
+		t.Fatalf("record of the new identity failed: identity=%+v err=%v", outcome.identity, outcome.err)
+	}
+	persisted, err := store.load()
+	if err != nil || persisted.Process == nil || !sameProcessIdentity(persisted.Process.Identity, newIdentity) {
+		t.Fatalf("new process identity was lost: process=%+v err=%v", persisted.Process, err)
+	}
+}
+
+func TestPrivateStateUpdateLockIsPrivateStableAndCancellable(t *testing.T) {
+	projectRoot := t.TempDir()
+	if _, err := InitializeProject(context.Background(), projectRoot, "update-lock-fixture"); err != nil {
+		t.Fatal(err)
+	}
+	store, err := newPrivateStateStore(projectRoot, "update-lock-fixture", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstRoot, releaseFirst, err := store.lockProcessUpdate(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstInfo, err := firstRoot.Lstat(stateLockName)
+	if err != nil || firstInfo.Mode().Perm() != 0600 || !firstInfo.Mode().IsRegular() || !ownedByCurrentUser(firstInfo) {
+		releaseFirst()
+		t.Fatalf("lock file is not a private owned regular file: info=%v err=%v", firstInfo, err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Millisecond)
+	defer cancel()
+	started := time.Now()
+	if _, releaseSecond, err := store.lockProcessUpdate(ctx, nil); err == nil {
+		releaseSecond()
+		releaseFirst()
+		t.Fatal("contended lock ignored caller cancellation")
+	}
+	if elapsed := time.Since(started); elapsed > time.Second {
+		releaseFirst()
+		t.Fatalf("lock wait did not honor bounded context: %s", elapsed)
+	}
+	releaseFirst()
+	secondRoot, releaseSecond, err := store.lockProcessUpdate(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer releaseSecond()
+	secondInfo, err := secondRoot.Lstat(stateLockName)
+	if err != nil || !os.SameFile(firstInfo, secondInfo) {
+		t.Fatalf("lock inode changed between updates: first=%v second=%v err=%v", firstInfo, secondInfo, err)
+	}
+}
+
+func TestPrivateStateUpdateLockRejectsSymlink(t *testing.T) {
+	projectRoot := t.TempDir()
+	if _, err := InitializeProject(context.Background(), projectRoot, "update-lock-symlink"); err != nil {
+		t.Fatal(err)
+	}
+	store, err := newPrivateStateStore(projectRoot, "update-lock-symlink", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lockPath := filepath.Join(projectRoot, ".amos", "devrunner", stateLockName)
+	target := filepath.Join(t.TempDir(), "target")
+	if err := os.WriteFile(target, []byte("untouched"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, lockPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, release, err := store.lockProcessUpdate(context.Background(), nil); err == nil {
+		release()
+		t.Fatal("symlink lock file was followed")
+	}
+	contents, err := os.ReadFile(target)
+	if err != nil || string(contents) != "untouched" {
+		t.Fatalf("symlink target was changed: contents=%q err=%v", contents, err)
+	}
+}
+
+func TestPrivateStateUpdateLockRejectsIncorrectMode(t *testing.T) {
+	projectRoot := t.TempDir()
+	if _, err := InitializeProject(context.Background(), projectRoot, "update-lock-mode"); err != nil {
+		t.Fatal(err)
+	}
+	store, err := newPrivateStateStore(projectRoot, "update-lock-mode", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lockPath := filepath.Join(projectRoot, ".amos", "devrunner", stateLockName)
+	if err := os.WriteFile(lockPath, nil, 0640); err != nil {
+		t.Fatal(err)
+	}
+	if _, release, err := store.lockProcessUpdate(context.Background(), nil); err == nil {
+		release()
+		t.Fatal("group-readable update lock was accepted")
+	}
+}
+
+func TestPrivateStateUpdateLockRejectsHardLink(t *testing.T) {
+	projectRoot := t.TempDir()
+	if _, err := InitializeProject(context.Background(), projectRoot, "update-lock-hardlink"); err != nil {
+		t.Fatal(err)
+	}
+	store, err := newPrivateStateStore(projectRoot, "update-lock-hardlink", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	statePath := filepath.Join(projectRoot, ".amos", "devrunner", stateFileName)
+	lockPath := filepath.Join(projectRoot, ".amos", "devrunner", stateLockName)
+	if err := os.Link(statePath, lockPath); err != nil {
+		t.Skipf("filesystem does not permit isolated hard-link test: %v", err)
+	}
+	if _, release, err := store.lockProcessUpdate(context.Background(), nil); err == nil {
+		release()
+		t.Fatal("hard-linked project state was accepted as the update lock")
+	}
+}
+
+func TestPrivateStateUpdateLockRejectsForeignOwner(t *testing.T) {
+	if runtime.GOOS != "linux" || os.Geteuid() != 0 {
+		t.Skip("requires Linux root to create a foreign-owned test lock")
+	}
+	projectRoot := t.TempDir()
+	if _, err := InitializeProject(context.Background(), projectRoot, "update-lock-foreign-owner"); err != nil {
+		t.Fatal(err)
+	}
+	store, err := newPrivateStateStore(projectRoot, "update-lock-foreign-owner", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, release, err := store.lockProcessUpdate(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
+	lockPath := filepath.Join(projectRoot, ".amos", "devrunner", stateLockName)
+	if err := os.Chown(lockPath, 65534, 65534); err != nil {
+		t.Skipf("cannot change ownership of isolated test lock: %v", err)
+	}
+	if _, release, err := store.lockProcessUpdate(context.Background(), nil); err == nil {
+		release()
+		t.Fatal("foreign-owned update lock was accepted")
 	}
 }
 
