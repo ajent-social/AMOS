@@ -141,12 +141,22 @@ test("@auth-password registration, verification, sign-in and reset remain one-ti
 
     await page.goto(verification.toString());
     // Never emit proof-bearing request headers in diagnostics.
-    const verificationPost = page.waitForRequest((request) => request.method() === "POST" && new URL(request.url()).pathname === "/verify-email");
+    const verificationPost = page.waitForRequest(
+      (request) =>
+        request.method() === "POST" &&
+        new URL(request.url()).pathname === "/verify-email",
+    );
     // Neither scanner-style GET nor HEAD verifies; only this explicit POST may.
     await page.getByRole("button", { name: "Confirm email" }).click();
     const headers = (await verificationPost).headers();
-    expect(headers.origin === appURL.origin, "native confirmation retains exact Origin").toBeTruthy();
-    expect(headers.referer === appURL.origin + "/", "referrer excludes verification path and proof").toBeTruthy();
+    expect(
+      headers.origin === appURL.origin,
+      "native confirmation retains exact Origin",
+    ).toBeTruthy();
+    expect(
+      headers.referer === appURL.origin + "/",
+      "referrer excludes verification path and proof",
+    ).toBeTruthy();
     await expect(
       page.getByRole("heading", { name: "Email verified" }),
     ).toBeVisible();
@@ -165,7 +175,9 @@ test("@auth-password registration, verification, sign-in and reset remain one-ti
   await page.getByLabel("Password").fill(signupPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/todos(?:\?.*)?$/);
-  await expect(page.getByRole("heading", { name: "Todos", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Todos", exact: true }),
+  ).toBeVisible();
 
   await page.goto(new URL("/forgot-password", appURL).toString());
   await page.getByLabel("Email").fill(email);
@@ -186,30 +198,42 @@ test("@auth-password registration, verification, sign-in and reset remain one-ti
     await page.getByLabel("New password").fill(replacementPassword);
     await page.getByRole("button", { name: "Change password" }).click();
     await expect(page).toHaveURL(/\/signin\?message=password-reset$/);
-    await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Sign in", exact: true }),
+    ).toBeVisible();
   });
   let replayStage = "Back navigation";
-  await redactChallengeFailure(() => replayStage, async () => {
-    // Completion redirects to GET. Back may skip the redirect source entry.
-    await page.goBack();
-    replayStage = "Revisit original reset proof after Back";
-    await page.goto(reset.toString());
-    await expect(page.getByRole("heading", { name: "Reset link unavailable", exact: true })).toBeVisible();
-    await expect(page.getByLabel("New password")).toHaveCount(0);
-    // no-store may refetch the spent link. Reconstruct the previously rendered
-    // form to test an actual native stale-form POST without exposing its proof.
-    replayStage = "Restore previous reset form";
-    await page.evaluate((form) => { document.body.innerHTML = form; }, resetForm);
-    await expect(page.getByLabel("New password")).toBeVisible();
-    await page.getByLabel("New password").fill("Third-Horse-7!example");
-    replayStage = "Stale form native submission";
-    await page.getByRole("button", { name: "Change password" }).click();
-    replayStage = "Stale proof rejection result";
-    await expect(
-      page.getByText(/invalid, expired or already used/i),
-    ).toBeVisible();
-    await expect(page.locator("input[name='password']")).toHaveCount(0);
-  });
+  await redactChallengeFailure(
+    () => replayStage,
+    async () => {
+      // Completion redirects to GET. Back may skip the redirect source entry.
+      await page.goBack();
+      replayStage = "Revisit original reset proof after Back";
+      await page.goto(reset.toString());
+      await expect(
+        page.getByRole("heading", {
+          name: "Reset link unavailable",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(page.getByLabel("New password")).toHaveCount(0);
+      // no-store may refetch the spent link. Reconstruct the previously rendered
+      // form to test an actual native stale-form POST without exposing its proof.
+      replayStage = "Restore previous reset form";
+      await page.evaluate((form) => {
+        document.body.innerHTML = form;
+      }, resetForm);
+      await expect(page.getByLabel("New password")).toBeVisible();
+      await page.getByLabel("New password").fill("Third-Horse-7!example");
+      replayStage = "Stale form native submission";
+      await page.getByRole("button", { name: "Change password" }).click();
+      replayStage = "Stale proof rejection result";
+      await expect(
+        page.getByText(/invalid, expired or already used/i),
+      ).toBeVisible();
+      await expect(page.locator("input[name='password']")).toHaveCount(0);
+    },
+  );
 
   await page.goto(new URL("/signin", appURL).toString());
   await page.getByLabel("Email").fill(email);
