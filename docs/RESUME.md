@@ -2,7 +2,7 @@
 
 Updated: 2026-10-01. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
-Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 48 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Generated application composition, complete auth and organization policy, live subscriptions and deployment remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
+Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 50 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Generated application composition, complete auth and organization policy, live subscriptions and deployment remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
 
 Integrated foundations cover PostgreSQL/migrations, policy/configuration, jobs/outbox/email/audit, identity storage/sessions/passwords/email verification, workspace persistence/bootstrap/context, OpenAPI/Go generation, tenant-scoped reference todos and the default UI renderer. The fragment swap regression failed before the renderer fix and passes afterward in a real browser.
 
@@ -53,7 +53,7 @@ If a planned task is already implemented, materially underspecified or blocked, 
 
 Keep this repository public-safe: no private project references, home paths, private source hashes, infrastructure account identifiers, customer/attendee data, secrets or internal schedules. Use public independently reproducible evidence and synthetic fixtures. Planning grants no provider spending, publication or deployment authority.
 
-### Pending integration checkpoint (2026-10-01, resumed session)
+### Historical pending checkpoint (superseded by acceptance records below)
 
 - Main remains at the reviewed 46-task checkpoint before the current two service acceptances; additional source is staged
   in the integration branch and has not been accepted merely because it builds.
@@ -101,3 +101,12 @@ The reset replay case follows Back navigation and resubmits a reconstructed
 previously rendered form; it does not claim history restored that form itself.
 Native host/generator shipping remains a separate batch. No live provider,
 subscription, organization, cloud or complete release qualification is implied.
+
+## Native host acceptance
+
+The local personal application host is reviewed and accepted as a composition
+component. Fresh real PostgreSQL race tests, vet and zero-issue lint pass in the
+isolated batch; shutdown, immutable database binding and finite guarded MFA
+checks described as pending in the historical checkpoint now pass. See
+[evidence](evidence/native-host-20261001.md). Generator and CLI shipping remain a
+separate batch; full SaaS, live providers and cloud deployment are not qualified.

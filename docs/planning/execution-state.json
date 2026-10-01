@@ -474,7 +474,8 @@
       "Integrator isolated service batch passes fresh race tests across MFA/vault, session, store, primary proof, protection and migration packages; scoped vet and zero-issue lint pass.",
       "Headless batch review found a missing MFA admitted-context supporting file; the real guarded-cookie regression failed with unavailable primary work, the fix was restored, and fresh race tests passed. Final headless review cleared the correction.",
       "Session issuance database-clock regression fails under a transaction-start clock mutation and passes after restoration. Composed local HTTP tests also verify Origin/CSRF denial, exact persisted assurance expiry and replay rejection in a separately staged native application.",
-      "Accepted as a service component. Production key management, organization policy, enterprise MFA, UI composition, live providers and complete SaaS release qualification remain separate."
+      "Accepted as a service component. Production key management, organization policy, enterprise MFA, UI composition, live providers and complete SaaS release qualification remain separate.",
+      "Native local host composition independently reviewed at 0a71fba; fresh real PostgreSQL race checks across host, capture, reference UI and runtime pass, with scoped vet and zero-issue lint. Guarded composed MFA, replay denial, immutable binding and missing-schema startup rejection are obtained evidence. Local evaluation only; generator shipping, organizations, live providers and deployment remain separate."
     ]
   },
   "T6.3": {
