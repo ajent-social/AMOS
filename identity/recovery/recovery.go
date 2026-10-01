@@ -741,3 +741,17 @@ func writeResetPage(w http.ResponseWriter, method string, available bool, challe
 		}
 	}
 }
+
+// Preview validates a reset proof without consuming it. Invalid or expired
+// proofs share the same result; callers must not render the supplied token.
+func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, token string) (bool, error) {
+	if s == nil || s.cfg.DB == nil || ctx == nil {
+		return false, ErrUnavailable
+	}
+	id, ok := parseID(challengeID.String())
+	_, digest, err := parseToken(token)
+	if !ok || err != nil {
+		return false, nil
+	}
+	return s.preview(ctx, id, digest[:])
+}

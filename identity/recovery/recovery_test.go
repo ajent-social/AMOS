@@ -574,3 +574,26 @@ func (allowRecoveryPolicy) AuthorizePasswordChange(context.Context, *sql.Tx, ide
 func (allowRecoveryPolicy) AuthorizePasswordReset(context.Context, *sql.Tx, uuid.UUID) error {
 	return nil
 }
+
+func TestTypedPreviewValidatesWithoutConsumingResetProof(t *testing.T) {
+	db, service, ids := recoveryFixture(t)
+	account := activeRecoveryAccount(t, db, service, ids, "preview@example.test", oldPassword, false)
+	id, token := issueResetChallenge(t, db, account, time.Hour)
+	for i := 0; i < 2; i++ {
+		ok, err := service.Preview(context.Background(), id, token)
+		if err != nil || !ok {
+			t.Fatal("valid preview unavailable")
+		}
+	}
+	ok, err := service.Preview(context.Background(), id, "invalid")
+	if err != nil || ok {
+		t.Fatal("invalid reset preview accepted")
+	}
+	if response := completeResetHTTP(t, service, id, token, newPassword); response.Code != http.StatusNoContent {
+		t.Fatal("read-only preview consumed reset proof")
+	}
+	ok, err = service.Preview(context.Background(), id, token)
+	if err != nil || ok {
+		t.Fatal("consumed reset remained available")
+	}
+}
