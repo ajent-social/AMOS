@@ -18,7 +18,7 @@ paths:
         permissions: [billing.manage]
         entitlements: []
         assurance: aal2
-        sideEffect: write
+        sideEffect: external
         idempotency: required
         mcp: never
       parameters:

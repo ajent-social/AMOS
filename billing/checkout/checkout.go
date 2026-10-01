@@ -39,6 +39,7 @@ var (
 	ErrInvalidRequest  = errors.New("checkout request is invalid")
 	ErrUnauthorized    = errors.New("checkout is not authorized")
 	ErrCustomerMissing = errors.New("workspace billing customer is not configured")
+	ErrCheckoutExpired = errors.New("checkout continuation has expired")
 	keyPattern         = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`)
 )
 
@@ -87,6 +88,12 @@ type Provider interface {
 	RecoverCheckout(context.Context, provider.CheckoutRequest, billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error)
 }
 
+// ConfirmedCheckoutReader retrieves the existing provider checkout session.
+// It must never create a new checkout or retry a mutation.
+type ConfirmedCheckoutReader interface {
+	ReadConfirmedCheckout(context.Context, provider.CheckoutRequest, billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error)
+}
+
 type Authority struct {
 	ActorKind          string
 	PersonID           uuid.UUID
@@ -103,24 +110,39 @@ type Authority struct {
 type AuthorityResolver func(context.Context) (Authority, bool)
 
 type Config struct {
-	Repository        Repository
-	Provider          Provider
-	Catalog           *catalog.Catalog
-	ProviderAccountID string
-	AccountMode       provider.AccountMode
-	SuccessURL        string
-	CancelURL         string
-	ResolveAuthority  AuthorityResolver
-	Now               func() time.Time
+	Repository         Repository
+	Provider           Provider
+	ContinuationReader ConfirmedCheckoutReader
+	Catalog            *catalog.Catalog
+	CheckoutHosts      []string
+	ProviderAccountID  string
+	AccountMode        provider.AccountMode
+	SuccessURL         string
+	CancelURL          string
+	ResolveAuthority   AuthorityResolver
+	Now                func() time.Time
 }
 
-type Handler struct{ cfg Config }
+type Handler struct {
+	cfg           Config
+	checkoutHosts map[string]struct{}
+}
 
 func New(cfg Config) (*Handler, error) {
 	if cfg.Repository == nil || cfg.Provider == nil || cfg.Catalog == nil || cfg.ProviderAccountID == "" ||
 		(cfg.AccountMode != provider.AccountTest && cfg.AccountMode != provider.AccountLive) ||
-		cfg.SuccessURL == "" || cfg.CancelURL == "" {
+		cfg.SuccessURL == "" || cfg.CancelURL == "" || len(cfg.CheckoutHosts) == 0 {
 		return nil, ErrInvalidConfig
+	}
+	checkoutHosts := make(map[string]struct{}, len(cfg.CheckoutHosts))
+	for _, host := range cfg.CheckoutHosts {
+		if !validCheckoutHost(host) {
+			return nil, ErrInvalidConfig
+		}
+		if _, exists := checkoutHosts[host]; exists {
+			return nil, ErrInvalidConfig
+		}
+		checkoutHosts[host] = struct{}{}
 	}
 	if cfg.Now == nil {
 		cfg.Now = time.Now
@@ -128,7 +150,8 @@ func New(cfg Config) (*Handler, error) {
 	if cfg.ResolveAuthority == nil {
 		cfg.ResolveAuthority = contextAuthority
 	}
-	return &Handler{cfg: cfg}, nil
+	cfg.CheckoutHosts = append([]string(nil), cfg.CheckoutHosts...)
+	return &Handler{cfg: cfg, checkoutHosts: checkoutHosts}, nil
 }
 
 // SQLRepository commits intent creation and claim before the HTTP handler can
@@ -356,7 +379,28 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if prepared.Intent.State == "confirmed" {
-		writeJSON(w, http.StatusOK, response{State: "ready", IntentID: prepared.Intent.ID.String(), CreatedAt: timePtr(prepared.Intent.CreatedAt)})
+		if h.cfg.ContinuationReader == nil {
+			writeError(w, http.StatusServiceUnavailable, "billing.continuation_unavailable")
+			return
+		}
+		outcome, readErr := h.cfg.ContinuationReader.ReadConfirmedCheckout(r.Context(), toProviderRequest(prepared.Request), prepared.Intent)
+		if readErr != nil {
+			if errors.Is(readErr, ErrCheckoutExpired) {
+				writeError(w, http.StatusConflict, "billing.checkout_expired")
+				return
+			}
+			writeError(w, http.StatusServiceUnavailable, "billing.continuation_unavailable")
+			return
+		}
+		if err := h.validateOutcome(prepared.Request, outcome); err != nil || outcome.State != provider.SubscriptionConfirmed || outcome.ProviderObject.ID != prepared.Intent.ProviderObjectRef {
+			if errors.Is(err, ErrCheckoutExpired) {
+				writeError(w, http.StatusConflict, "billing.checkout_expired")
+			} else {
+				writeError(w, http.StatusServiceUnavailable, "billing.continuation_unavailable")
+			}
+			return
+		}
+		h.respondOutcome(w, prepared.Request, prepared.Intent, outcome)
 		return
 	}
 	if prepared.Intent.State == "failed" {
@@ -371,7 +415,7 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusAccepted, response{State: "unknown", IntentID: prepared.Intent.ID.String(), CreatedAt: timePtr(prepared.Intent.CreatedAt)})
 			return
 		}
-		if validateOutcome(prepared.Request, outcome) != nil {
+		if h.validateOutcome(prepared.Request, outcome) != nil {
 			h.markUnknown(w, r, prepared)
 			return
 		}
@@ -397,7 +441,7 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusAccepted, response{State: "unknown", IntentID: prepared.Intent.ID.String(), CreatedAt: timePtr(prepared.Intent.CreatedAt)})
 		return
 	}
-	if validateOutcome(prepared.Request, outcome) != nil {
+	if h.validateOutcome(prepared.Request, outcome) != nil {
 		h.markUnknown(w, r, prepared)
 		return
 	}
@@ -419,7 +463,7 @@ func (h *Handler) markUnknown(w http.ResponseWriter, r *http.Request, prepared P
 }
 
 func (h *Handler) respondOutcome(w http.ResponseWriter, req CheckoutRequest, intent billingstore.Intent, outcome provider.Outcome[provider.CheckoutSession]) {
-	if err := validateOutcome(req, outcome); err != nil {
+	if err := h.validateOutcome(req, outcome); err != nil {
 		writeError(w, http.StatusServiceUnavailable, "billing.unavailable")
 		return
 	}
@@ -462,6 +506,34 @@ func validateOutcome(req CheckoutRequest, outcome provider.Outcome[provider.Chec
 		return provider.ErrMalformedResult
 	}
 	return nil
+}
+
+func (h *Handler) validateOutcome(req CheckoutRequest, outcome provider.Outcome[provider.CheckoutSession]) error {
+	if err := validateOutcome(req, outcome); err != nil {
+		return err
+	}
+	if outcome.State != provider.SubscriptionConfirmed {
+		return nil
+	}
+	if outcome.Value.ExpiresAt.IsZero() || !outcome.Value.ExpiresAt.After(h.cfg.Now()) {
+		return ErrCheckoutExpired
+	}
+	u, err := url.Parse(outcome.Value.URL)
+	if err != nil || u.Scheme != "https" || u.User != nil || u.Port() != "" || u.Fragment != "" {
+		return provider.ErrMalformedResult
+	}
+	if _, ok := h.checkoutHosts[strings.ToLower(u.Hostname())]; !ok {
+		return provider.ErrMalformedResult
+	}
+	return nil
+}
+
+func validCheckoutHost(host string) bool {
+	if host == "" || strings.ToLower(host) != host || strings.TrimSpace(host) != host || strings.ContainsAny(host, ":/@?#*[]") {
+		return false
+	}
+	u, err := url.Parse("https://" + host)
+	return err == nil && u.Hostname() == host && u.Path == "" && u.RawQuery == "" && u.Fragment == ""
 }
 
 func (h *Handler) status(w http.ResponseWriter, r *http.Request) {

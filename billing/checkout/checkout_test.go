@@ -38,6 +38,7 @@ type memoryRepository struct {
 
 func (m *memoryRepository) Prepare(_ context.Context, _, _, _ uuid.UUID, req CheckoutRequest) (Prepared, error) {
 	m.prepareN++
+	req.Customer = provider.ObjectRef{Binding: req.Binding, ID: "cus_test_123"}
 	m.last = req
 	if m.prepareErr != nil {
 		return Prepared{}, m.prepareErr
@@ -67,6 +68,20 @@ func (m *memoryProvider) RecoverCheckout(context.Context, provider.CheckoutReque
 	return provider.Outcome[provider.CheckoutSession]{State: provider.SubscriptionUnknown, ObservedAt: time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)}, nil
 }
 
+type memoryConfirmedReader struct {
+	outcome provider.Outcome[provider.CheckoutSession]
+	err     error
+	calls   int
+	request provider.CheckoutRequest
+	intent  billingstore.Intent
+}
+
+func (m *memoryConfirmedReader) ReadConfirmedCheckout(_ context.Context, request provider.CheckoutRequest, intent billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error) {
+	m.calls++
+	m.request, m.intent = request, intent
+	return m.outcome, m.err
+}
+
 func checkoutCatalog(t *testing.T) *catalog.Catalog {
 	t.Helper()
 	c, err := catalog.New(catalog.Config{Revision: "catalog-7", Plans: []catalog.Plan{{
@@ -93,14 +108,26 @@ func checkoutAuthority(workspaceID uuid.UUID, aal identity.AssuranceLevel) Autho
 }
 
 func checkoutHandler(t *testing.T, repo *memoryRepository, providerClient *memoryProvider, authority Authority) http.Handler {
+	return checkoutHandlerWithReader(t, repo, providerClient, nil, authority)
+}
+
+func checkoutHandlerWithReader(t *testing.T, repo *memoryRepository, providerClient *memoryProvider, reader ConfirmedCheckoutReader, authority Authority) http.Handler {
 	t.Helper()
 	h, err := New(Config{Repository: repo, Provider: providerClient, Catalog: checkoutCatalog(t), ProviderAccountID: "acct_test", AccountMode: provider.AccountTest,
+		ContinuationReader: reader, CheckoutHosts: []string{"checkout.stripe.com"},
 		SuccessURL: "https://app.example.test/billing/return", CancelURL: "https://app.example.test/billing/cancel", Now: func() time.Time { return time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC) },
 		ResolveAuthority: func(context.Context) (Authority, bool) { return authority, true }})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return h
+}
+
+func confirmedOutcome(binding provider.Binding, host string, expiry time.Time) provider.Outcome[provider.CheckoutSession] {
+	ref := provider.ObjectRef{Binding: binding, ID: "cs_test_123"}
+	return provider.Outcome[provider.CheckoutSession]{State: provider.SubscriptionConfirmed,
+		Value:          provider.CheckoutSession{Ref: ref, URL: "https://" + host + "/c/pay/cs_test_123", ExpiresAt: expiry},
+		ProviderObject: ref, ObservedAt: time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)}
 }
 
 func requestStart(handler http.Handler, body string) *httptest.ResponseRecorder {
@@ -183,22 +210,60 @@ func TestT5_6_OrganizationMemberCannotStartCheckout(t *testing.T) {
 func TestT5_6_ConfirmedCheckoutResultMustBeBoundAndHTTPS(t *testing.T) {
 	req := CheckoutRequest{Binding: testBinding(checkoutWork)}
 	ref := provider.ObjectRef{Binding: req.Binding, ID: "cs_test_123"}
+	h := checkoutHandler(t, &memoryRepository{}, &memoryProvider{}, checkoutAuthority(checkoutWork, identity.AAL2)).(*Handler)
 	for _, tc := range []struct {
 		name string
 		url  string
 		ref  provider.ObjectRef
 	}{
 		{name: "http url", url: "http://checkout.example.test/session", ref: ref},
+		{name: "evil https host", url: "https://evil.example.test/session", ref: ref},
 		{name: "foreign binding", url: "https://checkout.example.test/session", ref: provider.ObjectRef{Binding: testBinding(checkoutOther), ID: "cs_test_123"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			out := provider.Outcome[provider.CheckoutSession]{State: provider.SubscriptionConfirmed,
-				Value: provider.CheckoutSession{Ref: tc.ref, URL: tc.url}, ProviderObject: tc.ref,
+				Value: provider.CheckoutSession{Ref: tc.ref, URL: tc.url, ExpiresAt: time.Date(2026, 10, 1, 12, 5, 0, 0, time.UTC)}, ProviderObject: tc.ref,
 				ObservedAt: time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)}
-			if validateOutcome(req, out) == nil {
+			if h.validateOutcome(req, out) == nil {
 				t.Fatal("malformed or cross-workspace provider result accepted")
 			}
 		})
+	}
+	if h.validateOutcome(req, confirmedOutcome(req.Binding, "checkout.stripe.com", time.Time{})) != ErrCheckoutExpired {
+		t.Fatal("zero expiry accepted")
+	}
+	if h.validateOutcome(req, confirmedOutcome(req.Binding, "checkout.stripe.com", time.Date(2026, 10, 1, 11, 59, 59, 0, time.UTC))) != ErrCheckoutExpired {
+		t.Fatal("past expiry accepted")
+	}
+}
+
+func TestT5_6_ConfirmedIdempotentRetryRetrievesSameSessionReadOnly(t *testing.T) {
+	repo := &memoryRepository{prepared: Prepared{Intent: billingstore.Intent{ID: checkoutIntent, State: "confirmed", ProviderObjectRef: "cs_test_123", CreatedAt: time.Date(2026, 10, 1, 11, 0, 0, 0, time.UTC)}}}
+	client := &memoryProvider{}
+	reader := &memoryConfirmedReader{outcome: confirmedOutcome(testBinding(checkoutWork), "checkout.stripe.com", time.Date(2026, 10, 1, 12, 5, 0, 0, time.UTC))}
+	w := requestStart(checkoutHandlerWithReader(t, repo, client, reader, checkoutAuthority(checkoutWork, identity.AAL2)), `{"price_key":"pro-month"}`)
+	var got response
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || w.Code != http.StatusOK || got.State != "redirect" || got.RedirectURL == "" || got.IntentID != checkoutIntent.String() || client.calls != 0 || reader.calls != 1 || reader.request.Customer.ID != "cus_test_123" || reader.intent.ProviderObjectRef != "cs_test_123" {
+		t.Fatalf("confirmed idempotent retry failed: status=%d result=%+v provider_calls=%d reader_calls=%d err=%v body=%s", w.Code, got, client.calls, reader.calls, err, w.Body.String())
+	}
+}
+
+func TestT5_6_ConfirmedRetryWithoutContinuationIsUnavailable(t *testing.T) {
+	repo := &memoryRepository{prepared: Prepared{Intent: billingstore.Intent{ID: checkoutIntent, State: "confirmed", ProviderObjectRef: "cs_test_123"}}}
+	client := &memoryProvider{}
+	w := requestStart(checkoutHandler(t, repo, client, checkoutAuthority(checkoutWork, identity.AAL2)), `{"price_key":"pro-month"}`)
+	if w.Code != http.StatusServiceUnavailable || !strings.Contains(w.Body.String(), "billing.continuation_unavailable") || client.calls != 0 {
+		t.Fatalf("missing continuation was falsely presented as ready: status=%d provider_calls=%d body=%s", w.Code, client.calls, w.Body.String())
+	}
+}
+
+func TestT5_6_ConfirmedRetryRejectsWrongDurableProviderObject(t *testing.T) {
+	repo := &memoryRepository{prepared: Prepared{Intent: billingstore.Intent{ID: checkoutIntent, State: "confirmed", ProviderObjectRef: "cs_other_123"}}}
+	client := &memoryProvider{}
+	reader := &memoryConfirmedReader{outcome: confirmedOutcome(testBinding(checkoutWork), "checkout.stripe.com", time.Date(2026, 10, 1, 12, 5, 0, 0, time.UTC))}
+	w := requestStart(checkoutHandlerWithReader(t, repo, client, reader, checkoutAuthority(checkoutWork, identity.AAL2)), `{"price_key":"pro-month"}`)
+	if w.Code != http.StatusServiceUnavailable || !strings.Contains(w.Body.String(), "billing.continuation_unavailable") || client.calls != 0 {
+		t.Fatalf("wrong provider object accepted on confirmed retry: status=%d body=%s", w.Code, w.Body.String())
 	}
 }
 
