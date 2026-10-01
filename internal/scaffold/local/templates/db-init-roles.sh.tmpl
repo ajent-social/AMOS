@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+  --set=db_name="$POSTGRES_DB" \
+  --set=runtime_user="$AMOS_DB_RUNTIME_USER" \
+  --set=runtime_password="$AMOS_DB_RUNTIME_PASSWORD" <<'SQL'
+CREATE ROLE :"runtime_user" LOGIN PASSWORD :'runtime_password';
+GRANT CONNECT ON DATABASE :"db_name" TO :"runtime_user";
+GRANT USAGE ON SCHEMA public TO :"runtime_user";
+SQL

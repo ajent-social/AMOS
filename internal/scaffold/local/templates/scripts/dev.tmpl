@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+if [ ! -f .env.local ]; then
+  echo "local database configuration is unavailable; run amos init first" >&2
+  exit 2
+fi
+set -a
+. ./.env.local
+set +a
+if [ ! -f ./cmd/app/main.go ]; then
+  echo "local app runner is unavailable until the generated cmd/app entrypoint is installed" >&2
+  exit 3
+fi
+podman compose up -d database
+export AMOS_DATABASE_URL="postgres://${AMOS_DB_RUNTIME_USER}:${AMOS_DB_RUNTIME_PASSWORD}@127.0.0.1:${AMOS_DB_PORT}/${AMOS_DB_NAME}?sslmode=disable"
+go run ./cmd/app serve
