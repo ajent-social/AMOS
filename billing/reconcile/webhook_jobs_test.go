@@ -246,6 +246,99 @@ func TestT5_8_WebhookJobDuplicateDoesNotDirtyOrInvalidateWorkLease(t *testing.T)
 	}
 }
 
+func TestT5_8_WebhookJobLeaseExpiryDuringIngressLinkWaitRollsBackDirtySignal(t *testing.T) {
+	f := newWebhookJobsFixture(t)
+	ctx := context.Background()
+	ingressID, _ := f.enqueueReceiptJob(t, "cus_current", "")
+
+	// Seed a work row so an expired consumer's attempted dirty signal is visible
+	// as an increment and can be proven rolled back.
+	if err := f.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		store, err := NewStore(tx)
+		if err != nil {
+			return err
+		}
+		return store.MarkDirty(ctx, newID(t), f.binding, "cus_current")
+	}); err != nil {
+		t.Fatalf("seed reconciliation work: %v", err)
+	}
+	job, ok, err := f.repository.Claim(ctx, "billing-link-wait-test", 3*time.Second)
+	if err != nil || !ok {
+		t.Fatalf("claim webhook job: ok=%v err=%v", ok, err)
+	}
+	blocker, err := f.raw.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = blocker.Rollback() }()
+	if _, err := blocker.ExecContext(ctx, `LOCK TABLE billing_reconcile_ingress IN SHARE MODE`); err != nil {
+		t.Fatalf("hold ingress-link relation lock: %v", err)
+	}
+
+	type consumeResult struct{ resolution jobs.Resolution }
+	finished := make(chan consumeResult, 1)
+	go func() { finished <- consumeResult{resolution: f.consumer.Execute(ctx, job, job.ID)} }()
+
+	// Wait until PostgreSQL confirms the consumer is blocked acquiring the
+	// ingress-link insert lock, proving it passed the earlier lease checks and
+	// dirtied the work row inside its still-open transaction.
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		var waiting bool
+		if err := f.raw.QueryRowContext(ctx, `SELECT EXISTS(
+			SELECT 1 FROM pg_stat_activity
+			WHERE datname=current_database() AND wait_event_type='Lock'
+			  AND position('INSERT INTO billing_reconcile_ingress' in query)>0
+		)`).Scan(&waiting); err != nil {
+			t.Fatal(err)
+		}
+		if waiting {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("consumer did not block on the ingress-link insert")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	expiryDeadline := time.Now().Add(5 * time.Second)
+	for {
+		var expired bool
+		if err := f.raw.QueryRowContext(ctx, `SELECT lease_until<=clock_timestamp() FROM amos_jobs WHERE id=$1`, job.ID).Scan(&expired); err != nil {
+			t.Fatal(err)
+		}
+		if expired {
+			break
+		}
+		if time.Now().After(expiryDeadline) {
+			t.Fatal("claimed job lease did not expire")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if err := blocker.Commit(); err != nil {
+		t.Fatalf("release ingress-link relation lock: %v", err)
+	}
+	select {
+	case got := <-finished:
+		if got.resolution.Kind != jobs.ResolutionTerminal {
+			t.Fatalf("expired consumer resolution=%s, want terminal", got.resolution.Kind)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("consumer did not finish after releasing ingress-link conflict")
+	}
+
+	var dirtyVersion int64
+	if err := f.raw.QueryRow(`SELECT dirty_version FROM billing_reconcile_work WHERE billing_account_id=$1`, f.account).Scan(&dirtyVersion); err != nil {
+		t.Fatal(err)
+	}
+	if dirtyVersion != 1 {
+		t.Fatalf("expired consumer committed dirty signal: dirty_version=%d, want 1", dirtyVersion)
+	}
+	var links int
+	if err := f.raw.QueryRow(`SELECT count(*) FROM billing_reconcile_ingress WHERE ingress_id=$1`, ingressID).Scan(&links); err != nil || links != 0 {
+		t.Fatalf("expired consumer link count=%d err=%v, want rollback", links, err)
+	}
+}
+
 func TestT5_8_WebhookJobRejectsForeignAndMalformedEnvelopes(t *testing.T) {
 	f := newWebhookJobsFixture(t)
 	ingressID, _ := f.enqueueReceiptJob(t, "cus_current", "")

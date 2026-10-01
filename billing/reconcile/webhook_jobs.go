@@ -321,6 +321,12 @@ func (c *WebhookJobConsumer) processWebhookReceipt(ctx context.Context, tx *sql.
 	if err != nil {
 		return jobs.Resolution{}, ErrPersistence
 	}
+	// The insert may wait on its unique key or foreign-key checks. Recheck the
+	// database clock after those waits so an expired claimant cannot commit the
+	// dirty signal or receipt link.
+	if err := assertWebhookJobLeaseCurrent(ctx, tx, job); err != nil {
+		return jobs.Resolution{}, err
+	}
 	if rows != 1 {
 		valid, err := linkedWebhookWorkMatches(ctx, tx, payload.IngressID, current, scope)
 		if err != nil {
