@@ -411,10 +411,29 @@
     ]
   },
   "T8.2": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Independent review cleared bounded strict cloud authentication reference configuration and least-privilege role/document separation.",
+      "Integrator cloudconfig package checks passed; worker named TestAuthentication, scoped vet and lint passed.",
+      "Genuine unknown-field enforcement mutation accepted a runtime secret and failed its regression; restored named suite passed.",
+      "Static AWS environment/shared/source-profile credential values rejected; local nonproduction profile/SSO and CI OIDC SDK credential references selected without extracting secret values.",
+      "Zone-scoped Cloudflare DNS edit/read reference and production KMS plus distinct recovery reference required; local passphrase restricted to development.",
+      "IAM trust/resource conditions, actual credentials, AWS/Cloudflare permissions and live deployment remain unqualified; shared schema/executable wiring pending."
+    ]
+  },
+  "T3.8": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Dependency-ready cloud authentication contract assigned exclusive configuration and documentation paths to isolated Luna worker; identity references and least-privilege validation pending."
+      "Dependency-ready Luna implementation assigned exclusive identity/recovery and identity recovery API fragment; integration, independent review and obtained named acceptance evidence pending."
+    ]
+  },
+  "T5.6": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependency-ready Luna implementation assigned exclusive billing/checkout and billing checkout API fragment; integration, independent review and obtained named acceptance evidence pending."
     ]
   }
 }
