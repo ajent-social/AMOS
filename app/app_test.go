@@ -168,6 +168,9 @@ func TestBusinessWildcardAndDistinctApexCanBothServe(t *testing.T) {
 	if err := a.RegisterBusinessRoute("GET", "/todos/*", child); err != nil {
 		t.Fatal("nonoverlapping apex and child routes rejected", err)
 	}
+	if err := a.RegisterBusinessRoute("GET", "/todos/*", child); !errors.Is(err, ErrRouteConflict) {
+		t.Fatal("duplicate wildcard accepted", err)
+	}
 	for _, tc := range []struct {
 		path string
 		want int
