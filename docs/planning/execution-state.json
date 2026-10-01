@@ -327,17 +327,46 @@
     ]
   },
   "T6.14": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Override task claimed with exclusive path ownership; implementation and generated-consumer qualification pending."
+      "Luna implementation independently reviewed; integrator corrected executed security-slot validation and HTML5 active-form parsing before acceptance.",
+      "Scoped Go tests, vet and lint passed; integrated full Go suite passed with required PostgreSQL available.",
+      "Two Chromium generated-consumer override tests passed; pinned Prettier formatting passed.",
+      "Negative tests reject missing, conditional, inert and spoofed form slots before response output; isolated security-check mutation was detected and restored.",
+      "Renderer evidence does not qualify authentication, checkout providers or deployment."
     ]
   },
   "T7.4": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Local environment generator assigned after reviewed initializer; real environment tests under review."
+      "Task claimed with isolated worktree and exclusive path ownership; implementation and acceptance checks remain in progress."
+    ]
+  },
+  "T5.3": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Luna billing persistence implementation independently reviewed and integrated; additive migration fragment awaits generated runtime migration assembly.",
+      "Integrator real PostgreSQL race suite TestT5_3 passed; worker scoped vet and lint passed.",
+      "Cross-workspace customer reuse mutation removed uniqueness enforcement and failed the expected test; restored suite passed.",
+      "Durable intent scope, idempotency, claim lease/version, unknown reconciliation, stale projection denial and append-only audit references reviewed.",
+      "Environment authority is supplied by trusted application configuration; durable event processing and live provider qualification remain separate tasks."
+    ]
+  },
+  "T3.7": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Task claimed with isolated worktree and exclusive path ownership; implementation and acceptance checks remain in progress."
+    ]
+  },
+  "T8.1": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Task claimed with isolated worktree and exclusive path ownership; implementation and acceptance checks remain in progress."
     ]
   }
 }

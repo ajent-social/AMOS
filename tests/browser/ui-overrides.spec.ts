@@ -59,15 +59,19 @@ test.beforeAll(async () => {
   await waitForServer();
 });
 test.afterAll(async () => {
-  if (server && server.exitCode === null) {
+  const running = () =>
+    server && server.exitCode === null && server.signalCode === null;
+  if (running()) {
+    const exited = new Promise<void>((resolve) =>
+      server.once("exit", () => resolve()),
+    );
     server.kill("SIGTERM");
-    await Promise.race([
-      new Promise((resolve) => server.once("exit", resolve)),
-      delay(5_000),
-    ]);
-    if (server.exitCode === null) {
+    await Promise.race([exited, delay(5_000)]);
+    if (running()) {
       server.kill("SIGKILL");
-      await new Promise((resolve) => server.once("exit", resolve));
+      await Promise.race([exited, delay(5_000)]);
+      if (running())
+        throw new Error("override example did not exit after termination");
     }
   }
   if (binaryPath) await unlink(binaryPath).catch(() => {});
