@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 set +x
+if [ ! -f cmd/app/main.go ] || [ ! -f go.mod ]; then
+  echo "application backend unavailable until generated application code is present" >&2
+  exit 3
+fi
 if [ ! -f .env.local ]; then
   echo "local database configuration is unavailable; run amos init first" >&2
   exit 2
@@ -8,10 +12,9 @@ fi
 set -a
 . ./.env.local
 set +a
-if [ ! -f ./cmd/app/main.go ]; then
-  echo "migration runner is unavailable until the generated cmd/app entrypoint is installed" >&2
-  exit 3
-fi
 podman compose up -d database
 export AMOS_MIGRATION_DATABASE_URL="postgres://${AMOS_DB_MIGRATION_USER}:${AMOS_DB_MIGRATION_PASSWORD}@127.0.0.1:${AMOS_DB_PORT}/${AMOS_DB_NAME}?sslmode=disable"
-go run ./cmd/app migrate
+mkdir -p .amos/bin
+chmod 700 .amos/bin
+go build -o .amos/bin/app ./cmd/app
+exec ./.amos/bin/app migrate

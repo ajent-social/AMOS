@@ -72,6 +72,9 @@ func (Generator) Generate(ctx context.Context, config initializer.Config, files 
 		if err != nil {
 			return err
 		}
+		if asset.template == ".gitignore" {
+			data = append(data, []byte(".amos/runtime.json\n.amos/mail/\n.amos/bin/\n.amos/devrunner/\n")...)
+		}
 		if err := files.WriteFile(ctx, asset.path, data, asset.mode); err != nil {
 			return err
 		}
@@ -84,6 +87,13 @@ func (Generator) Generate(ctx context.Context, config initializer.Config, files 
 		"AMOS_DB_RUNTIME_USER=" + v.Runtime,
 		"AMOS_DB_RUNTIME_PASSWORD=" + v.RuntimePW,
 	}, "\n") + "\n"
+	persisted, exists, err := files.ReadManagedFile(ctx, ".env.local")
+	if err != nil {
+		return err
+	}
+	if exists {
+		privateEnv = string(persisted)
+	}
 	return files.WriteFile(ctx, ".env.local", []byte(privateEnv), 0600)
 }
 

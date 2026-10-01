@@ -336,7 +336,59 @@ type Files struct {
 	journal *journal
 }
 
+// ReadManagedFile returns only a verified journaled preimage during generation.
+// It lets resumable generators reuse random private configuration without
+// exposing staging paths or accepting authored/untracked inputs as authority.
+func (f *Files) ReadManagedFile(ctx context.Context, name string) ([]byte, bool, error) {
+	if f == nil || f.journal == nil || ctx == nil || !safeOutputPath(name) || reservedOutputPath(name) {
+		return nil, false, ErrInvalidInput
+	}
+	if ctx.Err() != nil {
+		return nil, false, ErrCanceled
+	}
+	record, exists := f.journal.Files[name]
+	if !exists {
+		return nil, false, nil
+	}
+	if record.Owner != "managed" || verifyFile(f.root, record) != nil {
+		return nil, false, ErrResumeConflict
+	}
+	root, err := os.OpenRoot(f.root)
+	if err != nil {
+		return nil, false, ErrResumeConflict
+	}
+	defer func() { _ = root.Close() }()
+	before, err := root.Lstat(name)
+	if err != nil || !before.Mode().IsRegular() {
+		return nil, false, ErrResumeConflict
+	}
+	file, err := root.Open(name)
+	if err != nil {
+		return nil, false, ErrResumeConflict
+	}
+	defer func() { _ = file.Close() }()
+	after, err := file.Stat()
+	if err != nil || !os.SameFile(before, after) || uint32(after.Mode().Perm()) != record.Mode {
+		return nil, false, ErrResumeConflict
+	}
+	data, err := io.ReadAll(io.LimitReader(file, 8<<20+1))
+	if err != nil || int64(len(data)) != record.Size || digest(data) != record.SHA256 {
+		return nil, false, ErrResumeConflict
+	}
+	return data, true, nil
+}
+
 func (f *Files) WriteFile(ctx context.Context, name string, data []byte, mode os.FileMode) error {
+	return f.writeFile(ctx, name, data, mode, "managed")
+}
+
+// WriteAuthoredFile seeds owner-maintained business code and page overrides.
+// Its preimage is still checked during resume; later upgrades must preserve it.
+func (f *Files) WriteAuthoredFile(ctx context.Context, name string, data []byte, mode os.FileMode) error {
+	return f.writeFile(ctx, name, data, mode, "authored")
+}
+
+func (f *Files) writeFile(ctx context.Context, name string, data []byte, mode os.FileMode, owner string) error {
 	if f == nil || f.journal == nil || !safeOutputPath(name) || reservedOutputPath(name) || (mode != 0600 && mode != 0644 && mode != 0755) || len(data) > 8<<20 {
 		return ErrInvalidInput
 	}
@@ -350,7 +402,7 @@ func (f *Files) WriteFile(ctx context.Context, name string, data []byte, mode os
 		if err := verifyFile(f.root, record); err != nil {
 			return ErrResumeConflict
 		}
-		if record.SHA256 != digest(data) || record.Mode != uint32(mode.Perm()) {
+		if record.SHA256 != digest(data) || record.Mode != uint32(mode.Perm()) || record.Owner != owner {
 			return ErrResumeConflict
 		}
 		return nil
@@ -368,7 +420,7 @@ func (f *Files) WriteFile(ctx context.Context, name string, data []byte, mode os
 	if err := ensureParentDirs(f.root, name); err != nil {
 		return ErrGeneration
 	}
-	fileRecord := FileRecord{Path: name, SHA256: digest(data), Mode: uint32(mode.Perm()), Size: int64(len(data)), Owner: "managed"}
+	fileRecord := FileRecord{Path: name, SHA256: digest(data), Mode: uint32(mode.Perm()), Size: int64(len(data)), Owner: owner}
 	tempName := filepath.ToSlash(filepath.Join(filepath.Dir(filepath.FromSlash(name)), ".amos-write-"+f.journal.StageID+"-"+digest([]byte(name))[:12]))
 	f.journal.Pending = &pendingWrite{Record: fileRecord, TempPath: tempName}
 	if err := writeJournal(f.root, *f.journal); err != nil {
@@ -660,7 +712,11 @@ func ensureParentDirs(root, name string) error {
 		current = filepath.Join(current, part)
 		info, err := os.Lstat(current)
 		if errors.Is(err, os.ErrNotExist) {
-			if err := os.Mkdir(current, 0755); err != nil {
+			mode := os.FileMode(0755)
+			if current == filepath.Join(root, ".amos") {
+				mode = 0700
+			}
+			if err := os.Mkdir(current, mode); err != nil {
 				return err
 			}
 			continue
@@ -939,7 +995,7 @@ func readJournal(root string) (journal, error) {
 	return j, nil
 }
 func verifyFile(root string, record FileRecord) error {
-	if !safeOutputPath(record.Path) || reservedOutputPath(record.Path) || record.Owner != "managed" {
+	if !safeOutputPath(record.Path) || reservedOutputPath(record.Path) || (record.Owner != "managed" && record.Owner != "authored") {
 		return ErrResumeConflict
 	}
 	full := filepath.Join(root, filepath.FromSlash(record.Path))
