@@ -8,3 +8,10 @@ var ErrUnsupported = errors.New("atomic no-replace rename is unsupported on this
 
 func RenameNoReplace(string, string, string) error { return ErrUnsupported }
 func DirectoryIdentity(string) (string, error)     { return "", ErrUnsupported }
+
+func SecureParent(string) error {
+	return errors.New("secure initializer finalization unavailable on this platform")
+}
+func FinalizeNoReplace(string, string, string, string) (bool, error) {
+	return false, errors.New("secure initializer finalization unavailable on this platform")
+}

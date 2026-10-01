@@ -57,3 +57,7 @@ func opaqueIdentity(identity string) string {
 	sum := sha256.Sum256([]byte(identity))
 	return hex.EncodeToString(sum[:])
 }
+
+func renameAtExclusive(dir int, oldName, newName string) error {
+	return unix.Renameat2(dir, oldName, dir, newName, unix.RENAME_NOREPLACE)
+}

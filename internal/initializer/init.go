@@ -24,7 +24,7 @@ import (
 )
 
 const SchemaVersion = 1
-const TemplateVersion = "1.0"
+const TemplateVersion = "1.1"
 
 var (
 	ErrInvalidInput              = errors.New("invalid initializer input")
@@ -183,7 +183,11 @@ func initialize(ctx context.Context, input Input, generator Generator, ops trans
 		_ = os.Remove(stage)
 		return Result{}, ErrGeneration
 	}
-	j := journal{SchemaVersion: SchemaVersion, TemplateVersion: TemplateVersion, ConfigDigest: configDigest(input, config), ParentDigest: parentIdentity, StageID: stageID, Target: filepath.ToSlash(input.Target), State: "generating", Files: map[string]FileRecord{}}
+	stageIdentity, identityErr := atomic.DirectoryIdentity(stage)
+	if identityErr != nil {
+		return Result{StagingName: filepath.Base(stage)}, ErrGeneration
+	}
+	j := journal{StageDigest: stageIdentity, SchemaVersion: SchemaVersion, TemplateVersion: TemplateVersion, ConfigDigest: configDigest(input, config), ParentDigest: parentIdentity, StageID: stageID, Target: filepath.ToSlash(input.Target), State: "generating", Files: map[string]FileRecord{}}
 	if err := writeJournal(stage, j); err != nil {
 		return Result{StagingName: filepath.Base(stage)}, ErrGeneration
 	}
@@ -206,12 +210,13 @@ func resume(ctx context.Context, input Input, stagingName string, generator Gene
 	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return Result{}, ErrResumeConflict
 	}
-	if err := recoverJournalTemp(stage); err != nil {
-		return Result{}, ErrResumeConflict
-	}
 	parentIdentity, identityErr := atomic.DirectoryIdentity(targetParent)
 	j, err := readJournal(stage)
-	if identityErr != nil || err != nil || j.SchemaVersion != SchemaVersion || j.TemplateVersion != TemplateVersion || j.Target != filepath.ToSlash(input.Target) || j.ConfigDigest != configDigest(input, config) || j.ParentDigest != parentIdentity || !validID(j.StageID) {
+	stageIdentity, stageErr := atomic.DirectoryIdentity(stage)
+	if stageErr != nil || j.StageDigest != stageIdentity || identityErr != nil || err != nil || j.SchemaVersion != SchemaVersion || j.TemplateVersion != TemplateVersion || j.Target != filepath.ToSlash(input.Target) || j.ConfigDigest != configDigest(input, config) || j.ParentDigest != parentIdentity || !validID(j.StageID) {
+		return Result{}, ErrResumeConflict
+	}
+	if err := recoverJournalTemp(stage); err != nil {
 		return Result{}, ErrResumeConflict
 	}
 	if err := recoverPending(stage, &j); err != nil {
@@ -293,22 +298,26 @@ func finalize(ctx context.Context, input Input, target, targetParent, stage stri
 	if err := revalidateFinalization(input, target, targetParent, stage, j.ParentDigest); err != nil {
 		return Result{StagingName: stageName, Manifest: manifest}, err
 	}
-	if err := os.Chmod(stage, 0755); err != nil {
+	var committed bool
+	var finalErr error
+	if ops.rename != nil {
+		finalErr = ops.rename(stage, target)
+		committed = finalErr == nil
+	} else {
+		committed, finalErr = atomic.FinalizeNoReplace(stage, target, j.ParentDigest, j.StageDigest)
+	}
+	if !committed {
 		return Result{StagingName: stageName, Manifest: manifest}, ErrFinalization
 	}
-	rename := ops.rename
-	if rename == nil {
-		rename = func(oldPath, newPath string) error { return atomic.RenameNoReplace(oldPath, newPath, j.ParentDigest) }
-	}
-	if err := rename(stage, target); err != nil {
-		_ = os.Chmod(stage, 0700)
-		return Result{StagingName: stageName, Manifest: manifest}, ErrFinalization
-	}
+
 	result := Result{Target: input.Target, Manifest: manifest, Finalized: true}
 	_ = os.Remove(filepath.Join(target, ".amos-resume.json"))
 	if dir, err := os.Open(target); err == nil {
 		_ = dir.Sync()
 		_ = dir.Close()
+	}
+	if finalErr != nil {
+		return result, ErrFinalization
 	}
 	if ops.afterRename != nil {
 		if err := ops.afterRename(ctx); err != nil || ctx.Err() != nil {
@@ -523,6 +532,9 @@ func validateInput(input Input) (Config, string, string, error) {
 	}
 	target := filepath.Join(parentReal, filepath.FromSlash(input.Target))
 	targetParent := filepath.Dir(target)
+	if err := atomic.SecureParent(targetParent); err != nil {
+		return invalid()
+	}
 	if err := ensureSafeExistingPath(parentReal, targetParent); err != nil {
 		return Config{}, "", "", ErrInvalidInput
 	}
@@ -865,6 +877,7 @@ type journal struct {
 	SchemaVersion   int                   `json:"schemaVersion"`
 	TemplateVersion string                `json:"templateVersion"`
 	ConfigDigest    string                `json:"configDigest"`
+	StageDigest     string                `json:"stageDigest"`
 	ParentDigest    string                `json:"parentDigest"`
 	StageID         string                `json:"stageId"`
 	Target          string                `json:"target"`

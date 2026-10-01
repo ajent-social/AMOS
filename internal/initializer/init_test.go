@@ -352,3 +352,25 @@ func TestInitResumeRecordIsBoundToItsTargetParent(t *testing.T) {
 		t.Fatalf("copied resume record accepted under another parent: %v", err)
 	}
 }
+
+func TestResumePreservesUnownedJournalTemp(t *testing.T) {
+	input := testInput(t)
+	name := ".amos-init-todo-demo-unowned"
+	stage := filepath.Join(input.ParentDir, name)
+	if err := os.Mkdir(stage, 0700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(stage, ".amos-resume.json.tmp")
+	authored := []byte("authored recovery material")
+	if err := os.WriteFile(path, authored, 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Resume(context.Background(), input, name, GeneratorFunc(sampleGenerator))
+	if !errors.Is(err, ErrResumeConflict) {
+		t.Fatalf("resume: %v", err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil || !bytes.Equal(got, authored) {
+		t.Fatalf("unowned material altered: %q %v", got, err)
+	}
+}
