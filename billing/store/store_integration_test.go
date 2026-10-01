@@ -192,10 +192,12 @@ func newBillingDB(t *testing.T) (*storage.DB, billingprovider.Binding, billingpr
 	identitySQL := readFragment(t, "identity.sql")
 	workspaceSQL := readFragment(t, "workspace.sql")
 	billingSQL := readFragment(t, "billing.sql")
+	ingressSQL := readFragment(t, "billing-webhook-ingress.sql")
 	registry, err := migrations.NewRegistry(
 		migrations.Fragment{Namespace: "identity", Migrations: []migrations.Migration{{Sequence: 1, Name: "identity_base", SQL: identitySQL}}},
 		migrations.Fragment{Namespace: "workspace", Migrations: []migrations.Migration{{Sequence: 2, Name: "workspace_base", SQL: workspaceSQL}}},
 		migrations.Fragment{Namespace: "billing", Migrations: []migrations.Migration{{Sequence: 3, Name: "billing_base", SQL: billingSQL}}},
+		migrations.Fragment{Namespace: "billing", Migrations: []migrations.Migration{{Sequence: 4, Name: "verified_webhook_ingress", SQL: ingressSQL}}},
 	)
 	if err != nil {
 		t.Fatal(err)
