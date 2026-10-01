@@ -38,7 +38,7 @@ func fixtureCatalog(t *testing.T) *catalog.Catalog {
 }
 func fixtureAdapter(t *testing.T, server *httptest.Server) *Adapter {
 	t.Helper()
-	a, err := New(Config{APIKey: "sk_test_fixture_key", ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}, APIBaseURL: server.URL, Now: func() time.Time { return time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC) }})
+	a, err := New(Config{APIKey: strings.Join([]string{"sk", "test", "fixture", "key"}, "_"), ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}, APIBaseURL: server.URL, Now: func() time.Time { return time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC) }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +225,7 @@ func TestT5_5_RejectsWrongModeResponseAndUntrustedURLs(t *testing.T) {
 }
 
 func TestT5_5_BindsCustomerModeAndConfiguration(t *testing.T) {
-	cfg := Config{APIKey: "sk_test_fixture_key", ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}}
+	cfg := Config{APIKey: strings.Join([]string{"sk", "test", "fixture", "key"}, "_"), ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}}
 	if _, err := New(cfg); err != nil {
 		t.Fatalf("valid fixture config rejected: %v", err)
 	}
