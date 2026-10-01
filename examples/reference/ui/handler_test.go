@@ -181,3 +181,16 @@ func TestHTMXUsesSessionCSRFHeader(t *testing.T) {
 		t.Fatalf("valid HTMX CSRF header did not reach the domain seam: %#v", domain.created)
 	}
 }
+
+func TestInvalidHTMXHeaderCannotFallBackToValidFormToken(t *testing.T) {
+	domain := &fakeTodos{}
+	request := httptest.NewRequest(http.MethodPost, "/todos", strings.NewReader("_csrf=csrf-test&workspace=ws&title=Plan"))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("HX-Request", "true")
+	request.Header.Set("X-CSRF-Token", "wrong")
+	response := httptest.NewRecorder()
+	handlerWithTestCSRF(domain).ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden || domain.created.Body.Title != "" {
+		t.Fatalf("invalid HTMX CSRF header reached domain mutation: %d", response.Code)
+	}
+}
