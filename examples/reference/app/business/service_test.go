@@ -414,3 +414,37 @@ func newID(t *testing.T) uuid.UUID {
 	}
 	return id
 }
+
+func TestPersonalWorkspaceOnlyAllowsCurrentOwner(t *testing.T) {
+	h := newBusinessHarness(t)
+	auth := newSessionService(t, h.db, h.scope, h.environment)
+	svc, err := New(h.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workspaceID uuid.UUID
+	if err = h.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		store, e := workspacestore.New(tx)
+		if e != nil {
+			return e
+		}
+		ws, e := store.CreatePersonalWorkspace(context.Background(), workspacestore.CreatePersonalInput{ID: newID(t), Scope: h.scope, OwnerPersonID: h.ownerA})
+		workspaceID = ws.ID
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for _, person := range []uuid.UUID{h.ownerA, h.memberA, h.ownerB} {
+		err = callAs(t, auth, h.tokens[person], http.MethodPost, func(ctx context.Context) error {
+			_, e := svc.HandleTodosCreate(ctx, apigen.OpTodosCreateRequest{Body: apigen.ModelCreateTodo{WorkspaceId: apigen.ModelCreateTodoWorkspaceId(workspaceID.String()), Title: "personal task"}})
+			return e
+		})
+		if person == h.ownerA {
+			if err != nil {
+				t.Fatalf("owner: %v", err)
+			}
+		} else if !errors.Is(err, ErrWorkspaceUnavailable) {
+			t.Fatalf("nonowner: %v", err)
+		}
+	}
+}

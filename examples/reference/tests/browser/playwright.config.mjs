@@ -5,7 +5,10 @@ import { createRequire } from "node:module";
 const require = createRequire(path.resolve(process.cwd(), "package.json"));
 const { defineConfig } = require("@playwright/test");
 const here = path.dirname(fileURLToPath(import.meta.url));
-const host = process.env.AMOS_REFERENCE_BROWSER_HOST ?? "127.0.0.1";
+const host = "127.0.0.1";
+if (process.env.AMOS_REFERENCE_BROWSER_HOST && process.env.AMOS_REFERENCE_BROWSER_HOST !== host) {
+  throw new Error("Reference browser host must use 127.0.0.1 loopback");
+}
 const port = Number(process.env.AMOS_REFERENCE_BROWSER_PORT ?? "4187");
 const binary = process.env.AMOS_REFERENCE_BROWSER_BINARY;
 const databaseURL = process.env.AMOS_TEST_DATABASE_URL;
@@ -31,6 +34,7 @@ export default defineConfig({
   use: {
     baseURL: `http://${host}:${port}`,
     headless: true,
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } } : {}),
     trace: "off",
     screenshot: "off",
     video: "off",

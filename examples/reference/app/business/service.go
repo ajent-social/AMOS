@@ -209,14 +209,25 @@ func requireWorkspaceMember(ctx context.Context, tx *sql.Tx, principal identity.
 	if err != nil {
 		return ErrPersistence
 	}
-	err = tx.QueryRowContext(ctx, `SELECT id FROM workspaces
-		WHERE id=$1 AND installation_id=$2 AND application_id=$3 AND kind='organization' AND state='active' FOR SHARE`,
-		workspaceID, principal.InstallationID(), principal.ApplicationID()).Scan(&found)
+	var kind string
+	var owner uuid.NullUUID
+	err = tx.QueryRowContext(ctx, `SELECT id,kind,personal_owner_id FROM workspaces
+		WHERE id=$1 AND installation_id=$2 AND application_id=$3 AND state='active' FOR SHARE`,
+		workspaceID, principal.InstallationID(), principal.ApplicationID()).Scan(&found, &kind, &owner)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrWorkspaceUnavailable
 	}
 	if err != nil {
 		return ErrPersistence
+	}
+	if kind == "personal" {
+		if !owner.Valid || owner.UUID != principal.PersonID() {
+			return ErrWorkspaceUnavailable
+		}
+		return nil
+	}
+	if kind != "organization" {
+		return ErrWorkspaceUnavailable
 	}
 	err = tx.QueryRowContext(ctx, `SELECT id FROM workspace_memberships
 		WHERE installation_id=$1 AND application_id=$2 AND workspace_id=$3 AND person_id=$4 AND state='active' FOR SHARE`,
