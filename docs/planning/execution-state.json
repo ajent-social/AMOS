@@ -280,31 +280,43 @@
     ]
   },
   "T3.5": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dependency-ready isolated implementation dispatched; independent review and integrated acceptance pending."
+      "Signup atomically creates pending identity, personal workspace, verification challenge and opaque email outbox intent; concurrent scoped-email retries remain generic and issue no session.",
+      "Real PostgreSQL tests passed for concurrent signup, actual email challenge confirmation, verified-only signin, generic credential failures, malformed email fallback denial, session rotation and server-generated request IDs.",
+      "Independent review caught login CSRF; corrected configured-origin and strict JSON checks. Cross-origin gate mutation failed as predicted and restored regression passed.",
+      "Session form CSRF is bounded and body-only; duplicate Origin/Referer denial covers protected mutation and signout. Scoped lint passed with zero issues. Full authentication suite and live email delivery remain unqualified."
     ]
   },
   "T5.2": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dependency-ready isolated implementation dispatched; independent review and integrated acceptance pending."
+      "Typed provider capability interfaces and installation/environment/workspace bindings integrated with explicit unsupported and error outcomes.",
+      "Adapter timeouts preserve unknown outcomes, discard successful values and retain only valid scoped object references. Confirmed subscription snapshots bind requested subscription, price and quantity and require consistent confirmed state.",
+      "Independent review and scoped tests/lint passed. Namespace/capability and malformed snapshot mutations were detected, restored checks passed.",
+      "No live billing provider was contacted or qualified."
     ]
   },
   "T2.6": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dependency-ready isolated implementation dispatched; independent review and integrated acceptance pending."
+      "Server-rendered reference business UI with pinned same-origin HTMX assets and JavaScript-disabled form support integrated.",
+      "Nine real Chromium tests passed against isolated PostgreSQL, actual session middleware and business persistence: landing, responsiveness, assets, CRUD, validation, stale edits, account isolation, escaped titles and no-JS CSRF.",
+      "Independent review corrected missing form CSRF transport and organization-only business authorization; personal workspaces now require the current scoped owner.",
+      "CSRF and escaping negative mutations detected and restored; scoped tests/lint and public artifact checks passed. Browser fixture login is test-only and does not qualify production signup or providers."
     ]
   },
   "T7.3": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dependency-ready isolated Luna local diagnostics implementation dispatched."
+      "Bounded Go/Podman prerequisite probes, ports, volume ownership and config diagnostics integrated without installation or raw value disclosure.",
+      "Seven named local checks and ambiguous default machine regression passed. Timeout mutation failed as predicted and restored bounded probe passed.",
+      "Independent source review found no blocker after ambiguous machine selection correction; scoped lint and vet passed.",
+      "Diagnostic readiness is not generated application or deployment qualification."
     ]
   },
   "T3.10": {
@@ -319,6 +331,13 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Override task claimed with exclusive path ownership; implementation and generated-consumer qualification pending."
+    ]
+  },
+  "T7.4": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Local environment generator assigned after reviewed initializer; real environment tests under review."
     ]
   }
 }
