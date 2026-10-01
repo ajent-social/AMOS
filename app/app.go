@@ -34,9 +34,15 @@ var (
 // context supplied by AMOS. Return an error when the dependency is unavailable.
 type ReadinessCheck func(context.Context) error
 
+// IdentityHandlers binds only the selected AMOS authentication routes at startup.
+// Handlers must enforce their own credential, origin and authorization checks.
+// This constructor seam does not relax business route reservations.
+type IdentityHandlers = runtime.IdentityHandlers
+
 // Options configure the app's required dependency checks and HTTP lifecycle.
 // Empty ReadinessChecks means the app declares no external readiness dependency.
 type Options struct {
+	Identity         IdentityHandlers
 	ReadinessChecks  []ReadinessCheck
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -68,6 +74,7 @@ func New(options Options) (*App, error) {
 		checks[index] = check
 	}
 	composed, err := runtime.New(runtime.Options{
+		Identity:         options.Identity,
 		ReadinessChecks:  checks,
 		ReadinessTimeout: readinessTimeout,
 		ShutdownTimeout:  shutdownTimeout,

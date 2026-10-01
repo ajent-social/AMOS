@@ -30,6 +30,7 @@ var (
 var reservedRoots = []string{"/signin", "/signout", "/signup", "/auth", "/verify-email", "/forgot-password", "/reset-password", "/oauth", "/.well-known", "/account", "/workspaces", "/billing", "/api", "/mcp", "/healthz", "/readyz"}
 
 type Options struct {
+	Identity         IdentityHandlers
 	ReadinessChecks  []func(context.Context) error
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -42,6 +43,7 @@ type route struct {
 }
 
 type Runtime struct {
+	identity         map[string]http.Handler
 	mu               sync.RWMutex
 	routes           []route
 	checks           []func(context.Context) error
@@ -59,7 +61,7 @@ func New(opts Options) (*Runtime, error) {
 			return nil, ErrInvalidOptions
 		}
 	}
-	return &Runtime{checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}, nil
+	return &Runtime{identity: opts.Identity.routes(), checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}, nil
 }
 
 func (r *Runtime) Register(method, pattern string, handler http.Handler) error {
@@ -201,6 +203,10 @@ func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			r.readiness(w, req)
+			return
+		}
+		if handler := r.identity[req.Method+" "+path]; handler != nil {
+			handler.ServeHTTP(w, req)
 			return
 		}
 		writeError(w, http.StatusServiceUnavailable, requestID, "route.unavailable", "this AMOS route is reserved but unavailable")

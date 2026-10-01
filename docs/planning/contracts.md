@@ -134,3 +134,10 @@ principal/session authority. Existing active-principal bootstrap stays intact.
 Signup uses natural uniqueness idempotency and generic responses; duplicate
 registration cannot change credentials, ownership or grant a session. T3.5 must
 verify this composed boundary, including rollback and concurrent retry.
+
+## Contract clarification v1.3: authentication route composition
+
+ADR 012 defines the finite startup `app.IdentityHandlers` seam. It binds exact
+implemented authentication routes while preserving business prefix reservations,
+built-in health/readiness and ingress normalization. Nil handlers remain
+unavailable; supplying one grants no authentication authority or CSRF exemption.
