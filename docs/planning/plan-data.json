@@ -1086,9 +1086,9 @@
           ],
           "objective": "Create and authenticate personal accounts through shared domain operations.",
           "instructions": [
-            "Implement registration with normalized validated input and explicit unverified state; atomically create personal workspace via frozen public transaction seam.",
+            "Implement normalized registration with explicit pending-verification state; atomically create identity and personal workspace using CreatePendingRegistration and BootstrapPending transaction-bound proof (ADR 010), then QueueExistingChallengeTx before committing.",
             "Implement password sign-in using generic failure responses, verified-email policy and assurance-aware session minting.",
-            "Expose OpenAPI fragment operations with limits/idempotency semantics; never create duplicate identity on retry.",
+            "Expose bounded OpenAPI operations with natural scoped-email uniqueness idempotency; duplicate requests return generic acknowledgement without credential mutation, duplicate person/workspace creation or a session.",
             "Write real HTTP registration/sign-in tests asserting status/body, account/workspace durability and wrong-password denial.",
             "Format touched Go files with gofmt and changed frontend files with the pinned formatter; run scoped vet/lint and the named behavioral checks, rejecting skipped or zero matching tests."
           ],
@@ -4432,7 +4432,8 @@
           ],
           "owned_paths": [
             "internal/initializer/init.go",
-            "internal/initializer/init_test.go"
+            "internal/initializer/init_test.go",
+            "internal/initializer/atomic/**"
           ],
           "objective": "Generate into a staging directory and finalize only after validation.",
           "instructions": [

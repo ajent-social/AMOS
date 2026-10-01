@@ -123,3 +123,14 @@ The project license is Apache-2.0, selected by the owner. AWS, Cloudflare, email
 ## Contract amendment v1.1
 
 Reserve all selected authentication and protocol discovery route roots before business registration. Runtime errors carry a server-generated request ID that agrees with the response header; client-supplied correlation headers confer no authority and are not reused as trusted IDs. Reject control characters, invalid UTF-8, and repeated percent decoding at ingress. Task T2.2 includes actual rejection tests; downstream route and generator tasks consume this revision.
+
+## Contract clarification v1.2: pending registration
+
+ADR 010 defines the transaction-bound `identity/store.PendingRegistration` and
+`workspace/personal.BootstrapPending` composition seam. Only successful creation
+of a pending account mints this immutable proof; the workspace participant checks
+the same transaction, persisted pending state and scoped owner. It grants no
+principal/session authority. Existing active-principal bootstrap stays intact.
+Signup uses natural uniqueness idempotency and generic responses; duplicate
+registration cannot change credentials, ownership or grant a session. T3.5 must
+verify this composed boundary, including rollback and concurrent retry.

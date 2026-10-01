@@ -270,10 +270,34 @@
     ]
   },
   "T7.2": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Previous isolated initializer implementation independently reviewed; original unfinished worktree preserved.",
+      "Initializer/atomic Go tests, vet and scoped lint passed in integration checkout.",
+      "Replacing atomic no-replace rename with replacing rename failed authored empty destination regression; restored check passed.",
+      "Scoped transaction engine only; generated runnable app, CLI wiring and live provider qualification remain downstream."
+    ]
+  },
+  "T3.5": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Isolated Luna implementation covers input validation, staged generation and platform atomic no-replace finalization."
+      "Dependency-ready isolated implementation dispatched; independent review and integrated acceptance pending."
+    ]
+  },
+  "T5.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependency-ready isolated implementation dispatched; independent review and integrated acceptance pending."
+    ]
+  },
+  "T2.6": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependency-ready isolated implementation dispatched; independent review and integrated acceptance pending."
     ]
   }
 }
