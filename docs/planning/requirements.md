@@ -26,7 +26,7 @@ Status: requirements are planned, not implemented. Links identify concrete task 
 | R20 | Profiles, invitations, roles and account administration | E3-E4, T6.6/T6.10/T6.13, T16.6 |
 | R21 | Customer-created API keys and MCP OAuth | T11.5-T11.12, T11.14 |
 | R22 | Full applicable agent access under application controls | T2.8, T11.13, T12.10, T15.2, T16.8 |
-| R23 | Independent agents/Zatiti; no mandatory governance/runtime | ADR 001, T11.1/T11.14, T13.2; no customer approval-inbox epic |
+| R23 | Independent agents/external runtimes; no mandatory governance/runtime | ADR 001, T11.1/T11.14, T13.2; no customer approval-inbox epic |
 | R24 | OpenAPI first; generated Go scaffolding and MCP | T2.1/T2.3, T11.2-T11.4, T12.2/T12.12 |
 | R25 | All shared UI replaceable | T6.14-T6.17, T12.10-T12.11, T16.9 |
 | R26 | Hybrid versioned core, customizable UI, managed deployment files | T9.8-T9.12, T6.17, T12.12 |

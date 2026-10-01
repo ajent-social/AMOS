@@ -27,8 +27,8 @@ The default stack is Go, server-rendered HTML, HTMX and plain JavaScript/CSS. Bu
 - Email/password, email magic link, Google, GitHub, Apple, passkeys and per-organization OIDC enterprise SSO. SAML is not selected for this scope.
 - MFA, including organization-enforced MFA.
 - Customer API keys and MCP OAuth; agents can access all applicable application functions subject to ordinary permissions, grants and subscription policy.
-- Independent agents, including Zatiti-governed agents, connect through standard MCP. AMOS does not host Zatiti or require it. Future agent APIs remain an extension direction, not a speculative protocol to implement now.
-- AMOS enforces application security. Zatiti or other agent runtimes own broad agent governance. Do not add an AMOS approval inbox for customer agent actions merely because the old RFC or early discussion proposed one.
+- Independent agents, including agents governed by external runtimes, connect through standard MCP. AMOS does not host external agent runtimes or require a particular one. Future agent APIs remain an extension direction, not a speculative protocol to implement now.
+- AMOS enforces application security. External agent runtimes own broad agent governance. Do not add an AMOS approval inbox for customer agent actions merely because the old RFC or early discussion proposed one.
 - Shared pages are fully replaceable. An upgradable core, optional default UI, developer-owned code and managed deployment files form a hybrid distribution.
 - Automated upgrade pull requests belong in the first release scope.
 - Operational tooling includes deployment, monitoring, backups and recovery.
