@@ -163,14 +163,26 @@ components:
       properties:
         challenge_id: { type: string, format: uuid, pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" }
         token: { type: string, minLength: 43, maxLength: 43, writeOnly: true }
-        password: { type: string, minLength: 15, maxLength: 128, writeOnly: true }
+        password:
+          type: string
+          minLength: 15
+          maxLength: 128
+          writeOnly: true
     PasswordChangeRequest:
       type: object
       additionalProperties: false
       required: [current_password, new_password]
       properties:
-        current_password: { type: string, minLength: 15, maxLength: 128, writeOnly: true }
-        new_password: { type: string, minLength: 15, maxLength: 128, writeOnly: true }
+        current_password:
+          type: string
+          minLength: 15
+          maxLength: 128
+          writeOnly: true
+        new_password:
+          type: string
+          minLength: 15
+          maxLength: 128
+          writeOnly: true
     Accepted:
       type: object
       additionalProperties: false

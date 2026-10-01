@@ -20,6 +20,7 @@ func TestConfirmedContinuationReadsOnlyBoundDurableObject(t *testing.T) {
 		want  error
 	}{
 		{name: "exact"},
+		{name: "historical catalog", alter: func(s map[string]any) { s["metadata"].(map[string]string)["amos_catalog_revision"] = "prior-catalog" }},
 		{name: "foreign customer", alter: func(s map[string]any) { s["customer"] = map[string]any{"id": "cus_foreign"} }, want: ErrWrongAccount},
 		{name: "wrong object", alter: func(s map[string]any) { s["id"] = "cs_other" }, want: ErrWrongAccount},
 		{name: "evil host", alter: func(s map[string]any) { s["url"] = "https://evil.example/c/pay/cs_fixture123" }, want: ErrWrongAccount},
