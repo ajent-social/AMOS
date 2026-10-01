@@ -453,3 +453,48 @@ func newID(t *testing.T) uuid.UUID {
 	}
 	return id
 }
+
+func TestCustomerReadRequiresExactActiveAccountBinding(t *testing.T) {
+	db, binding, other := newBillingDB(t)
+	account := ensureAccount(t, db, binding)
+	otherAccount := ensureAccount(t, db, other)
+	bindCustomer(t, db, account.ID, binding, "cus_personal_read")
+	read := func(id uuid.UUID, b billingprovider.Binding) (billingstore.CustomerBinding, error) {
+		var out billingstore.CustomerBinding
+		err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+			s, e := billingstore.New(tx)
+			if e != nil {
+				return e
+			}
+			out, e = s.FindCustomerBinding(context.Background(), id, b)
+			return e
+		})
+		return out, err
+	}
+	if out, e := read(account.ID, binding); e != nil || out.CustomerRef != "cus_personal_read" {
+		t.Fatalf("bound customer unavailable: %v", e)
+	}
+	wrongEnv := binding
+	wrongEnv.EnvironmentID = newID(t).String()
+	wrongMerchant := binding
+	wrongMerchant.AccountID = "acct_wrong"
+	wrongMode := binding
+	wrongMode.AccountMode = billingprovider.AccountLive
+	for _, b := range []billingprovider.Binding{other, wrongEnv, wrongMerchant, wrongMode} {
+		if _, e := read(account.ID, b); !errors.Is(e, billingstore.ErrAccountUnavailable) {
+			t.Fatalf("foreign customer read accepted: %v", e)
+		}
+	}
+	if _, e := read(otherAccount.ID, binding); !errors.Is(e, billingstore.ErrAccountUnavailable) {
+		t.Fatalf("foreign account selected: %v", e)
+	}
+	if e := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.ExecContext(context.Background(), "UPDATE billing_workspace_accounts SET state='suspended' WHERE id=$1", account.ID)
+		return e
+	}); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := read(account.ID, binding); !errors.Is(e, billingstore.ErrAccountUnavailable) {
+		t.Fatalf("suspended account accepted: %v", e)
+	}
+}

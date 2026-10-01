@@ -220,6 +220,27 @@ func (s *Store) BindCustomer(ctx context.Context, id, bindingID uuid.UUID, bindi
 	return out, nil
 }
 
+// FindCustomerBinding reads only the active customer of an active, completely
+// bound billing account. accountID is an authorized selector, not authority.
+func (s *Store) FindCustomerBinding(ctx context.Context, accountID uuid.UUID, binding provider.Binding) (CustomerBinding, error) {
+	if !s.valid(ctx) || !validID(accountID) || binding.Validate() != nil {
+		return CustomerBinding{}, ErrInvalidInput
+	}
+	var out CustomerBinding
+	err := s.tx.QueryRowContext(ctx, `SELECT c.id,c.billing_account_id,c.customer_ref,c.state,c.created_at
+ FROM billing_customer_bindings c JOIN billing_workspace_accounts a
+ ON a.id=c.billing_account_id AND a.installation_id=c.installation_id AND a.application_id=c.application_id AND a.environment_id=c.environment_id AND a.workspace_id=c.workspace_id AND a.provider=c.provider AND a.provider_account_id=c.provider_account_id AND a.account_mode=c.account_mode
+ WHERE c.billing_account_id=$1 AND c.installation_id=$2 AND c.environment_id=$3 AND c.workspace_id=$4 AND c.provider=$5 AND c.provider_account_id=$6 AND c.account_mode=$7 AND c.state='active' AND a.state='active'`, accountID, uuid.MustParse(binding.InstallationID), uuid.MustParse(binding.EnvironmentID), uuid.MustParse(binding.WorkspaceID), binding.Provider, binding.AccountID, string(binding.AccountMode)).Scan(&out.ID, &out.AccountID, &out.CustomerRef, &out.State, &out.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return CustomerBinding{}, ErrAccountUnavailable
+	}
+	if err != nil {
+		return CustomerBinding{}, ErrPersistence
+	}
+	out.Binding = binding
+	return out, nil
+}
+
 // CreateIntent stores an immutable idempotency payload before any provider
 // mutation. Same-key/same-payload replay returns the original intent.
 func (s *Store) CreateIntent(ctx context.Context, in CreateIntentInput) (Intent, bool, error) {
