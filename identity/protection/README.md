@@ -21,8 +21,9 @@ exemptions from this guard.
 Counters use database transaction time and atomic row updates. IP denial stops
 before creating a supplied account counter; account denial remains independent of
 account existence. Denied responses are generic 429 with a bounded retry hint;
-database failure is 503. Expired counters are reused. Installation maintenance
-must prune expired rows under its separately reviewed retention policy.
+database failure is 503. Expired counters are reused. `PruneExpired` removes bounded batches within the exact deployment scope and
+skips locked rows. The application lifecycle must schedule this cleanup and
+monitor failures before production composition. It cannot delete live windows.
 
 The migration is additive. Do not remove active counters during an upgrade,
 change a deployment key casually, or infer live proxy/provider qualification from

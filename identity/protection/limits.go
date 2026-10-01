@@ -127,3 +127,30 @@ RETURNING attempts,EXTRACT(EPOCH FROM window_end-transaction_timestamp())`, l.cf
 	}
 	return result, nil
 }
+
+// PruneExpired removes at most limit expired rows in this exact deployment
+// scope. Locked admission rows are skipped. Schedule bounded batches in the
+// application lifecycle; pruning never deletes a live budget window.
+func (l *Limiter) PruneExpired(ctx context.Context, limit int) (int64, error) {
+	if l == nil || limit < 1 || limit > 1000 {
+		return 0, ErrConfiguration
+	}
+	var removed int64
+	err := l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		result, err := tx.ExecContext(ctx, `WITH expired AS (
+SELECT ctid FROM identity_auth_limits
+WHERE installation_id=$1 AND application_id=$2 AND environment_id=$3
+AND window_end<=transaction_timestamp()
+ORDER BY window_end LIMIT $4 FOR UPDATE SKIP LOCKED
+) DELETE FROM identity_auth_limits counters USING expired WHERE counters.ctid=expired.ctid`, l.cfg.InstallationID, l.cfg.ApplicationID, l.cfg.EnvironmentID, limit)
+		if err != nil {
+			return err
+		}
+		removed, err = result.RowsAffected()
+		return err
+	})
+	if err != nil {
+		return 0, ErrUnavailable
+	}
+	return removed, nil
+}

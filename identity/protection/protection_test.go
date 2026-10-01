@@ -301,3 +301,55 @@ func TestT3_7_ExpiryScopeAndConfiguration(t *testing.T) {
 		t.Fatal("unbound callback admitted")
 	}
 }
+
+func TestT3_7_PruneIsBoundedScopedAndPreservesLiveBudgets(t *testing.T) {
+	l, _ := fixture(t, 2)
+	ctx := context.Background()
+	for i := 0; i < 3; i++ {
+		if _, e := l.Allow(ctx, Signin, fmt.Sprintf("192.0.2.%d", 100+i), fmt.Sprintf("prune%d@example.test", i)); e != nil {
+			t.Fatal(e)
+		}
+	}
+	cfg := l.cfg
+	cfg.EnvironmentID, _ = uuid.NewV7()
+	other, e := New(cfg)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = other.Allow(ctx, Signin, "192.0.2.200", "other@example.test"); e != nil {
+		t.Fatal(e)
+	}
+	e = l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		_, e := tx.Exec(`UPDATE identity_auth_limits SET window_start=transaction_timestamp()-interval '2 hour',window_end=transaction_timestamp()-interval '1 hour' WHERE dimension='account'`)
+		return e
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+	n, e := l.PruneExpired(ctx, 2)
+	if e != nil || n != 2 {
+		t.Fatal(n, e)
+	}
+	n, e = l.PruneExpired(ctx, 2)
+	if e != nil || n != 1 {
+		t.Fatal(n, e)
+	}
+	n, e = l.PruneExpired(ctx, 2)
+	if e != nil || n != 0 {
+		t.Fatal(n, e)
+	}
+	n, e = other.PruneExpired(ctx, 2)
+	if e != nil || n != 1 {
+		t.Fatal("cross-scope prune", n, e)
+	}
+	var count int
+	e = l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT count(*) FROM identity_auth_limits WHERE dimension='ip'`).Scan(&count)
+	})
+	if e != nil || count != 4 {
+		t.Fatal("live budget deleted", count, e)
+	}
+	if _, e = l.PruneExpired(ctx, 1001); e != ErrConfiguration {
+		t.Fatal("unbounded prune accepted")
+	}
+}
