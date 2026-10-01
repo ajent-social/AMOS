@@ -273,10 +273,10 @@
     "status": "ACCEPTED",
     "certification": "REVIEWED",
     "evidence": [
-      "Previous isolated initializer implementation independently reviewed; original unfinished worktree preserved.",
-      "Initializer/atomic Go tests, vet and scoped lint passed in integration checkout.",
-      "Replacing atomic no-replace rename with replacing rename failed authored empty destination regression; restored check passed.",
-      "Scoped transaction engine only; generated runnable app, CLI wiring and live provider qualification remain downstream."
+      "Initializer integrated with filesystem identity journals, secure ancestor traversal and exclusive no-replace publication on Darwin/Linux; unsupported platforms fail explicitly.",
+      "Independent review identified and corrected source-substitution and premature recovery mutation issues; follow-up source review found no blocking issue.",
+      "Real filesystem tests passed for collisions, resumability, source/ancestor substitution and authored-file preservation. Recovery-order mutation failed as predicted and restored regression passed.",
+      "Full integration Go suite passed with PostgreSQL; scoped lint passed with zero issues. No generated runnable application or deployment qualification is inferred."
     ]
   },
   "T3.5": {
@@ -298,6 +298,27 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Dependency-ready isolated implementation dispatched; independent review and integrated acceptance pending."
+    ]
+  },
+  "T7.3": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependency-ready isolated Luna local diagnostics implementation dispatched."
+    ]
+  },
+  "T3.10": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Coordinator task claimed; durable flow and transactional session seam under integration design."
+    ]
+  },
+  "T6.14": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Override task claimed with exclusive path ownership; implementation and generated-consumer qualification pending."
     ]
   }
 }
