@@ -128,6 +128,30 @@ class PublicArtifactCheckerTests(unittest.TestCase):
         self.assertIn("private-home-path", result.stderr)
         self.assertNotIn(target, result.stderr)
 
+    def test_allows_env_filename_and_references_without_hiding_credentials(self) -> None:
+        clean = '\n'.join((
+            'source .env.local',
+            'template: "env.local.example"',
+            'PASS' + 'WORD=',
+            'PUBLIC_NAME=synthetic',
+            '${AMOS_DB_PASSWORD:?set password in .env.local}',
+            'DATABASE_URL="postgres://${AMOS_DB_USER}:${AMOS_DB_PASSWORD}@127.0.0.1:${AMOS_DB_PORT}/${AMOS_DB_NAME}?sslmode=disable"',
+        ))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "clean.txt").write_text(clean, encoding="utf-8")
+            result = run_checker(root, ["clean.txt"])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            (root / "bad.txt").write_text('source .env.local\npass' + 'word="non-placeholder-value"\nserver=https://env' + '.local\n', encoding="utf-8")
+            result = run_checker(root, ["bad.txt"])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("credential-assignment", result.stderr)
+            self.assertIn("private-hostname", result.stderr)
+            (root / "fallback.txt").write_text('pass' + 'word=${AMOS_DB_' + 'PASS' + 'WORD:-non-placeholder-value}\n', encoding="utf-8")
+            result = run_checker(root, ["fallback.txt"])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("credential-assignment", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

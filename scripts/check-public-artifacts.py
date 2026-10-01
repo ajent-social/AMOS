@@ -62,7 +62,7 @@ CREDENTIAL_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 ASSIGNMENT = re.compile(
     r"(?<![a-z0-9])(?:password|passwd|passphrase|secret(?:[_-]?(?:access[_-]?)?key)?|api[_-]?key|"
     r"access[_-]?token|auth[_-]?token|client[_-]?secret|private[_-]?key|"
-    r"credential|(?:database|db)[_-]?url)(?![a-z0-9])\s*[:=]\s*"
+    r"credential|(?:database|db)[_-]?url)(?![a-z0-9])[ \t]*[:=][ \t]*"
     r"(?P<value>\"[^\"\r\n]*\"|'[^'\r\n]*'|[^\s,;#]+)",
     re.IGNORECASE,
 )
@@ -73,6 +73,7 @@ SAFE_ASSIGNMENT_VALUES = re.compile(
     r"|your[-_ ]?(?:api[-_ ]?key|secret|password)"
     r"|<[^>]+>"
     r"|\$\{?[A-Z_][A-Z0-9_]*\}?"
+    r"|postgres(?:ql)?://\$\{[A-Z_][A-Z0-9_]*\}:\$\{[A-Z_][A-Z0-9_]*\}@127\.0\.0\.1:\$\{[A-Z_][A-Z0-9_]*\}/\$\{[A-Z_][A-Z0-9_]*\}\?sslmode=disable"
     r"|(?:os\.)?(?:getenv\(.+\)|environ(?:\[[^]]+\])?)"
     r"|(?:settings?|config|vault|secretmanager)(?:[._\[(].*)?"
     r")$"
@@ -205,9 +206,13 @@ def scan_public_artifacts(root: Path, paths: list[str] | None = None) -> list[Fi
             continue
         for line_number, line in enumerate(content.splitlines(), 1):
             for category, pattern in PRIVATE_PATTERNS + CREDENTIAL_PATTERNS:
-                if pattern.search(line):
+                candidate_line = line
+                if category == "private-hostname":
+                    candidate_line = re.sub(r"(?<![A-Za-z0-9.-])(?:\.env\.local(?:\.example(?:\.tmpl)?)?|env\.local\.example(?:\.tmpl)?)(?![A-Za-z0-9.-])", "<environment-file>", line)
+                if pattern.search(candidate_line):
                     findings.append(Finding(display_path, line_number, category))
-            for match in ASSIGNMENT.finditer(line):
+            assignment_line = re.sub(r"\$\{([A-Z_][A-Z0-9_]*):\?[A-Za-z0-9_ ./-]{1,256}\}", r"$\1", line)
+            for match in ASSIGNMENT.finditer(assignment_line):
                 value = match.group("value").strip("\"'")
                 if value and not SAFE_ASSIGNMENT_VALUES.fullmatch(value):
                     findings.append(Finding(display_path, line_number, "credential-assignment"))

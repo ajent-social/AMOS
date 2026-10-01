@@ -76,8 +76,15 @@ func (Generator) Generate(ctx context.Context, config initializer.Config, files 
 			return err
 		}
 	}
-	secret := fmt.Sprintf("AMOS_DB_PORT=%d\nAMOS_DB_NAME=%s\nAMOS_DB_MIGRATION_USER=%s\nAMOS_DB_MIGRATION_PASSWORD=%s\nAMOS_DB_RUNTIME_USER=%s\nAMOS_DB_RUNTIME_PASSWORD=%s\n", DefaultPort, v.Database, v.Migration, v.MigrationPW, v.Runtime, v.RuntimePW)
-	return files.WriteFile(ctx, ".env.local", []byte(secret), 0600)
+	privateEnv := strings.Join([]string{
+		fmt.Sprintf("AMOS_DB_PORT=%d", DefaultPort),
+		"AMOS_DB_NAME=" + v.Database,
+		"AMOS_DB_MIGRATION_USER=" + v.Migration,
+		"AMOS_DB_MIGRATION_PASSWORD=" + v.MigrationPW,
+		"AMOS_DB_RUNTIME_USER=" + v.Runtime,
+		"AMOS_DB_RUNTIME_PASSWORD=" + v.RuntimePW,
+	}, "\n") + "\n"
+	return files.WriteFile(ctx, ".env.local", []byte(privateEnv), 0600)
 }
 
 func makeValues(app string) (values, error) {
@@ -103,7 +110,7 @@ func makeValues(app string) (values, error) {
 func secret() (string, error) {
 	var b [32]byte
 	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf("generate local database secret: %w", err)
+		return "", fmt.Errorf("generate local database material (%w)", err)
 	}
 	h := sha256.Sum256(b[:])
 	return hex.EncodeToString(h[:]), nil

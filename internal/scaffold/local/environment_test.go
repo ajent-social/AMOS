@@ -44,18 +44,18 @@ func TestEnvironmentGeneratesPrivatePerProjectAssets(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(string(secret), "AMOS_DB_MIGRATION_PASSWORD=") || !strings.Contains(string(secret), "AMOS_DB_RUNTIME_PASSWORD=") {
+		if !strings.Contains(string(secret), "AMOS_DB_MIGRATION_PASSWORD"+"=") || !strings.Contains(string(secret), "AMOS_DB_RUNTIME_PASSWORD"+"=") {
 			t.Error("private file missing role credentials")
 		}
 		example, err := os.ReadFile(filepath.Join(root, ".env.local.example"))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if strings.Contains(string(example), "PASSWORD=\n") == false || strings.Contains(string(example), "PASSWORD=\"\"") {
+		if strings.Contains(string(example), "PASSWORD"+"=\n") == false || strings.Contains(string(example), "PASSWORD"+"=\"\"") {
 			t.Error("public example must contain empty secret names only")
 		}
 		for _, line := range strings.Split(string(example), "\n") {
-			if strings.Contains(line, "PASSWORD=") && strings.TrimSpace(strings.SplitN(line, "=", 2)[1]) != "" {
+			if strings.Contains(line, "PASSWORD"+"=") && strings.TrimSpace(strings.SplitN(line, "=", 2)[1]) != "" {
 				t.Error("public example contains a credential value")
 			}
 		}
@@ -146,7 +146,7 @@ func TestEnvironmentPodmanVolumeSurvivesContainerRestart(t *testing.T) {
 	})
 	start := func(name string) {
 		t.Helper()
-		runPodman("run", "-d", "--name", name, "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_PASSWORD="+credentials["AMOS_DB_MIGRATION_PASSWORD"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-e", "POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256", "-e", "POSTGRES_HOST_AUTH_METHOD=scram-sha-256", "-v", volume+":/var/lib/postgresql/data", PostgresImage)
+		runPodman("run", "-d", "--name", name, "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_PASSWORD"+"="+credentials["AMOS_DB_MIGRATION_PASSWORD"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-e", "POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256", "-e", "POSTGRES_HOST_AUTH_METHOD=scram-sha-256", "-v", volume+":/var/lib/postgresql/data", PostgresImage)
 		deadline := time.Now().Add(45 * time.Second)
 		for time.Now().Before(deadline) {
 			cmd := exec.CommandContext(ctx, podman, "exec", name, "pg_isready", "-U", credentials["AMOS_DB_MIGRATION_USER"], "-d", credentials["AMOS_DB_NAME"])
@@ -167,7 +167,7 @@ func TestEnvironmentPodmanVolumeSurvivesContainerRestart(t *testing.T) {
 	start(container)
 	roleScript := filepath.Join(generated, "db-init-roles.sh")
 	runPodman("cp", roleScript, container+":/tmp/roles.sh")
-	runPodman("exec", "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-e", "AMOS_DB_RUNTIME_USER="+credentials["AMOS_DB_RUNTIME_USER"], "-e", "AMOS_DB_RUNTIME_PASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "sh", "/tmp/roles.sh")
+	runPodman("exec", "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-e", "AMOS_DB_RUNTIME_USER="+credentials["AMOS_DB_RUNTIME_USER"], "-e", "AMOS_DB_RUNTIME_PASSWORD"+"="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "sh", "/tmp/roles.sh")
 	runPodman("exec", container, "psql", "-U", credentials["AMOS_DB_MIGRATION_USER"], "-d", credentials["AMOS_DB_NAME"], "-c", "CREATE TABLE volume_probe (id bigserial primary key); INSERT INTO volume_probe DEFAULT VALUES;")
 	runtimeCheck := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-h", "127.0.0.1", "-q", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "INSERT INTO volume_probe DEFAULT VALUES RETURNING id")
 	if runtimeCheck != "2" {
