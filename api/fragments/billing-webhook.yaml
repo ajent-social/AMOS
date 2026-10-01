@@ -1,0 +1,61 @@
+openapi: 3.1.1
+info:
+  title: AMOS Stripe webhook ingress
+  version: 1.0.0
+paths:
+  /webhooks/stripe:
+    post:
+      operationId: billing.webhook.receive
+      summary: Receive a signed Stripe event
+      description: >-
+        Verifies the untouched request body with the configured Stripe endpoint
+        secret and timestamp tolerance, resolves routing only from the endpoint
+        scope plus a persisted active customer binding, and durably stores the
+        event digest and normalized metadata before acknowledgement. Unknown
+        or mismatched routing is stored in quarantine. This endpoint does not
+        grant entitlements or apply provider event order directly.
+      x-amos-policy:
+        operationId: billing.webhook.receive
+        permissions: []
+        entitlements: []
+        assurance: none
+        sideEffect: external
+        idempotency: provider_event
+        mcp: never
+      parameters:
+        - in: header
+          name: Stripe-Signature
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 8192 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe event document; signature covers its exact serialized bytes.
+      responses:
+        '204':
+          description: Verified event receipt committed to the durable inbox.
+        '202':
+          description: Verified event receipt committed to quarantine.
+        '400': { $ref: '#/components/responses/WebhookError' }
+        '404': { $ref: '#/components/responses/WebhookError' }
+        '405': { $ref: '#/components/responses/WebhookError' }
+        '409': { $ref: '#/components/responses/WebhookError' }
+        '413': { $ref: '#/components/responses/WebhookError' }
+        '503': { $ref: '#/components/responses/WebhookError' }
+components:
+  schemas:
+    WebhookError:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string }
+  responses:
+    WebhookError:
+      description: Invalid signature/body, conflicting event, or unavailable durable receipt.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/WebhookError' }
