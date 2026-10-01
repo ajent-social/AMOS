@@ -121,3 +121,13 @@ and three negative/restored checks pass. See the README commands and
 remains explicit; no live providers, organization policy, production targets or
 cloud deployment are qualified. This extends accepted initializer/local scaffold
 components without accepting an entire SaaS or narrowing the complete plan.
+
+## Billing reconciliation components
+
+T5.8 remains in progress after the isolated core/official SDK component batch.
+Fresh real PostgreSQL race tests, vet and zero-issue lint pass; expired retry
+leases were corrected after independent review with genuine negative/restored
+evidence. See [checks and limits](evidence/billing-reconciliation-20261001.md).
+Durable consumer/executable scheduling, shared migration allocation, account-wide
+throttling and complete subscription/access policy remain separate; live Stripe
+credentials are absent and fixtures are not provider qualification.
