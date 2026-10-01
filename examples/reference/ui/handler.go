@@ -32,6 +32,9 @@ type Todos interface {
 // mutation requests fail closed.
 type Options struct {
 	CSRFToken func(*http.Request) (string, bool)
+	// PersonalWorkspace resolves the current authenticated person’s active personal
+	// workspace. When configured, supplied selectors cannot choose another scope.
+	PersonalWorkspace func(*http.Request) (string, error)
 }
 
 const maxFormBodyBytes = 16 << 10
@@ -43,7 +46,7 @@ func NewHandler(todos Todos, options ...Options) http.Handler {
 	if len(options) > 0 {
 		option = options[0]
 	}
-	h := &handler{todos: todos, csrfToken: option.CSRFToken}
+	h := &handler{todos: todos, csrfToken: option.CSRFToken, personal: option.PersonalWorkspace != nil}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.home)
 	mux.HandleFunc("GET /reference/ui.css", h.styles)
@@ -58,6 +61,38 @@ func NewHandler(todos Todos, options ...Options) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "same-origin")
+
+		if option.PersonalWorkspace != nil && (r.URL.Path == "/" || r.URL.Path == "/todos" || strings.HasPrefix(r.URL.Path, "/todos/")) {
+			selected, err := option.PersonalWorkspace(r)
+			if err != nil || selected == "" {
+				http.Error(w, "Workspace is unavailable.", http.StatusServiceUnavailable)
+				return
+			}
+			if r.Method == http.MethodPost {
+				if !h.parseForm(w, r) {
+					return
+				}
+				values := r.PostForm["workspace"]
+				if len(values) > 1 || (len(values) == 1 && values[0] != "" && values[0] != selected) {
+					http.Error(w, "Workspace is unavailable.", http.StatusForbidden)
+					return
+				}
+				r.PostForm.Set("workspace", selected)
+				r.Form.Set("workspace", selected)
+			}
+			query := r.URL.Query()
+			values := query["workspace"]
+			if len(values) > 1 || (len(values) == 1 && values[0] != "" && values[0] != selected) {
+				http.Error(w, "Workspace is unavailable.", http.StatusForbidden)
+				return
+			}
+			cloned := r.Clone(r.Context())
+			copiedURL := *r.URL
+			cloned.URL = &copiedURL
+			query.Set("workspace", selected)
+			cloned.URL.RawQuery = query.Encode()
+			r = cloned
+		}
 		mux.ServeHTTP(w, r)
 	})
 }
@@ -65,12 +100,14 @@ func NewHandler(todos Todos, options ...Options) http.Handler {
 type handler struct {
 	todos     Todos
 	csrfToken func(*http.Request) (string, bool)
+	personal  bool
 }
 
 type pageData struct {
 	Title, Workspace, Message, Error, TodoID string
 	CSRF                                     string
 	CanMutate                                bool
+	Personal                                 bool
 	Todos                                    []todoView
 	Editing                                  *todoView
 }
@@ -85,8 +122,8 @@ var page = template.Must(template.New("page").Parse(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="{{.CSRF}}"><title>{{.Title}} · AMOS reference</title><link rel="stylesheet" href="/reference/ui.css"><script src="/reference/htmx.min.js" defer></script><script src="/reference/csrf.js" defer></script></head>
 <body><a class="skip" href="#main">Skip to content</a><header><a href="/">AMOS reference</a><nav><a href="/todos?workspace={{urlquery .Workspace}}">Todos</a></nav></header><main id="main">
 {{if .Message}}<p role="status" class="notice">{{.Message}}</p>{{end}}{{if .Error}}<p role="alert" class="error">{{.Error}}</p>{{end}}
-{{if eq .Title "Your work, in one place"}}<section class="hero"><p class="eyebrow">A small business workspace</p><h1>Your work, in one place</h1><p>Keep a shared list of the next things to do.</p><form action="/todos" method="get"><label for="home-workspace">Workspace ID</label><div class="row"><input id="home-workspace" name="workspace" value="{{.Workspace}}" required autocomplete="off"><button type="submit">Open todos</button></div></form></section>
-{{else}}<section><p class="eyebrow">Reference workspace</p><h1>Todos</h1><form action="/todos" method="get"><label for="workspace">Workspace ID</label><div class="row"><input id="workspace" name="workspace" value="{{.Workspace}}" required autocomplete="off"><button type="submit">Load workspace</button></div></form>
+{{if eq .Title "Your work, in one place"}}<section class="hero"><p class="eyebrow">A small business workspace</p><h1>Your work, in one place</h1><p>Keep a shared list of the next things to do.</p>{{if .Personal}}<p><a href="/todos">Open your todos</a></p>{{else}}<form action="/todos" method="get"><label for="home-workspace">Workspace ID</label><div class="row"><input id="home-workspace" name="workspace" value="{{.Workspace}}" required autocomplete="off"><button type="submit">Open todos</button></div></form>{{end}}</section>
+{{else}}<section><p class="eyebrow">Reference workspace</p><h1>Todos</h1>{{if .Personal}}<p>Your personal workspace</p>{{else}}<form action="/todos" method="get"><label for="workspace">Workspace ID</label><div class="row"><input id="workspace" name="workspace" value="{{.Workspace}}" required autocomplete="off"><button type="submit">Load workspace</button></div></form>{{end}}
 {{if .Workspace}}<section class="card"><h2>{{if .Editing}}Edit todo{{else}}Add a todo{{end}}</h2>{{if .CanMutate}}{{if .Editing}}<form action="/todos/{{.Editing.ID}}/edit" method="post" hx-boost="true"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="workspace" value="{{.Workspace}}"><input type="hidden" name="revision" value="{{.Editing.Revision}}"><label for="title">Title</label><input id="title" name="title" value="{{.Editing.Title}}" required maxlength="200"><label><input type="checkbox" name="completed" value="true" {{if .Editing.Completed}}checked{{end}}> Completed</label><button type="submit">Save changes</button><a href="/todos?workspace={{urlquery .Workspace}}">Cancel</a></form>{{else}}<form action="/todos" method="post" hx-boost="true"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="workspace" value="{{.Workspace}}"><label for="title">New todo</label><div class="row"><input id="title" name="title" required maxlength="200" autocomplete="off"><button type="submit">Add todo</button></div></form>{{end}}{{else}}<p role="status" class="muted">Changes are unavailable until a protected session is ready.</p>{{end}}</section>
 <section class="card" aria-labelledby="todo-heading"><h2 id="todo-heading">Your list</h2>{{if .Todos}}<ul class="todos">{{range .Todos}}<li><span class="state">{{if .Completed}}Complete{{else}}Open{{end}}</span><span class="todo-title">{{.Title}}</span><a href="/todos/{{.ID}}/edit?workspace={{urlquery $.Workspace}}">Edit</a></li>{{end}}</ul>{{else}}<p>No todos yet. Add one above to get started.</p>{{end}}</section>{{else}}<p class="muted">Enter a workspace ID to see its todos.</p>{{end}}</section>{{end}}
 </main><footer>AMOS reference interface</footer></body></html>`))
@@ -317,6 +354,7 @@ func (h *handler) domainError(w http.ResponseWriter, data pageData, err error) {
 }
 
 func (h *handler) render(w http.ResponseWriter, status int, data pageData) {
+	data.Personal = h.personal
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if err := page.Execute(w, data); err != nil {

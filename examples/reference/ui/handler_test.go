@@ -195,3 +195,32 @@ func TestInvalidHTMXHeaderCannotFallBackToValidFormToken(t *testing.T) {
 		t.Fatalf("invalid HTMX CSRF header reached domain mutation: %d", response.Code)
 	}
 }
+
+func TestPersonalWorkspaceSelectionHidesInternalSelectorAndRejectsForeignScope(t *testing.T) {
+	domain := &fakeTodos{}
+	handler := NewHandler(domain, Options{CSRFToken: func(*http.Request) (string, bool) { return "csrf-test", true }, PersonalWorkspace: func(*http.Request) (string, error) { return "owned", nil }})
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest("GET", "/todos", nil))
+	if w.Code != 200 || strings.Contains(w.Body.String(), "Workspace ID") || !strings.Contains(w.Body.String(), "Your personal workspace") {
+		t.Fatal("personal flow exposes manual selector")
+	}
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest("GET", "/todos?workspace=foreign", nil))
+	if w.Code != 403 {
+		t.Fatal("foreign query selector accepted")
+	}
+	r := httptest.NewRequest("POST", "/todos", strings.NewReader("_csrf=csrf-test&title=Plan"))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	if w.Code != 303 || domain.created.Body.WorkspaceId != "owned" {
+		t.Fatalf("personal mutation not bound: %d", w.Code)
+	}
+	r = httptest.NewRequest("POST", "/todos", strings.NewReader("_csrf=csrf-test&workspace=foreign&title=Plan"))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	if w.Code != 403 {
+		t.Fatal("foreign form selector accepted")
+	}
+}
