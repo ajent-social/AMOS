@@ -14,6 +14,9 @@ import (
 func main() { os.Exit(run(os.Args[1:])) }
 
 func run(args []string) int {
+	if len(args) > 0 && (args[0] == "dev" || args[0] == "status" || args[0] == "clean") {
+		return runLocal(args[0], args[1:])
+	}
 	if len(args) == 0 || args[0] != "init" {
 		fmt.Fprintln(os.Stderr, "usage: amos init --config <file> --framework-source <trusted-public-repo>")
 		return 2

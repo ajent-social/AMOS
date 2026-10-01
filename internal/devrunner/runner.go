@@ -66,8 +66,10 @@ type localConfig struct {
 
 type resources struct {
 	project, volume, network, container string
+	identity                            ProjectIdentity
 	createdNetwork                      bool
 	containerID                         string
+	networkID                           string
 	config                              localConfig
 	options                             Options
 	redactor                            *redactor
@@ -98,7 +100,12 @@ func Run(ctx context.Context, options Options) (runErr error) {
 	if err := checkPort(config.port); err != nil {
 		return err
 	}
+	identity, err := InitializeProject(ctx, options.WorkingDir, options.Project)
+	if err != nil {
+		return fmt.Errorf("initialize private project identity: %w", err)
+	}
 	r := &resources{
+		identity: identity,
 		project:  options.Project,
 		volume:   options.Project + "-postgres-data",
 		network:  options.Project + "-database",
@@ -262,13 +269,47 @@ func checkPort(port string) error {
 }
 
 func (r *resources) ensureNetwork(ctx context.Context) error {
-	return r.ensureNamedResource(ctx, "network", r.network, &r.createdNetwork, []string{"network", "exists", r.network}, []string{"network", "inspect", "--format", "{{json .Labels}}", r.network}, []string{"network", "create", "--label", "io.amos.project=" + r.project, r.network})
+	if err := r.ensureNamedResource(ctx, "network", r.network, &r.createdNetwork, []string{"network", "exists", r.network}, []string{"network", "inspect", "--format", "{{json .Labels}}", r.network}, append(append([]string{"network", "create"}, r.creationLabels(ResourceDatabaseNetwork)...), r.network)); err != nil {
+		return err
+	}
+	if r.createdNetwork {
+		out, err := r.podman(ctx, "", "network", "inspect", r.network)
+		if err != nil {
+			return err
+		}
+		var records []struct {
+			ID     string            `json:"id"`
+			Labels map[string]string `json:"labels"`
+		}
+		if json.Unmarshal([]byte(out), &records) != nil || len(records) != 1 || !fullResourceIDRE.MatchString(records[0].ID) || !r.ownsLabels(records[0].Labels, ResourceDatabaseNetwork) {
+			return ErrResourceConflict
+		}
+		r.networkID = records[0].ID
+	}
+	return nil
 }
 
 func (r *resources) ensureVolume(ctx context.Context) error {
 	var created bool
-	err := r.ensureNamedResource(ctx, "volume", r.volume, &created, []string{"volume", "exists", r.volume}, []string{"volume", "inspect", "--format", "{{json .Labels}}", r.volume}, []string{"volume", "create", "--label", "io.amos.project=" + r.project, r.volume})
+	err := r.ensureNamedResource(ctx, "volume", r.volume, &created, []string{"volume", "exists", r.volume}, []string{"volume", "inspect", "--format", "{{json .Labels}}", r.volume}, append(append([]string{"volume", "create"}, r.creationLabels(ResourceDatabaseVolume)...), r.volume))
 	return err
+}
+
+func resourceKindForCommand(kind string) ResourceKind {
+	switch kind {
+	case "network":
+		return ResourceDatabaseNetwork
+	case "volume":
+		return ResourceDatabaseVolume
+	default:
+		return ResourceDatabase
+	}
+}
+func (r *resources) creationLabels(kind ResourceKind) []string {
+	return []string{"--label", projectLabel + "=" + r.identity.Project, "--label", projectIDLabel + "=" + r.identity.ID.String(), "--label", resourceLabel + "=" + string(kind)}
+}
+func (r *resources) ownsLabels(labels map[string]string, kind ResourceKind) bool {
+	return validProjectIdentity(r.identity) && labels[projectLabel] == r.identity.Project && labels[projectIDLabel] == r.identity.ID.String() && labels[resourceLabel] == string(kind)
 }
 
 func (r *resources) ensureNamedResource(ctx context.Context, kind, name string, created *bool, existsArgs, inspectArgs, createArgs []string) error {
@@ -279,7 +320,7 @@ func (r *resources) ensureNamedResource(ctx context.Context, kind, name string, 
 			return fmt.Errorf("inspect existing local %s: %w", kind, inspectErr)
 		}
 		var labels map[string]string
-		if json.Unmarshal([]byte(strings.TrimSpace(out)), &labels) != nil || (labels["io.amos.project"] != r.project && labels["com.docker.compose.project"] != r.project) {
+		if json.Unmarshal([]byte(strings.TrimSpace(out)), &labels) != nil || !r.ownsLabels(labels, resourceKindForCommand(kind)) {
 			return ErrResourceConflict
 		}
 		return nil
@@ -312,8 +353,9 @@ func (r *resources) startDatabase(ctx context.Context) error {
 	}
 	env := databaseEnvironment(r.config)
 	args := []string{"create", "--name", r.container,
-		"--label", "io.amos.project=" + r.project,
-		"--label", "io.amos.resource=database",
+		"--label", projectLabel + "=" + r.identity.Project,
+		"--label", projectIDLabel + "=" + r.identity.ID.String(),
+		"--label", resourceLabel + "=" + string(ResourceDatabase),
 		"--network", r.network,
 		"--publish", "127.0.0.1:" + r.config.port + ":5432",
 		"--volume", r.volume + ":/var/lib/postgresql/data",
@@ -329,7 +371,7 @@ func (r *resources) startDatabase(ctx context.Context) error {
 		return fmt.Errorf("create local database container: %w", err)
 	}
 	r.containerID = strings.TrimSpace(out)
-	if r.containerID == "" || strings.ContainsAny(r.containerID, "\r\n") {
+	if !fullResourceIDRE.MatchString(r.containerID) {
 		return errors.New("podman did not return the created database identity")
 	}
 	if _, err := r.podman(ctx, "", "cp", roleScript, r.containerID+":/docker-entrypoint-initdb.d/10-amos-roles.sh"); err != nil {
@@ -414,7 +456,7 @@ func (r *resources) runAppCommand(ctx context.Context, args []string, label stri
 	}
 }
 
-func (r *resources) runServer(ctx context.Context) error {
+func (r *resources) runServer(ctx context.Context) (runErr error) {
 	cmd := exec.Command(r.options.AppBinary, r.options.ServerArgs...)
 	cmd.Dir = r.options.WorkingDir
 	cmd.Env = mergeEnvironment(os.Environ(), r.serverEnvironment())
@@ -426,6 +468,20 @@ func (r *resources) runServer(ctx context.Context) error {
 		return fmt.Errorf("start local application: %w", err)
 	}
 	done := supervise(cmd, stream)
+	process, err := RecordOwnedProcess(ctx, r.options.WorkingDir, r.options.Project, cmd.Process.Pid, r.options.AppBinary)
+	if err != nil {
+		return errors.Join(fmt.Errorf("persist owned application process: %w", err), stopProcess(cmd, done, r.options.ShutdownGrace))
+	}
+	defer func() {
+		select {
+		case <-done.done:
+			if err := ClearOwnedProcess(context.Background(), r.options.WorkingDir, r.options.Project, process); err != nil {
+				runErr = errors.Join(runErr, fmt.Errorf("clear owned process record: %w", err))
+			}
+		default:
+			runErr = errors.Join(runErr, errors.New("application process exit not observed; record retained"))
+		}
+	}()
 
 	readyCtx, cancelReady := context.WithTimeout(ctx, r.options.AppReadyTimeout)
 	readyErr := waitForReady(readyCtx, r.options.ReadinessURL, done)
@@ -542,26 +598,43 @@ func stopProcess(cmd *exec.Cmd, done *processCompletion, grace time.Duration) er
 	return nil
 }
 
+var fullResourceIDRE = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
 func (r *resources) cleanup() error {
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
 	defer cancel()
 	var failures []error
 	if r.containerID != "" {
-		state, inspectErr := r.podman(ctx, "", "inspect", "--format", "{{.State.Running}}", r.containerID)
-		if inspectErr == nil && state == "true" {
-			if _, err := r.podman(ctx, "database", "stop", "--time", "5", r.containerID); err != nil {
-				failures = append(failures, fmt.Errorf("stop owned local database: %w", err))
+		output, err := r.podman(ctx, "", "inspect", "--format", "{{json .Config.Labels}}\t{{.State.Running}}\t{{.Id}}", r.containerID)
+		parts := strings.Split(output, "\t")
+		var labels map[string]string
+		if err != nil || len(parts) != 3 || json.Unmarshal([]byte(parts[0]), &labels) != nil || !r.ownsLabels(labels, ResourceDatabase) || parts[2] != r.containerID || !fullResourceIDRE.MatchString(parts[2]) {
+			failures = append(failures, errors.New("local database cleanup ownership unavailable"))
+		} else {
+			if parts[1] == "true" {
+				if _, err := r.podman(ctx, "database", "stop", "--time", "5", r.containerID); err != nil {
+					failures = append(failures, fmt.Errorf("stop owned local database: %w", err))
+				}
 			}
-		} else if inspectErr != nil {
-			failures = append(failures, fmt.Errorf("inspect owned local database before cleanup: %w", inspectErr))
-		}
-		if _, err := r.podman(ctx, "database", "rm", r.containerID); err != nil {
-			failures = append(failures, fmt.Errorf("remove owned local database: %w", err))
+			if _, err := r.podman(ctx, "database", "rm", r.containerID); err != nil {
+				failures = append(failures, fmt.Errorf("remove owned local database: %w", err))
+			}
 		}
 	}
 	if r.createdNetwork {
-		if _, err := r.podman(ctx, "database", "network", "rm", r.network); err != nil {
-			failures = append(failures, fmt.Errorf("remove owned local database network: %w", err))
+		if !fullResourceIDRE.MatchString(r.networkID) {
+			failures = append(failures, errors.New("local network cleanup identity unavailable"))
+		} else {
+			out, err := r.podman(ctx, "", "network", "inspect", r.networkID)
+			var records []struct {
+				ID     string            `json:"id"`
+				Labels map[string]string `json:"labels"`
+			}
+			if err != nil || json.Unmarshal([]byte(out), &records) != nil || len(records) != 1 || records[0].ID != r.networkID || !r.ownsLabels(records[0].Labels, ResourceDatabaseNetwork) {
+				failures = append(failures, errors.New("local network cleanup ownership unavailable"))
+			} else if _, err := r.podman(ctx, "database", "network", "rm", r.networkID); err != nil {
+				failures = append(failures, fmt.Errorf("remove owned local database network: %w", err))
+			}
 		}
 	}
 	return errors.Join(failures...)
@@ -604,7 +677,8 @@ func (r *resources) migrationEnvironment() map[string]string {
 }
 
 func (r *resources) serverEnvironment() map[string]string {
-	return map[string]string{"AMOS_DATABASE_URL": r.databaseURL(r.config.runtimeUser, r.config.runtimePassword)}
+	runtimeURL := r.databaseURL(r.config.runtimeUser, r.config.runtimePassword)
+	return map[string]string{"AMOS_DATABASE_URL": runtimeURL, "AMOS_RUNTIME_DATABASE_URL": runtimeURL}
 }
 
 func (r *resources) databaseURL(user, password string) string {
@@ -627,7 +701,7 @@ func mergeEnvironment(base []string, additions map[string]string) []string {
 	values := make(map[string]string, len(base)+len(additions))
 	for _, entry := range base {
 		key, value, ok := strings.Cut(entry, "=")
-		if ok && !strings.HasPrefix(key, "AMOS_DB_") && key != "AMOS_DATABASE_URL" && key != "AMOS_MIGRATION_DATABASE_URL" && key != "PGPASSWORD" {
+		if ok && !strings.HasPrefix(key, "AMOS_DB_") && key != "AMOS_DATABASE_URL" && key != "AMOS_MIGRATION_DATABASE_URL" && key != "AMOS_RUNTIME_DATABASE_URL" && key != "PGPASSWORD" {
 			values[key] = value
 		}
 	}

@@ -146,10 +146,27 @@ func TestLifecycleGracefulStopKeepsVolumeAndReleasesPort(t *testing.T) {
 		t.Fatalf("runner stopped before record creation: %v", runErr)
 	default:
 	}
+	status, err := InspectProject(context.Background(), StatusOptions{Project: options.Project, WorkingDir: options.WorkingDir, PodmanBinary: options.PodmanBinary})
+	if err != nil || status.State != ProjectRunning || status.Process.State != ResourceRunning {
+		t.Fatalf("owned running status unavailable: %v %+v", err, status)
+	}
+	for _, resource := range status.Resources {
+		if resource.State == ResourceUnknown {
+			t.Fatal("owned resource status unknown")
+		}
+	}
 	createRecord(t, databaseID, project.config)
 	cancel()
 	if err := <-result; err != nil {
 		t.Fatalf("graceful cancellation: %v", err)
+	}
+	store, err := newPrivateStateStore(options.WorkingDir, options.Project, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, err := store.load()
+	if err != nil || state.Process != nil {
+		t.Fatal("owned process record retained after observed shutdown")
 	}
 	if got := strings.Count(readFile(t, marker), "migration "); got != 1 {
 		t.Fatalf("migration invocation count=%d, want 1", got)
@@ -493,7 +510,12 @@ func TestEarlyNativeParentExitStopsSurvivingOwnedGroup(t *testing.T) {
 		}
 	})
 	cfg := localConfig{port: "1", database: "fixture", runtimeUser: "fixture", runtimePassword: "fixture"}
-	runner := &resources{config: cfg, redactor: newRedactor(cfg), options: Options{AppBinary: os.Args[0], WorkingDir: t.TempDir(), ServerArgs: []string{"-test.run=^TestNativeLifecycleHelper$", "--", "server"}, ReadinessURL: freeURL(t), AppReadyTimeout: 2 * time.Second, ShutdownGrace: 100 * time.Millisecond, Output: io.Discard}}
+	workingDir := t.TempDir()
+	identity, err := InitializeProject(context.Background(), workingDir, "early-exit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runner := &resources{identity: identity, project: identity.Project, config: cfg, redactor: newRedactor(cfg), options: Options{AppBinary: os.Args[0], WorkingDir: workingDir, Project: identity.Project, ServerArgs: []string{"-test.run=^TestNativeLifecycleHelper$", "--", "server"}, ReadinessURL: freeURL(t), AppReadyTimeout: 2 * time.Second, ShutdownGrace: 100 * time.Millisecond, Output: io.Discard}}
 	result := make(chan error, 1)
 	go func() { result <- runner.runServer(context.Background()) }()
 	select {
@@ -505,4 +527,57 @@ func TestEarlyNativeParentExitStopsSurvivingOwnedGroup(t *testing.T) {
 		t.Fatal("startup cleanup hung after parent exit")
 	}
 	assertProcessGone(t, readPID(t, pidFile))
+}
+
+func TestRunnerResourceIdentityLabels(t *testing.T) {
+	identity, err := InitializeProject(context.Background(), t.TempDir(), "label-boundary")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := resources{identity: identity, project: identity.Project}
+	labels, err := ResourceLabels(identity, ResourceDatabaseVolume)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r.ownsLabels(labels, ResourceDatabaseVolume) {
+		t.Fatal("owned identity labels denied")
+	}
+	labels[projectIDLabel] = "018f15e2-9aba-7d99-9fd0-070ca95bb1f8"
+	if r.ownsLabels(labels, ResourceDatabaseVolume) {
+		t.Fatal("foreign UUID resource adopted")
+	}
+	labels[projectIDLabel] = identity.ID.String()
+	labels[resourceLabel] = string(ResourceDatabaseNetwork)
+	if r.ownsLabels(labels, ResourceDatabaseVolume) {
+		t.Fatal("wrong-kind resource adopted")
+	}
+	if r.ownsLabels(map[string]string{"com.docker.compose.project": identity.Project}, ResourceDatabaseVolume) {
+		t.Fatal("legacy compose labels adopted")
+	}
+}
+func TestLifecycleRejectsSameSlugForeignVolume(t *testing.T) {
+	requirePodman(t)
+	project := newTestProject(t)
+	options := testOptions(project, freeURL(t), io.Discard)
+	volume := options.Project + "-postgres-data"
+	podmanRun(t, podmanPath(t), "volume", "create", "--label", projectLabel+"="+options.Project, "--label", projectIDLabel+"=018f15e2-9aba-7d99-9fd0-070ca95bb1f8", "--label", resourceLabel+"="+string(ResourceDatabaseVolume), volume)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := Run(ctx, options); !errors.Is(err, ErrResourceConflict) {
+		t.Fatalf("foreign same-slug volume result = %v, want ownership conflict", err)
+	}
+	podmanRun(t, podmanPath(t), "volume", "exists", volume)
+}
+
+func TestRunnerRuntimeDatabaseAlias(t *testing.T) {
+	r := resources{config: localConfig{port: "5432", database: "fixture", runtimeUser: "fixture", runtimePassword: "fixture"}}
+	env := r.serverEnvironment()
+	if env["AMOS_RUNTIME_DATABASE_URL"] == "" || env["AMOS_RUNTIME_DATABASE_URL"] != env["AMOS_DATABASE_URL"] {
+		t.Fatal("native runtime database alias unavailable")
+	}
+	for _, entry := range mergeEnvironment([]string{"AMOS_RUNTIME_DATABASE_URL=untrusted"}, r.migrationEnvironment()) {
+		if strings.HasPrefix(entry, "AMOS_RUNTIME_DATABASE_URL=") {
+			t.Fatal("runtime database credential inherited by migration child")
+		}
+	}
 }
