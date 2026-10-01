@@ -11,11 +11,13 @@ type admittedRequest struct {
 	limiter   *Limiter
 	operation Operation
 	account   string
-	used      atomic.Bool
+	used      atomic.Uint32
 }
 
-// AdmittedBudget grants one expensive credential operation only after durable
-// transport admission. Its private proof cannot be constructed by extensions.
+// AdmittedBudget bounds credential work after durable transport admission.
+// Signup/signin/reset allow one operation; password change allows current
+// verification then replacement hashing once each. This is a resource budget,
+// not proof of successful credential verification or authorization.
 type AdmittedBudget struct{ limiter *Limiter }
 
 func (l *Limiter) PasswordBudget() *AdmittedBudget { return &AdmittedBudget{limiter: l} }
@@ -27,16 +29,34 @@ func (b *AdmittedBudget) Allow(ctx context.Context, key string) error {
 	if !ok || proof == nil || proof.limiter != b.limiter {
 		return ErrUnavailable
 	}
-	var prefix string
+	var expected string
+	var before, after uint32
 	switch proof.operation {
 	case Signup:
-		prefix = "register:"
+		expected = "register:" + proof.account
+		after = 1
 	case Signin:
-		prefix = "signin:"
+		expected = "signin:" + proof.account
+		after = 1
+	case Recovery:
+		expected = "reset:" + proof.account
+		after = 1
+	case PasswordChange:
+		switch key {
+		case "change-current:" + proof.account:
+			expected = key
+			after = 1
+		case "change-new:" + proof.account:
+			expected = key
+			before = 1
+			after = 3
+		default:
+			return ErrUnavailable
+		}
 	default:
 		return ErrUnavailable
 	}
-	if key != prefix+proof.account || !proof.used.CompareAndSwap(false, true) {
+	if key != expected || !proof.used.CompareAndSwap(before, after) {
 		return ErrUnavailable
 	}
 	return nil

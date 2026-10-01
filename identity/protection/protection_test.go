@@ -390,3 +390,40 @@ func TestT3_7_PasswordWorkNeedsOneMatchingDurableAdmission(t *testing.T) {
 		t.Fatal(w.Code, called)
 	}
 }
+
+func TestPasswordMutationAdmissionIsPurposeBoundAndFinite(t *testing.T) {
+	limiter := &Limiter{}
+	guard := Guard{Limiter: limiter}
+	budget := limiter.PasswordBudget()
+	personID, err := uuid.NewV7()
+	if err != nil {
+		t.Fatal(err)
+	}
+	person := personID.String()
+	proof := guard.admittedContext(context.Background(), PasswordChange, person)
+	if e := budget.Allow(proof, "change-new:"+person); e == nil {
+		t.Fatal("replacement hashing admitted before current verification budget")
+	}
+	if e := budget.Allow(proof, "change-current:"+person); e != nil {
+		t.Fatal(e)
+	}
+	if e := budget.Allow(proof, "change-current:"+person); e == nil {
+		t.Fatal("current verifier work repeated")
+	}
+	if e := budget.Allow(proof, "change-new:"+person); e != nil {
+		t.Fatal(e)
+	}
+	if e := budget.Allow(proof, "change-new:"+person); e == nil {
+		t.Fatal("replacement hashing repeated")
+	}
+	reset := guard.admittedContext(context.Background(), Recovery, person)
+	if e := budget.Allow(reset, "register:"+person); e == nil {
+		t.Fatal("recovery admitted registration work")
+	}
+	if e := budget.Allow(reset, "reset:"+person); e != nil {
+		t.Fatal(e)
+	}
+	if e := budget.Allow(reset, "reset:"+person); e == nil {
+		t.Fatal("reset hashing repeated")
+	}
+}

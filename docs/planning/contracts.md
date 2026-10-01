@@ -157,3 +157,12 @@ application fragments at 8 and later. Published migration IDs and SQL bytes are
 immutable; upgrades append entries. The reference todo fragment owns sequence 8
 in the reference application. Current-person personal workspace selection is
 realm-scoped and does not grant authority from identifiers.
+
+## Amendment v1.6: finite password mutation admission
+
+ADR 016 distinguishes resource admission from verified credential authority.
+Password reset permits one challenge-bound hash; authenticated password change
+permits one current verifier operation then one replacement hash, with separate
+mandatory handler proof/policy/atomic revocation. Distinct protected reset writes,
+purpose-aware resolution and final rendering enforce reset/verification paths.
+No new assurance level, MFA bypass or session issuance is granted by these seams.

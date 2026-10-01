@@ -205,3 +205,33 @@ func TestProtectedMaterialRotationAndInputBounds(t *testing.T) {
 		t.Fatal("outage ignored")
 	}
 }
+
+func TestResetProtectedMaterialCannotCrossAuthenticationPurpose(t *testing.T) {
+	s, _ := setup(t)
+	ref := reference(t)
+	reset := material()
+	reset.ActionURL = "https://app.example.test/reset-password?token=synthetic"
+	expiry := time.Now().UTC().Add(time.Hour)
+	if e := s.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error { return s.PutVerificationMaterial(context.Background(), tx, ref, reset, expiry) }); e == nil {
+		t.Fatal("reset link entered verification writer")
+	}
+	if e := s.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		return s.PutPasswordResetMaterial(context.Background(), tx, ref, reset, expiry)
+	}); e != nil {
+		t.Fatal(e)
+	}
+	if got, e := s.ResolveForTemplate(context.Background(), ref, email.TemplatePasswordReset); e != nil || got != reset {
+		t.Fatal("reset material unavailable", e)
+	}
+	if _, e := s.ResolveForTemplate(context.Background(), ref, email.TemplateVerifyEmail); e == nil {
+		t.Fatal("reset material reused as verification")
+	}
+	if _, e := s.ResolveForTemplate(context.Background(), ref, email.TemplateSignIn); e == nil {
+		t.Fatal("unsupported purpose admitted")
+	}
+	verification := reference(t)
+	write(t, s, verification)
+	if _, e := s.ResolveForTemplate(context.Background(), verification, email.TemplatePasswordReset); e == nil {
+		t.Fatal("verification material reused as reset")
+	}
+}

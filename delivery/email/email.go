@@ -155,6 +155,17 @@ func (r *Renderer) Render(jobID uuid.UUID, req Request, material PrivateMaterial
 	if !validSecretReference(req.MaterialRef) || !r.allowedActionURL(material.ActionURL) {
 		return Message{}, ErrInvalidRequest
 	}
+	action, parseErr := url.Parse(material.ActionURL)
+	purposeMatches := parseErr == nil
+	if req.Template == TemplateVerifyEmail {
+		purposeMatches = purposeMatches && action.Path == "/verify-email" && action.RawPath == ""
+	}
+	if req.Template == TemplatePasswordReset {
+		purposeMatches = purposeMatches && action.Path == "/reset-password" && action.RawPath == ""
+	}
+	if !purposeMatches {
+		return Message{}, ErrInvalidRequest
+	}
 	data := templateData{ActionURL: material.ActionURL, ExpiresInSeconds: req.ExpiresInSeconds}
 	var textBuffer, htmlBuffer bytes.Buffer
 	if err := r.text[req.Template].Execute(&textBuffer, data); err != nil {
@@ -215,6 +226,11 @@ type EmailSender interface {
 type MaterialResolver interface {
 	ResolveDelivery(context.Context, SecretReference) (PrivateMaterial, error)
 }
+
+// PurposeMaterialResolver binds protected material to its authentication template.
+type PurposeMaterialResolver interface {
+	ResolveForTemplate(context.Context, SecretReference, TemplateID) (PrivateMaterial, error)
+}
 type VerifiedEventSource interface {
 	LookupVerified(context.Context, uuid.UUID) (VerifiedEvent, bool, error)
 }
@@ -261,7 +277,12 @@ func (d *Dispatcher) Execute(ctx context.Context, job jobs.Job, idempotencyKey u
 	if err := d.renderer.validateRequest(request); err != nil {
 		return jobs.Resolution{Kind: jobs.ResolutionTerminal}
 	}
-	material, err := d.materials.ResolveDelivery(ctx, request.MaterialRef)
+	var material PrivateMaterial
+	if scoped, ok := d.materials.(PurposeMaterialResolver); ok {
+		material, err = scoped.ResolveForTemplate(ctx, request.MaterialRef, request.Template)
+	} else {
+		material, err = d.materials.ResolveDelivery(ctx, request.MaterialRef)
+	}
 	if err != nil {
 		return jobs.Resolution{Kind: jobs.ResolutionRetrySafe, RetryAfter: d.retryDelay}
 	}

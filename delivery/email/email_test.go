@@ -31,7 +31,7 @@ func validRequest() Request {
 }
 
 func validMaterial() PrivateMaterial {
-	return PrivateMaterial{Recipient: "person@example.test", ActionURL: "https://app.example.test/auth/action?token=synthetic-token"}
+	return PrivateMaterial{Recipient: "person@example.test", ActionURL: "https://app.example.test/verify-email?token=synthetic-token"}
 }
 
 func TestRendererRejectsRecipientTemplateAndOriginInjection(t *testing.T) {
@@ -220,5 +220,40 @@ func TestEnqueuePersistsOnlySecretReference(t *testing.T) {
 	}
 	if count != 1 {
 		t.Fatalf("durable email intent count=%d", count)
+	}
+}
+
+func TestRendererRejectsCrossPurposeEvenWithLegacyResolver(t *testing.T) {
+	renderer := testRenderer(t)
+	id, e := uuid.NewV7()
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, tc := range []struct {
+		template TemplateID
+		path     string
+	}{{TemplateVerifyEmail, "/reset-password"}, {TemplatePasswordReset, "/verify-email"}} {
+		request := validRequest()
+		request.Template = tc.template
+		material := validMaterial()
+		material.ActionURL = "https://app.example.test" + tc.path + "?token=synthetic"
+		if _, e := renderer.Render(id, request, material); e == nil {
+			t.Fatal("authentication purpose crossed renderer")
+		}
+		legacy := &materialDouble{value: material}
+		sender := &senderDouble{send: receipt.AcceptedResult("synthetic")}
+		dispatcher, e := NewDispatcher(renderer, sender, legacy, time.Second)
+		if e != nil {
+			t.Fatal(e)
+		}
+		payload, e := json.Marshal(request)
+		if e != nil {
+			t.Fatal(e)
+		}
+		job := jobs.Job{ID: id, Kind: Kind, ExternalEffect: true, Payload: payload}
+		if out := dispatcher.Execute(context.Background(), job, id); out.Kind != jobs.ResolutionTerminal || sender.calls != 0 {
+			t.Fatal("legacy resolver bypassed authentication purpose")
+		}
+
 	}
 }

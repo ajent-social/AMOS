@@ -98,10 +98,19 @@ func (g Guard) PublicJSON(op Operation, next http.Handler) (http.Handler, error)
 			return
 		}
 		var key struct {
-			Email string `json:"email"`
+			Email       string `json:"email"`
+			ChallengeID string `json:"challenge_id"`
 		}
 		if json.Unmarshal(body, &key) != nil || len(key.Email) > 320 || !utf8.ValidString(key.Email) || strings.ContainsAny(key.Email, "\x00\r\n") {
 			key.Email = "invalid-input"
+		}
+		if op == Recovery && key.ChallengeID != "" {
+			id, e := uuid.Parse(key.ChallengeID)
+			if e != nil || id.Version() != 7 || id.String() != key.ChallengeID {
+				key.Email = "invalid-input"
+			} else {
+				key.Email = id.String()
+			}
 		}
 		if !g.admission(w, r, op, key.Email) {
 			return
@@ -176,6 +185,9 @@ func (g Guard) CookieMutation(op Operation, next http.Handler) (http.Handler, er
 			return
 		}
 		r.Body = io.NopCloser(bytes.NewReader(body))
+		if op == PasswordChange {
+			r = r.WithContext(g.admittedContext(r.Context(), op, person.String()))
+		}
 		next.ServeHTTP(w, r)
 	}), nil
 }

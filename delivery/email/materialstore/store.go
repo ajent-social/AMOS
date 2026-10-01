@@ -97,13 +97,25 @@ func (s *Store) validMaterial(m email.PrivateMaterial) bool {
 		return false
 	}
 	u, e := url.Parse(m.ActionURL)
-	return e == nil && u.Scheme+"://"+u.Host == s.origin && u.User == nil && u.Fragment == "" && u.Path == "/verify-email" && u.RawPath == ""
+	return e == nil && u.Scheme+"://"+u.Host == s.origin && u.User == nil && u.Fragment == "" && (u.Path == "/verify-email" || u.Path == "/reset-password") && u.RawPath == ""
 }
 
 // PutVerificationMaterial never writes plaintext. Failure aborts the caller's
 // transaction; generic errors omit recipients, URLs, tokens and database text.
 func (s *Store) PutVerificationMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time) error {
+	return s.putMaterial(ctx, tx, ref, m, expiry, "/verify-email")
+}
+
+// PutPasswordResetMaterial binds encrypted material to the reset action only.
+func (s *Store) PutPasswordResetMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time) error {
+	return s.putMaterial(ctx, tx, ref, m, expiry, "/reset-password")
+}
+func (s *Store) putMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time, path string) error {
 	if s == nil || ctx == nil || tx == nil || !s.validMaterial(m) {
+		return ErrUnavailable
+	}
+	action, parseErr := url.Parse(m.ActionURL)
+	if parseErr != nil || action.Path != path {
 		return ErrUnavailable
 	}
 	id, e := parseRef(ref)
@@ -192,4 +204,27 @@ func (s *Store) PruneExpired(ctx context.Context, limit int) (int64, error) {
 		return 0, ErrUnavailable
 	}
 	return count, nil
+}
+
+// ResolveForTemplate prevents a protected reference from being repurposed under
+// another authentication message template. Purpose is authenticated in the URL.
+func (s *Store) ResolveForTemplate(ctx context.Context, ref email.SecretReference, template email.TemplateID) (email.PrivateMaterial, error) {
+	var path string
+	switch template {
+	case email.TemplateVerifyEmail:
+		path = "/verify-email"
+	case email.TemplatePasswordReset:
+		path = "/reset-password"
+	default:
+		return email.PrivateMaterial{}, ErrUnavailable
+	}
+	m, e := s.ResolveDelivery(ctx, ref)
+	if e != nil {
+		return email.PrivateMaterial{}, e
+	}
+	u, e := url.Parse(m.ActionURL)
+	if e != nil || u.Path != path {
+		return email.PrivateMaterial{}, ErrUnavailable
+	}
+	return m, nil
 }
