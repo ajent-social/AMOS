@@ -177,3 +177,14 @@ policy checks preserve stronger organization/factor requirements. The reference
 assembly appends verified webhook ingress (9), immutable local deployment binding
 (10) and magic browser binding (11) after todos (8), without changing foundation
 bytes. The authored adapter does not claim qualified upstream reuse.
+
+## Amendment v1.8: native evaluation assurance and managed resume
+
+ADR 019 adds finite guarded TOTP routes and exact issued assurance expiry to the
+local evaluation composition. Statement database time bounds issuance after
+primary verification; assurance does not inherit transaction-start time. The
+reference registry appends session assurance (12), TOTP factors (13) and finite
+MFA admission (14). Existing foundation migration identities and bytes remain
+immutable. Generators reuse private random configuration only from verified
+managed journal preimages. This amendment grants no production provider, secret
+store, organization policy or deployment qualification.
