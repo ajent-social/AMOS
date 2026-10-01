@@ -1,0 +1,112 @@
+openapi: 3.1.1
+info:
+  title: AMOS workspace checkout operations
+  version: 1.0.0
+paths:
+  /billing/checkout:
+    post:
+      operationId: billing.checkout.create
+      summary: Start a workspace checkout
+      description: >-
+        Uses the authenticated current workspace, its active billing customer,
+        and a server-controlled catalog selection. A redirect-ready checkout
+        session is not evidence of payment or entitlement. Repeating the same
+        Idempotency-Key and request returns the same intent; a changed request
+        conflicts.
+      x-amos-policy:
+        operationId: billing.checkout.create
+        permissions: [billing.manage]
+        entitlements: []
+        assurance: aal2
+        sideEffect: write
+        idempotency: required
+        mcp: never
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 128, pattern: '^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$' }
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 256 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [price_key]
+              properties:
+                price_key: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        '200':
+          description: Checkout session is ready for the browser to redirect to.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckoutResult' }
+        '202':
+          description: Provider result is pending or unknown; poll the status resource.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckoutResult' }
+        '400': { $ref: '#/components/responses/CheckoutError' }
+        '403': { $ref: '#/components/responses/CheckoutError' }
+        '409': { $ref: '#/components/responses/CheckoutError' }
+        '422': { $ref: '#/components/responses/CheckoutError' }
+        '503': { $ref: '#/components/responses/CheckoutError' }
+  /billing/checkout/{intent_id}:
+    get:
+      operationId: billing.checkout.status
+      summary: Read the current workspace checkout status
+      description: >-
+        Reads only an intent belonging to the authenticated current workspace.
+        The response omits provider object identifiers and checkout URLs. A
+        browser return URL or query parameter never changes payment state.
+      x-amos-policy:
+        operationId: billing.checkout.status
+        permissions: [billing.manage]
+        entitlements: []
+        assurance: aal1
+        sideEffect: read
+        idempotency: forbidden
+        mcp: never
+      parameters:
+        - in: path
+          name: intent_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Current durable request state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckoutResult' }
+        '400': { $ref: '#/components/responses/CheckoutError' }
+        '403': { $ref: '#/components/responses/CheckoutError' }
+        '404': { $ref: '#/components/responses/CheckoutError' }
+        '503': { $ref: '#/components/responses/CheckoutError' }
+components:
+  schemas:
+    CheckoutResult:
+      type: object
+      additionalProperties: false
+      required: [state, intent_id, created_at]
+      properties:
+        state: { type: string, enum: [redirect, ready, pending, unknown, failed] }
+        intent_id: { type: string, format: uuid }
+        redirect_url: { type: string, format: uri, description: Present only on an authorized checkout creation or exact unknown-intent recovery response. }
+        created_at: { type: string, format: date-time }
+    CheckoutError:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string }
+  responses:
+    CheckoutError:
+      description: Checkout request denied, invalid, conflicting, or unavailable.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/CheckoutError' }
