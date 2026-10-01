@@ -1,5 +1,7 @@
 // Package catalog holds reviewed, server-side flat-price catalog versions and
 // evaluates paid-feature access from fresh, scoped subscription projections.
+// The initial supported currency set is USD with two minor-unit digits; other
+// currencies remain rejected until their scale and provider handling are reviewed.
 package catalog
 
 import (
@@ -20,7 +22,11 @@ var (
 )
 
 var identifierPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$`)
-var currencyPattern = regexp.MustCompile(`^[A-Z]{3}$`)
+
+// supportedCurrencyScales contains only currency scales qualified for this
+// catalog implementation. Extending currency support requires adding reviewed
+// provider/account and rounding tests; valid-looking ISO codes alone are not support.
+var supportedCurrencyScales = map[string]int{"USD": 2}
 
 type Model string
 
@@ -367,7 +373,13 @@ func validUUIDv7(s string) bool {
 	return err == nil && u.Version() == 7 && u.Variant() == uuid.RFC4122 && u.String() == s
 }
 func validatePlan(p Plan) error {
-	if !validIdentifier(p.Key) || !validIdentifier(p.Revision) || !validIdentifier(p.ProductFamily) || p.Model != ModelFlat || p.Scope.validateCatalogScope() != nil || !currencyPattern.MatchString(p.Currency) || (p.MinorUnit != 0 && p.MinorUnit != 2 && p.MinorUnit != 3 && p.MinorUnit != 4) || p.EffectiveAt.IsZero() || (!p.WithdrawnAt.IsZero() && !p.WithdrawnAt.After(p.EffectiveAt)) || len(p.Features) == 0 || len(p.Prices) == 0 {
+	minorUnit, currencySupported := supportedCurrencyScales[p.Currency]
+	if !currencySupported || minorUnit != p.MinorUnit {
+		return ErrInvalidCatalog
+	}
+	if !validIdentifier(p.Key) || !validIdentifier(p.Revision) || !validIdentifier(p.ProductFamily) ||
+		p.Model != ModelFlat || p.Scope.validateCatalogScope() != nil || p.EffectiveAt.IsZero() ||
+		(!p.WithdrawnAt.IsZero() && !p.WithdrawnAt.After(p.EffectiveAt)) || len(p.Features) == 0 || len(p.Prices) == 0 {
 		return ErrInvalidCatalog
 	}
 	seen := map[string]bool{}

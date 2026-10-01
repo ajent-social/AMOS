@@ -189,3 +189,23 @@ func TestT5_4_CanceledProjectionDoesNotPreservePaidAccess(t *testing.T) {
 		t.Fatalf("ambiguous cancellation granted access: %+v", got)
 	}
 }
+
+func TestT5_4_RejectsUnsupportedCurrencyAndIncorrectMinorUnit(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		currency string
+		minor    int
+	}{
+		{name: "unknown currency", currency: "ZZZ", minor: 2},
+		{name: "USD zero minor units", currency: "USD", minor: 0},
+		{name: "USD four minor units", currency: "USD", minor: 4},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			plan := testPlan(testScope())
+			plan.Currency, plan.MinorUnit = tc.currency, tc.minor
+			if _, err := New(Config{Revision: "catalog-invalid-currency", Plans: []Plan{plan}}); !errors.Is(err, ErrInvalidCatalog) {
+				t.Fatalf("invalid currency metadata accepted: %v", err)
+			}
+		})
+	}
+}
