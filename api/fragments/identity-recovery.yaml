@@ -1,0 +1,208 @@
+openapi: 3.1.1
+info:
+  title: AMOS password recovery operations
+  version: 1.0.0
+paths:
+  /forgot-password:
+    post:
+      operationId: identity.password-recovery.request
+      summary: Request a password reset
+      description: Returns the same accepted response whether or not the normalized email identifies an eligible account. The reset challenge and protected delivery intent are committed atomically.
+      x-amos-policy:
+        operationId: identity.password-recovery.request
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: external
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordRecoveryRequest'
+      responses:
+        '202':
+          description: Request accepted without disclosing account eligibility.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Accepted' }
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /reset-password:
+    get:
+      operationId: identity.password-recovery.preview
+      summary: Preview a password reset
+      description: Validates the purpose-bound reset proof and renders a confirmation form. This request never consumes the challenge or creates a session.
+      x-amos-policy:
+        operationId: identity.password-recovery.preview
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: read
+        idempotency: natural
+        mcp: never
+      parameters:
+        - name: challenge
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: token
+          in: query
+          required: true
+          schema: { type: string, minLength: 43, maxLength: 43 }
+      responses:
+        '200':
+          description: A non-consuming confirmation page; invalid proofs receive a generic unavailable page.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+            Referrer-Policy:
+              schema: { type: string, const: no-referrer }
+          content:
+            text/html:
+              schema: { type: string }
+        '503':
+          $ref: '#/components/responses/Unavailable'
+    post:
+      operationId: identity.password-recovery.complete
+      summary: Complete a password reset
+      description: Consumes one unexpired, purpose-bound password-reset challenge. A successful reset advances the security epoch, revokes existing sessions, preserves other authentication methods, and does not issue a session. Reset completion never creates an authenticated session; required MFA or organization policy remains in force.
+      x-amos-policy:
+        operationId: identity.password-recovery.complete
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordRecoveryCompletion'
+      responses:
+        '204':
+          description: Password changed; no session is issued.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          description: The reset proof is unavailable, expired, consumed, or bound to a different account.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /account/password:
+    post:
+      operationId: identity.password.change
+      summary: Change the authenticated account password
+      description: Requires a current authenticated session, Origin and CSRF validation, and the current password. Organization policy may additionally require a fresh step-up proof. A successful change invalidates prior sessions.
+      x-amos-policy:
+        operationId: identity.password.change
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+      responses:
+        '204':
+          description: Password changed; existing sessions are invalidated.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          description: Current password or current proof is unavailable.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: CSRF, Origin, assurance, or organization policy requirements were not met.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  schemas:
+    PasswordRecoveryRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { type: string, format: email, minLength: 3, maxLength: 254 }
+    PasswordRecoveryCompletion:
+      type: object
+      additionalProperties: false
+      required: [challenge_id, token, password]
+      properties:
+        challenge_id: { type: string, format: uuid, pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" }
+        token: { type: string, minLength: 43, maxLength: 43, writeOnly: true }
+        password: { type: string, minLength: 15, maxLength: 128, writeOnly: true }
+    PasswordChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [current_password, new_password]
+      properties:
+        current_password: { type: string, minLength: 15, maxLength: 128, writeOnly: true }
+        new_password: { type: string, minLength: 15, maxLength: 128, writeOnly: true }
+    Accepted:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: { type: string, const: identity.password-recovery.accepted }
+        message: { type: string }
+        request_id: { type: string, maxLength: 80 }
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string, maxLength: 80 }
+  responses:
+    InvalidRequest:
+      description: Invalid or oversized request.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Authentication operation rate limit exceeded.
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unavailable:
+      description: Required dependency is unavailable.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
