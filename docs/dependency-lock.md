@@ -71,3 +71,7 @@ Stripe Go transitive arithmetic dependency: `github.com/shopspring/decimal`
 **v1.4.0**, MIT, selected by the pinned SDK. Module checksum
 `h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp81k=`; go.mod checksum
 `h1:gawqmDU56v4yIKSwfBSFip1HdCCXN8/+DMd9qYNcwME=`.
+
+## TOTP library selection
+
+`github.com/pquerna/otp` v1.5.0 is the latest official non-prerelease tag verified through the managed GitHub release API on 2026-10-01 (published 2025-05-16). The release includes the upstream random-secret generation security correction. Apache-2.0 license and module checksum were inspected; the MIT barcode transitive module is pinned and its notice reproduced. AMOS factor storage, proof policy, anti-replay and durable assurance propagation require their own review and evidence.
