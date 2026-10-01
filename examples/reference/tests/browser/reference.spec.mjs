@@ -28,9 +28,15 @@ test.afterEach(async ({ page }) => {
   await page.request.post("/_test/reset");
 });
 
+test("public landing renders workspace entry without a session", async ({ page }) => {
+  const response = await page.goto("/");
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "Your work, in one place" })).toBeVisible();
+  await expect(page.getByLabel("Workspace ID")).toBeVisible();
+});
+
 test("loads the pinned HTMX enhancement from the same origin", async ({ page }) => {
-  const { workspace } = await prepare(page);
-  await page.goto(`/todos?workspace=${encodeURIComponent(workspace)}`);
+  await page.goto("/");
   await expect(page.locator('script[src^="https://"]')).toHaveCount(0);
   const asset = await page.request.get("/reference/htmx.min.js");
   expect(asset.ok()).toBeTruthy();
