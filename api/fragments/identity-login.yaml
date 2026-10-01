@@ -1,0 +1,122 @@
+openapi: 3.1.1
+paths:
+  /signup:
+    post:
+      operationId: identity.register
+      summary: Register a personal account
+      description: Accepts registration without revealing whether an email address is already registered. Verification is required before sign-in.
+      x-amos-policy:
+        operationId: identity.register
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: natural
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '202':
+          description: Registration accepted. A verification message may be sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accepted'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /auth:
+    post:
+      operationId: identity.sign-in
+      summary: Sign in with email and password
+      description: Unverified, disabled, missing, and password-mismatched accounts receive the same authentication failure.
+      x-amos-policy:
+        operationId: identity.sign-in
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+      responses:
+        '200':
+          description: Session established with an HttpOnly cookie.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [authenticated, csrf_token]
+                properties:
+                  authenticated: { type: boolean, const: true }
+                  csrf_token: { type: string, minLength: 43, maxLength: 43 }
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          description: Email or password is incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  schemas:
+    RegistrationRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, minLength: 3, maxLength: 254 }
+        password: { type: string, minLength: 15, maxLength: 128 }
+    SignInRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, minLength: 3, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 512 }
+    Accepted:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: { type: string, const: identity.registration_accepted }
+        message: { type: string }
+        request_id: { type: string, maxLength: 80 }
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string, maxLength: 80 }
+  responses:
+    InvalidRequest:
+      description: Invalid or oversized request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unavailable:
+      description: Required dependency is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
