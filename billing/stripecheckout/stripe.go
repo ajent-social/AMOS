@@ -98,7 +98,9 @@ func New(cfg Config) (*Adapter, error) {
 	// Go's transport may replay idempotency-key POSTs on reused connections
 	// independently of SDK retries. Fresh connections prevent that implicit replay.
 	transport := &http.Transport{Proxy: http.ProxyFromEnvironment, DisableKeepAlives: true, ForceAttemptHTTP2: false, TLSHandshakeTimeout: 10 * time.Second}
-	backendConfig := &stripe.BackendConfig{URL: apiURL, HTTPClient: &http.Client{Timeout: cfg.Timeout, Transport: transport, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}, MaxNetworkRetries: &noRetries, EnableTelemetry: &enableTelemetry}
+	// SDK diagnostics can contain provider URLs and object identifiers. Callers
+	// receive sanitized adapter errors instead of raw SDK logging.
+	backendConfig := &stripe.BackendConfig{LeveledLogger: &stripe.LeveledLogger{Level: stripe.LevelNull}, URL: apiURL, HTTPClient: &http.Client{Timeout: cfg.Timeout, Transport: transport, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}, MaxNetworkRetries: &noRetries, EnableTelemetry: &enableTelemetry}
 	client := stripe.NewClient(cfg.APIKey, stripe.WithBackends(stripe.NewBackendsWithConfig(backendConfig)))
 	return &Adapter{client: client, accountID: cfg.ProviderAccountID, mode: cfg.AccountMode, catalog: cfg.Catalog, returnHosts: hosts, connectAccount: cfg.ConnectAccountID, now: cfg.Now}, nil
 }

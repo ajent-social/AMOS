@@ -490,5 +490,14 @@
       "The browser resubmission case reconstructs the previously rendered form after Back; it does not claim the browser restored that form from history. Original origin/referrer failures and worker guard mutations were observed before corrected passing checks.",
       "Accepted as a UI component. Native host/generator shipping is a separate batch; live mail, subscriptions, organizations, cloud deployment and complete release qualification remain separate."
     ]
+  },
+  "T5.8": {
+    "status": "IN_PROGRESS",
+    "evidence": [
+      "Independent headless re-review of exact ccc119c closed the expired Retry lease blocker and found no remaining standalone component source blocker. Integrator-owned catalog/SDK support and explicitly delegated snapshot paths are recorded in the task file.",
+      "Isolated reconciliation core and official Stripe snapshot component batch ccc119c passes fresh PostgreSQL race tests, scoped vet and zero-issue lint.",
+      "Apply and retry database-clock lease regressions, per-instance serialization, SDK mode/logging and immutable catalog alias mutations fail as intended and restored checks pass.",
+      "Fixtures do not qualify live Stripe; live credentials are absent. Durable job/executable composition, migration allocation, account-wide throttling and integrated access policy remain separate. No full task or release acceptance."
+    ]
   }
 }

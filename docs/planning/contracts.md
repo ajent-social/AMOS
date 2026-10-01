@@ -188,3 +188,15 @@ MFA admission (14). Existing foundation migration identities and bytes remain
 immutable. Generators reuse private random configuration only from verified
 managed journal preimages. This amendment grants no production provider, secret
 store, organization policy or deployment qualification.
+
+## Amendment v1.9: reconciliation component boundary
+
+Reconciliation work is scoped to the immutable customer/account/mode binding,
+with dirty-generation and claim-token compare-and-swap fencing and database-clock
+lease expiry. Provider lifecycle facts remain in additive metadata; the frozen
+subscription projection vocabulary and entitlement policy are preserved.
+Provider-price resolution returns immutable configured historical terms without
+authorizing new checkout. Complete bounded official SDK reads are compared for
+changes; this is not atomic upstream snapshot isolation. Rate spacing is per
+reconciler instance. Durable job composition, migration sequence allocation,
+account-wide throttling and live provider/release qualification are separate.
