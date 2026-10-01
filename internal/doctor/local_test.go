@@ -173,3 +173,14 @@ func hasCode(diagnostics []Diagnostic, code string) bool {
 	}
 	return false
 }
+
+func TestLocalAmbiguousPodmanMachineSelection(t *testing.T) {
+	for _, payload := range []string{`[{"Running":true,"Default":false}]`, `[{"Running":false,"Default":true},{"Running":true,"Default":true}]`} {
+		binary := writeCommand(t, "#!/bin/sh\nprintf '%s' '"+payload+"'\n")
+		var diagnostics []Diagnostic
+		checkPodmanMachine(context.Background(), binary, DefaultProbeTimeout, &diagnostics)
+		if !hasCode(diagnostics, "podman.machine.state.ambiguous") {
+			t.Fatalf("ambiguous default accepted: %+v", diagnostics)
+		}
+	}
+}

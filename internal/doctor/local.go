@@ -298,20 +298,22 @@ func checkPodmanMachine(ctx context.Context, binary string, timeout time.Duratio
 		*out = append(*out, Diagnostic{Severity: SeverityError, Code: "podman.machine.not_configured", Message: "No Podman machine is configured.", CorrectiveCommand: "Run podman machine init, then podman machine start."})
 		return
 	}
-	selected, hasDefault := false, false
-	anyRunning := false
+
+	selected, defaults := false, 0
 	for _, machine := range machines {
-		if machine.Running {
-			anyRunning = true
-		}
 		if machine.Default {
-			hasDefault = true
+			defaults++
 			selected = machine.Running
 		}
 	}
-	if (hasDefault && !selected) || (!hasDefault && !anyRunning) {
+	if defaults != 1 {
+		*out = append(*out, Diagnostic{Severity: SeverityError, Code: "podman.machine.state.ambiguous", Message: "Podman machine selection is ambiguous.", CorrectiveCommand: "Select exactly one default Podman machine."})
+		return
+	}
+	if !selected {
 		*out = append(*out, Diagnostic{Severity: SeverityError, Code: "podman.machine.stopped", Message: "The default Podman machine is stopped.", CorrectiveCommand: "Run podman machine start."})
 	}
+
 }
 
 func checkPort(port Port, out *[]Diagnostic) {
