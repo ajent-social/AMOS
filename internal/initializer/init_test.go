@@ -374,3 +374,20 @@ func TestResumePreservesUnownedJournalTemp(t *testing.T) {
 		t.Fatalf("unowned material altered: %q %v", got, err)
 	}
 }
+
+func TestInitializerPreservesExplicitExecutableMode(t *testing.T) {
+	input := testInput(t)
+	result, err := Initialize(context.Background(), input, GeneratorFunc(func(ctx context.Context, c Config, f *Files) error {
+		return f.WriteFile(ctx, "scripts/dev", []byte("#!/bin/sh\nexit 0\n"), 0755)
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(filepath.Join(input.ParentDir, result.Target, "scripts", "dev"))
+	if err != nil || info.Mode().Perm() != 0755 {
+		t.Fatalf("executable mode not preserved: %v %v", info, err)
+	}
+	if len(result.Manifest.Files) != 1 || result.Manifest.Files[0].Mode != 0755 {
+		t.Fatal("executable manifest mode missing")
+	}
+}

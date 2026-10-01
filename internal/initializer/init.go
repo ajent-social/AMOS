@@ -337,7 +337,7 @@ type Files struct {
 }
 
 func (f *Files) WriteFile(ctx context.Context, name string, data []byte, mode os.FileMode) error {
-	if f == nil || f.journal == nil || !safeOutputPath(name) || reservedOutputPath(name) || (mode.Perm() != 0600 && mode.Perm() != 0644) || len(data) > 8<<20 {
+	if f == nil || f.journal == nil || !safeOutputPath(name) || reservedOutputPath(name) || (mode != 0600 && mode != 0644 && mode != 0755) || len(data) > 8<<20 {
 		return ErrInvalidInput
 	}
 	if ctx == nil || ctx.Err() != nil {
