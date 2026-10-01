@@ -7,7 +7,7 @@ Recovery completion binds a canonical `challenge_id` to one `reset:<id>` hash
 operation. Cookie-authenticated password change binds current principal scope,
 exact allowed origin and session CSRF before admitting one
 `change-current:<person>` verification followed by one `change-new:<person>`
-hash. The recovery handler must independently verify the current password before
+hash. The password-change handler must independently verify the current password before
 replacement hashing, enforce current account and operation policy, and atomically
 consume challenges/update credentials/revoke sessions. Budget consumption alone
 is not successful verification. Recovery never issues a session, removes another
