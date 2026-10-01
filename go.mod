@@ -5,11 +5,11 @@ go 1.27.0
 toolchain go1.27.1
 
 require (
-	golang.org/x/net v0.59.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/pb33f/libopenapi v0.38.7
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
+	golang.org/x/net v0.59.0
 )
 
 require (
@@ -35,6 +35,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/pb33f/jsonpath v0.8.2 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
+	github.com/stripe/stripe-go/v87 v87.0.0
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect

@@ -53,3 +53,16 @@ Exact selected versions and checksums; license inspection and pins do not qualif
 Prettier 3.9.9 is pinned by the browser package lock with integrity
 `sha512-Z/CJHIkdujO/OtN7nXUii0Rf3VT5SRuhjBA82Xvu2XhBUgX3nhP67T0LHceBdQLex7OOFGTox+Q5Yg8Jk2Qivg==`.
 [MIT package license](https://www.npmjs.com/package/prettier/v/3.9.9).
+
+## Stripe checkout SDK candidate
+
+Pinned official `github.com/stripe/stripe-go/v87` **v87.0.0**, API
+**2026-09-30.endive**, Go minimum 1.24, MIT license. Official release:
+[Stripe Go v87.0.0](https://github.com/stripe/stripe-go/releases/tag/v87.0.0),
+published 2026-10-01. Module checksum:
+`h1:dDztIAKst1hNfNpv4zo3zhVnoLiXJx0fH3Kl+KlGP6Y=`; go.mod checksum:
+`h1:UQKKBVL4DY/evB1M1KczpoCaJi1oFnZ/gRPKukRXYYA=`. Download verified against
+the Go checksum service. Task T5.5 must qualify SDK behavior at its changed
+boundary; this pin and source inspection do not qualify live Stripe operations.
+No prerelease or preview API is selected. Disable automatic SDK retries where
+durable AMOS intent/reconciliation owns external outcome handling.
