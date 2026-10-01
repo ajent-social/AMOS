@@ -134,16 +134,20 @@ test("renders hostile todo titles as text", async ({ page }) => {
   expect(await page.evaluate(() => window.__referencePayloadRan)).toBe(false);
 });
 
-test("submits a valid mutation without JavaScript using the hidden CSRF field", async ({ page }) => {
-  const { workspace } = await prepare(page);
-  await page.route("**/reference/htmx.min.js", (route) => route.abort());
-  await page.route("**/reference/csrf.js", (route) => route.abort());
-  await page.goto(`/todos?workspace=${encodeURIComponent(workspace)}`);
-  const token = await page.locator('form[action="/todos"][method="post"] input[name="_csrf"]').inputValue();
-  expect(token).toBeTruthy();
-  await page.getByLabel("New todo").fill("Works without JavaScript");
-  await page.getByRole("button", { name: "Add todo" }).click();
-  await expect(page.getByRole("status")).toContainText("Todo added");
-  await expect(page.getByText("Works without JavaScript")).toBeVisible();
+test("submits a valid mutation with JavaScript disabled using the hidden CSRF field", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    const { workspace } = await prepare(page);
+    await page.goto(`/todos?workspace=${encodeURIComponent(workspace)}`);
+    const token = await page.locator('form[action="/todos"][method="post"] input[name="_csrf"]').inputValue();
+    expect(token).toBeTruthy();
+    await page.getByLabel("New todo").fill("Works without JavaScript");
+    await page.getByRole("button", { name: "Add todo" }).click();
+    await expect(page.getByRole("status")).toContainText("Todo added");
+    await expect(page.getByText("Works without JavaScript")).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });
 });
