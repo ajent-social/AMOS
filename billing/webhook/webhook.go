@@ -17,6 +17,7 @@ import (
 	"github.com/ajent-social/amos/billing/provider"
 	billingstore "github.com/ajent-social/amos/billing/store"
 	identitystore "github.com/ajent-social/amos/identity/store"
+	"github.com/ajent-social/amos/jobs"
 	"github.com/google/uuid"
 	stripe "github.com/stripe/stripe-go/v87"
 	stripewebhook "github.com/stripe/stripe-go/v87/webhook"
@@ -156,17 +157,23 @@ func (r *SQLBindingRouter) Resolve(ctx context.Context, scope EndpointScope, cla
 type SQLInbox struct {
 	db       TxRunner
 	newStore StoreFactory
+	jobs     TxEnqueuer
 }
 
-func NewSQLInbox(db TxRunner, newStore StoreFactory) (*SQLInbox, error) {
-	if db == nil || newStore == nil {
+// TxEnqueuer writes a durable job into the caller's receipt transaction.
+type TxEnqueuer interface {
+	EnqueueTx(context.Context, *sql.Tx, jobs.Intent) (jobs.Job, error)
+}
+
+func NewSQLInbox(db TxRunner, newStore StoreFactory, jobWriter TxEnqueuer) (*SQLInbox, error) {
+	if db == nil || newStore == nil || jobWriter == nil {
 		return nil, ErrInvalidConfig
 	}
-	return &SQLInbox{db: db, newStore: newStore}, nil
+	return &SQLInbox{db: db, newStore: newStore, jobs: jobWriter}, nil
 }
 
 func (i *SQLInbox) PersistVerifiedWebhook(ctx context.Context, input VerifiedWebhookInput) (VerifiedWebhookReceipt, error) {
-	if i == nil || i.db == nil || i.newStore == nil || ctx == nil {
+	if i == nil || i.db == nil || i.newStore == nil || i.jobs == nil || ctx == nil {
 		return VerifiedWebhookReceipt{}, billingstore.ErrInvalidInput
 	}
 	var out VerifiedWebhookReceipt
@@ -176,12 +183,52 @@ func (i *SQLInbox) PersistVerifiedWebhook(ctx context.Context, input VerifiedWeb
 			return err
 		}
 		out, err = s.PersistVerifiedWebhook(ctx, input)
+		if err != nil {
+			return err
+		}
+		intent, err := reconcileIntent(input.Endpoint, out)
+		if err != nil {
+			return err
+		}
+		_, err = i.jobs.EnqueueTx(ctx, tx, intent)
 		return err
 	})
 	if err != nil {
 		return VerifiedWebhookReceipt{}, err
 	}
 	return out, nil
+}
+
+const reconcileJobKind = "billing.webhook.reconcile"
+
+type reconcilePayload struct {
+	IngressID         uuid.UUID `json:"ingress_id"`
+	EnvironmentID     uuid.UUID `json:"environment_id"`
+	Provider          string    `json:"provider"`
+	ProviderAccountID string    `json:"provider_account_id"`
+	AccountMode       string    `json:"account_mode"`
+}
+
+func reconcileIntent(endpoint EndpointScope, receipt VerifiedWebhookReceipt) (jobs.Intent, error) {
+	if receipt.ID == uuid.Nil || receipt.ReceivedAt.IsZero() || !validEndpointScope(endpoint) {
+		return jobs.Intent{}, ErrInvalidEvent
+	}
+	payload, err := json.Marshal(reconcilePayload{
+		IngressID: receipt.ID, EnvironmentID: endpoint.EnvironmentID, Provider: endpoint.Provider,
+		ProviderAccountID: endpoint.ProviderAccountID, AccountMode: string(endpoint.AccountMode),
+	})
+	if err != nil {
+		return jobs.Intent{}, err
+	}
+	return jobs.Intent{
+		InstallationID: endpoint.InstallationID,
+		ApplicationID:  endpoint.ApplicationID,
+		Key:            "billing:reconcile:" + receipt.ID.String(),
+		Kind:           reconcileJobKind,
+		Payload:        payload,
+		ExternalEffect: false,
+		Deadline:       receipt.ReceivedAt.UTC().Add(7 * 24 * time.Hour),
+	}, nil
 }
 
 type Handler struct {
