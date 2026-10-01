@@ -507,5 +507,14 @@
       "Genuine error-guard mutations disclose foreign DTO values and fail the regression; byte-identical restoration and positive checks pass. Pinned browser formatter and public artifact checks pass.",
       "Browser NOT_RUN without composed organization fixture; real membership/selection adapters and native host wiring remain separate. No full task, organization or deployment acceptance."
     ]
+  },
+  "T7.7": {
+    "status": "IN_PROGRESS",
+    "evidence": [
+      "Native runner/CLI component and persistent private process-state lock independently headless reviewed; source corrections retain immutable resource identity and reject foreign ownership.",
+      "Fresh real PostgreSQL/generated native runner/Chromium race checks, scoped vet and lint pass before final lock correction; final integrated gates recorded in component evidence.",
+      "Genuine ownership, runtime environment and Clear-lock mutants fail intended regressions; restored scoped checks pass.",
+      "CLI clean --plan is advisory only. Full cleanup executor, whole Linux runner and cloud deployment are not qualified. No full task acceptance."
+    ]
   }
 }

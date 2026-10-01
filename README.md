@@ -56,13 +56,17 @@ cat > initializer.json <<'JSON'
 }
 JSON
 go run ./cmd/amos init --config initializer.json --framework-source .
+go build -o ../amos-apps/amos-dev ./cmd/amos
 cd ../amos-apps/todo-demo
-./scripts/dev
+mkdir -p .amos/bin
+go build -o .amos/bin/app ./cmd/app
+../amos-dev dev --project todo-demo --dir . --binary .amos/bin/app
 ```
 
-The script requires running Podman and an installed Podman Compose provider.
-It checks the database port before starting Compose, then migrates and starts
-the generated Go server. Missing prerequisites fail visibly. If the database
+The native development runner requires running Podman and an available PostgreSQL
+image. It reads the private generated configuration, migrates and starts the Go
+server, and preserves its database volume when stopped. The alternative
+`./scripts/dev` requires an installed Podman Compose provider. Missing prerequisites fail visibly. If the database
 is already running on that port, use its explicitly configured migration and
 runtime URLs with `go run ./cmd/app migrate` and `go run ./cmd/app serve`.
 The database must be a disposable local evaluation database.
@@ -78,7 +82,10 @@ email. The Compose scripts have not been qualified in the current environment
 because its Compose provider is absent; the generated executable, real
 PostgreSQL and Chromium lifecycle have been qualified directly. Billing and
 production generation fail explicitly until their composition is available.
-See [obtained evidence](docs/evidence/native-generator-20261001.md).
+See [generator evidence](docs/evidence/native-generator-20261001.md) and
+[native runner evidence](docs/evidence/native-dev-supervision-20261001.md).
+`amos-dev status --project todo-demo --dir .` inspects the local installation;
+`amos-dev clean --plan --project todo-demo --dir .` is advisory only.
 
 ## Development and architecture
 

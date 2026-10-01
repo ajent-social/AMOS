@@ -139,3 +139,12 @@ zero-issue lint. Stale hints are cleared and current authorized choices are
 queried again; error DTO fields never render. T6.4 remains in progress because
 the composed organization browser fixture and native adapter are absent. See
 [evidence](evidence/workspace-switch-20261001.md).
+
+## Native development supervision component
+
+The reviewed local runner starts the generated native application with real
+Podman PostgreSQL and does not require Compose. Installation identity and
+process state are pinned to private ownership; Record/Clear updates use a
+persistent lock. T7.7 remains in progress: clean --plan is advisory only and
+full cleanup execution remains unqualified. See
+[evidence](evidence/native-dev-supervision-20261001.md).
