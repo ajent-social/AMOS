@@ -1,0 +1,172 @@
+openapi: 3.1.1
+info:
+  title: AMOS email magic-link sign-in
+  version: 1.0.0
+paths:
+  /api/v1/identity/magic-links:
+    post:
+      operationId: identity.request-magic-link
+      summary: Request an email sign-in link
+      description: Returns the same accepted response for unknown, unverified, disabled, and policy-ineligible accounts. A link proves email control at AAL1 and cannot satisfy a stronger organization requirement.
+      x-amos-policy:
+        operationId: identity.request-magic-link
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicLinkRequest'
+      responses:
+        '202':
+          description: Request received. Sign-in instructions may be sent if the address is eligible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagicLinkAccepted'
+        '400':
+          $ref: '#/components/responses/MagicLinkInvalid'
+        '403':
+          description: Request origin is not permitted.
+        '429':
+          description: Too many pending browser flows or recent requests.
+        '503':
+          $ref: '#/components/responses/MagicLinkUnavailable'
+  /magic-link:
+    get:
+      operationId: identity.preview-magic-link
+      summary: Preview an email sign-in link
+      description: Scanner-safe preview only. GET never consumes the challenge or creates a session; the browser must submit explicit confirmation.
+      x-amos-policy:
+        operationId: identity.preview-magic-link
+        permissions: []
+        entitlements: []
+        assurance: none
+        sideEffect: none
+        idempotency: natural
+        mcp: never
+      parameters:
+        - { in: query, name: challenge, required: true, schema: { type: string, format: uuid } }
+        - { in: query, name: token, required: true, schema: { type: string, minLength: 43, maxLength: 43 } }
+      responses:
+        '200':
+          description: Generic no-store HTML preview, including for unavailable links.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+            Referrer-Policy: { schema: { type: string, const: no-referrer } }
+          content:
+            text/html:
+              schema: { type: string }
+        '503':
+          $ref: '#/components/responses/MagicLinkUnavailable'
+    head:
+      operationId: identity.head-preview-magic-link
+      summary: Check an email sign-in link without consuming it
+      description: HEAD has the same scanner-safe, non-consuming behavior as GET.
+      x-amos-policy:
+        operationId: identity.head-preview-magic-link
+        permissions: []
+        entitlements: []
+        assurance: none
+        sideEffect: none
+        idempotency: natural
+        mcp: never
+      parameters:
+        - { in: query, name: challenge, required: true, schema: { type: string, format: uuid } }
+        - { in: query, name: token, required: true, schema: { type: string, minLength: 43, maxLength: 43 } }
+      responses:
+        '200':
+          description: Generic no-store response with no body.
+        '503':
+          $ref: '#/components/responses/MagicLinkUnavailable'
+  /magic-link/confirm:
+    post:
+      operationId: identity.confirm-magic-link
+      summary: Confirm email sign-in
+      description: Explicit, exact-origin-checked confirmation consumes the purpose-bound challenge and establishes one AAL1 session in the same transaction. A different-device confirmation requires a visible explicit user action. No stronger assurance is asserted.
+      x-amos-policy:
+        operationId: identity.confirm-magic-link
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagicLinkConfirmation'
+      responses:
+        '200':
+          description: Session established with an HttpOnly cookie; no session token is returned in the response body.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [authenticated, assurance, csrf_token]
+                properties:
+                  authenticated: { type: boolean, const: true }
+                  assurance: { type: string, const: aal1 }
+                  csrf_token: { type: string, minLength: 43, maxLength: 43 }
+        '400':
+          $ref: '#/components/responses/MagicLinkInvalid'
+        '401':
+          description: The email sign-in proof is unavailable, expired, or already consumed.
+        '403':
+          description: Browser confirmation or current sign-in policy requirements were not met.
+        '503':
+          $ref: '#/components/responses/MagicLinkUnavailable'
+components:
+  schemas:
+    MagicLinkRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { type: string, format: email, minLength: 3, maxLength: 254 }
+    MagicLinkConfirmation:
+      type: object
+      additionalProperties: false
+      required: [challenge_id, token, confirm_different_device]
+      properties:
+        challenge_id: { type: string, format: uuid }
+        token: { type: string, minLength: 43, maxLength: 43 }
+        confirm_different_device: { type: boolean, description: Must be true only after an explicit user confirmation on a different device. }
+    MagicLinkAccepted:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: { type: string, const: identity.magic_link.accepted }
+        message: { type: string }
+        request_id: { type: string, maxLength: 80 }
+    MagicLinkError:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string, maxLength: 80 }
+  responses:
+    MagicLinkInvalid:
+      description: Invalid request.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/MagicLinkError' }
+    MagicLinkUnavailable:
+      description: Required identity, session, material, or outbox service is unavailable.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/MagicLinkError' }
