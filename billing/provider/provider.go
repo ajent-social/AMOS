@@ -339,7 +339,7 @@ func (g Gate) CreateCheckout(ctx context.Context, r CheckoutRequest) (Outcome[Ch
 	}
 	got, err := g.Checkout.CreateCheckout(ctx, r)
 	if err != nil {
-		return Outcome[CheckoutSession]{}, err
+		return uncertainOutcome(got, r.Binding), err
 	}
 	if err := validateOutcome(got, r.Binding); err != nil {
 		return Outcome[CheckoutSession]{}, err
@@ -361,12 +361,12 @@ func (g Gate) GetSubscription(ctx context.Context, r SubscriptionRequest) (Outco
 	}
 	got, err := g.Subscription.GetSubscription(ctx, r)
 	if err != nil {
-		return Outcome[SubscriptionSnapshot]{}, err
+		return uncertainOutcome(got, r.Binding), err
 	}
 	if err := validateOutcome(got, r.Binding); err != nil {
 		return Outcome[SubscriptionSnapshot]{}, err
 	}
-	if got.State == SubscriptionConfirmed && (got.Value.Ref.Validate() != nil || !sameBinding(got.Value.Ref.Binding, r.Binding) || got.Value.Ref.ID != got.ProviderObject.ID || got.Value.ObservedAt.IsZero()) {
+	if got.State == SubscriptionConfirmed && (got.Value.Ref.Validate() != nil || !sameBinding(got.Value.Ref.Binding, r.Binding) || got.Value.Ref.ID != got.ProviderObject.ID || !validSnapshot(got.Value)) {
 		return Outcome[SubscriptionSnapshot]{}, ErrMalformedResult
 	}
 	return got, nil
@@ -402,12 +402,12 @@ func (g Gate) SetQuantity(ctx context.Context, r QuantityRequest) (Outcome[Subsc
 	}
 	got, err := g.Quantity.SetQuantity(ctx, r)
 	if err != nil {
-		return Outcome[SubscriptionSnapshot]{}, err
+		return uncertainOutcome(got, r.Binding), err
 	}
 	if err := validateOutcome(got, r.Binding); err != nil {
 		return Outcome[SubscriptionSnapshot]{}, err
 	}
-	if got.State == SubscriptionConfirmed && (got.Value.Ref.Validate() != nil || !sameBinding(got.Value.Ref.Binding, r.Binding) || got.Value.Ref.ID != got.ProviderObject.ID || got.Value.Quantity != r.Quantity || got.Value.ObservedAt.IsZero()) {
+	if got.State == SubscriptionConfirmed && (got.Value.Ref.Validate() != nil || !sameBinding(got.Value.Ref.Binding, r.Binding) || got.Value.Ref.ID != got.ProviderObject.ID || got.Value.Ref.ID != r.Subscription.ID || got.Value.PriceKey != r.PriceKey || got.Value.Quantity != r.Quantity || !validSnapshot(got.Value)) {
 		return Outcome[SubscriptionSnapshot]{}, ErrMalformedResult
 	}
 	return got, nil
@@ -472,4 +472,21 @@ func validUUIDv7(s string) bool {
 		}
 	}
 	return true
+}
+
+// An adapter error after dispatch cannot prove a write failed. Clear any
+// claimed successful value and retain only a valid scoped object for recovery.
+func uncertainOutcome[T any](got Outcome[T], binding Binding) Outcome[T] {
+	result := Outcome[T]{State: SubscriptionUnknown, ObservedAt: got.ObservedAt}
+	if got.ProviderObject.Validate() == nil && sameBinding(got.ProviderObject.Binding, binding) {
+		result.ProviderObject = got.ProviderObject
+	}
+	return result
+}
+
+func validSnapshot(s SubscriptionSnapshot) bool {
+	if s.State != SubscriptionConfirmed {
+		return false
+	}
+	return s.PriceKey != "" && len(s.PriceKey) <= 128 && s.Quantity >= 0 && !s.ObservedAt.IsZero() && !s.PeriodStart.IsZero() && s.PeriodEnd.After(s.PeriodStart)
 }

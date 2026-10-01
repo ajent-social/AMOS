@@ -8,10 +8,11 @@ import (
 )
 
 type testClient struct {
-	calls    int
-	quantity int64
-	checkout Outcome[CheckoutSession]
-	result   Outcome[SubscriptionSnapshot]
+	calls       int
+	quantity    int64
+	checkoutErr error
+	checkout    Outcome[CheckoutSession]
+	result      Outcome[SubscriptionSnapshot]
 }
 
 func (c *testClient) EnsureCustomer(context.Context, CustomerRequest) (Customer, error) {
@@ -20,7 +21,7 @@ func (c *testClient) EnsureCustomer(context.Context, CustomerRequest) (Customer,
 }
 func (c *testClient) CreateCheckout(context.Context, CheckoutRequest) (Outcome[CheckoutSession], error) {
 	c.calls++
-	return c.checkout, nil
+	return c.checkout, c.checkoutErr
 }
 func (c *testClient) GetSubscription(context.Context, SubscriptionRequest) (Outcome[SubscriptionSnapshot], error) {
 	c.calls++
@@ -44,7 +45,7 @@ func validBinding() Binding {
 func confirmedSnapshot(b Binding, quantity int64) Outcome[SubscriptionSnapshot] {
 	ref := ObjectRef{Binding: b, ID: "sub_123"}
 	now := time.Now().UTC()
-	return Outcome[SubscriptionSnapshot]{State: SubscriptionConfirmed, Value: SubscriptionSnapshot{Ref: ref, State: SubscriptionConfirmed, Quantity: quantity, ObservedAt: now}, ProviderObject: ref, ObservedAt: now}
+	return Outcome[SubscriptionSnapshot]{State: SubscriptionConfirmed, Value: SubscriptionSnapshot{Ref: ref, State: SubscriptionConfirmed, PriceKey: "seat", Quantity: quantity, PeriodStart: now, PeriodEnd: now.Add(30 * 24 * time.Hour), ObservedAt: now}, ProviderObject: ref, ObservedAt: now}
 }
 
 func checkoutGate(c *testClient) Gate { return Gate{Checkout: c} }
@@ -148,5 +149,46 @@ func TestT5_2_ValidatesRetryWindow(t *testing.T) {
 	}
 	if err := (RetryPolicy{MaxAttempts: 2}).Validate(); !errors.Is(err, ErrInvalidRequest) {
 		t.Fatalf("expected invalid retry policy, got %v", err)
+	}
+}
+
+func TestT5_2_TimeoutAfterDispatchRetainsUnknown(t *testing.T) {
+	b := validBinding()
+	for _, state := range []SubscriptionState{SubscriptionUnknown, SubscriptionConfirmed} {
+		t.Run(string(state), func(t *testing.T) {
+			c := &testClient{checkoutErr: context.DeadlineExceeded, checkout: Outcome[CheckoutSession]{State: state, Value: CheckoutSession{URL: "https://pay.invalid/claimed-success"}}}
+			result, err := checkoutGate(c).CreateCheckout(context.Background(), CheckoutRequest{Binding: b, Customer: ObjectRef{Binding: b, ID: "cus_1"}, PriceKey: "monthly-v1", SuccessURL: "https://app.invalid/success", CancelURL: "https://app.invalid/cancel", IdempotencyKey: "timeout-1"})
+			if !errors.Is(err, context.DeadlineExceeded) || result.State != SubscriptionUnknown || !isZero(result.Value) {
+				t.Fatalf("timeout promoted or lost uncertainty: state=%s value=%+v err=%v", result.State, result.Value, err)
+			}
+		})
+	}
+}
+
+func TestT5_2_QuantityResultBoundToRequestedSubscriptionAndPrice(t *testing.T) {
+	b := validBinding()
+	c := &testClient{}
+	request := QuantityRequest{Binding: b, Subscription: ObjectRef{Binding: b, ID: "sub_123"}, PriceKey: "seat", Quantity: 3, IdempotencyKey: "seat-1"}
+	if _, err := (Gate{Quantity: c}).SetQuantity(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	for _, mutate := range []func(*QuantityRequest){func(r *QuantityRequest) { r.Subscription.ID = "sub_other" }, func(r *QuantityRequest) { r.PriceKey = "other-plan" }} {
+		changed := request
+		mutate(&changed)
+		if _, err := (Gate{Quantity: c}).SetQuantity(context.Background(), changed); !errors.Is(err, ErrMalformedResult) {
+			t.Fatalf("wrong subscription/price accepted: %v", err)
+		}
+	}
+}
+
+func TestT5_2_RejectsMalformedSubscriptionSnapshot(t *testing.T) {
+	b := validBinding()
+	for _, mutate := range []func(*SubscriptionSnapshot){func(s *SubscriptionSnapshot) { s.State = "invented" }, func(s *SubscriptionSnapshot) { s.State = SubscriptionPending }, func(s *SubscriptionSnapshot) { s.State = SubscriptionUnknown }, func(s *SubscriptionSnapshot) { s.State = SubscriptionFailed }, func(s *SubscriptionSnapshot) { s.Quantity = -1 }, func(s *SubscriptionSnapshot) { s.PriceKey = "" }, func(s *SubscriptionSnapshot) { s.PeriodEnd = s.PeriodStart }} {
+		result := confirmedSnapshot(b, 1)
+		mutate(&result.Value)
+		c := &testClient{result: result}
+		if _, err := (Gate{Subscription: c}).GetSubscription(context.Background(), SubscriptionRequest{Binding: b, Customer: ObjectRef{Binding: b, ID: "cus_1"}}); !errors.Is(err, ErrMalformedResult) {
+			t.Fatalf("malformed snapshot accepted: %v", err)
+		}
 	}
 }
