@@ -14,6 +14,7 @@ import (
  "os"
  "os/signal"
  "strings"
+ "strconv"
  "syscall"
  "github.com/google/uuid"
  "github.com/ajent-social/amos/apphost"
@@ -28,10 +29,16 @@ import (
 type runtimeConfig struct {SchemaVersion int; InstallationID,ApplicationID,EnvironmentID,Origin,MaterialKey,RateKey string}
 func main(){
  var err error
- switch {case len(os.Args)==2 && os.Args[1]=="migrate":err=runMigration()
+ switch {case len(os.Args)==2 && os.Args[1]=="preflight-database":
+ if preflightDatabase()!=nil{fmt.Fprintln(os.Stderr,"app: local database port unavailable");os.Exit(3)};return
+ case len(os.Args)==2 && os.Args[1]=="migrate":err=runMigration()
  case len(os.Args)==1 || (len(os.Args)==2 && os.Args[1]=="serve"):err=run()
  default:err=errors.New("command unavailable")}
  if err!=nil{fmt.Fprintln(os.Stderr,"app: startup or serving failed");os.Exit(1)}
+}
+func preflightDatabase()error{
+ port,err:=strconv.Atoi(os.Getenv("AMOS_DB_PORT"));if err!=nil || port<1 || port>65535{return errors.New("invalid database port")}
+ listener,err:=net.Listen("tcp4",net.JoinHostPort("127.0.0.1",strconv.Itoa(port)));if err!=nil{return err};return listener.Close()
 }
 func run()error{
  root,err:=openPrivateRuntime();if err!=nil{return err};defer func(){_ = root.Close()}()
@@ -111,7 +118,12 @@ func runMigration()error{
 `
 
 const runtimeTests = `package main
-import("os";"path/filepath";"testing")
+import("os";"path/filepath";"testing";"net";"strconv")
+func TestDatabasePortPreflight(t *testing.T){
+ listener,err:=net.Listen("tcp4","127.0.0.1:0");if err!=nil{t.Fatal(err)};defer func(){_ = listener.Close()}()
+ t.Setenv("AMOS_DB_PORT",strconv.Itoa(listener.Addr().(*net.TCPAddr).Port));if preflightDatabase()==nil{t.Fatal("occupied port accepted")}
+ for _,port:=range []string{"","0","65536","invalid"}{t.Setenv("AMOS_DB_PORT",port);if preflightDatabase()==nil{t.Fatal("invalid port accepted")}}
+}
 func TestPrivateRuntimeDirectory(t *testing.T){
  old,err:=os.Getwd();if err!=nil{t.Fatal("working directory unavailable")}
  temp:=t.TempDir();if err:=os.Chdir(temp);err!=nil{t.Fatal("change directory")};t.Cleanup(func(){if err:=os.Chdir(old);err!=nil{t.Error("restore working directory")}})

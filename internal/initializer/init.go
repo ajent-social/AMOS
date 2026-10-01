@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/ajent-social/amos/internal/initializer/atomic"
 	"golang.org/x/mod/module"
@@ -650,6 +651,9 @@ func validateMode(input Input, config *Config) error {
 }
 
 func safeTarget(target string) bool {
+	if strings.IndexFunc(target, unicode.IsControl) >= 0 {
+		return false
+	}
 	if target == "" || filepath.IsAbs(target) || filepath.VolumeName(target) != "" || strings.ContainsAny(target, "\\\x00") {
 		return false
 	}

@@ -12,6 +12,7 @@ fi
 set -a
 . ./.env.local
 set +a
+go run ./cmd/app preflight-database
 podman compose up -d database
 export AMOS_MIGRATION_DATABASE_URL="postgres://${AMOS_DB_MIGRATION_USER}:${AMOS_DB_MIGRATION_PASSWORD}@127.0.0.1:${AMOS_DB_PORT}/${AMOS_DB_NAME}?sslmode=disable"
 export AMOS_DATABASE_URL="postgres://${AMOS_DB_RUNTIME_USER}:${AMOS_DB_RUNTIME_PASSWORD}@127.0.0.1:${AMOS_DB_PORT}/${AMOS_DB_NAME}?sslmode=disable"

@@ -207,3 +207,37 @@ func generate(t *testing.T, slug string) string {
 	}
 	return filepath.Join(parent, result.Target)
 }
+
+func TestDatabasePreflightStopsScriptsBeforeCompose(t *testing.T) {
+	for _, name := range []string{"dev", "migrate"} {
+		t.Run(name, func(t *testing.T) {
+			project := generate(t, "port-preflight")
+			if err := os.MkdirAll(filepath.Join(project, "cmd", "app"), 0755); err != nil {
+				t.Fatal(err)
+			}
+			for _, path := range []string{"go.mod", "cmd/app/main.go"} {
+				if err := os.WriteFile(filepath.Join(project, path), []byte("fixture"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			bin := t.TempDir()
+			marker := filepath.Join(bin, "compose-called")
+			if err := os.WriteFile(filepath.Join(bin, "go"), []byte("#!/bin/sh\n[ \"$*\" = 'run ./cmd/app preflight-database' ] || exit 7\necho 'app: local database port unavailable' >&2\nexit 3\n"), 0700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(bin, "podman"), []byte("#!/bin/sh\ntouch '"+marker+"'\n"), 0700); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("sh", filepath.Join(project, "scripts", name))
+			cmd.Dir = project
+			cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"))
+			output, err := cmd.CombinedOutput()
+			if err == nil || !strings.Contains(string(output), "local database port unavailable") {
+				t.Fatalf("missing visible preflight failure: %v %s", err, output)
+			}
+			if _, err := os.Stat(marker); !os.IsNotExist(err) {
+				t.Fatal("compose invoked after failed port preflight")
+			}
+		})
+	}
+}

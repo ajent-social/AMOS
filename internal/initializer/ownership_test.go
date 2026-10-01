@@ -55,3 +55,13 @@ func TestReadManagedFileRejectsAuthoredAndChangedPreimage(t *testing.T) {
 		t.Fatal("interrupted generation unexpectedly finalized")
 	}
 }
+
+func TestInitializerRejectsControlCharacterTarget(t *testing.T) {
+	for _, target := range []string{"app\nforged", "app\x1b[2J", "app\tother", "app\u0085other"} {
+		input := testInput(t)
+		input.Target = target
+		if _, _, _, err := validateInput(input); err == nil {
+			t.Fatal("control-character target accepted")
+		}
+	}
+}
