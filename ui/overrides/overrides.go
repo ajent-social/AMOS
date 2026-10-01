@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -22,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/ajent-social/amos/ui/render"
+	nethtml "golang.org/x/net/html"
 	"text/template/parse"
 )
 
@@ -47,6 +47,7 @@ var (
 	assetNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 	pageIDPattern    = regexp.MustCompile(`^[a-z][a-z0-9-]{0,63}$`)
 	unsafeCSSPattern = regexp.MustCompile(`(?i)(url\s*\(|@import|expression\s*\(|javascript\s*:)`)
+	ownerFormPattern = regexp.MustCompile(`(?i)<form(?:[\s>])`)
 	remoteScript     = regexp.MustCompile(`(?i)<script\b[^>]*\bsrc\s*=\s*["']\s*(https?:|//|data:|javascript:)`)
 	htmlComment      = regexp.MustCompile(`(?s)<!--.*?-->`)
 )
@@ -223,12 +224,37 @@ func (r *Renderer) Render(ctx context.Context, w http.ResponseWriter, req *http.
 			Styles:    append([]assetView(nil), r.theme.styles...),
 		},
 	}
+	instance, err := selected.tmpl.Clone()
+	if err != nil {
+		return ErrInvalidConfig
+	}
+	secureForms := 0
+	instance.Funcs(template.FuncMap{"amosExecutedSecureForm": func() string { secureForms++; return "" }})
+	var expectedForm bytes.Buffer
+	if model.Form != nil {
+		if err := instance.ExecuteTemplate(&expectedForm, SecureFormSlot, data); err != nil {
+			return ErrInvalidConfig
+		}
+		secureForms = 0
+	}
 	var body bytes.Buffer
-	if err := selected.tmpl.ExecuteTemplate(&body, pageTemplateName(page.ID), data); err != nil {
+	if err := instance.ExecuteTemplate(&body, pageTemplateName(page.ID), data); err != nil {
 		return fmt.Errorf("render override page %q: %w", page.ID, err)
 	}
-	if model.Form != nil && !bytes.Contains(body.Bytes(), []byte(ActionMarker)) {
+	if model.Form != nil && (secureForms != 1 || !bytes.Contains(body.Bytes(), expectedForm.Bytes())) {
 		return ErrMissingSlot
+	}
+	if model.Form != nil {
+		document, err := nethtml.ParseWithOptions(bytes.NewReader(body.Bytes()), nethtml.ParseOptionEnableScripting(true))
+		if err != nil || !hasActiveSecureForm(document, model.Form) {
+			return ErrMissingSlot
+		}
+		// Serve the parsed representation used for this decision rather than
+		// relying on the browser to repair different original markup.
+		body.Reset()
+		if err := nethtml.Render(&body, document); err != nil {
+			return ErrInvalidView
+		}
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -239,7 +265,7 @@ func (r *Renderer) Render(ctx context.Context, w http.ResponseWriter, req *http.
 	w.Header().Add("Vary", "HX-Request")
 	w.Header().Add("Vary", "HX-Target")
 	w.WriteHeader(http.StatusOK)
-	_, err := io.Copy(w, &body)
+	_, err = io.Copy(w, &body)
 	return err
 }
 
@@ -277,7 +303,7 @@ func loadPageTemplate(files fs.FS, override PageOverride) (*template.Template, e
 	if err != nil {
 		return nil, fmt.Errorf("%w: page %q template could not be read", ErrInvalidConfig, override.Page.ID)
 	}
-	if len(content) == 0 || len(content) > maxTemplate || remoteScript.Match(content) {
+	if len(content) == 0 || len(content) > maxTemplate || remoteScript.Match(content) || ownerFormPattern.Match(htmlComment.ReplaceAll(content, nil)) {
 		return nil, fmt.Errorf("%w: page %q template is empty, too large, or declares a remote script", ErrInvalidConfig, override.Page.ID)
 	}
 	root := pageTemplateName(override.Page.ID)
@@ -314,7 +340,8 @@ func loadPageTemplate(files fs.FS, override PageOverride) (*template.Template, e
 	if _, err := tmpl.New(HeadSlot).Parse(`{{define "` + HeadSlot + `"}}<link rel="stylesheet" href="{{.Theme.CSSPath}}" integrity="{{.Theme.CSSSRI}}" crossorigin="anonymous">{{range .Theme.Styles}}<link rel="stylesheet" href="{{.Path}}" integrity="{{.Integrity}}" crossorigin="anonymous">{{end}}{{end}}`); err != nil {
 		return nil, fmt.Errorf("%w: installing protected theme slot", ErrInvalidConfig)
 	}
-	if _, err := tmpl.New(SecureFormSlot).Parse(`{{define "` + SecureFormSlot + `"}}{{with .View.Form}}<form ` + ActionMarker + ` action="{{.Action}}" method="{{.Method}}"><input type="hidden" name="_csrf" value="{{.CSRFToken}}"><label for="{{.Field}}">{{.Label}}</label>{{range $.View.FieldErrors}}<span class="field-error">{{.Message}}</span>{{end}}<input id="{{.Field}}" name="{{.Field}}" value="{{.Value}}"><button type="submit">{{.Submit}}</button></form>{{end}}{{end}}`); err != nil {
+	tmpl.Funcs(template.FuncMap{"amosExecutedSecureForm": func() string { return "" }})
+	if _, err := tmpl.New(SecureFormSlot).Parse(`{{define "` + SecureFormSlot + `"}}{{with .View.Form}}{{amosExecutedSecureForm}}<form ` + ActionMarker + ` action="{{.Action}}" method="{{.Method}}"><input type="hidden" name="_csrf" value="{{.CSRFToken}}"><label for="{{.Field}}">{{.Label}}</label>{{range $.View.FieldErrors}}<span class="field-error">{{.Message}}</span>{{end}}<input id="{{.Field}}" name="{{.Field}}" value="{{.Value}}"><button type="submit">{{.Submit}}</button></form>{{end}}{{end}}`); err != nil {
 		return nil, fmt.Errorf("%w: installing protected action slot", ErrInvalidConfig)
 	}
 	return tmpl, nil
@@ -331,15 +358,9 @@ func collectTemplateCalls(node parse.Node, calls map[string]bool) {
 		}
 	case *parse.TemplateNode:
 		calls[current.Name] = true
-	case *parse.IfNode:
-		collectTemplateCalls(current.List, calls)
-		collectTemplateCalls(current.ElseList, calls)
-	case *parse.RangeNode:
-		collectTemplateCalls(current.List, calls)
-		collectTemplateCalls(current.ElseList, calls)
-	case *parse.WithNode:
-		collectTemplateCalls(current.List, calls)
-		collectTemplateCalls(current.ElseList, calls)
+		// Conditional branches cannot establish a required slot: execution depends
+		// on owner-controlled data, and an empty range executes no body at all.
+
 	}
 }
 
@@ -474,8 +495,58 @@ func cloneAssets(source map[string]assetView) map[string]assetView {
 
 var _ render.Renderer = (*Renderer)(nil)
 
-// compareIntegrity is used by tests and asset handlers to compare generated
-// SRI without exposing asset source bytes through configuration.
-func compareIntegrity(expected, actual string) bool {
-	return subtle.ConstantTimeCompare([]byte(expected), []byte(actual)) == 1
+func uniqueHTMLAttribute(node *nethtml.Node, key string) (string, bool) {
+	value, count := "", 0
+	for _, attribute := range node.Attr {
+		if attribute.Namespace == "" && attribute.Key == key {
+			value = attribute.Val
+			count++
+		}
+	}
+	return value, count == 1
+}
+
+func hasActiveSecureForm(document *nethtml.Node, form *render.Form) bool {
+	if document == nil || form == nil {
+		return false
+	}
+	forms, valid := 0, false
+	var visit func(*nethtml.Node)
+	visit = func(node *nethtml.Node) {
+		if node.Type == nethtml.ElementNode && (node.Data == "template" || node.Namespace != "") {
+			return
+		}
+		if node.Type == nethtml.ElementNode && node.Data == "form" {
+			forms++
+			marker, m := uniqueHTMLAttribute(node, "data-amos-action-contract")
+			action, a := uniqueHTMLAttribute(node, "action")
+			method, p := uniqueHTMLAttribute(node, "method")
+			tokens, correct := 0, false
+			var inputs func(*nethtml.Node)
+			inputs = func(child *nethtml.Node) {
+				if child.Type == nethtml.ElementNode && (child.Data == "template" || child.Namespace != "") {
+					return
+				}
+				if child.Type == nethtml.ElementNode && child.Data == "input" {
+					name, n := uniqueHTMLAttribute(child, "name")
+					if name == "_csrf" {
+						tokens++
+						value, v := uniqueHTMLAttribute(child, "value")
+						kind, k := uniqueHTMLAttribute(child, "type")
+						correct = n && v && k && kind == "hidden" && value == form.CSRFToken
+					}
+				}
+				for child := child.FirstChild; child != nil; child = child.NextSibling {
+					inputs(child)
+				}
+			}
+			inputs(node)
+			valid = m && marker == "1" && a && action == form.Action && p && strings.EqualFold(method, http.MethodPost) && tokens == 1 && correct
+		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			visit(child)
+		}
+	}
+	visit(document)
+	return forms == 1 && valid
 }

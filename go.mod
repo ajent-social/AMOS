@@ -5,6 +5,7 @@ go 1.27.0
 toolchain go1.27.1
 
 require (
+	golang.org/x/net v0.59.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/pb33f/libopenapi v0.38.7

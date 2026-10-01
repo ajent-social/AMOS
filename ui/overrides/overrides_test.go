@@ -153,3 +153,77 @@ func TestThemeRejectsActiveCSS(t *testing.T) {
 		t.Fatalf("New error = %v, want ErrInvalidConfig", err)
 	}
 }
+
+func TestStartupRejectsConditionalSecuritySlot(t *testing.T) {
+	for _, source := range []string{
+		`{{template "amos:head" .}}{{if false}}{{template "amos:secure-form" .}}{{end}}`,
+		`{{template "amos:head" .}}{{with .View.Form}}{{template "amos:secure-form" $}}{{end}}`,
+		`{{template "amos:head" .}}{{range .View.Notices}}{{template "amos:secure-form" $}}{{end}}`,
+	} {
+		if _, err := newTestRenderer(t, source); !errors.Is(err, ErrMissingSlot) {
+			t.Fatalf("conditional slot accepted: %v", err)
+		}
+	}
+}
+
+func TestLiteralActionMarkerCannotReplaceExecutedSecureSlot(t *testing.T) {
+	renderer, err := newTestRenderer(t, validPageTemplate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A deliberately replaced protected template simulates an omitted execution
+	// hook. Literal markup must not satisfy the runtime execution check.
+	_, err = renderer.pages["signin"].tmpl.New(SecureFormSlot).Parse(`<form data-amos-action-contract="1"></form>`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := httptest.NewRecorder()
+	model := render.ViewModel{Title: "Sign in", Heading: "Sign in", Form: &render.Form{Action: "/signin", Method: "POST", Field: "email", Label: "Email", Submit: "Continue", CSRFToken: "synthetic-proof"}}
+	err = renderer.Render(context.Background(), writer, httptest.NewRequest("GET", "/signin", nil), render.Page{ID: "signin", Version: render.ContractVersion}, model)
+	if !errors.Is(err, ErrMissingSlot) || writer.Body.Len() != 0 {
+		t.Fatalf("literal marker accepted: %v", err)
+	}
+}
+
+func TestOwnerCannotInvokeProtectedExecutionHook(t *testing.T) {
+	source := validPageTemplate + `{{amosExecutedSecureForm}}`
+	if _, err := newTestRenderer(t, source); !errors.Is(err, ErrInvalidConfig) {
+		t.Fatalf("execution hook available to owner: %v", err)
+	}
+}
+
+func TestOwnerCannotNestProtectedFormInLiteralForm(t *testing.T) {
+	source := `{{template "amos:head" .}}<form method="get">{{template "amos:secure-form" .}}</form>`
+	if _, err := newTestRenderer(t, source); !errors.Is(err, ErrInvalidConfig) {
+		t.Fatalf("nested form accepted: %v", err)
+	}
+}
+func TestProtectedFormCannotRenderAsJavaScriptString(t *testing.T) {
+	source := `{{template "amos:head" .}}<script>const hidden = '{{template "amos:secure-form" .}}';</script>`
+	renderer, err := newTestRenderer(t, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := httptest.NewRecorder()
+	model := render.ViewModel{Title: "Sign in", Heading: "Sign in", Form: &render.Form{Action: "/signin", Method: "POST", Label: "Email", Field: "email", Submit: "Continue", CSRFToken: "synthetic-proof"}}
+	err = renderer.Render(context.Background(), writer, httptest.NewRequest("GET", "/signin", nil), render.Page{ID: "signin", Version: render.ContractVersion}, model)
+	if err == nil || writer.Body.Len() != 0 {
+		t.Fatalf("non-HTML form served: %v", err)
+	}
+}
+
+func TestInertTemplateCannotHideRequiredSecureForm(t *testing.T) {
+	for _, container := range []string{"template", "select", "noscript"} {
+		source := `{{template "amos:head" .}}<` + container + `>{{template "amos:secure-form" .}}</` + container + `>`
+		renderer, err := newTestRenderer(t, source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		writer := httptest.NewRecorder()
+		model := render.ViewModel{Title: "Sign in", Heading: "Sign in", Form: &render.Form{Action: "/signin", Method: "POST", Label: "Email", Field: "email", Submit: "Continue", CSRFToken: "synthetic-proof"}}
+		err = renderer.Render(context.Background(), writer, httptest.NewRequest("GET", "/signin", nil), render.Page{ID: "signin", Version: render.ContractVersion}, model)
+		if err == nil || writer.Body.Len() != 0 {
+			t.Fatalf("%s hid required form: %v", container, err)
+		}
+	}
+}

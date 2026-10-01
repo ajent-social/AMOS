@@ -24,3 +24,20 @@ The dependencies are inventoried and provenance-qualified for source, version an
 ## UUIDv7 identifier dependency
 
 `github.com/google/uuid` v1.6.0 is selected for canonical UUID parsing and trusted UUIDv7 generation. The exact module checksum is `h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=`. Its [pinned implementation](https://github.com/google/uuid/blob/v1.6.0/version7.go) and [BSD-3-Clause license](https://github.com/google/uuid/blob/v1.6.0/LICENSE) were inspected. UUIDs are identifiers, not authentication secrets; current authority still comes from verified credentials and database relationships. Consumer tests must enforce canonical lower-case text, version 7, and the RFC variant.
+
+## Override HTML validation
+
+The override renderer uses the Go project HTML5 parser from pinned
+`golang.org/x/net v0.59.0` to validate active POST forms and their body CSRF
+fields, excluding inert template content and foreign namespaces. It serves the
+parsed representation used by that decision. The module checksum and BSD
+license notice are recorded in the dependency lock and third-party notices.
+[Package documentation](https://pkg.go.dev/golang.org/x/net@v0.59.0/html).
+
+## Frontend verification formatter
+
+Verification tooling pins Prettier 3.9.9 and Playwright 1.63.0 in the browser
+package manifest and lockfile. Prettier uses MIT licensing; its distribution
+notice is preserved. These are development tools, not application runtime
+dependencies. Run the pinned local formatter for changed browser/frontend
+verification files.

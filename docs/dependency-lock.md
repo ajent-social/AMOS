@@ -39,7 +39,7 @@ Exact selected versions and checksums; license inspection and pins do not qualif
 | `go.yaml.in/yaml/v4` | `v4.0.0-rc.6` | `h1:1h7H1ohdUh93/FyE4YaDa1Zh64K6VVbjF4K6WUxMtH4=` | [Module license](https://pkg.go.dev/go.yaml.in/yaml/v4@v4.0.0-rc.6?tab=licenses) |
 | `golang.org/x/crypto` | `v0.57.0` | `h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=` | [Module license](https://pkg.go.dev/golang.org/x/crypto@v0.57.0?tab=licenses) |
 | `golang.org/x/mod` | `v0.41.0` | `h1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c=` | [Module license](https://pkg.go.dev/golang.org/x/mod@v0.41.0?tab=licenses) |
-| `golang.org/x/net` | `v0.58.0` | `h1:ynWG7rqYi4ccpTEuPZ2QGWHktVEM9DMCj9yzDE0Q7To=` | [Module license](https://pkg.go.dev/golang.org/x/net@v0.58.0?tab=licenses) |
+| `golang.org/x/net` | `v0.59.0` | `h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues=` | [Module license](https://pkg.go.dev/golang.org/x/net@v0.59.0?tab=licenses) |
 | `golang.org/x/sync` | `v0.23.0` | `h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=` | [Module license](https://pkg.go.dev/golang.org/x/sync@v0.23.0?tab=licenses) |
 | `golang.org/x/sys` | `v0.48.0` | `h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=` | [Module license](https://pkg.go.dev/golang.org/x/sys@v0.48.0?tab=licenses) |
 | `golang.org/x/term` | `v0.46.0` | `h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE=` | [Module license](https://pkg.go.dev/golang.org/x/term@v0.46.0?tab=licenses) |
@@ -47,3 +47,9 @@ Exact selected versions and checksums; license inspection and pins do not qualif
 | `golang.org/x/tools` | `v0.49.0` | `h1:3NI7VXzL9+1WZD52Dx2ttoPwD5DWrFGpl9mFZDlmisI=` | [Module license](https://pkg.go.dev/golang.org/x/tools@v0.49.0?tab=licenses) |
 | `gopkg.in/check.v1` | `v1.0.0-20201130134442-10cb98267c6c` | `h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=` | [Module license](https://pkg.go.dev/gopkg.in/check.v1@v1.0.0-20201130134442-10cb98267c6c?tab=licenses) |
 | `gopkg.in/yaml.v3` | `v3.0.1` | `h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=` | [Module license](https://pkg.go.dev/gopkg.in/yaml.v3@v3.0.1?tab=licenses) |
+
+## Browser formatter
+
+Prettier 3.9.9 is pinned by the browser package lock with integrity
+`sha512-Z/CJHIkdujO/OtN7nXUii0Rf3VT5SRuhjBA82Xvu2XhBUgX3nhP67T0LHceBdQLex7OOFGTox+Q5Yg8Jk2Qivg==`.
+[MIT package license](https://www.npmjs.com/package/prettier/v/3.9.9).

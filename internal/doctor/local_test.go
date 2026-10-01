@@ -155,7 +155,7 @@ func TestLocalVersionParserRejectsPrereleaseAndUnrelatedOutput(t *testing.T) {
 }
 
 func baseOptions(goBin, podman string) Options {
-	return Options{GoBinary: goBin, PodmanBinary: podman, Config: json.RawMessage(completeDevelopmentConfig)}
+	return Options{GoBinary: goBin, PodmanBinary: podman, ProbeTimeout: 10 * time.Second, Config: json.RawMessage(completeDevelopmentConfig)}
 }
 func writeCommand(t *testing.T, source string) string {
 	t.Helper()

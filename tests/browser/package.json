@@ -6,6 +6,7 @@
     "test:fixtures": "playwright test --config=playwright.config.ts --project=chromium --grep=@fixtures"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0"
+    "@playwright/test": "1.63.0",
+    "prettier": "3.9.9"
   }
 }
