@@ -248,19 +248,20 @@ func (s *Store) CreateSession(ctx context.Context, session Session) error {
 		return ErrInvalidInput
 	}
 	result, err := s.tx.ExecContext(ctx, `
+		WITH issuance_clock AS MATERIALIZED (SELECT clock_timestamp() AS now)
 		INSERT INTO identity_sessions
 			(id, person_id, installation_id, application_id, environment_id,
 			 token_digest, security_epoch, authentication_method, authenticated_at,
-			 expires_at, idle_expires_at)
+			 expires_at, idle_expires_at, issued_at, last_seen_at)
 		SELECT $1, p.id, p.installation_id, p.application_id, $5,
 			$6, p.security_epoch, $8, $9, $7,
-			LEAST($7, transaction_timestamp() + interval '30 minutes')
-		FROM identity_persons p
+			LEAST($7, issuance_clock.now + interval '30 minutes'), issuance_clock.now, issuance_clock.now
+		FROM identity_persons p CROSS JOIN issuance_clock
 		WHERE p.id = $2 AND p.installation_id = $3 AND p.application_id = $4
 		  AND p.state = 'active' AND p.security_epoch = $10
-		  AND $7 > transaction_timestamp()
-		  AND $7 <= transaction_timestamp() + interval '12 hours'
-		  AND $9 <= transaction_timestamp()`,
+		  AND $7 > issuance_clock.now
+		  AND $7 <= issuance_clock.now + interval '12 hours'
+		  AND $9 <= issuance_clock.now`,
 		session.ID, session.PersonID, session.InstallationID, session.ApplicationID,
 		session.EnvironmentID, session.TokenDigest, session.ExpiresAt,
 		session.AuthenticationMethod, session.AuthenticatedAt, session.SecurityEpoch)
@@ -484,7 +485,7 @@ func validChallengePurpose(purpose string) bool {
 
 func validAuthenticationMethod(method string) bool {
 	switch method {
-	case "email_password", "email_magic_link", "google", "github", "apple", "passkey", "enterprise_oidc":
+	case "email_password", "email_magic_link", "google", "github", "apple", "passkey", "enterprise_oidc", "password+totp":
 		return true
 	default:
 		return false

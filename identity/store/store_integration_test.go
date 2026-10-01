@@ -423,3 +423,49 @@ func existsPerson(t *testing.T, db *storage.DB, id uuid.UUID) bool {
 	}
 	return exists
 }
+
+func TestT3_2_SessionIssuanceAfterCallerTransactionVerification(t *testing.T) {
+	db := newIdentityDB(t)
+	account := pendingAccount(t, "issuance-clock@example.test")
+	if err := createAccount(t, db, account); err != nil {
+		t.Fatal("create clock test account")
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(context.Background(), `UPDATE identity_persons SET state='active' WHERE id=$1`, account.PersonID); err != nil {
+			return err
+		}
+		var authenticated, started time.Time
+		if err := tx.QueryRowContext(context.Background(), `SELECT clock_timestamp(),transaction_timestamp()`).Scan(&authenticated, &started); err != nil {
+			return err
+		}
+		if !authenticated.After(started) {
+			return errors.New("verification clock did not advance after transaction start")
+		}
+		st, err := store.New(tx)
+		if err != nil {
+			return err
+		}
+		fingerprint := sha256.Sum256([]byte("synthetic-current-proof"))
+		id := newID(t)
+		input := store.Session{ID: id, PersonID: account.PersonID, InstallationID: account.InstallationID, ApplicationID: account.ApplicationID, EnvironmentID: newID(t), TokenDigest: fingerprint[:], SecurityEpoch: 0, AuthenticationMethod: "email_password", AuthenticatedAt: authenticated, ExpiresAt: authenticated.Add(12 * time.Hour)}
+		if err := st.CreateSession(context.Background(), input); err != nil {
+			return err
+		}
+		var valid bool
+		if err := tx.QueryRowContext(context.Background(), `SELECT authenticated_at<=issued_at AND last_seen_at=issued_at AND expires_at<=issued_at+interval '12 hours' AND idle_expires_at<=issued_at+interval '30 minutes' FROM identity_sessions WHERE id=$1`, id).Scan(&valid); err != nil {
+			return err
+		}
+		if !valid {
+			return errors.New("issued session clocks violate lifecycle bounds")
+		}
+		input.ID = newID(t)
+		input.AuthenticatedAt = authenticated.Add(time.Hour)
+		input.ExpiresAt = authenticated.Add(13 * time.Hour)
+		if err := st.CreateSession(context.Background(), input); !errors.Is(err, store.ErrSessionUnavailable) {
+			return errors.New("future session proof was not rejected")
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("caller transaction session issuance: %v", err)
+	}
+}

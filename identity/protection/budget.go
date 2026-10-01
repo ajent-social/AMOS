@@ -41,6 +41,9 @@ func (b *AdmittedBudget) Allow(ctx context.Context, key string) error {
 	case Recovery:
 		expected = "reset:" + proof.account
 		after = 1
+	case MFA:
+		expected = "mfa-current:" + proof.account
+		after = 1
 	case PasswordChange:
 		switch key {
 		case "change-current:" + proof.account:

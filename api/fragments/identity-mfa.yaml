@@ -1,0 +1,188 @@
+openapi: 3.1.1
+info:
+  title: AMOS TOTP multifactor authentication
+  version: 1.0.0
+paths:
+  /account/mfa/totp:
+    get:
+      operationId: identity.totp.status
+      summary: Read non-secret TOTP factor status
+      x-amos-policy:
+        operationId: identity.totp.status
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: read
+        idempotency: natural
+        mcp: never
+      responses:
+        '200':
+          description: Factor status never contains seed material.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TOTPStatus' }
+        '401': { $ref: '#/components/responses/AuthenticationRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /account/mfa/totp/enroll:
+    post:
+      operationId: identity.totp.enrollment.begin
+      summary: Begin a pending TOTP enrollment
+      description: Requires the current primary password. Returns the secret and provisioning URI once; the response is private and non-cacheable. The pending factor expires after 30 minutes and does not satisfy MFA policy.
+      x-amos-policy:
+        operationId: identity.totp.enrollment.begin
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [current_password]
+              properties:
+                "current_password": { type: string, minLength: 1, maxLength: 512, writeOnly: true }
+      responses:
+        '201':
+          description: Pending enrollment created. Secret material is returned only in this private response.
+          headers:
+            Cache-Control: { schema: { type: string, const: 'no-store, private' } }
+            Referrer-Policy: { schema: { type: string, const: no-referrer } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TOTPEnrollment' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '413': { description: Request body exceeds the configured limit. }
+        '401': { $ref: '#/components/responses/AuthenticationRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: An active or pending TOTP factor already exists. }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /account/mfa/totp/confirm:
+    post:
+      operationId: identity.totp.enrollment.confirm
+      summary: Confirm a pending TOTP factor
+      description: Requires the current primary password and a valid code. The accepted time step is consumed atomically, the pending factor becomes active, and a new session cookie is issued with bounded AAL2 assurance only after commit.
+      x-amos-policy:
+        operationId: identity.totp.enrollment.confirm
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: never
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TOTPProof' }
+      responses:
+        '200':
+          description: Factor confirmed and session rotated after transaction commit.
+          headers:
+            Set-Cookie: { schema: { type: string } }
+            X-CSRF-Token: { schema: { type: string, minLength: 43, maxLength: 43 } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StepUp' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '413': { description: Request body exceeds the configured limit. }
+        '401': { description: Primary proof or TOTP code was not accepted. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /account/mfa/totp/challenge:
+    post:
+      operationId: identity.totp.challenge
+      summary: Complete a TOTP step-up challenge
+      description: Requires the current primary password and one unused, current-window TOTP time step. A factor alone cannot create an identity or raise session assurance.
+      x-amos-policy:
+        operationId: identity.totp.challenge
+        permissions: []
+        entitlements: []
+        assurance: aal1
+        sideEffect: write
+        idempotency: forbidden
+        mcp: challenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [current_password, code]
+              properties:
+                "current_password": { type: string, minLength: 1, maxLength: 512, writeOnly: true }
+                code: { type: string, pattern: '^[0-9]{6}$' }
+      responses:
+        '200':
+          description: Session rotated with a 15-minute AAL2 bound after commit.
+          headers:
+            Set-Cookie: { schema: { type: string } }
+            X-CSRF-Token: { schema: { type: string, minLength: 43, maxLength: 43 } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StepUp' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '413': { description: Request body exceeds the configured limit. }
+        '401': { description: Primary proof, factor, or TOTP code was not accepted. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+components:
+  schemas:
+    TOTPStatus:
+      type: object
+      additionalProperties: false
+      required: [enabled, pending]
+      properties:
+        enabled: { type: boolean }
+        pending: { type: boolean }
+        pending_factor_id: { type: string, format: uuid }
+        expires_at: { type: string, format: date-time }
+    TOTPEnrollment:
+      type: object
+      additionalProperties: false
+      required: [factor_id, secret, otpauth_uri, expires_at]
+      properties:
+        factor_id: { type: string, format: uuid }
+        "secret": { type: string, minLength: 16, maxLength: 64, readOnly: true }
+        otpauth_uri: { type: string, minLength: 16, maxLength: 512, readOnly: true }
+        expires_at: { type: string, format: date-time }
+    TOTPProof:
+      type: object
+      additionalProperties: false
+      required: [factor_id, current_password, code]
+      properties:
+        factor_id: { type: string, format: uuid }
+        "current_password": { type: string, minLength: 1, maxLength: 512, writeOnly: true }
+        code: { type: string, pattern: '^[0-9]{6}$' }
+    StepUp:
+      type: object
+      additionalProperties: false
+      required: [assurance, expires_at]
+      properties:
+        assurance: { type: string, const: aal2 }
+        expires_at: { type: string, format: date-time }
+  responses:
+    InvalidRequest:
+      description: Invalid or oversized request.
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [code, message, request_id]
+            properties:
+              code: { type: string }
+              message: { type: string }
+              request_id: { type: string, maxLength: 80 }
+    AuthenticationRequired:
+      description: An active authenticated browser session is required.
+    Forbidden:
+      description: Current authorization or browser mutation proof was denied.
+    Unavailable:
+      description: A required password, policy, seed-vault, session, or database dependency is unavailable.

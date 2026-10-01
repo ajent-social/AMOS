@@ -42,6 +42,8 @@ type Config struct {
 	AllowedOrigins      []string
 	DevelopmentLoopback bool
 	CookieSecure        bool
+	// PersistAssurance requires the optional SessionAssurance migration.
+	PersistAssurance bool
 }
 
 type Service struct {
@@ -77,8 +79,9 @@ func New(db *storage.DB, cfg Config) (*Service, error) {
 }
 
 type Issued struct {
-	Cookie    *http.Cookie
-	CSRFToken string
+	Cookie           *http.Cookie
+	CSRFToken        string
+	AssuranceExpires time.Time
 }
 
 // Issue rotates any known prior browser session and creates a fresh one in a
@@ -136,12 +139,13 @@ func (s *Service) issueTx(ctx context.Context, tx *sql.Tx, proof authproof.Verif
 		return Issued{}, ErrUnavailable
 	}
 	expires := proof.AuthenticatedAt().Add(maxAge)
-	if proof.AssuranceExpires().Before(expires) {
-		// The current persistence schema stores sign-in method/time but not
-		// elevated assurance. Bound the durable session to the supplied proof
-		// until that schema can preserve a stronger assurance level.
+	if proof.Assurance() == "aal1" && proof.AssuranceExpires().Before(expires) {
 		expires = proof.AssuranceExpires()
 	}
+	if proof.Assurance() != "aal1" && (!s.cfg.PersistAssurance || proof.AssuranceExpires().After(proof.AuthenticatedAt().Add(15*time.Minute))) {
+		return Issued{}, ErrUnauthenticated
+	}
+
 	err = func() error {
 		st, err := store.New(tx)
 		if err != nil {
@@ -154,12 +158,19 @@ func (s *Service) issueTx(ctx context.Context, tx *sql.Tx, proof authproof.Verif
 				}
 			}
 		}
-		return st.CreateSession(ctx, store.Session{ID: id, PersonID: proof.PersonID(), InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID, TokenDigest: digest[:], SecurityEpoch: proof.SecurityEpoch(), AuthenticationMethod: proof.Method(), AuthenticatedAt: proof.AuthenticatedAt(), ExpiresAt: expires})
+		err = st.CreateSession(ctx, store.Session{ID: id, PersonID: proof.PersonID(), InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID, TokenDigest: digest[:], SecurityEpoch: proof.SecurityEpoch(), AuthenticationMethod: proof.Method(), AuthenticatedAt: proof.AuthenticatedAt(), ExpiresAt: expires})
+		if err != nil {
+			return err
+		}
+		if proof.Assurance() != "aal1" {
+			return st.SetSessionAssurance(ctx, id, proof.Assurance(), proof.AssuranceExpires())
+		}
+		return nil
 	}()
 	if err != nil {
 		return Issued{}, ErrUnavailable
 	}
-	return Issued{Cookie: s.cookie(token, expires), CSRFToken: csrf(raw)}, nil
+	return Issued{Cookie: s.cookie(token, expires), CSRFToken: csrf(raw), AssuranceExpires: proof.AssuranceExpires()}, nil
 }
 
 func (s *Service) Middleware(next http.Handler) http.Handler {
@@ -179,6 +190,8 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		var active store.AuthenticatedSession
+		level := "aal1"
+		var assuranceExpiry time.Time
 		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 		defer cancel()
 		err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
@@ -187,6 +200,9 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 				return e
 			}
 			active, e = st.FindActiveSession(ctx, digest, store.SessionScope{InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID})
+			if e == nil && s.cfg.PersistAssurance {
+				level, assuranceExpiry, e = st.ActiveSessionAssurance(ctx, active.ID)
+			}
 			return e
 		})
 		if err != nil {
@@ -197,7 +213,10 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 			}
 			return
 		}
-		proof, err := authproof.NewVerifiedCredential(active.PersonID, active.InstallationID, active.ApplicationID, active.EnvironmentID, active.SecurityEpoch, active.AuthenticationMethod, active.AuthenticatedAt, "aal1", active.AuthenticatedAt.Add(maxAge))
+		if !s.cfg.PersistAssurance {
+			assuranceExpiry = active.AuthenticatedAt.Add(maxAge)
+		}
+		proof, err := authproof.NewVerifiedCredential(active.PersonID, active.InstallationID, active.ApplicationID, active.EnvironmentID, active.SecurityEpoch, active.AuthenticationMethod, active.AuthenticatedAt, level, assuranceExpiry)
 		if err != nil {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable")
 			return

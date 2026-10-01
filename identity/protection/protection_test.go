@@ -427,3 +427,26 @@ func TestPasswordMutationAdmissionIsPurposeBoundAndFinite(t *testing.T) {
 		t.Fatal("reset hashing repeated")
 	}
 }
+
+func TestMFAAdmissionIsBoundToCurrentPersonAndUsedOnce(t *testing.T) {
+	limiter := &Limiter{}
+	guard := Guard{Limiter: limiter}
+	budget := limiter.PasswordBudget()
+	person, err := uuid.NewV7()
+	if err != nil {
+		t.Fatal(err)
+	}
+	proof := guard.admittedContext(context.Background(), MFA, person.String())
+	if err := budget.Allow(proof, "mfa-current:another-person"); err == nil {
+		t.Fatal("foreign primary verification admitted")
+	}
+	if err := budget.Allow(proof, "signin:"+person.String()); err == nil {
+		t.Fatal("MFA admitted a different operation")
+	}
+	if err := budget.Allow(proof, "mfa-current:"+person.String()); err != nil {
+		t.Fatal(err)
+	}
+	if err := budget.Allow(proof, "mfa-current:"+person.String()); err == nil {
+		t.Fatal("primary password verification repeated")
+	}
+}

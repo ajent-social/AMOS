@@ -329,3 +329,58 @@ func TestCallerTransactionSessionRotationRollbackAndCommit(t *testing.T) {
 	check(first.Cookie, 401)
 	check(committed.Cookie, 204)
 }
+
+func TestDurableAssurancePersistsAndExpiresWithoutRevokingSession(t *testing.T) {
+	db, account := readyIdentity(t)
+	fragment, err := migrations.SessionAssurance(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.ExecContext(context.Background(), fragment.Migrations[0].SQL)
+		return e
+	}); err != nil {
+		t.Fatal("apply assurance migration", err)
+	}
+	svc, err := session.New(db, session.Config{InstallationID: account.InstallationID, ApplicationID: account.ApplicationID, EnvironmentID: account.EnvironmentID, AllowedOrigins: []string{"https://amos.example"}, CookieSecure: true, PersistAssurance: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	proof, err := authproof.NewVerifiedCredential(account.PersonID, account.InstallationID, account.ApplicationID, account.EnvironmentID, 0, "password+totp", now.Add(-2*time.Minute), "aal2", now.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	issued, err := svc.Issue(context.Background(), proof, "")
+	if err != nil {
+		t.Fatal("issue elevated session", err)
+	}
+	var got identity.AssuranceLevel
+	handler := svc.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		principal, ok := identity.PrincipalFromContext(r.Context())
+		if !ok {
+			t.Error("missing principal")
+		}
+		got = principal.Assurance().Level()
+		w.WriteHeader(204)
+	}))
+	check := func(want identity.AssuranceLevel) {
+		t.Helper()
+		req := httptest.NewRequest("GET", "https://amos.example/protected", nil)
+		req.AddCookie(issued.Cookie)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		if w.Code != 204 || got != want {
+			t.Fatalf("assurance lookup status=%d level=%s want=%s", w.Code, got, want)
+		}
+	}
+	check(identity.AAL2)
+	digest := sha256.Sum256([]byte(issued.Cookie.Value))
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.ExecContext(context.Background(), `UPDATE identity_sessions SET assurance_expires_at=transaction_timestamp()-interval '1 minute' WHERE token_digest=$1`, digest[:])
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	check(identity.AAL1)
+}
