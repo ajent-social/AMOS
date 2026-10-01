@@ -1,12 +1,12 @@
 # AMOS roadmap
 
-Updated: 2026-09-30. Public implementation status.
+Updated: 2026-10-01. Public implementation status.
 
 ## Current status
 
 The reviewed foundation is merged into `main`. There is no released, complete runnable SaaS and no qualified production deployment yet.
 
-The execution record contains 30 accepted tasks out of 257 planned tasks, with T7.2 (initializer validation and atomic generation) in progress. Task counts measure accepted work items, not percentage of product completion. Consult the [execution record](planning/execution-state.json) for current evidence.
+The execution record contains 37 accepted tasks out of 257 planned tasks. Atomic initializer generation, signup/sign-in components, default reference browser flows, billing persistence and replaceable UI overrides are reviewed. Task counts measure accepted work items, not percentage of product completion. Consult the [execution record](planning/execution-state.json) for current evidence.
 
 ## Integrated foundation
 
@@ -21,7 +21,7 @@ These are integrated components, not a completed end-to-end product. Required SQ
 
 ## Next working-app milestone
 
-1. Finish initializer validation, atomic generation and application templates; wire the developer executable.
+1. Finish local application templates and runtime composition; wire the developer executable.
 2. Assemble signup, verification, sign-in and personal workspace flows into the default web app.
 3. Connect the reference business feature through the shared route and authorization boundaries.
 4. Verify a generated application with real database and browser checks.

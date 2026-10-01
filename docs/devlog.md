@@ -15,3 +15,16 @@ Original AMOS code will use Apache 2.0, selected by the owner. Three isolated in
 ## 2026-09-30 — Foundation merged and public status reconciled
 
 Merged the reviewed foundation into main. Thirty tasks have accepted execution evidence; initializer validation/generation remains in progress. Corrected targeted UI fragments to support the default innerHTML swap without nested main elements, with a browser regression that failed before the correction and passed afterward. Updated the README, roadmap and resume checkpoint to distinguish integrated components from a complete runnable SaaS and live provider qualification. The next milestone is a generated app with account flows, a personal workspace and the reference business feature.
+
+## 2026-10-01 — reviewed local components
+
+Accepted-task registry now contains 37 tasks. Independent review and real SQL
+checks cover signup/sign-in, session rotation, personal todo authorization and
+billing persistence. Nine reference Chromium cases include JavaScript-disabled
+CRUD; two generated-consumer override cases verify escaping and protected POST
+form slots. Initializer filesystem security checks and explicit doctor failures
+were reviewed. Whole integrated Go suite passed with required PostgreSQL.
+
+Generated executable/runtime assembly, real subscriptions and cloud deployment
+remain incomplete. Synthetic browser authentication and provider fixtures do not
+qualify live services. Other sessions' infrastructure work remains isolated.

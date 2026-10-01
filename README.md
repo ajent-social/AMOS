@@ -30,7 +30,7 @@ Application code and Pulumi infrastructure programs use Go. The default UI uses 
 
 AMOS is under active development. It is not yet a complete runnable SaaS or a qualified production deployment.
 
-Implemented foundations include real PostgreSQL test infrastructure and transactional migrations; configuration and policy validation; durable jobs and an outbox; email delivery and audit components; identity storage, sessions, password hashing and email verification; workspace persistence, personal workspace bootstrap and request context; OpenAPI validation and Go code generation; a tenant-scoped reference todo service; and the default UI renderer.
+Implemented foundations include real PostgreSQL test infrastructure and transactional migrations; configuration and policy validation; durable jobs and an outbox; email delivery and audit components; identity storage, sessions, password hashing, email verification and signup/sign-in components; workspace persistence, personal workspace bootstrap and request context; OpenAPI validation and Go code generation; a tenant-scoped reference todo service; the default UI renderer and protected template overrides; atomic initializer generation; and scoped billing intents and persistence.
 
 These components still need to be assembled into the complete application. End-to-end account flows, organization administration, subscription processing, generated applications, deployment commands, cloud infrastructure, MCP, upgrades and operational recovery remain to be completed. Local tests and provider fixtures do not qualify live services.
 

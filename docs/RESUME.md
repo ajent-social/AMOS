@@ -1,12 +1,12 @@
 # Current implementation checkpoint
 
-Updated: 2026-09-30. The reviewed foundation is merged into `main`; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
+Updated: 2026-10-01. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
-Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 30 tasks are accepted out of 257 planned, and T7.2 is in progress in an isolated worktree. Do not assume that a task worktree is merged or accepted merely because it exists.
+Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 37 tasks are accepted out of 257 planned. Initializer atomic generation, signup/sign-in components, reference browser flows, billing persistence and UI overrides are reviewed. Local environment templates and AWS profile design remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
 
 Integrated foundations cover PostgreSQL/migrations, policy/configuration, jobs/outbox/email/audit, identity storage/sessions/passwords/email verification, workspace persistence/bootstrap/context, OpenAPI/Go generation, tenant-scoped reference todos and the default UI renderer. The fragment swap regression failed before the renderer fix and passes afterward in a real browser.
 
-AMOS is not yet a complete runnable SaaS. Signup/sign-in assembly, full identity and organization flows, billing, initializer/templates/executable, cloud deployment, generated MCP, upgrades and operating recovery remain incomplete. No live provider or production deployment qualification is claimed.
+AMOS is not yet a complete runnable SaaS. Generated application and executable wiring, full identity and organization flows, subscription processing, cloud deployment, generated MCP, upgrades and operating recovery remain incomplete. No live provider or production deployment qualification is claimed.
 
 Prioritize a generated runnable app with signup, verification, sign-in, a personal workspace and the reference business feature; follow with billing and qualified deployment. Preserve the complete later architecture in the staged plan rather than narrowing the product vision to this first slice.
 
