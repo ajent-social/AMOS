@@ -64,16 +64,19 @@ func TestEnvironmentGeneratesPrivatePerProjectAssets(t *testing.T) {
 			t.Error("private environment file is not ignored")
 		}
 		for _, script := range []string{"scripts/migrate", "scripts/dev"} {
-			if _, err := os.Stat(filepath.Join(root, script)); err != nil {
+			info, err := os.Stat(filepath.Join(root, script))
+			if err != nil {
 				t.Errorf("missing generated %s: %v", script, err)
+			} else if info.Mode().Perm() != 0755 {
+				t.Errorf("generated %s mode=%04o, want 0755", script, info.Mode().Perm())
 			}
-		}
-		cmd := exec.Command("sh", "scripts/dev")
-		cmd.Dir = root
-		output, err := cmd.CombinedOutput()
-		var exitErr *exec.ExitError
-		if !errors.As(err, &exitErr) || exitErr.ExitCode() != 3 || !strings.Contains(string(output), "unavailable until") {
-			t.Errorf("dev script without generated app should report unavailable: err=%v output=%q", err, output)
+			cmd := exec.Command(filepath.Join(root, script))
+			cmd.Dir = root
+			output, err := cmd.CombinedOutput()
+			var exitErr *exec.ExitError
+			if !errors.As(err, &exitErr) || exitErr.ExitCode() != 3 || !strings.Contains(string(output), "unavailable until") {
+				t.Errorf("%s without generated app should report unavailable: err=%v output=%q", script, err, output)
+			}
 		}
 	}
 }
@@ -143,7 +146,7 @@ func TestEnvironmentPodmanVolumeSurvivesContainerRestart(t *testing.T) {
 	})
 	start := func(name string) {
 		t.Helper()
-		runPodman("run", "-d", "--name", name, "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_PASSWORD="+credentials["AMOS_DB_MIGRATION_PASSWORD"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-v", volume+":/var/lib/postgresql/data", PostgresImage)
+		runPodman("run", "-d", "--name", name, "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_PASSWORD="+credentials["AMOS_DB_MIGRATION_PASSWORD"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-e", "POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256", "-e", "POSTGRES_HOST_AUTH_METHOD=scram-sha-256", "-v", volume+":/var/lib/postgresql/data", PostgresImage)
 		deadline := time.Now().Add(45 * time.Second)
 		for time.Now().Before(deadline) {
 			cmd := exec.CommandContext(ctx, podman, "exec", name, "pg_isready", "-U", credentials["AMOS_DB_MIGRATION_USER"], "-d", credentials["AMOS_DB_NAME"])
@@ -166,13 +169,19 @@ func TestEnvironmentPodmanVolumeSurvivesContainerRestart(t *testing.T) {
 	runPodman("cp", roleScript, container+":/tmp/roles.sh")
 	runPodman("exec", "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-e", "AMOS_DB_RUNTIME_USER="+credentials["AMOS_DB_RUNTIME_USER"], "-e", "AMOS_DB_RUNTIME_PASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "sh", "/tmp/roles.sh")
 	runPodman("exec", container, "psql", "-U", credentials["AMOS_DB_MIGRATION_USER"], "-d", credentials["AMOS_DB_NAME"], "-c", "CREATE TABLE volume_probe (id bigserial primary key); INSERT INTO volume_probe DEFAULT VALUES;")
-	runtimeCheck := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-q", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "INSERT INTO volume_probe DEFAULT VALUES RETURNING id")
+	runtimeCheck := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-h", "127.0.0.1", "-q", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "INSERT INTO volume_probe DEFAULT VALUES RETURNING id")
 	if runtimeCheck != "2" {
 		t.Fatalf("runtime role insert result=%q, want 2", runtimeCheck)
 	}
+	wrongPassword := exec.CommandContext(ctx, podman, "exec", "-e", "PGPASSWORD=invalid-test-password", container, "psql", "-h", "127.0.0.1", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "SELECT 1")
+	wrongPassword.Env = append(os.Environ(), "REGISTRY_AUTH_FILE="+authfile)
+	wrongOutput, wrongErr := wrongPassword.CombinedOutput()
+	if wrongErr == nil || !strings.Contains(string(wrongOutput), "password authentication failed") {
+		t.Fatalf("TCP login with invalid password should be denied; err=%v output=%q", wrongErr, wrongOutput)
+	}
 	runPodman("rm", "-f", container)
 	start(container)
-	out := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "SELECT count(*) FROM volume_probe")
+	out := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-h", "127.0.0.1", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "SELECT count(*) FROM volume_probe")
 	if out != "2" {
 		t.Fatalf("runtime role row count after restart=%q, want 2", out)
 	}

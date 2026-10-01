@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -58,19 +59,20 @@ func (Generator) Generate(ctx context.Context, config initializer.Config, files 
 	for _, asset := range []struct {
 		template string
 		path     string
+		mode     os.FileMode
 	}{
-		{template: "compose.yaml", path: "compose.yaml"},
-		{template: "scripts/migrate", path: "scripts/migrate"},
-		{template: "scripts/dev", path: "scripts/dev"},
-		{template: "env.local.example", path: ".env.local.example"},
-		{template: ".gitignore", path: ".gitignore"},
-		{template: "db-init-roles.sh", path: "db-init-roles.sh"},
+		{template: "compose.yaml", path: "compose.yaml", mode: 0644},
+		{template: "scripts/migrate", path: "scripts/migrate", mode: 0755},
+		{template: "scripts/dev", path: "scripts/dev", mode: 0755},
+		{template: "env.local.example", path: ".env.local.example", mode: 0644},
+		{template: ".gitignore", path: ".gitignore", mode: 0644},
+		{template: "db-init-roles.sh", path: "db-init-roles.sh", mode: 0644},
 	} {
 		data, err := render(asset.template, v)
 		if err != nil {
 			return err
 		}
-		if err := files.WriteFile(ctx, asset.path, data, 0644); err != nil {
+		if err := files.WriteFile(ctx, asset.path, data, asset.mode); err != nil {
 			return err
 		}
 	}
