@@ -38,7 +38,8 @@ func fixtureCatalog(t *testing.T) *catalog.Catalog {
 }
 func fixtureAdapter(t *testing.T, server *httptest.Server) *Adapter {
 	t.Helper()
-	a, err := New(Config{APIKey: strings.Join([]string{"sk", "test", "fixture", "key"}, "_"), ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}, APIBaseURL: server.URL, Now: func() time.Time { return time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC) }})
+	config := strings.Join([]string{"sk", "test", "fixture", "key"}, "_")
+	a, err := New(Config{APIKey: config, ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}, APIBaseURL: server.URL, Now: func() time.Time { return time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC) }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +67,7 @@ func writeJSON(w http.ResponseWriter, value any) {
 func TestT5_5_UsesOfficialSDKWithBoundMetadataAndFixedQuantity(t *testing.T) {
 	var customerCalls, checkoutCalls int
 	req := fixtureRequest()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := fixtureServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Stripe-Version") != StripeAPIVersion {
 			t.Errorf("wrong Stripe API version: %q", r.Header.Get("Stripe-Version"))
 		}
@@ -126,7 +127,7 @@ func TestT5_5_LostCheckoutResponseRecoversSameSessionFromDurableIntent(t *testin
 	req := fixtureRequest()
 	created := map[string]map[string]any{}
 	checkoutCalls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := fixtureServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/checkout/sessions" {
 			http.NotFound(w, r)
 			return
@@ -165,7 +166,7 @@ func TestT5_5_LostCheckoutResponseRecoversSameSessionFromDurableIntent(t *testin
 	if checkoutCalls != 1 {
 		t.Fatalf("SDK automatically retried unknown write %d times", checkoutCalls)
 	}
-	intent := billingstore.Intent{Binding: req.Binding, Operation: CheckoutIntentOperation, IdempotencyKey: req.IdempotencyKey, PayloadSHA256: CheckoutPayloadHash(req), State: "unknown", Version: 2}
+	intent := billingstore.Intent{CreatedAt: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC).Add(-time.Hour), Binding: req.Binding, Operation: CheckoutIntentOperation, IdempotencyKey: req.IdempotencyKey, PayloadSHA256: CheckoutPayloadHash(req), State: "unknown", Version: 2}
 	recovered, err := adapter.RecoverCheckout(context.Background(), req, intent)
 	if err != nil {
 		t.Fatal(err)
@@ -184,10 +185,10 @@ func TestT5_5_LostCheckoutResponseRecoversSameSessionFromDurableIntent(t *testin
 func TestT5_5_DurableRecoveryRejectsChangedPriceAndWrongBinding(t *testing.T) {
 	req := fixtureRequest()
 	calls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls++; writeJSON(w, sessionJSON(req, false)) }))
+	server := fixtureServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls++; writeJSON(w, sessionJSON(req, false)) }))
 	defer server.Close()
 	adapter := fixtureAdapter(t, server)
-	intent := billingstore.Intent{Binding: req.Binding, Operation: CheckoutIntentOperation, IdempotencyKey: req.IdempotencyKey, PayloadSHA256: CheckoutPayloadHash(req), State: "unknown", Version: 2}
+	intent := billingstore.Intent{CreatedAt: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC).Add(-time.Hour), Binding: req.Binding, Operation: CheckoutIntentOperation, IdempotencyKey: req.IdempotencyKey, PayloadSHA256: CheckoutPayloadHash(req), State: "unknown", Version: 2}
 	changed := req
 	changed.PriceKey = "year"
 	if _, err := adapter.RecoverCheckout(context.Background(), changed, intent); !errors.Is(err, provider.ErrInvalidRequest) {
@@ -205,7 +206,7 @@ func TestT5_5_DurableRecoveryRejectsChangedPriceAndWrongBinding(t *testing.T) {
 
 func TestT5_5_RejectsWrongModeResponseAndUntrustedURLs(t *testing.T) {
 	req := fixtureRequest()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { writeJSON(w, customerJSON(true)) }))
+	server := fixtureServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { writeJSON(w, customerJSON(true)) }))
 	defer server.Close()
 	adapter := fixtureAdapter(t, server)
 	_, err := adapter.EnsureCustomer(context.Background(), provider.CustomerRequest{Binding: req.Binding, IdempotencyKey: "customer_setup_002"})
@@ -225,7 +226,8 @@ func TestT5_5_RejectsWrongModeResponseAndUntrustedURLs(t *testing.T) {
 }
 
 func TestT5_5_BindsCustomerModeAndConfiguration(t *testing.T) {
-	cfg := Config{APIKey: strings.Join([]string{"sk", "test", "fixture", "key"}, "_"), ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}}
+	config := strings.Join([]string{"sk", "test", "fixture", "key"}, "_")
+	cfg := Config{APIKey: config, ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, Catalog: fixtureCatalog(t), ReturnHosts: []string{"app.example"}}
 	if _, err := New(cfg); err != nil {
 		t.Fatalf("valid fixture config rejected: %v", err)
 	}
@@ -242,7 +244,7 @@ func TestT5_5_CustomerTimeoutRequiresMatchingDurableIntentToRecover(t *testing.T
 	b := fixtureBinding()
 	req := provider.CustomerRequest{Binding: b, IdempotencyKey: "customer_recovery_01"}
 	calls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := fixtureServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
 		if r.Header.Get("Idempotency-Key") != req.IdempotencyKey {
 			t.Errorf("customer idempotency key changed")
@@ -276,7 +278,7 @@ func TestT5_5_CustomerTimeoutRequiresMatchingDurableIntentToRecover(t *testing.T
 	if calls != 1 {
 		t.Fatalf("customer write auto-retried %d times", calls)
 	}
-	intent := billingstore.Intent{Binding: b, Operation: CustomerIntentOperation, IdempotencyKey: req.IdempotencyKey, PayloadSHA256: CustomerPayloadHash(req), State: "unknown", Version: 2}
+	intent := billingstore.Intent{CreatedAt: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC).Add(-time.Hour), Binding: b, Operation: CustomerIntentOperation, IdempotencyKey: req.IdempotencyKey, PayloadSHA256: CustomerPayloadHash(req), State: "unknown", Version: 2}
 	customer, err := adapter.RecoverCustomer(context.Background(), req, intent)
 	if err != nil || customer.Ref.ID != "cus_fixture" {
 		t.Fatalf("durable customer recovery: %+v %v", customer, err)
@@ -285,5 +287,86 @@ func TestT5_5_CustomerTimeoutRequiresMatchingDurableIntentToRecover(t *testing.T
 	changed.Binding.WorkspaceID = "018f0000-0000-7000-8000-000000000005"
 	if _, err := adapter.RecoverCustomer(context.Background(), changed, intent); !errors.Is(err, provider.ErrInvalidRequest) {
 		t.Fatalf("cross-workspace recovery accepted: %v", err)
+	}
+}
+
+func fixtureServer(next http.Handler) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/account" {
+			writeJSON(w, map[string]any{"id": "acct_test", "object": "account"})
+			return
+		}
+		next.ServeHTTP(w, r)
+	}))
+}
+
+func TestT5_5_VerifiesCredentialAccountBeforeAnyMutation(t *testing.T) {
+	for _, remote := range []string{"acct_other", ""} {
+		t.Run(remote, func(t *testing.T) {
+			posts := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == "POST" {
+					posts++
+					writeJSON(w, customerJSON(false))
+					return
+				}
+				writeJSON(w, map[string]any{"id": remote, "object": "account"})
+			}))
+			defer server.Close()
+			a := fixtureAdapter(t, server)
+			if _, e := a.EnsureCustomer(context.Background(), provider.CustomerRequest{Binding: fixtureBinding(), IdempotencyKey: "intent_customer_01"}); e == nil {
+				t.Fatal("wrong merchant accepted")
+			}
+			if _, e := a.CreateCheckout(context.Background(), fixtureRequest()); e == nil {
+				t.Fatal("wrong merchant checkout accepted")
+			}
+			if posts != 0 {
+				t.Fatalf("unverified merchant mutated %d times", posts)
+			}
+		})
+	}
+}
+
+func TestT5_5_UnknownRecoveryStopsBeforeRetentionExpiry(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		writeJSON(w, sessionJSON(fixtureRequest(), false))
+	}))
+	defer server.Close()
+	a := fixtureAdapter(t, server)
+	req := fixtureRequest()
+	for _, created := range []time.Time{{}, a.now().Add(time.Second), a.now().Add(-23 * time.Hour), a.now().Add(-48 * time.Hour)} {
+		intent := billingstore.Intent{CreatedAt: created, Binding: req.Binding, Operation: CheckoutIntentOperation, IdempotencyKey: req.IdempotencyKey, PayloadSHA256: CheckoutPayloadHash(req), State: "unknown", Version: 2}
+		out, e := a.RecoverCheckout(context.Background(), req, intent)
+		if e == nil || out.State != provider.SubscriptionUnknown {
+			t.Fatal("expired unknown checkout replayed")
+		}
+		customer := provider.CustomerRequest{Binding: req.Binding, IdempotencyKey: "intent_customer_01"}
+		intent.Operation = CustomerIntentOperation
+		intent.IdempotencyKey = customer.IdempotencyKey
+		intent.PayloadSHA256 = CustomerPayloadHash(customer)
+		if _, e := a.RecoverCustomer(context.Background(), customer, intent); e == nil {
+			t.Fatal("expired unknown customer replayed")
+		}
+	}
+	if calls != 0 {
+		t.Fatalf("unsafe aged recovery reached provider %d times", calls)
+	}
+}
+
+func TestT5_5_CheckoutRequiresMatchingPresentCustomer(t *testing.T) {
+	for _, customer := range []any{nil, map[string]any{"id": "cus_other", "object": "customer"}} {
+		server := fixtureServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			v := sessionJSON(fixtureRequest(), false)
+			v["customer"] = customer
+			writeJSON(w, v)
+		}))
+		a := fixtureAdapter(t, server)
+		out, e := a.CreateCheckout(context.Background(), fixtureRequest())
+		server.Close()
+		if e != nil || out.State != provider.SubscriptionUnknown {
+			t.Fatalf("unbound customer checkout confirmed: %v", e)
+		}
 	}
 }

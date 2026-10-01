@@ -95,9 +95,29 @@ func New(cfg Config) (*Adapter, error) {
 	}
 	noRetries := int64(0)
 	enableTelemetry := false
-	backendConfig := &stripe.BackendConfig{URL: apiURL, HTTPClient: &http.Client{Timeout: cfg.Timeout}, MaxNetworkRetries: &noRetries, EnableTelemetry: &enableTelemetry}
+	// Go's transport may replay idempotency-key POSTs on reused connections
+	// independently of SDK retries. Fresh connections prevent that implicit replay.
+	transport := &http.Transport{Proxy: http.ProxyFromEnvironment, DisableKeepAlives: true, ForceAttemptHTTP2: false, TLSHandshakeTimeout: 10 * time.Second}
+	backendConfig := &stripe.BackendConfig{URL: apiURL, HTTPClient: &http.Client{Timeout: cfg.Timeout, Transport: transport, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}, MaxNetworkRetries: &noRetries, EnableTelemetry: &enableTelemetry}
 	client := stripe.NewClient(cfg.APIKey, stripe.WithBackends(stripe.NewBackendsWithConfig(backendConfig)))
 	return &Adapter{client: client, accountID: cfg.ProviderAccountID, mode: cfg.AccountMode, catalog: cfg.Catalog, returnHosts: hosts, connectAccount: cfg.ConnectAccountID, now: cfg.Now}, nil
+}
+
+// CheckAccount verifies credential authority through Stripe rather than echoed
+// metadata. Callers may use it for readiness; every mutation also verifies it.
+func (a *Adapter) CheckAccount(ctx context.Context) error {
+	if ctx == nil || a == nil || a.client == nil {
+		return ErrInvalidConfig
+	}
+	params := &stripe.AccountRetrieveParams{}
+	if a.connectAccount != "" {
+		params.SetStripeAccount(a.connectAccount)
+	}
+	account, err := a.client.V1Accounts.Retrieve(ctx, params)
+	if err != nil || account == nil || account.ID != a.accountID {
+		return &provider.ProviderError{Class: provider.ErrorUnavailable, Retryable: false}
+	}
+	return nil
 }
 
 func (a *Adapter) EnsureCustomer(ctx context.Context, req provider.CustomerRequest) (provider.Customer, error) {
@@ -105,6 +125,9 @@ func (a *Adapter) EnsureCustomer(ctx context.Context, req provider.CustomerReque
 		return provider.Customer{}, provider.ErrInvalidRequest
 	}
 	metadata := bindingMetadata(req.Binding)
+	if err := a.CheckAccount(ctx); err != nil {
+		return provider.Customer{}, err
+	}
 	params := &stripe.CustomerCreateParams{Metadata: metadata}
 	params.SetIdempotencyKey(req.IdempotencyKey)
 	if a.connectAccount != "" {
@@ -127,6 +150,9 @@ func (a *Adapter) RecoverCustomer(ctx context.Context, req provider.CustomerRequ
 		intent.Operation != CustomerIntentOperation || intent.State != "unknown" || intent.IdempotencyKey != req.IdempotencyKey ||
 		intent.Version < 1 || intent.ProviderObjectRef != "" || intent.PayloadSHA256 != CustomerPayloadHash(req) {
 		return provider.Customer{}, provider.ErrInvalidRequest
+	}
+	if !safeReplayAge(intent.CreatedAt, a.now()) {
+		return provider.Customer{}, &provider.ProviderError{Class: provider.ErrorUnknownOutcome, Retryable: false}
 	}
 	return a.EnsureCustomer(ctx, req)
 }
@@ -154,6 +180,9 @@ func (a *Adapter) CreateCheckout(ctx context.Context, req provider.CheckoutReque
 func (a *Adapter) RecoverCheckout(ctx context.Context, req provider.CheckoutRequest, intent billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error) {
 	if ctx == nil || a == nil || !a.validBinding(req.Binding) || intent.Binding != req.Binding || intent.Operation != CheckoutIntentOperation || intent.State != "unknown" || intent.IdempotencyKey != req.IdempotencyKey || intent.Version < 1 || intent.ProviderObjectRef != "" || intent.PayloadSHA256 != CheckoutPayloadHash(req) {
 		return provider.Outcome[provider.CheckoutSession]{}, provider.ErrInvalidRequest
+	}
+	if !safeReplayAge(intent.CreatedAt, a.now()) {
+		return unknownOutcome(a.now()), &provider.ProviderError{Class: provider.ErrorUnknownOutcome, Retryable: false}
 	}
 	return a.CreateCheckout(ctx, req)
 }
@@ -183,6 +212,9 @@ func (a *Adapter) createCheckout(ctx context.Context, req provider.CheckoutReque
 	metadata := bindingMetadata(req.Binding)
 	metadata["amos_price_key"] = req.PriceKey
 	metadata["amos_catalog_revision"] = a.catalog.Revision()
+	if err := a.CheckAccount(ctx); err != nil {
+		return unknownOutcome(a.now()), err
+	}
 	params := &stripe.CheckoutSessionCreateParams{Mode: stripe.String("subscription"), Customer: &req.Customer.ID,
 		ClientReferenceID: &req.IdempotencyKey, SuccessURL: &req.SuccessURL, CancelURL: &req.CancelURL,
 		LineItems: []*stripe.CheckoutSessionCreateLineItemParams{{Price: &price.ProviderPriceKey, Quantity: stripe.Int64(1)}}, Metadata: metadata,
@@ -207,7 +239,7 @@ func (a *Adapter) validCheckoutResponse(s *stripe.CheckoutSession, req provider.
 	if s == nil || !validStripeID(s.ID) || s.Livemode != (a.mode == provider.AccountLive) || s.ClientReferenceID != req.IdempotencyKey || string(s.Mode) != "subscription" || !metadataMatches(s.Metadata, metadata) || !validHostedURL(s.URL) || s.ExpiresAt <= a.now().Unix() || s.ExpiresAt > a.now().Add(24*time.Hour).Unix() {
 		return false
 	}
-	if s.Customer != nil && s.Customer.ID != req.Customer.ID {
+	if s.Customer == nil || s.Customer.ID != req.Customer.ID {
 		return false
 	}
 	return true
@@ -303,3 +335,10 @@ func toCustomerError(err error) error {
 
 var _ provider.CustomerClient = (*Adapter)(nil)
 var _ provider.CheckoutClient = (*Adapter)(nil)
+
+// Stripe can prune idempotency keys at 24 hours. Use a conservative 23-hour
+// replay window from the durable intent's creation, which precedes first send.
+// Older or malformed ages stay unknown and require reconciliation/manual review.
+func safeReplayAge(created, now time.Time) bool {
+	return !created.IsZero() && !now.IsZero() && !created.After(now) && now.Sub(created) < 23*time.Hour
+}

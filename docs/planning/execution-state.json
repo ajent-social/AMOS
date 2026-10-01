@@ -380,10 +380,15 @@
     ]
   },
   "T5.5": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Official Stripe SDK checkout worker assigned exclusive billing/stripecheckout paths; fixture boundary tests in progress, live provider qualification pending."
+      "Official Stripe v87 SDK fixture boundary independently reviewed and corrected for authenticated merchant identity, replay age and present matching checkout customer.",
+      "Named TestT5_5 suite and scoped vet passed; lint reported zero issues after restored mutations.",
+      "Genuine mutations removing merchant equality, replay age bound, required customer and fresh HTTP transport each failed their regression; restored named suite passed.",
+      "Go transport reused-socket implicit POST replay was observed and prevented with dedicated fresh connections, HTTP2 disabled and refused redirects; SDK retries/telemetry disabled.",
+      "Explicit recovery requires exact durable unknown intent and creation age below 23 hours; old/malformed outcomes remain unresolved for reconciliation.",
+      "Original AMOS durable-intent contracts used; no private upstream qualification asserted. Controller integration, live Stripe prices/subscriptions/webhooks and deployment remain pending."
     ]
   },
   "T5.4": {

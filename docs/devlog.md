@@ -36,3 +36,18 @@ wrong-password denial, migration-owner default privileges and persistent rows
 after container replacement. Generated local scripts retain executable modes.
 Public-template hygiene checks distinguish environment references from credentials;
 seven checker regressions passed. Deployment qualification is still separate.
+
+## 2026-10-01 — runtime composition and checkout boundary
+
+Forty-two tasks now have accepted evidence. The integrator assembled the immutable
+seven-entry foundation registry and reference todo migration, encrypted scoped
+verification material with retained-key rotation, a versioned local password
+policy and one-use durable password admission. Real SQL and genuine predicate
+mutations plus independent review cover current-person personal workspace access.
+
+Stripe checkout fixtures and independent review caught merchant identity, aged
+idempotency replay and missing response customer gaps. Corrected checks passed.
+Go's HTTP transport unexpectedly replayed a lost-response write despite zero SDK
+retries; disabling connection reuse prevented it and a transport mutation proved
+the regression. These qualify the adapter boundary, not live Stripe delivery,
+subscriptions, a generated executable or cloud deployment.
