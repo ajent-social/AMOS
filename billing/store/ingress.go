@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/ajent-social/amos/billing/provider"
 	"github.com/google/uuid"
@@ -58,6 +59,8 @@ type VerifiedWebhookInput struct {
 	QuarantineReason string
 }
 type VerifiedWebhookReceipt struct {
+	ID                      uuid.UUID
+	ReceivedAt              time.Time
 	Duplicate               bool
 	State, QuarantineReason string
 }
@@ -99,10 +102,10 @@ func (s *Store) PersistVerifiedWebhook(ctx context.Context, in VerifiedWebhookIn
 	}
 	var receipt VerifiedWebhookReceipt
 	var digest []byte
-	err := s.tx.QueryRowContext(ctx, `INSERT INTO billing_verified_webhook_ingress(id,installation_id,application_id,environment_id,provider,provider_account_id,account_mode,provider_event_ref,event_type,customer_ref,subscription_ref,payload_sha256,billing_account_id,workspace_id,state,quarantine_reason) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) ON CONFLICT(installation_id,application_id,environment_id,provider,provider_account_id,account_mode,provider_event_ref) DO NOTHING RETURNING state,quarantine_reason,payload_sha256`, in.ID, e.InstallationID, e.ApplicationID, e.EnvironmentID, e.Provider, e.ProviderAccountID, string(e.AccountMode), in.EventID, in.EventType, in.CustomerRef, in.SubscriptionRef, in.PayloadSHA256[:], account, workspace, state, in.QuarantineReason).Scan(&receipt.State, &receipt.QuarantineReason, &digest)
+	err := s.tx.QueryRowContext(ctx, `INSERT INTO billing_verified_webhook_ingress(id,installation_id,application_id,environment_id,provider,provider_account_id,account_mode,provider_event_ref,event_type,customer_ref,subscription_ref,payload_sha256,billing_account_id,workspace_id,state,quarantine_reason) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) ON CONFLICT(installation_id,application_id,environment_id,provider,provider_account_id,account_mode,provider_event_ref) DO NOTHING RETURNING id,received_at,state,quarantine_reason,payload_sha256`, in.ID, e.InstallationID, e.ApplicationID, e.EnvironmentID, e.Provider, e.ProviderAccountID, string(e.AccountMode), in.EventID, in.EventType, in.CustomerRef, in.SubscriptionRef, in.PayloadSHA256[:], account, workspace, state, in.QuarantineReason).Scan(&receipt.ID, &receipt.ReceivedAt, &receipt.State, &receipt.QuarantineReason, &digest)
 	if errors.Is(err, sql.ErrNoRows) {
 		receipt.Duplicate = true
-		err = s.tx.QueryRowContext(ctx, `SELECT state,quarantine_reason,payload_sha256 FROM billing_verified_webhook_ingress WHERE installation_id=$1 AND application_id=$2 AND environment_id=$3 AND provider=$4 AND provider_account_id=$5 AND account_mode=$6 AND provider_event_ref=$7`, e.InstallationID, e.ApplicationID, e.EnvironmentID, e.Provider, e.ProviderAccountID, string(e.AccountMode), in.EventID).Scan(&receipt.State, &receipt.QuarantineReason, &digest)
+		err = s.tx.QueryRowContext(ctx, `SELECT id,received_at,state,quarantine_reason,payload_sha256 FROM billing_verified_webhook_ingress WHERE installation_id=$1 AND application_id=$2 AND environment_id=$3 AND provider=$4 AND provider_account_id=$5 AND account_mode=$6 AND provider_event_ref=$7`, e.InstallationID, e.ApplicationID, e.EnvironmentID, e.Provider, e.ProviderAccountID, string(e.AccountMode), in.EventID).Scan(&receipt.ID, &receipt.ReceivedAt, &receipt.State, &receipt.QuarantineReason, &digest)
 	}
 	if err != nil {
 		return VerifiedWebhookReceipt{}, ErrPersistence

@@ -291,3 +291,97 @@ func TestAttemptBudgetsAndUnknownReviewAreBounded(t *testing.T) {
 		t.Fatalf("manual-review job was claimable: ok=%v err=%v", ok, err)
 	}
 }
+
+func TestClaimKindsPreservesOtherConsumersAndExpiredLeases(t *testing.T) {
+	db, all := testStore(t)
+	ctx := context.Background()
+	billing := intent(t, "billing-kind", true)
+	billing.Kind = "billing.webhook.reconcile"
+	first, err := all.Enqueue(ctx, billing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	claimed, ok, err := all.Claim(ctx, "billing-owner", time.Second)
+	if err != nil || !ok || claimed.ID != first.ID {
+		t.Fatal("billing lease unavailable", err)
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE amos_jobs SET lease_until=clock_timestamp()-interval '1 second' WHERE id=$1", first.ID); err != nil {
+		t.Fatal(err)
+	}
+	mail := intent(t, "mail-kind", true)
+	mail.Kind = "email.send"
+	second, err := all.Enqueue(ctx, mail)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := all.config
+	cfg.ClaimKinds = []string{"email.send"}
+	selected, err := New(db, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.ClaimKinds[0] = "billing.webhook.reconcile"
+	got, ok, err := selected.Claim(ctx, "mail-owner", time.Second)
+	if err != nil || !ok || got.ID != second.ID {
+		t.Fatal("wrong consumer claimed", err)
+	}
+	var state, owner string
+	if err := db.QueryRowContext(ctx, "SELECT status,lease_owner FROM amos_jobs WHERE id=$1", first.ID).Scan(&state, &owner); err != nil {
+		t.Fatal(err)
+	}
+	if state != "leased" || owner != "billing-owner" {
+		t.Fatal("mail worker maintained another consumer lease")
+	}
+	if _, ok, err := selected.Claim(ctx, "mail-owner", time.Second); err != nil || ok {
+		t.Fatal("mail worker claimed foreign work", err)
+	}
+}
+
+func TestTxWriterEnqueueRollbackAndStableReplay(t *testing.T) {
+	db, reader := testStore(t)
+	writer, err := NewTxWriter(reader.config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	in := intent(t, "transaction-only", false)
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rolled, err := writer.EnqueueTx(ctx, tx, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := reader.Get(ctx, rolled.ID); !errors.Is(err, jobs.ErrNotFound) {
+		t.Fatal("uncommitted outbox visible")
+	}
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := writer.EnqueueTx(ctx, tx, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := writer.EnqueueTx(ctx, tx, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if first.ID != second.ID {
+		t.Fatal("stable replay duplicated job")
+	}
+}

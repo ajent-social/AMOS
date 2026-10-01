@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/ajent-social/amos/jobs"
 	"github.com/google/uuid"
@@ -27,6 +28,9 @@ const (
 )
 
 type Config struct {
+	// ClaimKinds limits execution and lease maintenance to selected consumers.
+	// Empty preserves the existing general-purpose repository behavior.
+	ClaimKinds                []string
 	MaxPayloadBytes           int
 	MaxAttempts               int
 	MaxReconciliationAttempts int
@@ -40,10 +44,28 @@ type Store struct {
 }
 
 func New(db *sql.DB, cfg Config) (*Store, error) {
-	if db == nil || cfg.MaxPayloadBytes <= 0 || cfg.MaxPayloadBytes > HardMaxPayloadBytes || cfg.MaxAttempts <= 0 || cfg.MaxAttempts > HardMaxAttempts || cfg.MaxReconciliationAttempts <= 0 || cfg.MaxReconciliationAttempts > HardMaxReconciliationAttempts || cfg.MaxLease <= 0 || cfg.MaxLease > HardMaxLease || cfg.MaxRetryDelay < 0 || cfg.MaxRetryDelay > HardMaxRetryDelay {
+	if db == nil || !validConfig(cfg) {
 		return nil, ErrInvalidConfig
 	}
+	cfg.ClaimKinds = append([]string(nil), cfg.ClaimKinds...)
 	return &Store{db: db, config: cfg}, nil
+}
+
+func validConfig(cfg Config) bool {
+	if cfg.MaxPayloadBytes <= 0 || cfg.MaxPayloadBytes > HardMaxPayloadBytes || cfg.MaxAttempts <= 0 || cfg.MaxAttempts > HardMaxAttempts || cfg.MaxReconciliationAttempts <= 0 || cfg.MaxReconciliationAttempts > HardMaxReconciliationAttempts || cfg.MaxLease <= 0 || cfg.MaxLease > HardMaxLease || cfg.MaxRetryDelay < 0 || cfg.MaxRetryDelay > HardMaxRetryDelay {
+		return false
+	}
+	if len(cfg.ClaimKinds) > 16 {
+		return false
+	}
+	seen := make(map[string]bool)
+	for _, kind := range cfg.ClaimKinds {
+		if kind == "" || len(kind) > 128 || strings.TrimSpace(kind) != kind || strings.IndexFunc(kind, unicode.IsControl) >= 0 || seen[kind] {
+			return false
+		}
+		seen[kind] = true
+	}
+	return true
 }
 
 func (s *Store) Enqueue(ctx context.Context, in jobs.Intent) (jobs.Job, error) {
@@ -67,7 +89,7 @@ func (s *Store) Enqueue(ctx context.Context, in jobs.Intent) (jobs.Job, error) {
 
 // EnqueueTx adds durable intent to a caller-owned domain transaction.
 func (s *Store) EnqueueTx(ctx context.Context, tx *sql.Tx, in jobs.Intent) (jobs.Job, error) {
-	if s == nil || s.db == nil || ctx == nil || tx == nil {
+	if s == nil || ctx == nil || tx == nil {
 		return jobs.Job{}, ErrInvalidConfig
 	}
 	if err := jobs.ValidateIntent(in, s.config.MaxPayloadBytes); err != nil {
@@ -129,7 +151,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 	}
 	defer func() { _ = tx.Rollback() }() // Commit consumes the transaction; failures already return unavailable.
 	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs SET status='dead', lease_owner=NULL, lease_action=NULL, lease_until=NULL, updated_at=clock_timestamp()
-		WHERE status='queued' AND deadline_at <= clock_timestamp()`)
+		WHERE status='queued' AND deadline_at <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[]))`, s.config.ClaimKinds)
 	if err != nil {
 		return jobs.Job{}, false, ErrUnavailable
 	}
@@ -137,7 +159,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 		status=CASE WHEN external_effect THEN 'unknown' WHEN attempt_count >= max_attempts THEN 'dead' ELSE 'queued' END,
 		manual_review=CASE WHEN external_effect AND reconciliation_attempt_count >= max_reconciliation_attempts THEN true ELSE manual_review END,
 		lease_owner=NULL, lease_action=NULL, lease_until=NULL, next_reconciliation_at=clock_timestamp(), updated_at=clock_timestamp()
-		WHERE lease_owner IS NOT NULL AND lease_until <= clock_timestamp()`)
+		WHERE lease_owner IS NOT NULL AND lease_until <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[]))`, s.config.ClaimKinds)
 	if err != nil {
 		return jobs.Job{}, false, ErrUnavailable
 	}
@@ -146,6 +168,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 		SELECT id, status FROM amos_jobs
 		WHERE ((status='queued' AND available_at <= clock_timestamp() AND deadline_at > clock_timestamp())
 		 OR (status='unknown' AND manual_review=false AND lease_owner IS NULL AND next_reconciliation_at <= clock_timestamp() AND reconciliation_attempt_count < max_reconciliation_attempts))
+		AND (COALESCE(cardinality($3::text[]),0)=0 OR kind=ANY($3::text[]))
 		ORDER BY CASE WHEN status='queued' THEN available_at ELSE next_reconciliation_at END, created_at, id
 		FOR UPDATE SKIP LOCKED LIMIT 1
 	)
@@ -157,7 +180,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 		fence_token=j.fence_token+1,
 		lease_until=clock_timestamp()+($2 * interval '1 microsecond'), updated_at=clock_timestamp()
 	FROM candidate c WHERE j.id=c.id
-	RETURNING `+jobReturningColumns, owner, lease.Microseconds()))
+	RETURNING `+jobReturningColumns, owner, lease.Microseconds(), s.config.ClaimKinds))
 	if errors.Is(err, jobs.ErrNotFound) {
 		if err := tx.Commit(); err != nil {
 			return jobs.Job{}, false, ErrUnavailable
