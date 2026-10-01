@@ -499,5 +499,13 @@
       "Apply and retry database-clock lease regressions, per-instance serialization, SDK mode/logging and immutable catalog alias mutations fail as intended and restored checks pass.",
       "Fixtures do not qualify live Stripe; live credentials are absent. Durable job/executable composition, migration allocation, account-wide throttling and integrated access policy remain separate. No full task or release acceptance."
     ]
+  },
+  "T6.4": {
+    "status": "IN_PROGRESS",
+    "evidence": [
+      "Workspace switch UI source component f941a53 independently reviewed after stale-hint remediation and denial-response corrections. Fresh scoped race, vet and zero-issue lint pass.",
+      "Genuine error-guard mutations disclose foreign DTO values and fail the regression; byte-identical restoration and positive checks pass. Pinned browser formatter and public artifact checks pass.",
+      "Browser NOT_RUN without composed organization fixture; real membership/selection adapters and native host wiring remain separate. No full task, organization or deployment acceptance."
+    ]
   }
 }

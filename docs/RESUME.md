@@ -131,3 +131,11 @@ evidence. See [checks and limits](evidence/billing-reconciliation-20261001.md).
 Durable consumer/executable scheduling, shared migration allocation, account-wide
 throttling and complete subscription/access policy remain separate; live Stripe
 credentials are absent and fixtures are not provider qualification.
+
+## Workspace UI component
+
+The reviewed workspace switch UI component passes fresh scoped race, vet and
+zero-issue lint. Stale hints are cleared and current authorized choices are
+queried again; error DTO fields never render. T6.4 remains in progress because
+the composed organization browser fixture and native adapter are absent. See
+[evidence](evidence/workspace-switch-20261001.md).
