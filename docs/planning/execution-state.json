@@ -476,5 +476,17 @@
       "Session issuance database-clock regression fails under a transaction-start clock mutation and passes after restoration. Composed local HTTP tests also verify Origin/CSRF denial, exact persisted assurance expiry and replay rejection in a separately staged native application.",
       "Accepted as a service component. Production key management, organization policy, enterprise MFA, UI composition, live providers and complete SaaS release qualification remain separate."
     ]
+  },
+  "T6.3": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Native server-rendered password authentication UI independently reviewed in a headless session; bounded strict forms preserve controller context, Origin and peer data, and use generic errors and safe redirects.",
+      "Fresh integrator race tests pass for UI, email confirmation and recovery packages; scoped vet and zero-issue lint pass. Public artifact and diff checks pass.",
+      "Actual generated Go executable and real PostgreSQL Chromium full lifecycle passed repeatedly, including a fresh run after the reviewed TOTP supporting batch merged. UI and browser sources match the isolated batch byte-for-byte.",
+      "Browser flow covers signup, explicit email confirmation, invalid-link guidance, sign-in, personal todos, sign-out, reset, Back navigation, spent-link revisit and native stale-form proof resubmission rejection. Original and reset password outcomes verify the stale request did not change the password.",
+      "The browser resubmission case reconstructs the previously rendered form after Back; it does not claim the browser restored that form from history. Original origin/referrer failures and worker guard mutations were observed before corrected passing checks.",
+      "Accepted as a UI component. Native host/generator shipping is a separate batch; live mail, subscriptions, organizations, cloud deployment and complete release qualification remain separate."
+    ]
   }
 }

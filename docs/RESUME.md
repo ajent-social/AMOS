@@ -92,3 +92,12 @@ statement-clock and guarded-cookie admission regressions have actual negative
 evidence and restored passing checks. Native application/UI wiring remains a
 separate staged batch. Production key management, organization/enterprise policy,
 live provider qualification and deployment are not established.
+
+## Native password UI acceptance
+
+T6.3 is accepted as an independently reviewed UI component, with fresh race,
+vet, lint and repeated real PostgreSQL/generated executable/Chromium evidence.
+The reset replay case follows Back navigation and resubmits a reconstructed
+previously rendered form; it does not claim history restored that form itself.
+Native host/generator shipping remains a separate batch. No live provider,
+subscription, organization, cloud or complete release qualification is implied.
