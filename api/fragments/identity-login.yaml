@@ -86,14 +86,14 @@ components:
       required: [email, password]
       properties:
         email: { type: string, format: email, minLength: 3, maxLength: 254 }
-        password: { type: string, minLength: 15, maxLength: 128 }
+        "password": { type: string, minLength: 15, maxLength: 128 }
     SignInRequest:
       type: object
       additionalProperties: false
       required: [email, password]
       properties:
         email: { type: string, format: email, minLength: 3, maxLength: 254 }
-        password: { type: string, minLength: 1, maxLength: 512 }
+        "password": { type: string, minLength: 1, maxLength: 512 }
     Accepted:
       type: object
       additionalProperties: false

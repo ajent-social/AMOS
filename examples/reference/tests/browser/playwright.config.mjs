@@ -11,14 +11,14 @@ if (process.env.AMOS_REFERENCE_BROWSER_HOST && process.env.AMOS_REFERENCE_BROWSE
 }
 const port = Number(process.env.AMOS_REFERENCE_BROWSER_PORT ?? "4187");
 const binary = process.env.AMOS_REFERENCE_BROWSER_BINARY;
-const databaseURL = process.env.AMOS_TEST_DATABASE_URL;
+const prerequisiteURL = process.env.AMOS_TEST_DATABASE_URL;
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error("AMOS_REFERENCE_BROWSER_PORT must be an integer from 1 through 65535");
 }
 if (!binary) {
   throw new Error("AMOS_REFERENCE_BROWSER_BINARY must point to the compiled test-only SQL browser host");
 }
-if (!databaseURL) {
+if (!prerequisiteURL) {
   throw new Error("AMOS_TEST_DATABASE_URL is required for the real SQL browser suite");
 }
 
@@ -46,7 +46,6 @@ export default defineConfig({
       AMOS_REFERENCE_BROWSER_HOST: host,
       AMOS_REFERENCE_BROWSER_PORT: String(port),
       AMOS_REFERENCE_BROWSER_BINARY: binary,
-      AMOS_TEST_DATABASE_URL: databaseURL,
       AMOS_REFERENCE_BROWSER_SERVE: "1",
     },
     reuseExistingServer: false,

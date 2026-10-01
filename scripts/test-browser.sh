@@ -19,7 +19,7 @@ case "$suite" in
   reference)
     export AMOS_REFERENCE_BROWSER_SERVE=1
     export AMOS_REFERENCE_BROWSER_ROOT="$ROOT"
-    if [[ -z "${AMOS_TEST_DATABASE_URL:-}" ]]; then
+    if [[ -z "${AMOS_TEST_DATABASE_URL-}" ]]; then
       printf 'AMOS_TEST_DATABASE_URL is required for reference browser tests.\n' >&2
       exit 2
     fi
