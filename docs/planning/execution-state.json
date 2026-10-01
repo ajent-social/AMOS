@@ -338,10 +338,14 @@
     ]
   },
   "T7.4": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Task claimed with isolated worktree and exclusive path ownership; implementation and acceptance checks remain in progress."
+      "Luna local database generator independently reviewed and integrated after tracked-template, executable-mode, default-privilege and host-auth corrections.",
+      "Integrator uncached TestEnvironment suite passed using real Podman and pinned PostgreSQL 16.15 image; runtime TCP login, wrong-password denial, migration-owner table/sequence grants and container replacement persistence verified.",
+      "Worker scoped vet/lint and occupied-port mutation checks passed; integrator public artifact scan and seven hygiene regressions passed.",
+      "Private local environment is ignored and owner-only, scripts disable tracing, database binds loopback and retains its named volume.",
+      "Generated cmd/app remains absent; scripts fail visibly rather than qualifying a runnable application or deployment."
     ]
   },
   "T5.3": {
@@ -356,17 +360,31 @@
     ]
   },
   "T3.7": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Task claimed with isolated worktree and exclusive path ownership; implementation and acceptance checks remain in progress."
+      "Integrator implementation independently reviewed; real PostgreSQL race tests cover shared concurrent IP/account admission, replica exhaustion, database-clock renewal, deployment isolation, bounded prune and denied password mutation.",
+      "Scoped vet and lint passed; cross-origin guard removal produced password mutation HTTP 204 instead of required 403, then restored race suite passed.",
+      "Exact socket peers ignore unqualified forwarding headers; current session scope and exact CSRF body/header evidence required; relative redirects reject ambiguous/external targets.",
+      "Production lifecycle must schedule bounded expired-counter cleanup and qualify trusted proxy binding; local checks do not establish deployment or complete account recovery."
     ]
   },
   "T8.1": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Luna reference profile design independently reviewed against canonical aws_managed/aws_vm configuration identifiers, ownership, egress, backup and explicit migration contracts.",
+      "Public official AWS regional price feeds identified by retrieval date, SHA-256 and selection rules; hypothetical monthly calculations reconcile to managed USD 282.53 and VM USD 66.76.",
+      "Negative completeness fixture rejects omitted backups, IPv4, load balancing and state; AWS-managed key assumptions and excluded costs are explicit.",
+      "No infrastructure creation, owner budget, deployment or provider qualification is claimed."
+    ]
+  },
+  "T5.5": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Task claimed with isolated worktree and exclusive path ownership; implementation and acceptance checks remain in progress."
+      "Official stable Stripe Go SDK version and API pinned by integrator; isolated Luna adapter lane owns billing/stripecheckout only.",
+      "SDK fixtures and live provider qualification remain separate acceptance gates."
     ]
   }
 }

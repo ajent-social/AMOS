@@ -30,7 +30,7 @@ The profile owner supplies the AWS account, region, Cloudflare zone and credenti
 
 ## Current illustrative price model
 
-Reference region is **US East (N. Virginia), `us-east-1`**. This is a comparison workload, not a forecast of any owner’s deployment: 730 hours/month; two continuously running Fargate x86 Linux tasks each at 0.5 vCPU/1 GiB; `db.t4g.medium` PostgreSQL Multi-AZ, 100 GB GP3, 7-day point-in-time retention; 100 GB-month of RDS backup storage (within its 100 GB included allowance); 100 GB retained app data; two AZ-local NAT Gateways processing 200 GB/month; two public ALB IPv4 addresses and two NAT IPv4 addresses; one ALB averaging 0.5 LCU; 200 GB/month total Internet data transfer out across NAT-routed dependencies and application responses; 5 GB/month log ingestion and 5 GB-month billable log retention; 1 GB-month S3 state plus 1,000 PUT and 1,000 GET requests. VM comparison is one ARM64 Linux `t4g.medium` for 730 hours, 20 GB root plus 100 GB encrypted GP3, one public IPv4, 200 GB Internet egress, one 120 GB standard snapshot retained for a month, a 100 GB PostgreSQL dump in S3 Standard, the same log assumptions, and the same S3 state assumptions. For S3, costs use decimal GB; for EBS and RDS provisioned volumes, GB is the AWS billed unit. No free-tier allowance, credits, reservations, savings plans, taxes, support, Cloudflare plan, domain, cross-region copies, or CPU surplus credits are included. Internet transfer charges are conservatively calculated on all 200 GB, before any account-level allowance.
+Reference region is **US East (N. Virginia), `us-east-1`**. This is a comparison workload, not a forecast of any owner’s deployment: 730 hours/month; two continuously running Fargate x86 Linux tasks each at 0.5 vCPU/1 GiB; `db.t4g.medium` PostgreSQL Multi-AZ, 100 GB GP3, 7-day point-in-time retention; 100 GB-month of RDS backup storage (within its 100 GB included allowance); 100 GB retained app data; two AZ-local NAT Gateways processing 200 GB/month; two public ALB IPv4 addresses and two NAT IPv4 addresses; one ALB averaging 0.5 LCU; 200 GB/month total Internet data transfer out across NAT-routed dependencies and application responses; 5 GB/month log ingestion and 5 GB-month billable log retention; 1 GB-month S3 state plus 1,000 PUT and 1,000 GET requests. VM comparison is one ARM64 Linux `t4g.medium` for 730 hours, 20 GB root plus 100 GB encrypted GP3, one public IPv4, 200 GB Internet egress, one 120 GB standard snapshot retained for a month, a 100 GB PostgreSQL dump in S3 Standard, the same log assumptions, and the same S3 state assumptions. For S3, costs use decimal GB; for EBS and RDS provisioned volumes, GB is the AWS billed unit. Encryption assumes AWS-managed/default service keys with no separately provisioned customer-managed KMS key; customer-managed key monthly and API charges are excluded and must be added if selected. No free-tier allowance, credits, reservations, savings plans, taxes, support, Cloudflare plan, domain, cross-region copies, or CPU surplus credits are included. Internet transfer charges are conservatively calculated on all 200 GB, before any account-level allowance.
 
 Rates were extracted on 2026-10-01 from AWS’s public regional Bulk Price List JSON for `us-east-1` (publication dates: EC2 2026-09-25, RDS 2026-10-01, S3 2026-09-28, CloudWatch 2026-09-22, data transfer 2026-09-16, and VPC 2026-09-17) (official inputs: [EC2](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/us-east-1/index.json), [RDS](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRDS/current/us-east-1/index.json), [S3](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json), [CloudWatch](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/current/us-east-1/index.json), and [data transfer](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/current/us-east-1/index.json), and [VPC](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonVPC/current/us-east-1/index.json)). These are current on-demand public list rates, not negotiated rates. Fargate and ALB rates use the [AWS Fargate](https://aws.amazon.com/fargate/pricing/) and [Elastic Load Balancing](https://aws.amazon.com/elasticloadbalancing/pricing/) pricing pages. They can change; rerun the same SKU attribute selections against the live regional offers before a real estimate.
 
@@ -65,3 +65,24 @@ estimate:
 ```
 
 The review check is `missing = required_categories - estimate.keys()`; reject when `missing` is non-empty. Applying it to this fixture must report missing `backups`, `load_balancing`, `public_ipv4`, and `state`. This is a documentation completeness check only; it does not qualify a deployed environment or provider.
+
+## Price-input reproducibility
+
+SHA-256 of the public regional offer bytes retrieved for this comparison:
+
+| Service | SHA-256 |
+| --- | --- |
+| AmazonEC2 | `a822b8b9ae885a3e6027860ea08d26c0a3c83db47fcede71db96b7b2b265a502` |
+| AmazonRDS | `0a793ee3b0c2a71bb0167751c15951673c7ed5f92a595a644850e8dd716d5b16` |
+| AmazonS3 | `798f9727bc5102d15d471c5b84c15ed3e20297015330f515a33d5f6a032cc2f1` |
+| AmazonCloudWatch | `bbcee631348d73a5cf0e14c0505ed48cd820d8432bfb8e7021bb55488ca8ff41` |
+| AWSDataTransfer | `00f81657d01946d02c905e32ca87cc6c23720b5de079b90fef5775243abcee80` |
+| AmazonVPC | `0c2d9d88dedc3ebb425a97c11a316f4e708945b6a6dd79955f52efd78ff0a42e` |
+
+Select on-demand USD terms in `us-east-1`: EC2 Linux/Shared/t4g.medium with no
+preinstalled software; RDS PostgreSQL/db.t4g.medium/Multi-AZ and Multi-AZ GP3;
+standard GP3 EBS and standard snapshots; in-use public IPv4; NAT Gateway hours
+and bytes; S3 Standard first-tier storage and standard PUT/GET requests;
+CloudWatch standard log ingestion and retained storage; Internet data transfer
+out first paid tier. Reconcile each unit against the formulas above. These
+digests identify public source snapshots, not private infrastructure artifacts.

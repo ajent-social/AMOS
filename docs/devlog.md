@@ -28,3 +28,11 @@ were reviewed. Whole integrated Go suite passed with required PostgreSQL.
 Generated executable/runtime assembly, real subscriptions and cloud deployment
 remain incomplete. Synthetic browser authentication and provider fixtures do not
 qualify live services. Other sessions' infrastructure work remains isolated.
+
+Authentication route composition now uses a finite startup handler object; shared
+route reservations and health/readiness ownership remain enforced. Real Podman
+local database checks additionally verified runtime TCP password authentication,
+wrong-password denial, migration-owner default privileges and persistent rows
+after container replacement. Generated local scripts retain executable modes.
+Public-template hygiene checks distinguish environment references from credentials;
+seven checker regressions passed. Deployment qualification is still separate.
