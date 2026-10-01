@@ -23,7 +23,7 @@ import (
 var templates embed.FS
 
 const (
-	PostgresImage = "docker.io/library/postgres:16.4-alpine3.20"
+	PostgresImage = "docker.io/library/postgres:16.15-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67"
 	DefaultPort   = 55432
 )
 
@@ -62,7 +62,7 @@ func (Generator) Generate(ctx context.Context, config initializer.Config, files 
 		{template: "compose.yaml", path: "compose.yaml"},
 		{template: "scripts/migrate", path: "scripts/migrate"},
 		{template: "scripts/dev", path: "scripts/dev"},
-		{template: ".env.local.example", path: ".env.local.example"},
+		{template: "env.local.example", path: ".env.local.example"},
 		{template: ".gitignore", path: ".gitignore"},
 		{template: "db-init-roles.sh", path: "db-init-roles.sh"},
 	} {

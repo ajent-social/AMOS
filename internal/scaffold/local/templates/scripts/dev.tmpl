@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+set +x
 if [ ! -f .env.local ]; then
   echo "local database configuration is unavailable; run amos init first" >&2
   exit 2

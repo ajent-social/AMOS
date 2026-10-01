@@ -141,18 +141,17 @@ func TestEnvironmentPodmanVolumeSurvivesContainerRestart(t *testing.T) {
 		_, _ = exec.Command(podman, "rm", "-f", container).CombinedOutput()
 		_, _ = exec.Command(podman, "volume", "rm", "-f", volume).CombinedOutput()
 	})
-	password := "test-only-" + suffix
 	start := func(name string) {
 		t.Helper()
-		runPodman("run", "-d", "--name", name, "-e", "POSTGRES_PASSWORD="+password, "-e", "POSTGRES_DB=postgres", "-v", volume+":/var/lib/postgresql/data", PostgresImage)
+		runPodman("run", "-d", "--name", name, "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_PASSWORD="+credentials["AMOS_DB_MIGRATION_PASSWORD"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-v", volume+":/var/lib/postgresql/data", PostgresImage)
 		deadline := time.Now().Add(45 * time.Second)
 		for time.Now().Before(deadline) {
-			cmd := exec.CommandContext(ctx, podman, "exec", name, "pg_isready", "-U", "postgres")
+			cmd := exec.CommandContext(ctx, podman, "exec", name, "pg_isready", "-U", credentials["AMOS_DB_MIGRATION_USER"], "-d", credentials["AMOS_DB_NAME"])
 			cmd.Env = append(os.Environ(), "REGISTRY_AUTH_FILE="+authfile)
 			if cmd.Run() == nil {
 				// pg_isready can report ready during the short entrypoint window
 				// before initialization scripts have completed. Verify a query too.
-				query := exec.CommandContext(ctx, podman, "exec", name, "psql", "-U", "postgres", "-d", "postgres", "-At", "-c", "SELECT 1")
+				query := exec.CommandContext(ctx, podman, "exec", name, "psql", "-U", credentials["AMOS_DB_MIGRATION_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "SELECT 1")
 				query.Env = append(os.Environ(), "REGISTRY_AUTH_FILE="+authfile)
 				if out, err := query.Output(); err == nil && strings.TrimSpace(string(out)) == "1" {
 					return
@@ -165,17 +164,17 @@ func TestEnvironmentPodmanVolumeSurvivesContainerRestart(t *testing.T) {
 	start(container)
 	roleScript := filepath.Join(generated, "db-init-roles.sh")
 	runPodman("cp", roleScript, container+":/tmp/roles.sh")
-	runPodman("exec", "-e", "POSTGRES_USER=postgres", "-e", "POSTGRES_DB=postgres", "-e", "AMOS_DB_RUNTIME_USER="+credentials["AMOS_DB_RUNTIME_USER"], "-e", "AMOS_DB_RUNTIME_PASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "sh", "/tmp/roles.sh")
-	runtimeCheck := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", "postgres", "-At", "-c", "SELECT 1")
-	if runtimeCheck != "1" {
-		t.Fatalf("runtime role query result=%q, want 1", runtimeCheck)
+	runPodman("exec", "-e", "POSTGRES_USER="+credentials["AMOS_DB_MIGRATION_USER"], "-e", "POSTGRES_DB="+credentials["AMOS_DB_NAME"], "-e", "AMOS_DB_RUNTIME_USER="+credentials["AMOS_DB_RUNTIME_USER"], "-e", "AMOS_DB_RUNTIME_PASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "sh", "/tmp/roles.sh")
+	runPodman("exec", container, "psql", "-U", credentials["AMOS_DB_MIGRATION_USER"], "-d", credentials["AMOS_DB_NAME"], "-c", "CREATE TABLE volume_probe (id bigserial primary key); INSERT INTO volume_probe DEFAULT VALUES;")
+	runtimeCheck := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-q", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "INSERT INTO volume_probe DEFAULT VALUES RETURNING id")
+	if runtimeCheck != "2" {
+		t.Fatalf("runtime role insert result=%q, want 2", runtimeCheck)
 	}
-	runPodman("exec", container, "psql", "-U", "postgres", "-d", "postgres", "-c", "CREATE TABLE volume_probe (id integer primary key); INSERT INTO volume_probe VALUES (42);")
 	runPodman("rm", "-f", container)
 	start(container)
-	out := runPodman("exec", container, "psql", "-U", "postgres", "-d", "postgres", "-At", "-c", "SELECT id FROM volume_probe")
-	if out != "42" {
-		t.Fatalf("volume data after restart=%q, want 42", out)
+	out := runPodman("exec", "-e", "PGPASSWORD="+credentials["AMOS_DB_RUNTIME_PASSWORD"], container, "psql", "-U", credentials["AMOS_DB_RUNTIME_USER"], "-d", credentials["AMOS_DB_NAME"], "-At", "-c", "SELECT count(*) FROM volume_probe")
+	if out != "2" {
+		t.Fatalf("runtime role row count after restart=%q, want 2", out)
 	}
 }
 
