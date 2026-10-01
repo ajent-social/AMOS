@@ -52,3 +52,24 @@ If a planned task is already implemented, materially underspecified or blocked, 
 ## Publication boundary
 
 Keep this repository public-safe: no private project references, home paths, private source hashes, infrastructure account identifiers, customer/attendee data, secrets or internal schedules. Use public independently reproducible evidence and synthetic fixtures. Planning grants no provider spending, publication or deployment authority.
+
+### Pending integration checkpoint (2026-10-01, resumed session)
+
+- Main remains at the reviewed 46-task checkpoint; additional source is staged
+  in the integration branch and has not been accepted merely because it builds.
+- Magic-link and verified webhook ingress scoped tests passed against the
+  required PostgreSQL environment after integration. The webhook transaction
+  now includes a durable reconciliation job, including quarantined receipts.
+  Subscription projection and live provider qualification remain separate.
+- Independent headless review cleared the CI, operations configuration and
+  business contract schemas as design artifacts only. Scoped schema tests passed;
+  this does not demonstrate executable workflows or operational recovery.
+- The local runtime composition reached signup, captured verification,
+  sign-in, personal todo creation and sign-out in its HTTP test; cleanup failed
+  and the test must pass again after the shutdown correction. Review found a
+  foreign quarantined receipt database-binding gap; a fix and regression test
+  are pending verification. The executable generated application is unfinished.
+- Authentication UI, TOTP and concrete local application generation are active
+  isolated lanes. Durable session assurance and factor admission seams are
+  pending independent review and actual tests. Shared machine build leases may
+  delay verification; a held or lost lease is not a passing test.
