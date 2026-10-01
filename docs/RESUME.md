@@ -1,14 +1,18 @@
 # Current implementation checkpoint
 
-Implementation is authorized and underway. Original AMOS code uses Apache 2.0. All Pulumi programs use Go. The owner has granted full command access and autonomous work; honor that grant and the actual runtime permissions without repeated confirmation questions.
+Updated: 2026-09-30. The reviewed foundation is merged into `main`; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
-Read `docs/planning/execution-state.json` before dispatch; it is the authoritative accepted-task registry. Integrated code includes the Go module, real PostgreSQL harness, migration ledger, durable jobs, identity storage, opaque browser sessions, bounded Argon2id password verification, protected SES delivery boundary, typed OpenAPI generation, runtime routing and reviewed workspace/billing/UI contracts. Workspace persistence and audit sink are under integration review. The most recent integrated lint and tagged database suite passed before the latest password normalization-only cleanup; run appropriate current checks after changes. No runnable complete SaaS app, live-provider qualification or production release is claimed.
+Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 30 tasks are accepted out of 257 planned, and T7.2 is in progress in an isolated worktree. Do not assume that a task worktree is merged or accepted merely because it exists.
 
-Current parallel coding lanes implement the durable reference business app, workspace admission/concurrency corrections and tenant-scoped audit sink. Password verification uses a fixed legacy/current work schedule and process-wide admission cap. Owner-supplied blocklist/rate-limit adapters and deployment benchmarks remain release gates. Email outbox material references are canonical opaque UUIDv7 identifiers; owner protected-material resolution and live SES remain staged. Resume the dependency-ready tasks rather than re-planning the architecture.
+Integrated foundations cover PostgreSQL/migrations, policy/configuration, jobs/outbox/email/audit, identity storage/sessions/passwords/email verification, workspace persistence/bootstrap/context, OpenAPI/Go generation, tenant-scoped reference todos and the default UI renderer. The fragment swap regression failed before the renderer fix and passes afterward in a real browser.
 
-Use isolated task worktrees and atomic task claims. Shared builds require the build lease and load check. Recover failed worker turns explicitly; do not assume a running model survives connection failure. Three inexpensive-model workers plus an integrator is the current harness capacity. Preserve existing work and do not certify future controls from document validators.
+AMOS is not yet a complete runnable SaaS. Signup/sign-in assembly, full identity and organization flows, billing, initializer/templates/executable, cloud deployment, generated MCP, upgrades and operating recovery remain incomplete. No live provider or production deployment qualification is claimed.
 
-The historical planning handoff below explains architecture and full inventory; its planning-only status is superseded by this checkpoint.
+Prioritize a generated runnable app with signup, verification, sign-in, a personal workspace and the reference business feature; follow with billing and qualified deployment. Preserve the complete later architecture in the staged plan rather than narrowing the product vision to this first slice.
+
+Use isolated task worktrees and atomic task claims. Shared multi-package builds require the build lease and load check. Record only obtained evidence, preserve existing work, and keep public artifacts free of private operational details. Recheck Git status, worker ownership and prerequisites at every lane boundary.
+
+The handoff below preserves architecture and dispatch rules; the checkpoint and execution record govern current implementation status.
 
 # Resume AMOS work
 

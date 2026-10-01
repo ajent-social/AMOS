@@ -11,3 +11,7 @@ Final planning checks: 257 task contracts, 116 covered use cases, 48 dependency/
 ## Foundation execution started
 
 Original AMOS code will use Apache 2.0, selected by the owner. Three isolated inexpensive-model workers are implementing the first dependency-ready foundation tasks. A disposable real PostgreSQL service is available for integration evidence. Planning regeneration now preserves accepted and in-progress execution states; false acceptance without evidence and reviewed certification is rejected. No provider deployment or product release is claimed.
+
+## 2026-09-30 — Foundation merged and public status reconciled
+
+Merged the reviewed foundation into main. Thirty tasks have accepted execution evidence; initializer validation/generation remains in progress. Corrected targeted UI fragments to support the default innerHTML swap without nested main elements, with a browser regression that failed before the correction and passed afterward. Updated the README, roadmap and resume checkpoint to distinguish integrated components from a complete runnable SaaS and live provider qualification. The next milestone is a generated app with account flows, a personal workspace and the reference business feature.
