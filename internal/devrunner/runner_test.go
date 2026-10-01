@@ -225,11 +225,7 @@ func newTestProject(t *testing.T) testProject {
 	t.Helper()
 	requirePodman(t)
 	slug := "amos-runner-" + randomSuffix(t)
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	path, err := os.MkdirTemp(home, slug+"-")
+	path, err := os.MkdirTemp("/Volumes/BuildOffload", slug+"-")
 	if err != nil {
 		t.Fatal(err)
 	}

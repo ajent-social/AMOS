@@ -315,7 +315,6 @@ func (r *resources) startDatabase(ctx context.Context) error {
 		"--network", r.network,
 		"--publish", "127.0.0.1:" + r.config.port + ":5432",
 		"--volume", r.volume + ":/var/lib/postgresql/data",
-		"--volume", roleScript + ":/docker-entrypoint-initdb.d/10-amos-roles.sh:ro",
 		"--env", "POSTGRES_DB", "--env", "POSTGRES_USER", "--env", "POSTGRES_PASSWORD",
 		"--env", "POSTGRES_INITDB_ARGS", "--env", "POSTGRES_HOST_AUTH_METHOD",
 		"--env", "AMOS_DB_RUNTIME_USER", "--env", "AMOS_DB_RUNTIME_PASSWORD",
@@ -330,6 +329,9 @@ func (r *resources) startDatabase(ctx context.Context) error {
 	r.containerID = strings.TrimSpace(out)
 	if r.containerID == "" || strings.ContainsAny(r.containerID, "\r\n") {
 		return errors.New("Podman did not return the created database identity")
+	}
+	if _, err := r.podman(ctx, "", "cp", roleScript, r.containerID+":/docker-entrypoint-initdb.d/10-amos-roles.sh"); err != nil {
+		return fmt.Errorf("copy generated local database role initializer: %w", err)
 	}
 	if _, err := r.podman(ctx, "database", "start", r.containerID); err != nil {
 		return fmt.Errorf("start local database container: %w", err)
