@@ -66,3 +66,8 @@ the Go checksum service. Task T5.5 must qualify SDK behavior at its changed
 boundary; this pin and source inspection do not qualify live Stripe operations.
 No prerelease or preview API is selected. Disable automatic SDK retries where
 durable AMOS intent/reconciliation owns external outcome handling.
+
+Stripe Go transitive arithmetic dependency: `github.com/shopspring/decimal`
+**v1.4.0**, MIT, selected by the pinned SDK. Module checksum
+`h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp81k=`; go.mod checksum
+`h1:gawqmDU56v4yIKSwfBSFip1HdCCXN8/+DMd9qYNcwME=`.
