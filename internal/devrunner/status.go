@@ -36,6 +36,7 @@ var (
 	ErrProcessIdentityMismatch = errors.New("local process identity is not owned by this project")
 	errProcessNotFound         = errors.New("owned process no longer exists")
 	errProcessProbeUnavailable = errors.New("exact process identity could not be verified")
+	errStateFileExists         = errors.New("private project state already exists")
 )
 
 type ResourceKind string
@@ -77,6 +78,8 @@ type ProcessIdentity struct {
 	PID               int    `json:"pid"`
 	StartSeconds      int64  `json:"start_seconds"`
 	StartMicroseconds int64  `json:"start_microseconds"`
+	StartTicks        uint64 `json:"start_ticks,omitempty"`
+	BootID            string `json:"boot_id,omitempty"`
 	Executable        string `json:"executable"`
 	OwnedRoot         string `json:"owned_root"`
 }
@@ -149,6 +152,10 @@ type privateStateStore struct {
 }
 
 func InitializeProject(ctx context.Context, workingDir, project string) (ProjectIdentity, error) {
+	return initializeProject(ctx, workingDir, project, nil)
+}
+
+func initializeProject(ctx context.Context, workingDir, project string, beforePublish func()) (ProjectIdentity, error) {
 	if ctx == nil || ctx.Err() != nil {
 		return ProjectIdentity{}, ErrProjectStateUnavailable
 	}
@@ -169,7 +176,17 @@ func InitializeProject(ctx context.Context, workingDir, project string) (Project
 	}
 	identity := ProjectIdentity{ID: id, Project: project}
 	state = newProjectState(identity, store.root)
-	if err := store.write(state); err != nil {
+	if beforePublish != nil {
+		beforePublish()
+	}
+	if err := store.create(state); err != nil {
+		if errors.Is(err, errStateFileExists) {
+			winner, loadErr := store.load()
+			if loadErr == nil {
+				return winner.Identity, nil
+			}
+			return ProjectIdentity{}, loadErr
+		}
 		return ProjectIdentity{}, err
 	}
 	return identity, nil
@@ -345,7 +362,7 @@ func exactLiveProcess(ctx context.Context, options StatusOptions, expected Proce
 }
 
 func sameProcessIdentity(expected, actual ProcessIdentity) bool {
-	return expected.PID >= 2 && expected.PID == actual.PID && expected.StartSeconds > 0 && expected.StartSeconds == actual.StartSeconds && expected.StartMicroseconds >= 0 && expected.StartMicroseconds == actual.StartMicroseconds && expected.Executable != "" && filepath.Clean(expected.Executable) == filepath.Clean(actual.Executable) && expected.OwnedRoot != "" && filepath.Clean(expected.OwnedRoot) == filepath.Clean(actual.OwnedRoot)
+	return validProcessIdentity(expected) && validProcessIdentity(actual) && expected.PID == actual.PID && expected.StartSeconds == actual.StartSeconds && expected.StartMicroseconds == actual.StartMicroseconds && expected.StartTicks == actual.StartTicks && expected.BootID == actual.BootID && filepath.Clean(expected.Executable) == filepath.Clean(actual.Executable) && filepath.Clean(expected.OwnedRoot) == filepath.Clean(actual.OwnedRoot)
 }
 
 func sameProcessStart(expected, actual processStartIdentity) bool {
@@ -454,11 +471,8 @@ func (s *privateStateStore) load() (privateProjectState, error) {
 }
 
 func (s *privateStateStore) write(state privateProjectState) error {
-	if s == nil || state.Version != stateVersion || state.Root != s.root || state.Identity.Project != s.project || !validProjectIdentity(state.Identity) || !validResources(state) || (state.Process != nil && (!validProcessIdentity(state.Process.Identity) || state.Process.Identity.OwnedRoot != state.Root)) {
-		return ErrProjectStateUnavailable
-	}
-	data, err := json.Marshal(state)
-	if err != nil || len(data) > maxStateBytes {
+	data, err := s.encode(state)
+	if err != nil {
 		return ErrProjectStateUnavailable
 	}
 	root, err := s.openStateRoot(false)
@@ -473,6 +487,36 @@ func (s *privateStateStore) write(state privateProjectState) error {
 		return ErrProjectStateUnavailable
 	}
 	return nil
+}
+
+func (s *privateStateStore) create(state privateProjectState) error {
+	data, err := s.encode(state)
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
+	root, err := s.openStateRoot(false)
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
+	defer func() { _ = root.Close() }()
+	if err := writePrivateStateFileNoReplace(root, stateFileName, data); err != nil {
+		return err
+	}
+	if err := s.verifyStateRootPath(root); err != nil {
+		return ErrProjectStateUnavailable
+	}
+	return nil
+}
+
+func (s *privateStateStore) encode(state privateProjectState) ([]byte, error) {
+	if s == nil || state.Version != stateVersion || state.Root != s.root || state.Identity.Project != s.project || !validProjectIdentity(state.Identity) || !validResources(state) || (state.Process != nil && (!validProcessIdentity(state.Process.Identity) || state.Process.Identity.OwnedRoot != state.Root)) {
+		return nil, ErrProjectStateUnavailable
+	}
+	data, err := json.Marshal(state)
+	if err != nil || len(data) > maxStateBytes {
+		return nil, ErrProjectStateUnavailable
+	}
+	return data, nil
 }
 
 func (s *privateStateStore) openStateRoot(create bool) (*os.Root, error) {
@@ -588,6 +632,14 @@ func readPrivateStateFile(root *os.Root, name string, afterLstat func() error) (
 }
 
 func writePrivateStateFile(root *os.Root, name string, data []byte, beforeRename func() error) error {
+	return writePrivateStateFileMode(root, name, data, beforeRename, true)
+}
+
+func writePrivateStateFileNoReplace(root *os.Root, name string, data []byte) error {
+	return writePrivateStateFileMode(root, name, data, nil, false)
+}
+
+func writePrivateStateFileMode(root *os.Root, name string, data []byte, beforeRename func() error, replace bool) error {
 	if root == nil || name != stateFileName || len(data) > maxStateBytes {
 		return ErrProjectStateUnavailable
 	}
@@ -632,9 +684,21 @@ func writePrivateStateFile(root *os.Root, name string, data []byte, beforeRename
 			return ErrProjectStateUnavailable
 		}
 	}
-	if err := root.Rename(tempName, name); err != nil {
+	if replace {
+		err = root.Rename(tempName, name)
+	} else {
+		err = root.Link(tempName, name)
+		if errors.Is(err, os.ErrExist) {
+			cleanup()
+			return errStateFileExists
+		}
+	}
+	if err != nil {
 		cleanup()
 		return ErrProjectStateUnavailable
+	}
+	if !replace {
+		cleanup()
 	}
 	directory, err := root.Open(".")
 	if err != nil {
@@ -754,7 +818,13 @@ func validLabels(identity ProjectIdentity, kind ResourceKind, labels map[string]
 }
 
 func validProcessIdentity(identity ProcessIdentity) bool {
-	return identity.PID >= 2 && identity.StartSeconds > 0 && identity.StartMicroseconds >= 0 && identity.StartMicroseconds < 1_000_000 && filepath.IsAbs(identity.Executable) && filepath.IsAbs(identity.OwnedRoot)
+	if identity.PID < 2 || !filepath.IsAbs(identity.Executable) || !filepath.IsAbs(identity.OwnedRoot) {
+		return false
+	}
+	if identity.BootID != "" || identity.StartTicks != 0 {
+		return identity.BootID != "" && identity.StartTicks > 0 && uuid.Validate(identity.BootID) == nil && identity.StartSeconds == 0 && identity.StartMicroseconds == 0
+	}
+	return identity.StartSeconds > 0 && identity.StartMicroseconds >= 0 && identity.StartMicroseconds < 1_000_000
 }
 
 var podmanIDRE = regexp.MustCompile(`^[a-f0-9]{12,64}$`)

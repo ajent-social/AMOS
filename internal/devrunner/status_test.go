@@ -1,14 +1,19 @@
 package devrunner
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -55,6 +60,162 @@ func TestStatusPrivateIdentityPersistsAndValidatesResourceLabels(t *testing.T) {
 	}
 	if _, err := InitializeProject(context.Background(), root, "another-fixture"); !errors.Is(err, ErrProjectIdentityMismatch) {
 		t.Fatalf("same directory accepted another project identity: %v", err)
+	}
+}
+
+func TestStatusConcurrentFirstInitializationUsesOneIdentity(t *testing.T) {
+	const callers = 8
+	projectRoot := t.TempDir()
+	ready := make(chan struct{}, callers)
+	release := make(chan struct{})
+	results := make(chan ProjectIdentity, callers)
+	errs := make(chan error, callers)
+	var wg sync.WaitGroup
+	for range callers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			identity, err := initializeProject(context.Background(), projectRoot, "parallel-first-init", func() {
+				ready <- struct{}{}
+				<-release
+			})
+			results <- identity
+			errs <- err
+		}()
+	}
+	for range callers {
+		<-ready
+	}
+	close(release)
+	wg.Wait()
+	close(results)
+	close(errs)
+	var winner uuid.UUID
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("concurrent initialization failed: %v", err)
+		}
+	}
+	for identity := range results {
+		if winner == uuid.Nil {
+			winner = identity.ID
+		}
+		if identity.ID != winner || identity.Project != "parallel-first-init" {
+			t.Fatalf("callers observed distinct project identities: winner=%s caller=%+v", winner, identity)
+		}
+	}
+	store, err := newPrivateStateStore(projectRoot, "parallel-first-init", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := store.load()
+	if err != nil || persisted.Identity.ID != winner {
+		t.Fatalf("persisted identity disagrees with initialization callers: state=%+v err=%v", persisted.Identity, err)
+	}
+}
+
+func TestStatusConcurrentCrossProcessInitializationUsesOneIdentity(t *testing.T) {
+	if os.Getenv("AMOS_T7_7_INIT_WORKER") == "1" {
+		root := os.Getenv("AMOS_T7_7_INIT_ROOT")
+		identity, err := initializeProject(context.Background(), root, "parallel-cross-process", func() {
+			if _, err := fmt.Fprintln(os.Stdout, "READY"); err != nil {
+				t.Fatalf("signal parent readiness: %v", err)
+			}
+			if _, err := bufio.NewReader(os.Stdin).ReadString('\n'); err != nil {
+				t.Fatalf("waiting for parent release: %v", err)
+			}
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := fmt.Fprintln(os.Stdout, identity.ID.String()); err != nil {
+			t.Fatalf("write resulting identity: %v", err)
+		}
+		return
+	}
+
+	root := t.TempDir()
+	type worker struct {
+		command *exec.Cmd
+		stdin   io.WriteCloser
+		stdout  *bufio.Reader
+		waited  bool
+	}
+	workers := make([]worker, 0, 2)
+	t.Cleanup(func() {
+		for index := range workers {
+			if workers[index].waited || workers[index].command.Process == nil {
+				continue
+			}
+			_ = workers[index].command.Process.Kill()
+			_ = workers[index].command.Wait()
+		}
+	})
+	for range 2 {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		t.Cleanup(cancel)
+		command := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestStatusConcurrentCrossProcessInitializationUsesOneIdentity$")
+		command.Env = append(os.Environ(), "AMOS_T7_7_INIT_WORKER=1", "AMOS_T7_7_INIT_ROOT="+root)
+		stdin, err := command.StdinPipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		stdout, err := command.StdoutPipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		command.Stderr = os.Stderr
+		if err := command.Start(); err != nil {
+			t.Fatal(err)
+		}
+		workers = append(workers, worker{command: command, stdin: stdin, stdout: bufio.NewReader(stdout)})
+	}
+	for index := range workers {
+		worker := &workers[index]
+		line, err := worker.stdout.ReadString('\n')
+		if err != nil || strings.TrimSpace(line) != "READY" {
+			t.Fatalf("worker did not pause after observing missing state: line=%q err=%v", line, err)
+		}
+	}
+	for index := range workers {
+		worker := &workers[index]
+		if _, err := io.WriteString(worker.stdin, "continue\n"); err != nil {
+			t.Fatal(err)
+		}
+		if err := worker.stdin.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var winner uuid.UUID
+	for index := range workers {
+		worker := &workers[index]
+		line, err := worker.stdout.ReadString('\n')
+		if err != nil {
+			t.Fatalf("read worker identity: %v", err)
+		}
+		identity, err := uuid.Parse(strings.TrimSpace(line))
+		if err != nil {
+			t.Fatalf("worker returned invalid identity %q: %v", line, err)
+		}
+		if winner == uuid.Nil {
+			winner = identity
+		}
+		if identity != winner {
+			t.Fatalf("processes returned different project identities: %s and %s", winner, identity)
+		}
+		waitErr := worker.command.Wait()
+		worker.waited = true
+		if waitErr != nil {
+			t.Fatalf("initialization worker failed: %v", waitErr)
+		}
+	}
+	store, err := newPrivateStateStore(root, "parallel-cross-process", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := store.load()
+	if err != nil || persisted.Identity.ID != winner {
+		t.Fatalf("persisted identity disagrees with processes: state=%+v err=%v", persisted.Identity, err)
 	}
 }
 
