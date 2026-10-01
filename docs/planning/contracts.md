@@ -149,3 +149,11 @@ ADR 013 permits HTTP email action origins only with an explicit
 remote origins remain HTTPS-only. Generated composition must validate local-only
 development mode and listener before enabling this flag; a local capture transport
 is a distinct, visibly unqualified capability. No production migration is needed.
+
+## Amendment v1.5: executable migration order
+
+ADR 014 fixes the embedded initial foundation order at sequences 1 through 7 and
+application fragments at 8 and later. Published migration IDs and SQL bytes are
+immutable; upgrades append entries. The reference todo fragment owns sequence 8
+in the reference application. Current-person personal workspace selection is
+realm-scoped and does not grant authority from identifiers.

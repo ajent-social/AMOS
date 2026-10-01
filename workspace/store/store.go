@@ -253,6 +253,26 @@ func (s *Store) FindWorkspace(ctx context.Context, scope Scope, id uuid.UUID) (W
 	return w, nil
 }
 
+// FindPersonalWorkspace selects the active personal resource of a currently
+// active person inside an explicit application realm. IDs are selectors only;
+// callers must obtain ownerID from the authenticated person principal.
+func (s *Store) FindPersonalWorkspace(ctx context.Context, scope Scope, ownerID uuid.UUID) (Workspace, error) {
+	if !s.valid(ctx) || !validScope(scope) || !validID(ownerID) {
+		return Workspace{}, ErrInvalidInput
+	}
+	var w Workspace
+	err := s.tx.QueryRowContext(ctx, `SELECT w.id,w.installation_id,w.application_id,w.kind,w.state,w.personal_owner_id,w.workspace_epoch,w.created_at,w.updated_at
+ FROM workspaces w JOIN identity_persons p ON p.id=w.personal_owner_id AND p.installation_id=w.installation_id AND p.application_id=w.application_id
+ WHERE w.installation_id=$1 AND w.application_id=$2 AND w.personal_owner_id=$3 AND w.kind='personal' AND w.state='active' AND p.state='active'`, scope.InstallationID, scope.ApplicationID, ownerID).Scan(&w.ID, &w.Scope.InstallationID, &w.Scope.ApplicationID, &w.Kind, &w.State, &w.PersonalOwnerID, &w.Epoch, &w.CreatedAt, &w.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Workspace{}, ErrWorkspaceUnavailable
+	}
+	if err != nil {
+		return Workspace{}, ErrPersistence
+	}
+	return w, nil
+}
+
 func (s *Store) FindMembership(ctx context.Context, scope Scope, workspaceID, personID uuid.UUID) (Membership, error) {
 	if !s.valid(ctx) || !validScope(scope) || !validID(workspaceID) || !validID(personID) {
 		return Membership{}, ErrInvalidInput

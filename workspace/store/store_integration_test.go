@@ -457,3 +457,65 @@ func newID(t *testing.T) uuid.UUID {
 	}
 	return id
 }
+
+func TestPersonalLookupRequiresCurrentOwnerAndRealm(t *testing.T) {
+	db, scope, owner, other := newWorkspaceDB(t)
+	id := newID(t)
+	query := func(realm workspacestore.Scope, person uuid.UUID) (workspacestore.Workspace, error) {
+		var got workspacestore.Workspace
+		err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+			s, e := workspacestore.New(tx)
+			if e != nil {
+				return e
+			}
+			got, e = s.FindPersonalWorkspace(context.Background(), realm, person)
+			return e
+		})
+		return got, err
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		s, e := workspacestore.New(tx)
+		if e != nil {
+			return e
+		}
+		_, e = s.CreatePersonalWorkspace(context.Background(), workspacestore.CreatePersonalInput{ID: id, Scope: scope, OwnerPersonID: owner})
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got, e := query(scope, owner); e != nil || got.ID != id {
+		t.Fatalf("owned resource unavailable: %v", e)
+	}
+	for _, tc := range []struct {
+		scope  workspacestore.Scope
+		person uuid.UUID
+	}{{scope, other}, {workspacestore.Scope{InstallationID: newID(t), ApplicationID: scope.ApplicationID}, owner}, {workspacestore.Scope{InstallationID: scope.InstallationID, ApplicationID: newID(t)}, owner}} {
+		if _, e := query(tc.scope, tc.person); !errors.Is(e, workspacestore.ErrWorkspaceUnavailable) {
+			t.Fatalf("foreign selector returned resource: %v", e)
+		}
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.ExecContext(context.Background(), "UPDATE workspaces SET state='suspended' WHERE id=$1", id)
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, e := query(scope, owner); !errors.Is(e, workspacestore.ErrWorkspaceUnavailable) {
+		t.Fatalf("suspended resource available: %v", e)
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.ExecContext(context.Background(), "UPDATE identity_persons SET state='administratively_disabled' WHERE id=$1", owner)
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, e := tx.ExecContext(context.Background(), "UPDATE workspaces SET state='active' WHERE id=$1", id)
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, e := query(scope, owner); !errors.Is(e, workspacestore.ErrWorkspaceUnavailable) {
+		t.Fatalf("disabled owner available: %v", e)
+	}
+}

@@ -281,3 +281,25 @@ func scalarInt(t *testing.T, db *DB, query string) int {
 	}
 	return value
 }
+
+func TestCoreFoundationRegistryAppliesAndRejectsReordering(t *testing.T) {
+	db := newTestDB(t)
+	registry, err := migrations.Core(migrations.Fragment{Namespace: "business", Migrations: []migrations.Migration{{Sequence: 8, Name: "smoke", SQL: "CREATE TABLE business_smoke(id uuid PRIMARY KEY, workspace_id uuid REFERENCES workspaces(id));"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if err := Migrate(context.Background(), db, registry); err != nil {
+			t.Fatalf("foundation migrate: %v", err)
+		}
+	}
+	if got := scalarInt(t, db, "SELECT count(*) FROM amos_schema_migrations"); got != 8 {
+		t.Fatalf("ledger entries=%d", got)
+	}
+	if got := scalarInt(t, db, "SELECT count(*) FROM information_schema.tables WHERE table_schema=current_schema() AND table_name IN ('identity_persons','amos_jobs','workspaces','billing_customer_bindings','identity_auth_limits','email_delivery_material','business_smoke')"); got != 7 {
+		t.Fatalf("foundation tables=%d", got)
+	}
+	if _, err := migrations.Core(migrations.Fragment{Namespace: "business", Migrations: []migrations.Migration{{Sequence: 7, Name: "collision", SQL: "SELECT 1"}}}); !errors.Is(err, migrations.ErrInvalidRegistry) {
+		t.Fatalf("collision accepted: %v", err)
+	}
+}
