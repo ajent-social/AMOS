@@ -575,8 +575,8 @@ func TestRunnerRuntimeDatabaseAlias(t *testing.T) {
 	if env["AMOS_RUNTIME_DATABASE_URL"] == "" || env["AMOS_RUNTIME_DATABASE_URL"] != env["AMOS_DATABASE_URL"] {
 		t.Fatal("native runtime database alias unavailable")
 	}
-	for _, entry := range mergeEnvironment([]string{"AMOS_RUNTIME_DATABASE_URL=test"}, r.migrationEnvironment()) {
-		if strings.HasPrefix(entry, "AMOS_RUNTIME_"+"DATABASE_URL=") {
+	for _, entry := range mergeEnvironment([]string{"AMOS_RUNTIME_DATABASE_URL=untrusted"}, r.migrationEnvironment()) {
+		if strings.HasPrefix(entry, "AMOS_RUNTIME_DATABASE_URL=") {
 			t.Fatal("runtime database credential inherited by migration child")
 		}
 	}

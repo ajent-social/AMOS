@@ -95,8 +95,7 @@ func TestLinuxProbeRejectsForeignUIDProcess(t *testing.T) {
 		t.Skip("requires root to start a test-owned process under a different UID")
 	}
 	command := exec.Command("/bin/sleep", "30")
-	config := &syscall.Credential{Uid: 65534, Gid: 65534}
-	command.SysProcAttr = &syscall.SysProcAttr{Credential: config}
+	command.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: 65534, Gid: 65534}}
 	if err := command.Start(); err != nil {
 		t.Skipf("cannot start foreign-UID test process: %v", err)
 	}
