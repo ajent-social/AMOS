@@ -110,3 +110,14 @@ isolated batch; shutdown, immutable database binding and finite guarded MFA
 checks described as pending in the historical checkpoint now pass. See
 [evidence](evidence/native-host-20261001.md). Generator and CLI shipping remain a
 separate batch; full SaaS, live providers and cloud deployment are not qualified.
+
+## Native generator acceptance
+
+The config-driven CLI now generates a runnable Go personal evaluation app.
+Independent follow-up review cleared port preflight and terminal-control
+corrections; fresh race, vet, lint, actual generated executable/PostgreSQL/Chromium
+and three negative/restored checks pass. See the README commands and
+[evidence](evidence/native-generator-20261001.md). Current Compose provider absence
+remains explicit; no live providers, organization policy, production targets or
+cloud deployment are qualified. This extends accepted initializer/local scaffold
+components without accepting an entire SaaS or narrowing the complete plan.

@@ -276,7 +276,8 @@
       "Initializer integrated with filesystem identity journals, secure ancestor traversal and exclusive no-replace publication on Darwin/Linux; unsupported platforms fail explicitly.",
       "Independent review identified and corrected source-substitution and premature recovery mutation issues; follow-up source review found no blocking issue.",
       "Real filesystem tests passed for collisions, resumability, source/ancestor substitution and authored-file preservation. Recovery-order mutation failed as predicted and restored regression passed.",
-      "Full integration Go suite passed with PostgreSQL; scoped lint passed with zero issues. No generated runnable application or deployment qualification is inferred."
+      "Full integration Go suite passed with PostgreSQL; scoped lint passed with zero issues. No generated runnable application or deployment qualification is inferred.",
+      "Native generator and config-driven CLI independently reviewed after port-preflight and control-target corrections. Fresh race/vet/zero-issue lint and actual generated consumer/private-path tests/build, real PostgreSQL migration and Chromium lifecycle pass. Three isolated guard-removal mutants fail and restored checks pass. Managed resume preserves private identity and environment. Evaluation only; no live providers, production generation or cloud deployment qualification."
     ]
   },
   "T3.5": {
