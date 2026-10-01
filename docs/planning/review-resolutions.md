@@ -26,3 +26,12 @@ All task certification remains NOT_RUN. Exact-version provider/security qualific
 ## Executed planning checks
 
 The canonical plan passes structural validation. Four isolated malformed-plan fixtures were rejected as expected: missing dependency, self-cycle, later-stage dependency and uncovered use case. These are checks of the plan validator, not application tests. All verification-script paths referenced by contracts have a planned owner or already exist as planning utilities.
+
+
+## RFC 0002 document review (2026-10-01)
+
+The owner requested resolution of the lifecycle gaps and exclusion of closed-source project names from public AMOS artifacts. [RFC 0002](../rfc/rfc-0002.md) now specifies dedicated machine-job authority and revocation, scoped/fenced scan reconciliation with evidence-based deletion, collection and destination-specific disclosure allowlists, and feature evolution with compatibility, migration and recovery rules. Its acceptance table and adoption gates include corresponding negative cases.
+
+External runtime references in both RFCs, the vision, handoff and supporting planning notes use neutral roles. Public integration requirements must be qualified from supported public contracts and actual controller checks, not private source or endpoint registries. Repository instructions explicitly exclude closed-source project names. This is a draft documentation revision; frozen shared contracts, task acceptance, deployment and provider status are unchanged.
+
+Verification obtained: the planning validator passed (16 epics, 257 tasks, 116 covered use cases, 48 waves); the public-artifact checker and whitespace check passed. RFC/review-record relative links resolve. Both reference images were inspected; the shell mock's private integration labels were replaced with neutral wording and the revised image inspected. A case-insensitive scan of Git-visible text found no remaining occurrences of the removed private runtime name. These are documentation/publication checks only.

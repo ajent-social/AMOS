@@ -31,7 +31,7 @@ This is a public, self-contained handoff. Product implementation has not been cl
 
 - AMOS delivers a complete application shell plus business extension points, not only a hosted identity service.
 - One public domain serves both shared pages and business routes; an optional internal service stays private.
-- Independent agents and Zatiti connect to standard generated MCP; AMOS does not host them or duplicate their customer-governance UI.
+- Independent agents and external runtimes connect to standard generated MCP; AMOS does not host them or duplicate their customer-governance UI.
 - Application auth/permissions/entitlements remain mandatory on every interface. Agent access does not bypass proof requirements.
 - Personal and organization billing are separate; all three pricing models and the selected full authentication suite remain planned even when an early release is narrower.
 - Owners can replace every UI surface. Upgrades must preserve custom work and stop on incompatible contracts.

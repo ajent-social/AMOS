@@ -2,7 +2,7 @@
 
 This input proposes E11-E15: **66 tasks, 40 use cases (UC-080-UC-119), and 85 estimated coding/design hours** before integration, external review, provider setup or live qualification. All use cases are PLANNED. The companion [machine-readable inventory](../inputs/agents-maintenance.json) contains task instructions, owned paths, dependencies, negative tests and scoped future verification commands. It is a complete future inventory with stage-entry revalidation, not execution-certified work.
 
-The intended behavior comes from [VISION](../../VISION.md) and [RFC 0001](../../rfc/rfc-0001.md). Standard external MCP clients receive ordinary application authorization, tenant isolation and entitlement enforcement. AMOS does not host customer agents or Zatiti, own their governance inbox, or invent a future agent protocol. Sensitive operations use ordinary resumable identity proof rather than an agent bypass.
+The intended behavior comes from [VISION](../../VISION.md) and [RFC 0001](../../rfc/rfc-0001.md). Standard external MCP clients receive ordinary application authorization, tenant isolation and entitlement enforcement. AMOS does not host customer agents or external agent runtimes, own their governance inbox, or invent a future agent protocol. Sensitive operations use ordinary resumable identity proof rather than an agent bypass.
 
 ## Use case and task summary
 
