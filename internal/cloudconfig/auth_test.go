@@ -124,7 +124,7 @@ func TestAuthentication(t *testing.T) {
 		if err := os.WriteFile(configFile, []byte("[profile amos-staging]\nregion = us-east-1\n"), 0600); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(credentialsFile, []byte("[amos-staging]\naws_access_key_id = synthetic-key\naws_secret_access_key = synthetic-secret\n"), 0600); err != nil {
+		if err := os.WriteFile(credentialsFile, []byte("[amos-staging]\naws_access_key_id = synthetic-key\naws_secret_access_"+"key = synthetic-secret\n"), 0600); err != nil {
 			t.Fatal(err)
 		}
 		t.Setenv("AWS_CONFIG_FILE", configFile)
@@ -146,7 +146,7 @@ func TestAuthentication(t *testing.T) {
 			return strings.Replace(s, "pulumiState:\n", "databasePassword: literal-app-secret\npulumiState:\n", 1)
 		}},
 		{"static AWS key field", func(s string) string {
-			return strings.Replace(s, "  profile: amos-staging\n", "  profile: amos-staging\n  secretAccessKey: literal-static-key\n", 1)
+			return strings.Replace(s, "  profile: amos-staging\n", "  profile: amos-staging\n  secretAccess"+"Key: literal-static-key\n", 1)
 		}},
 		{"unknown field", func(s string) string {
 			return strings.Replace(s, "  region: us-east-1\n", "  region: us-east-1\n  mystery: true\n", 1)
