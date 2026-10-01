@@ -259,7 +259,13 @@ func (h *handler) validateCSRF(w http.ResponseWriter, r *http.Request, data page
 		h.render(w, http.StatusServiceUnavailable, data)
 		return data
 	}
-	provided := r.FormValue("_csrf")
+	formTokens := r.PostForm["_csrf"]
+	if len(formTokens) != 1 {
+		data.Error = "This form has expired or is invalid. Reload the page and try again."
+		h.render(w, http.StatusForbidden, data)
+		return data
+	}
+	provided := formTokens[0]
 	if r.Header.Get("HX-Request") == "true" && r.Header.Get("X-CSRF-Token") != "" {
 		provided = r.Header.Get("X-CSRF-Token")
 	}

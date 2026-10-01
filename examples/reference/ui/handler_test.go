@@ -154,6 +154,7 @@ func TestInvalidAndMissingCSRFValuesDoNotMutate(t *testing.T) {
 	for _, form := range []string{
 		"workspace=ws&title=Plan",
 		"_csrf=wrong&workspace=ws&title=Plan",
+		"_csrf=csrf-test&_csrf=csrf-test&workspace=ws&title=Plan",
 	} {
 		domain := &fakeTodos{}
 		request := httptest.NewRequest(http.MethodPost, "/todos", strings.NewReader(form))
@@ -168,7 +169,7 @@ func TestInvalidAndMissingCSRFValuesDoNotMutate(t *testing.T) {
 
 func TestHTMXUsesSessionCSRFHeader(t *testing.T) {
 	domain := &fakeTodos{}
-	request := httptest.NewRequest(http.MethodPost, "/todos", strings.NewReader("workspace=ws&title=Plan"))
+	request := httptest.NewRequest(http.MethodPost, "/todos", strings.NewReader("_csrf=csrf-test&workspace=ws&title=Plan"))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("HX-Request", "true")
 	request.Header.Set("X-CSRF-Token", "csrf-test")
