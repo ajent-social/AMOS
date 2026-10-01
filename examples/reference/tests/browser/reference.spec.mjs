@@ -35,6 +35,18 @@ test("public landing renders workspace entry without a session", async ({ page }
   await expect(page.getByLabel("Workspace ID")).toBeVisible();
 });
 
+test("fits mobile, laptop, and wide viewports without horizontal overflow", async ({ page }) => {
+  for (const width of [390, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/?workspace=sample-workspace");
+    const sizes = await page.evaluate(() => ({
+      pageWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(sizes.pageWidth).toBeLessThanOrEqual(sizes.viewportWidth);
+  }
+});
+
 test("loads the pinned HTMX enhancement from the same origin", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('script[src^="https://"]')).toHaveCount(0);
