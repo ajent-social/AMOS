@@ -497,7 +497,8 @@
       "Independent headless re-review of exact ccc119c closed the expired Retry lease blocker and found no remaining standalone component source blocker. Integrator-owned catalog/SDK support and explicitly delegated snapshot paths are recorded in the task file.",
       "Isolated reconciliation core and official Stripe snapshot component batch ccc119c passes fresh PostgreSQL race tests, scoped vet and zero-issue lint.",
       "Apply and retry database-clock lease regressions, per-instance serialization, SDK mode/logging and immutable catalog alias mutations fail as intended and restored checks pass.",
-      "Fixtures do not qualify live Stripe; live credentials are absent. Durable job/executable composition, migration allocation, account-wide throttling and integrated access policy remain separate. No full task or release acceptance."
+      "Fixtures do not qualify live Stripe; live credentials are absent. Durable job/executable composition, migration allocation, account-wide throttling and integrated access policy remain separate. No full task or release acceptance.",
+      "Durable webhook jobs component b9311ea plus daaa4dd independently headless reviewed; actual PostgreSQL table-lock lease regression and genuine final-guard mutation pass after restoration. Component checks and limits in docs/evidence/billing-webhook-jobs-20261001.md; executable scheduling remains separate."
     ]
   },
   "T6.4": {

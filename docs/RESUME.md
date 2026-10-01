@@ -139,3 +139,11 @@ zero-issue lint. Stale hints are cleared and current authorized choices are
 queried again; error DTO fields never render. T6.4 remains in progress because
 the composed organization browser fixture and native adapter are absent. See
 [evidence](evidence/workspace-switch-20261001.md).
+
+## Durable billing webhook job component
+
+The independently reviewed durable billing-only consumer now links verified
+receipts to reconciliation work, with database-clock lease guards after lock
+waits. Duplicate receipts preserve active work leases and dirty generation.
+T5.8 remains in progress; executable scheduling and live Stripe qualification
+remain separate. See [evidence](evidence/billing-webhook-jobs-20261001.md).
