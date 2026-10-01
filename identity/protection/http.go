@@ -70,7 +70,7 @@ func (g Guard) admission(w http.ResponseWriter, r *http.Request, op Operation, a
 // PublicJSON admits signup/signin requests before any credential work. It does
 // not resolve account existence and never accepts identity from request data.
 func (g Guard) PublicJSON(op Operation, next http.Handler) (http.Handler, error) {
-	if !g.valid() || next == nil || (op != Signup && op != Signin && op != Recovery && op != Verification) {
+	if !g.valid() || next == nil || (op != Signup && op != Signin && op != Recovery && op != Verification && op != MagicLink) {
 		return nil, ErrConfiguration
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +104,7 @@ func (g Guard) PublicJSON(op Operation, next http.Handler) (http.Handler, error)
 		if json.Unmarshal(body, &key) != nil || len(key.Email) > 320 || !utf8.ValidString(key.Email) || strings.ContainsAny(key.Email, "\x00\r\n") {
 			key.Email = "invalid-input"
 		}
-		if op == Recovery && key.ChallengeID != "" {
+		if (op == Recovery || op == MagicLink) && key.ChallengeID != "" {
 			id, e := uuid.Parse(key.ChallengeID)
 			if e != nil || id.Version() != 7 || id.String() != key.ChallengeID {
 				key.Email = "invalid-input"

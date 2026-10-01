@@ -84,7 +84,41 @@ type Issued struct {
 // Issue rotates any known prior browser session and creates a fresh one in a
 // single transaction. Proof construction belongs to credential adapters.
 func (s *Service) Issue(ctx context.Context, proof authproof.VerifiedCredential, priorToken string) (Issued, error) {
-	if s == nil || proof.PersonID() == uuid.Nil || proof.InstallationID() != s.cfg.InstallationID || proof.ApplicationID() != s.cfg.ApplicationID || proof.EnvironmentID() != s.cfg.EnvironmentID {
+	if s == nil || s.db == nil || ctx == nil {
+		return Issued{}, ErrUnavailable
+	}
+	var issued Issued
+	err := s.db.WithTx(ctx, nil, func(tx *sql.Tx) error { var err error; issued, err = s.issueTx(ctx, tx, proof, priorToken); return err })
+	if err != nil {
+		return Issued{}, ErrUnavailable
+	}
+	return issued, nil
+}
+
+// IssueForRequestTx stages browser-session rotation in the caller's transaction.
+// The caller must commit successfully before exposing either the returned cookie
+// or CSRF token. A rollback also rolls back challenge consumption and rotation.
+// Credential adapters must establish current identity and policy before calling.
+func (s *Service) IssueForRequestTx(ctx context.Context, tx *sql.Tx, proof authproof.VerifiedCredential, r *http.Request) (Issued, error) {
+	if s == nil || r == nil {
+		return Issued{}, ErrUnavailable
+	}
+	var prior string
+	count := 0
+	for _, cookie := range r.Cookies() {
+		if cookie.Name == s.cookieName {
+			count++
+			prior = cookie.Value
+		}
+	}
+	if count > 1 {
+		return Issued{}, ErrUnauthenticated
+	}
+	return s.issueTx(ctx, tx, proof, prior)
+}
+
+func (s *Service) issueTx(ctx context.Context, tx *sql.Tx, proof authproof.VerifiedCredential, priorToken string) (Issued, error) {
+	if ctx == nil || tx == nil || s == nil || proof.PersonID() == uuid.Nil || proof.InstallationID() != s.cfg.InstallationID || proof.ApplicationID() != s.cfg.ApplicationID || proof.EnvironmentID() != s.cfg.EnvironmentID {
 		return Issued{}, ErrUnauthenticated
 	}
 	now := time.Now().UTC()
@@ -108,20 +142,20 @@ func (s *Service) Issue(ctx context.Context, proof authproof.VerifiedCredential,
 		// until that schema can preserve a stronger assurance level.
 		expires = proof.AssuranceExpires()
 	}
-	err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err = func() error {
 		st, err := store.New(tx)
 		if err != nil {
 			return err
 		}
 		if priorToken != "" {
 			if old, ok := tokenDigest(priorToken); ok {
-				if err := st.RevokeSession(ctx, old); err != nil && !errors.Is(err, store.ErrSessionUnavailable) {
+				if err := st.RevokeSessionScoped(ctx, old, store.SessionScope{InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID}); err != nil && !errors.Is(err, store.ErrSessionUnavailable) {
 					return err
 				}
 			}
 		}
 		return st.CreateSession(ctx, store.Session{ID: id, PersonID: proof.PersonID(), InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID, TokenDigest: digest[:], SecurityEpoch: proof.SecurityEpoch(), AuthenticationMethod: proof.Method(), AuthenticatedAt: proof.AuthenticatedAt(), ExpiresAt: expires})
-	})
+	}()
 	if err != nil {
 		return Issued{}, ErrUnavailable
 	}

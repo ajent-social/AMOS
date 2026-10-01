@@ -157,6 +157,9 @@ func (r *Renderer) Render(jobID uuid.UUID, req Request, material PrivateMaterial
 	}
 	action, parseErr := url.Parse(material.ActionURL)
 	purposeMatches := parseErr == nil
+	if req.Template == TemplateSignIn {
+		purposeMatches = purposeMatches && action.Path == "/magic-link" && action.RawPath == ""
+	}
 	if req.Template == TemplateVerifyEmail {
 		purposeMatches = purposeMatches && action.Path == "/verify-email" && action.RawPath == ""
 	}

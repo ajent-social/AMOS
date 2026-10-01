@@ -22,6 +22,7 @@ var ErrUnavailable = errors.New("authentication protection unavailable")
 type Operation string
 
 const (
+	MagicLink      Operation = "magic_link"
 	Signup         Operation = "signup"
 	Signin         Operation = "signin"
 	Verification   Operation = "verification"
@@ -31,7 +32,7 @@ const (
 
 func validOperation(op Operation) bool {
 	switch op {
-	case Signup, Signin, Verification, Recovery, PasswordChange:
+	case Signup, Signin, Verification, Recovery, PasswordChange, MagicLink:
 		return true
 	}
 	return false

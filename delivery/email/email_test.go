@@ -27,7 +27,7 @@ func testRenderer(t *testing.T) *Renderer {
 }
 
 func validRequest() Request {
-	return Request{Template: TemplateSignIn, MaterialRef: "material:018f22e7-8e71-7b4c-9a4c-6d7b8f15a3c2", ExpiresInSeconds: 600}
+	return Request{Template: TemplateVerifyEmail, MaterialRef: "material:018f22e7-8e71-7b4c-9a4c-6d7b8f15a3c2", ExpiresInSeconds: 600}
 }
 
 func validMaterial() PrivateMaterial {
@@ -57,7 +57,7 @@ func TestRendererUsesEscapedBoundedTemplate(t *testing.T) {
 	r := testRenderer(t)
 	id, _ := uuid.NewV7()
 	m := validMaterial()
-	m.ActionURL = "https://app.example.test/auth/action?token=%22%3E%3Cscript%3E"
+	m.ActionURL = "https://app.example.test/verify-email?token=%22%3E%3Cscript%3E"
 	msg, err := r.Render(id, validRequest(), m)
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +102,7 @@ func (s *senderDouble) Reconcile(context.Context, uuid.UUID) (Receipt, error) {
 func TestDispatcherResolvesSecretOnlyInsideSendAndPreservesUnknown(t *testing.T) {
 	r := testRenderer(t)
 	secretMaterial := validMaterial()
-	secretMaterial.ActionURL = "https://app.example.test/auth/verify?token=synthetic-one-time-bearer"
+	secretMaterial.ActionURL = "https://app.example.test/verify-email?token=synthetic-one-time-bearer"
 	materials := &materialDouble{value: secretMaterial}
 	sender := &senderDouble{send: receipt.AcceptedResult("ses-message-1")}
 	d, err := NewDispatcher(r, sender, materials, 30*time.Second)
@@ -232,7 +232,7 @@ func TestRendererRejectsCrossPurposeEvenWithLegacyResolver(t *testing.T) {
 	for _, tc := range []struct {
 		template TemplateID
 		path     string
-	}{{TemplateVerifyEmail, "/reset-password"}, {TemplatePasswordReset, "/verify-email"}} {
+	}{{TemplateVerifyEmail, "/reset-password"}, {TemplatePasswordReset, "/verify-email"}, {TemplateSignIn, "/verify-email"}, {TemplateVerifyEmail, "/magic-link"}} {
 		request := validRequest()
 		request.Template = tc.template
 		material := validMaterial()

@@ -275,3 +275,57 @@ func id(t *testing.T) uuid.UUID {
 	}
 	return v
 }
+
+func TestCallerTransactionSessionRotationRollbackAndCommit(t *testing.T) {
+	db, account := readyIdentity(t)
+	now := time.Now().UTC()
+	proof, err := authproof.NewVerifiedCredential(account.PersonID, account.InstallationID, account.ApplicationID, account.EnvironmentID, 0, "email_magic_link", now, "aal1", now.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc, err := session.New(db, session.Config{InstallationID: account.InstallationID, ApplicationID: account.ApplicationID, EnvironmentID: account.EnvironmentID, AllowedOrigins: []string{"https://amos.example"}, CookieSecure: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := svc.Issue(context.Background(), proof, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest("POST", "https://amos.example/magic-link", nil)
+	request.AddCookie(first.Cookie)
+	var rolled session.Issued
+	rollback := fmt.Errorf("intentional rollback")
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		var err error
+		rolled, err = svc.IssueForRequestTx(context.Background(), tx, proof, request)
+		if err != nil {
+			return err
+		}
+		return rollback
+	}); err == nil {
+		t.Fatal("transaction did not rollback")
+	}
+	handler := svc.Middleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
+	check := func(cookie *http.Cookie, want int) {
+		t.Helper()
+		r := httptest.NewRequest("GET", "https://amos.example/protected", nil)
+		r.AddCookie(cookie)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		if w.Code != want {
+			t.Fatalf("session status=%d want=%d", w.Code, want)
+		}
+	}
+	check(first.Cookie, 204)
+	check(rolled.Cookie, 401)
+	var committed session.Issued
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		var err error
+		committed, err = svc.IssueForRequestTx(context.Background(), tx, proof, request)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	check(first.Cookie, 401)
+	check(committed.Cookie, 204)
+}

@@ -97,13 +97,18 @@ func (s *Store) validMaterial(m email.PrivateMaterial) bool {
 		return false
 	}
 	u, e := url.Parse(m.ActionURL)
-	return e == nil && u.Scheme+"://"+u.Host == s.origin && u.User == nil && u.Fragment == "" && (u.Path == "/verify-email" || u.Path == "/reset-password") && u.RawPath == ""
+	return e == nil && u.Scheme+"://"+u.Host == s.origin && u.User == nil && u.Fragment == "" && (u.Path == "/verify-email" || u.Path == "/reset-password" || u.Path == "/magic-link") && u.RawPath == ""
 }
 
 // PutVerificationMaterial never writes plaintext. Failure aborts the caller's
 // transaction; generic errors omit recipients, URLs, tokens and database text.
 func (s *Store) PutVerificationMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time) error {
 	return s.putMaterial(ctx, tx, ref, m, expiry, "/verify-email")
+}
+
+// PutSignInMaterial binds encrypted material to the magic-link action only.
+func (s *Store) PutSignInMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time) error {
+	return s.putMaterial(ctx, tx, ref, m, expiry, "/magic-link")
 }
 
 // PutPasswordResetMaterial binds encrypted material to the reset action only.
@@ -215,6 +220,8 @@ func (s *Store) ResolveForTemplate(ctx context.Context, ref email.SecretReferenc
 		path = "/verify-email"
 	case email.TemplatePasswordReset:
 		path = "/reset-password"
+	case email.TemplateSignIn:
+		path = "/magic-link"
 	default:
 		return email.PrivateMaterial{}, ErrUnavailable
 	}

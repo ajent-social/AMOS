@@ -166,3 +166,14 @@ permits one current verifier operation then one replacement hash, with separate
 mandatory handler proof/policy/atomic revocation. Distinct protected reset writes,
 purpose-aware resolution and final rendering enforce reset/verification paths.
 No new assurance level, MFA bypass or session issuance is granted by these seams.
+
+## Amendment v1.7: atomic magic-link and local deployment binding
+
+ADR 017 adds caller-transaction session rotation, purpose-restricted browser
+binding digests, the distinct durable magic-link admission operation, and exact
+protected sign-in material/renderer binding to `/magic-link`. Returned session
+values must be exposed only after commit. Email proof remains AAL1 and mandatory
+policy checks preserve stronger organization/factor requirements. The reference
+assembly appends verified webhook ingress (9), immutable local deployment binding
+(10) and magic browser binding (11) after todos (8), without changing foundation
+bytes. The authored adapter does not claim qualified upstream reuse.

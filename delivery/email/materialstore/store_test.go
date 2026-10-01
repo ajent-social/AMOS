@@ -229,6 +229,20 @@ func TestResetProtectedMaterialCannotCrossAuthenticationPurpose(t *testing.T) {
 	if _, e := s.ResolveForTemplate(context.Background(), ref, email.TemplateSignIn); e == nil {
 		t.Fatal("unsupported purpose admitted")
 	}
+	magic := material()
+	magic.ActionURL = "https://app.example.test/magic-link?challenge=synthetic&token=synthetic"
+	magicRef := reference(t)
+	if err := s.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		return s.PutSignInMaterial(context.Background(), tx, magicRef, magic, time.Now().Add(time.Hour))
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := s.ResolveForTemplate(context.Background(), magicRef, email.TemplateSignIn); err != nil || got != magic {
+		t.Fatal("magic material unavailable", err)
+	}
+	if _, err := s.ResolveForTemplate(context.Background(), magicRef, email.TemplatePasswordReset); err == nil {
+		t.Fatal("magic material reused as reset")
+	}
 	verification := reference(t)
 	write(t, s, verification)
 	if _, e := s.ResolveForTemplate(context.Background(), verification, email.TemplatePasswordReset); e == nil {

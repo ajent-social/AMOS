@@ -387,7 +387,7 @@ func (s *Service) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		writeConfirmationForm(w, r.Method, challengeID.String(), tokenValues[0])
 	case http.MethodPost:
-		if r.Header.Get("Origin") != s.origin.String() {
+		if len(r.Header.Values("Origin")) != 1 || r.Header.Get("Origin") != s.origin.String() {
 			http.Error(w, "Verification request was denied.", http.StatusForbidden)
 			return
 		}

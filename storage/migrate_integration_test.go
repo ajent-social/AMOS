@@ -303,3 +303,43 @@ func TestCoreFoundationRegistryAppliesAndRejectsReordering(t *testing.T) {
 		t.Fatalf("collision accepted: %v", err)
 	}
 }
+
+func TestMagicBindingAdditiveMigrationRetainsFoundationChecksums(t *testing.T) {
+	db := newTestDB(t)
+	ingress, err := migrations.BillingWebhookIngress(9)
+	if err != nil {
+		t.Fatal(err)
+	}
+	binding, err := migrations.RuntimeBinding(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	magic, err := migrations.MagicBrowserBinding(11)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := migrations.Core(migrations.Fragment{Namespace: "business", Migrations: []migrations.Migration{{Sequence: 8, Name: "smoke", SQL: "CREATE TABLE business_smoke(id uuid PRIMARY KEY);"}}}, ingress, binding, magic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if err := Migrate(context.Background(), db, registry); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := scalarInt(t, db, "SELECT count(*) FROM amos_schema_migrations"); got != 11 {
+		t.Fatalf("entries=%d", got)
+	}
+	if got := scalarInt(t, db, "SELECT count(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='identity_challenges' AND column_name='browser_binding_digest'"); got != 1 {
+		t.Fatal("browser binding column unavailable")
+	}
+	if got := scalarInt(t, db, "SELECT count(*) FROM pg_constraint WHERE conrelid='identity_challenges'::regclass AND conname='identity_magic_browser_binding'"); got != 1 {
+		t.Fatal("purpose binding constraint unavailable")
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(context.Background(), `INSERT INTO identity_auth_limits(installation_id,application_id,environment_id,operation,dimension,key_digest,window_start,window_end,attempts) VALUES('018f0000-0000-7000-8000-000000000001','018f0000-0000-7000-8000-000000000002','018f0000-0000-7000-8000-000000000003','magic_link','ip',decode(repeat('ab',32),'hex'),transaction_timestamp(),transaction_timestamp()+interval '1 minute',1)`)
+		return err
+	}); err != nil {
+		t.Fatal("magic admission unavailable", err)
+	}
+}
