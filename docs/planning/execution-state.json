@@ -446,17 +446,23 @@
     ]
   },
   "T3.9": {
-    "status": "IN_PROGRESS",
-    "certification": "UNQUALIFIED",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Claimed for isolated Luna implementation of scanner-safe magic-link authentication. Shared session/material composition seams and independent review remain required."
+      "Luna scanner-safe magic-link service independently reviewed and integrated with caller-transaction session issuance, protected material, current account policy and durable limits.",
+      "Worker and root real PostgreSQL suites passed; worker race and vet passed; root scoped lint passed with zero issues. Genuine consumption-on-GET mutation failed before restoration.",
+      "Explicit confirmation consumes challenge and rotates session atomically; replay, expiry, disabled account, wrong purpose and policy unavailability fail closed. Browser flow binding supports scanner-safe preview and explicit different-device confirmation.",
+      "This is reviewed service/API evidence; generated application mounting, full browser qualification and live email delivery remain separate."
     ]
   },
   "T5.7": {
-    "status": "IN_PROGRESS",
-    "certification": "UNQUALIFIED",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Claimed for isolated Luna signature-verified durable webhook ingress. Root additive normalized inbox and authoritative customer-routing seams are under review; no live provider qualification."
+      "Luna bounded official Stripe SDK signature verification and normalized durable webhook receipt independently reviewed and integrated.",
+      "Worker and root real PostgreSQL suites passed; worker scoped vet passed; root scoped lint passed with zero issues. Genuine outer-transaction failure mutation failed acknowledgement regression and was restored.",
+      "Receipt and reconciliation intent share the same caller transaction; duplicate digests deduplicate, conflicting payloads deny, unmatched account/environment/customer events quarantine before acknowledgement.",
+      "Reconciliation remains a separate dependent task. Synthetic signed payloads exercise ingress behavior and do not qualify live Stripe subscriptions or webhook delivery."
     ]
   }
 }

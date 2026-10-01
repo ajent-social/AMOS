@@ -2,7 +2,7 @@
 
 Updated: 2026-10-01. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
-Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 46 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Generated application composition, complete auth and organization policy, live subscriptions and deployment remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
+Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 48 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Generated application composition, complete auth and organization policy, live subscriptions and deployment remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
 
 Integrated foundations cover PostgreSQL/migrations, policy/configuration, jobs/outbox/email/audit, identity storage/sessions/passwords/email verification, workspace persistence/bootstrap/context, OpenAPI/Go generation, tenant-scoped reference todos and the default UI renderer. The fragment swap regression failed before the renderer fix and passes afterward in a real browser.
 
@@ -55,7 +55,7 @@ Keep this repository public-safe: no private project references, home paths, pri
 
 ### Pending integration checkpoint (2026-10-01, resumed session)
 
-- Main remains at the reviewed 46-task checkpoint; additional source is staged
+- Main remains at the reviewed 46-task checkpoint before the current two service acceptances; additional source is staged
   in the integration branch and has not been accepted merely because it builds.
 - Magic-link and verified webhook ingress scoped tests passed against the
   required PostgreSQL environment after integration. The webhook transaction
@@ -73,3 +73,13 @@ Keep this repository public-safe: no private project references, home paths, pri
   isolated lanes. Durable session assurance and factor admission seams are
   pending independent review and actual tests. Shared machine build leases may
   delay verification; a held or lost lease is not a passing test.
+
+## Current service acceptance
+
+Magic-link service (T3.9) and durable signed webhook ingress (T5.7) now have
+independent review, worker negative tests, root real PostgreSQL tests and root
+zero-issue scoped lint. They are accepted as service components. Generated native
+application browser qualification remains pending: signup, explicit email
+confirmation and password sign-in progressed in Chromium; reset replay browser
+coverage is still being corrected. Runtime startup private-directory protection
+was strengthened after review. No live mail, Stripe or cloud deployment claim.
