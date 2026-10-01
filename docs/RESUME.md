@@ -83,3 +83,12 @@ application browser qualification remains pending: signup, explicit email
 confirmation and password sign-in progressed in Chromium; reset replay browser
 coverage is still being corrected. Runtime startup private-directory protection
 was strengthened after review. No live mail, Stripe or cloud deployment claim.
+
+## TOTP service acceptance
+
+T3.15 is accepted as an independently reviewed service component. The isolated
+service batch passes fresh PostgreSQL race tests, vet and zero-issue lint; replay,
+statement-clock and guarded-cookie admission regressions have actual negative
+evidence and restored passing checks. Native application/UI wiring remains a
+separate staged batch. Production key management, organization/enterprise policy,
+live provider qualification and deployment are not established.

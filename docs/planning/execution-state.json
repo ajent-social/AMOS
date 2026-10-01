@@ -464,5 +464,17 @@
       "Receipt and reconciliation intent share the same caller transaction; duplicate digests deduplicate, conflicting payloads deny, unmatched account/environment/customer events quarantine before acknowledgement.",
       "Reconciliation remains a separate dependent task. Synthetic signed payloads exercise ingress behavior and do not qualify live Stripe subscriptions or webhook delivery."
     ]
+  },
+  "T3.15": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "TOTP enrollment, confirmation and challenge service independently reviewed through headless sessions; current primary proof, pending/active scope, envelope rebinding, accepted-step replay fencing and finite admission are enforced.",
+      "Worker real PostgreSQL and concrete encrypted factor vault tests pass. Changing the accepted-step comparison from strict to inclusive caused the expected replay rejection test to fail; source restored and tests passed.",
+      "Integrator isolated service batch passes fresh race tests across MFA/vault, session, store, primary proof, protection and migration packages; scoped vet and zero-issue lint pass.",
+      "Headless batch review found a missing MFA admitted-context supporting file; the real guarded-cookie regression failed with unavailable primary work, the fix was restored, and fresh race tests passed. Final headless review cleared the correction.",
+      "Session issuance database-clock regression fails under a transaction-start clock mutation and passes after restoration. Composed local HTTP tests also verify Origin/CSRF denial, exact persisted assurance expiry and replay rejection in a separately staged native application.",
+      "Accepted as a service component. Production key management, organization policy, enterprise MFA, UI composition, live providers and complete SaaS release qualification remain separate."
+    ]
   }
 }

@@ -6,7 +6,7 @@ Updated: 2026-10-01. Public implementation status.
 
 The reviewed foundation is merged into `main`. There is no released, complete runnable SaaS and no qualified production deployment yet.
 
-The execution record contains 48 accepted tasks out of 257 planned tasks. Atomic initializer generation, signup/sign-in components, default reference browser flows, billing persistence and replaceable UI overrides are reviewed. Task counts measure accepted work items, not percentage of product completion. Consult the [execution record](planning/execution-state.json) for current evidence.
+The execution record contains 49 accepted tasks out of 257 planned tasks. Atomic initializer generation, signup/sign-in components, default reference browser flows, billing persistence and replaceable UI overrides are reviewed. Task counts measure accepted work items, not percentage of product completion. Consult the [execution record](planning/execution-state.json) for current evidence.
 
 ## Integrated foundation
 
