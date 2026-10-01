@@ -154,3 +154,28 @@ func TestServeContextGracefullyDrainsActiveRequest(t *testing.T) {
 		t.Fatal("Serve did not stop")
 	}
 }
+
+func TestBusinessWildcardAndDistinctApexCanBothServe(t *testing.T) {
+	a, err := New(Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	apex := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(202) })
+	child := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })
+	if err := a.RegisterBusinessRoute("GET", "/todos", apex); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.RegisterBusinessRoute("GET", "/todos/*", child); err != nil {
+		t.Fatal("nonoverlapping apex and child routes rejected", err)
+	}
+	for _, tc := range []struct {
+		path string
+		want int
+	}{{"/todos", 202}, {"/todos/one/edit", 204}} {
+		w := httptest.NewRecorder()
+		a.Handler().ServeHTTP(w, httptest.NewRequest("GET", tc.path, nil))
+		if w.Code != tc.want {
+			t.Fatalf("path=%s status=%d", tc.path, w.Code)
+		}
+	}
+}

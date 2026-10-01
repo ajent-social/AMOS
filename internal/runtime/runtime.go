@@ -110,10 +110,10 @@ func patternsOverlap(a, b route) bool {
 		return abase == bbase
 	}
 	if a.wildcard && b.wildcard {
-		return abase == bbase || strings.HasPrefix(abase, bbase+"/") || strings.HasPrefix(bbase, abase+"/")
+		return strings.HasPrefix(abase, bbase+"/") || strings.HasPrefix(bbase, abase+"/")
 	}
 	if a.wildcard {
-		return bbase == abase || strings.HasPrefix(bbase, abase+"/")
+		return strings.HasPrefix(bbase, abase+"/")
 	}
 	return abase == bbase || strings.HasPrefix(abase, bbase+"/")
 }
