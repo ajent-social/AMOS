@@ -24,6 +24,11 @@ labels, preserves the data volume, and never adopts slug-only resources.
   vet/lint and filtered Linux status tests passed; the Clear-lock bypass
   mutation failed and restored scoped tests passed.
 
+- Public-artifact false positives in synthetic environment/OS credential
+  fixtures were resolved by explicit fixture construction; no scanner bypass
+  was added. The changed regression scope passed race (1.350 seconds), vet
+  and zero-issue lint. Public artifact and planning scans pass.
+
 ## Limits
 
 T7.7 remains in progress. CLI clean --plan is advisory and refuses execution;

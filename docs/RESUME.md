@@ -148,3 +148,10 @@ process state are pinned to private ownership; Record/Clear updates use a
 persistent lock. T7.7 remains in progress: clean --plan is advisory only and
 full cleanup execution remains unqualified. See
 [evidence](evidence/native-dev-supervision-20261001.md).
+## Durable billing webhook job component
+
+The independently reviewed durable billing-only consumer now links verified
+receipts to reconciliation work, with database-clock lease guards after lock
+waits. Duplicate receipts preserve active work leases and dirty generation.
+T5.8 remains in progress; executable scheduling and live Stripe qualification
+remain separate. See [evidence](evidence/billing-webhook-jobs-20261001.md).
