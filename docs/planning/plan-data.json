@@ -5098,7 +5098,7 @@
           ],
           "objective": "Turn the confirmed per-installation profile choice into precise managed and small-VM contracts.",
           "instructions": [
-            "Freeze profile identifiers managed and small-vm, with immutable profile selection recorded in application and stack metadata.",
+            "Freeze machine profile identifiers aws_managed and aws_vm from the canonical configuration; managed and small-vm are display descriptions only. Record immutable selection in application and stack metadata.",
             "Define managed ECS Fargate, private RDS PostgreSQL, HTTPS ALB and required Cloudflare DNS; compare explicit NAT versus endpoint/public-task egress and state the security/cost decision.",
             "Define small-VM EC2, Podman, retained encrypted EBS, owner-hosted PostgreSQL and host HTTPS with no NAT/ALB unless explicitly selected; state single-AZ failure and patching responsibilities.",
             "Estimate both for an explicit region/workload from current official pricing, including compute, database, disks, public IPv4, load balancing, egress, backups, logs and state; distinguish estimates from budgets.",
