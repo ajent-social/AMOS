@@ -34,7 +34,7 @@ var ErrFrameworkUnavailable = errors.New("trusted AMOS runtime source is unavail
 // SourceDir must be an operator-selected public AMOS checkout.
 type Generator struct{ SourceDir string }
 
-var roots = []string{"apphost", "examples/reference/app/business", "examples/reference/ui", "examples/reference/migrations", "migrations"}
+var roots = []string{"apphost", "examples/reference/app/business", "examples/reference/ui", "examples/reference/migrations", "migrations", "billing/reconcile", "identity/federation"}
 
 func (g Generator) Generate(ctx context.Context, c initializer.Config, files *initializer.Files) error {
 	if ctx == nil || files == nil || c.Mode() != "evaluation" || c.BusinessMode() != "integrated-go" {
@@ -227,7 +227,7 @@ func selectFramework(root string) (map[string][]byte, error) {
 			}
 		}
 	}
-	// Runtime packages in this closure embed the reference migration and UI assets.
+	// Runtime packages in this closure embed migrations, provider-flow schemas and UI assets.
 	for _, name := range []string{"LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "go.mod", "go.sum"} {
 		b, e := readRegular(abs, name)
 		if e != nil {

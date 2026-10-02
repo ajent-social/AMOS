@@ -6,6 +6,7 @@ import "net/http"
 // Nil fields retain explicit unavailable responses. Neither health/readiness nor
 // arbitrary reserved prefixes can be replaced through this finite surface.
 type IdentityHandlers struct {
+	FederationCallback                                 http.Handler
 	SignupPage                                         http.Handler
 	SigninPage                                         http.Handler
 	Signup                                             http.Handler
@@ -19,6 +20,7 @@ type IdentityHandlers struct {
 
 func (h IdentityHandlers) routes() map[string]http.Handler {
 	return map[string]http.Handler{
+		"GET /oauth/callback":              h.FederationCallback,
 		"GET /account/mfa/totp":            h.TOTPStatus,
 		"POST /account/mfa/totp/enroll":    h.TOTPEnroll,
 		"POST /account/mfa/totp/confirm":   h.TOTPConfirm,

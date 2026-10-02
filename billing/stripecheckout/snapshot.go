@@ -62,7 +62,7 @@ func (a *Adapter) GetCustomerSnapshot(ctx context.Context, request reconcile.Sna
 	if observedAt.IsZero() {
 		return reconcile.CustomerSnapshot{}, &provider.ProviderError{Class: provider.ErrorUnavailable, Retryable: false}
 	}
-	return reconcile.CustomerSnapshot{Binding: request.Binding, CustomerRef: request.CustomerRef, Revision: previousRevision, ObservedAt: observedAt, Subscriptions: previous}, nil
+	return reconcile.CustomerSnapshot{Complete: true, Binding: request.Binding, CustomerRef: request.CustomerRef, Revision: previousRevision, ObservedAt: observedAt, Subscriptions: previous}, nil
 }
 
 func (a *Adapter) verifySnapshotCustomer(ctx context.Context, request reconcile.SnapshotRequest) error {

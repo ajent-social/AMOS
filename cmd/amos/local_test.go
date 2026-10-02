@@ -12,3 +12,12 @@ func TestLocalCLIRequiresExplicitProject(t *testing.T) {
 		t.Fatal("clean executed without explicit advisory plan flag")
 	}
 }
+
+func TestCleanupRequiresOneExplicitMode(t *testing.T) {
+	if got := run([]string{"clean", "--project", "example", "--dir", "missing", "--plan", "--execute"}); got != 2 {
+		t.Fatal("ambiguous cleanup mode was accepted")
+	}
+	if got := run([]string{"clean", "--project", "example", "--dir", "missing", "--execute"}); got != 1 {
+		t.Fatal("cleanup did not fail closed for missing owned state")
+	}
+}

@@ -57,7 +57,7 @@ func TestT5_8_StripeSnapshotPaginatesAllStatusesAndBindsAccount(t *testing.T) {
 	if got.Binding != request.Binding || got.CustomerRef != request.CustomerRef || len(got.Subscriptions) != total {
 		t.Fatalf("snapshot scope/items mismatch: binding=%+v customer=%s count=%d", got.Binding, got.CustomerRef, len(got.Subscriptions))
 	}
-	if got.ObservedAt.Location() != time.UTC || !got.ObservedAt.Equal(now) || !strings.HasPrefix(got.Revision, "rev_") || len(got.Revision) != 68 {
+	if !got.Complete || got.ObservedAt.Location() != time.UTC || !got.ObservedAt.Equal(now) || !strings.HasPrefix(got.Revision, "rev_") || len(got.Revision) != 68 {
 		t.Fatalf("snapshot observation/revision malformed: at=%s revision=%q", got.ObservedAt, got.Revision)
 	}
 	if got.Subscriptions[0].PriceKey != "price_month" || got.Subscriptions[0].Status != reconcile.StatusCanceled || calls.Load() != 4 {

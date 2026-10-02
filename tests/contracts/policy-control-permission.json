@@ -1,0 +1,13 @@
+{
+  "operationId": "workspace.invite.create",
+  "permissions": [
+    "workspace.member.invite\n"
+  ],
+  "entitlements": [
+    "teams.seats"
+  ],
+  "assurance": "aal2",
+  "sideEffect": "write",
+  "idempotency": "required",
+  "mcp": "challenge"
+}

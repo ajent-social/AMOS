@@ -215,12 +215,12 @@ func TestRunRejectsExistingProcessBeforeCreatingResources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	privateConfig := "AMOS_DB_PORT=" + freePort(t) + "\n" +
-		"AMOS_DB_NAME=local_db\n" +
-		"AMOS_DB_MIGRATION_USER=migrator\n" +
-		"AMOS_DB_MIGRATION_PASSWORD=migration-secret\n" +
-		"AMOS_DB_RUNTIME_USER=runtime_user\n" +
-		"AMOS_DB_RUNTIME_PASSWORD=runtime-secret\n"
+	privateConfig := "AMOS_DB_PORT=" + freePort(t) + "\n" + `AMOS_DB_NAME=local_db
+AMOS_DB_MIGRATION_USER=migrator
+AMOS_DB_MIGRATION_PASSWORD=<migration-fixture>
+AMOS_DB_RUNTIME_USER=runtime_user
+AMOS_DB_RUNTIME_PASSWORD=<runtime-fixture>
+`
 	if err := os.WriteFile(filepath.Join(root, ".env.local"), []byte(privateConfig), 0600); err != nil {
 		t.Fatal(err)
 	}

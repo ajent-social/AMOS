@@ -140,6 +140,15 @@ func TestT3_10_CallbackBindsBrowserProviderAndConsumesOnce(t *testing.T) {
 	// A subject owned by another provider and carrying the victim's email is
 	// not an account link and cannot issue a session.
 	flow, cookie := beginLogin(t, svc, "enterprise", "/")
+	otherRealm, err := federation.New(federation.Config{DB: db, Sessions: sessions, InstallationID: scope.install, ApplicationID: scope.app, EnvironmentID: newUUID(t), CallbackURL: callback.URL + "/oauth/callback", Providers: map[string]federation.Provider{"enterprise_oidc": httpProvider{h.server.URL, h.server.Client()}}, Connections: map[string]federation.Connection{"enterprise": {Provider: "enterprise_oidc", ProviderConnectionID: enterpriseID, Issuer: "https://issuer.example"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	realmResponse := httptest.NewRecorder()
+	otherRealm.Callback(realmResponse, callbackRequest(t, callback.URL, flow, "foreign-realm", "enterprise_oidc", cookie))
+	if realmResponse.Code != http.StatusUnauthorized || h.count() != 0 {
+		t.Fatal("foreign environment callback reached provider or authorized")
+	}
 	h.set("attacker", flow.CodeChallenge, tokenReply{Subject: "provider-subject-1", Email: "victim@example.test", Issuer: "https://issuer.example"})
 	wrongProvider := callbackRequest(t, callback.URL, flow, "attacker", "google", cookie)
 	if got := serve(t, callback.Client(), wrongProvider); got.StatusCode != http.StatusUnauthorized {
@@ -278,6 +287,15 @@ func TestT3_10_LinkRequiresCSRFAndCurrentProofEpoch(t *testing.T) {
 		return e
 	}); err != nil {
 		t.Fatal(err)
+	}
+	// Missing originating session must deny before provider exchange, without panic.
+	missingRequest := callbackRequest(t, callback.URL, revokedFlow, "missing-session", "google", revokedBrowser)
+	beforeCalls := h.count()
+	if response := serve(t, callback.Client(), missingRequest); response.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("missing session status=%d", response.StatusCode)
+	}
+	if h.count() != beforeCalls {
+		t.Fatal("missing session reached provider")
 	}
 	h.set("signed-out", revokedFlow.CodeChallenge, tokenReply{Subject: "signed-out-subject", Email: "victim@example.test", Issuer: "https://issuer.example"})
 	revokedRequest := callbackRequest(t, callback.URL, revokedFlow, "signed-out", "google", revokedBrowser)

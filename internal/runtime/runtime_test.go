@@ -34,3 +34,25 @@ func TestRejectsAmbiguousIngressPaths(t *testing.T) {
 		t.Fatal("registration accepted percent encoding")
 	}
 }
+
+func TestFiniteFederationCallbackComposition(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) })
+	runtime, err := New(Options{Identity: IdentityHandlers{FederationCallback: handler}, ReadinessTimeout: time.Second, ShutdownTimeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		method, path string
+		want         int
+	}{
+		{"GET", "/oauth/callback", http.StatusNoContent},
+		{"POST", "/oauth/callback", http.StatusServiceUnavailable},
+		{"GET", "/oauth/unconfigured", http.StatusServiceUnavailable},
+	} {
+		response := httptest.NewRecorder()
+		runtime.ServeHTTP(response, httptest.NewRequest(test.method, test.path, nil))
+		if response.Code != test.want {
+			t.Fatalf("%s %s: got %d want %d", test.method, test.path, response.Code, test.want)
+		}
+	}
+}

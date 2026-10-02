@@ -303,9 +303,17 @@ func (s *Service) Callback(w http.ResponseWriter, r *http.Request) {
 		writeStatus(w, http.StatusServiceUnavailable)
 		return
 	}
+	if flow.installationID != s.cfg.InstallationID || flow.applicationID != s.cfg.ApplicationID || flow.environmentID != s.cfg.EnvironmentID {
+		writeStatus(w, http.StatusUnauthorized)
+		return
+	}
 	flow.stateDigest = stateHash[:]
 	if flow.intent == string(IntentLink) {
 		sessionCookie, sessionCount := oneCookie(r, sessionCookieName(s.cfg.SecureCookies))
+		if sessionCount != 1 || sessionCookie == nil {
+			writeStatus(w, http.StatusUnauthorized)
+			return
+		}
 		cookieHash := digest(sessionCookie.Value)
 		if sessionCount != 1 || !validRandomToken(sessionCookie.Value) || !constantBytesEqual(flow.sessionDigest, cookieHash[:]) {
 			writeStatus(w, http.StatusUnauthorized)

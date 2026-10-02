@@ -43,6 +43,8 @@ def main() -> int:
 
     expectations = {
         "policy-allowed.json": ("policy", True, None),
+ "policy-control-id.json": ("policy", False, "pattern"),
+ "policy-control-permission.json": ("policy", False, "pattern"),
         "policy-read.json": ("policy", True, None),
         "policy-missing-permission.json": ("policy", False, "permissions"),
         "policy-unknown-field.json": ("policy", False, "mystery"),

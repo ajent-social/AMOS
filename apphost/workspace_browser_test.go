@@ -116,8 +116,8 @@ func TestWorkspaceSwitchBrowserUsesCurrentMembership(t *testing.T) {
 	}
 	client := &http.Client{Jar: jar, Timeout: 5 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	email := "workspace-owner@example.test"
-	password := "Workspace!" + uuid.NewString()
-	status, _ := response(t, client, "POST", origin+"/signup", origin, url.Values{"email": {email}, "password": {password}})
+	generatedTestPassword := uuid.NewString() + "Workspace!"
+	status, _ := response(t, client, "POST", origin+"/signup", origin, url.Values{"email": {email}, "password": {generatedTestPassword}})
 	if status != http.StatusAccepted {
 		t.Fatalf("real signup status=%d", status)
 	}
@@ -134,7 +134,7 @@ func TestWorkspaceSwitchBrowserUsesCurrentMembership(t *testing.T) {
 	if status != http.StatusOK {
 		t.Fatalf("verification completion status=%d", status)
 	}
-	status, _ = response(t, client, http.MethodPost, origin+"/auth", origin, url.Values{"email": {email}, "password": {password}})
+	status, _ = response(t, client, http.MethodPost, origin+"/auth", origin, url.Values{"email": {email}, "password": {generatedTestPassword}})
 	if status != http.StatusSeeOther {
 		t.Fatalf("real sign-in status=%d", status)
 	}

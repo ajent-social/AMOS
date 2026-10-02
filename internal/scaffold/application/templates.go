@@ -99,6 +99,8 @@ import (
  "time"
  "github.com/ajent-social/amos/migrations"
  "github.com/ajent-social/amos/identity/mfa"
+ "github.com/ajent-social/amos/identity/federation"
+ "github.com/ajent-social/amos/billing/reconcile"
  "github.com/ajent-social/amos/storage"
  reference "github.com/ajent-social/amos/examples/reference/migrations"
 )
@@ -112,7 +114,9 @@ func runMigration()error{
  assurance,err:=migrations.SessionAssurance(12);if err!=nil{return err}
  factors,err:=mfa.Fragment(13);if err!=nil{return err}
  limits,err:=migrations.MFAProtection(14);if err!=nil{return err}
- registry,err:=migrations.Core(reference.Fragment(),ingress,binding,magic,assurance,factors,limits);if err!=nil{return err}
+ reconciliation,err:=reconcile.Schema(15);if err!=nil{return err}
+ federationFlow,err:=federation.Fragment(16);if err!=nil{return err}
+ registry,err:=migrations.Core(reference.Fragment(),ingress,binding,magic,assurance,factors,limits,reconciliation,federationFlow);if err!=nil{return err}
  return storage.Migrate(ctx,db,registry)
 }
 `
