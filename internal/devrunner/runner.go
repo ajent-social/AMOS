@@ -109,9 +109,13 @@ func Run(ctx context.Context, options Options) (runErr error) {
 	if err != nil {
 		return fmt.Errorf("open private project state: %w", err)
 	}
-	_, release, err := stateStore.lockLifecycle(ctx, nil)
+	lifecycleRoot, release, err := stateStore.lockLifecycle(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("lock project lifecycle: %w", err)
+	}
+	if err := requireNoLiveOwnedProcess(ctx, stateStore, lifecycleRoot, identity); err != nil {
+		release()
+		return fmt.Errorf("an owned application process already exists: %w", err)
 	}
 	r := &resources{
 		identity:         identity,
@@ -152,6 +156,27 @@ func Run(ctx context.Context, options Options) (runErr error) {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 	return r.runServer(ctx)
+}
+
+func requireNoLiveOwnedProcess(ctx context.Context, store *privateStateStore, root *os.Root, expected ProjectIdentity) error {
+	if ctx == nil || ctx.Err() != nil || store == nil || root == nil {
+		return ErrProjectStateUnavailable
+	}
+	state, err := store.loadFromRoot(root)
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
+	if state.Identity.ID != expected.ID || state.Identity.Project != expected.Project {
+		return ErrProjectIdentityMismatch
+	}
+	if state.Process == nil {
+		return nil
+	}
+	_, probeErr := defaultProcessProbe(ctx, state.Process.Identity.PID, state.Process.Identity.Executable, state.Process.Identity.OwnedRoot)
+	if errors.Is(probeErr, errProcessNotFound) {
+		return nil
+	}
+	return ErrProcessIdentityMismatch
 }
 
 func validateOptions(options *Options) error {

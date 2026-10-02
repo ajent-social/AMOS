@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -204,5 +205,63 @@ func TestDeferredRunCleanupAcceptsResourcesAlreadyRemoved(t *testing.T) {
 	}
 	if err := r.cleanup(); err != nil {
 		t.Fatalf("cleanup did not accept already removed resources: %v", err)
+	}
+}
+
+func TestRunRejectsExistingProcessBeforeCreatingResources(t *testing.T) {
+	root := t.TempDir()
+	project := "lifecycle-existing-process"
+	_, err := InitializeProject(context.Background(), root, project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	privateConfig := "AMOS_DB_PORT=" + freePort(t) + "\n" +
+		"AMOS_DB_NAME=local_db\n" +
+		"AMOS_DB_MIGRATION_USER=migrator\n" +
+		"AMOS_DB_MIGRATION_PASSWORD=migration-secret\n" +
+		"AMOS_DB_RUNTIME_USER=runtime_user\n" +
+		"AMOS_DB_RUNTIME_PASSWORD=runtime-secret\n"
+	if err := os.WriteFile(filepath.Join(root, ".env.local"), []byte(privateConfig), 0600); err != nil {
+		t.Fatal(err)
+	}
+	marker := filepath.Join(root, "podman-invocations")
+	podman := filepath.Join(root, "podman")
+	if err := os.WriteFile(podman, []byte("#!/bin/sh\nprintf call >> \"$AMOS_DEVRUNNER_PODMAN_MARKER\"\nexit 1\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("AMOS_DEVRUNNER_PODMAN_MARKER", marker)
+	child := exec.Command("sleep", "30")
+	child.Dir = root
+	if err := child.Start(); err != nil {
+		t.Fatal(err)
+	}
+	waited := make(chan error, 1)
+	go func() { waited <- child.Wait() }()
+	t.Cleanup(func() {
+		select {
+		case <-waited:
+			return
+		default:
+		}
+		_ = child.Process.Kill()
+		<-waited
+	})
+	if _, err := RecordOwnedProcess(context.Background(), root, project, child.Process.Pid, child.Path); err != nil {
+		t.Fatal(err)
+	}
+	options := Options{Project: project, WorkingDir: root, AppBinary: os.Args[0], ReadinessURL: freeURL(t), PodmanBinary: podman}
+	if err := Run(context.Background(), options); !errors.Is(err, ErrProcessIdentityMismatch) {
+		t.Fatalf("Run did not reject the existing application process: %v", err)
+	}
+	if _, err := os.Stat(marker); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("Run invoked Podman before rejecting the existing process")
+	}
+	stateStore, err := newPrivateStateStore(root, project, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, err := stateStore.load()
+	if err != nil || state.Process == nil {
+		t.Fatal("Run altered the existing process record")
 	}
 }
