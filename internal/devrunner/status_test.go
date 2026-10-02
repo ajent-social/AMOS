@@ -233,12 +233,12 @@ func TestStatusConcurrentClearAndRecordKeepsNewIdentity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	executable := filepath.Join(projectRoot, "app")
+	executable := filepath.Join(state.Root, "app")
 	if err := os.WriteFile(executable, []byte("test-owned executable"), 0700); err != nil {
 		t.Fatal(err)
 	}
-	oldIdentity := ProcessIdentity{PID: 61001, StartSeconds: 100, StartMicroseconds: 1, Executable: executable, OwnedRoot: projectRoot}
-	newIdentity := ProcessIdentity{PID: 61002, StartSeconds: 200, StartMicroseconds: 2, Executable: executable, OwnedRoot: projectRoot}
+	oldIdentity := ProcessIdentity{PID: 61001, StartSeconds: 100, StartMicroseconds: 1, Executable: executable, OwnedRoot: state.Root}
+	newIdentity := ProcessIdentity{PID: 61002, StartSeconds: 200, StartMicroseconds: 2, Executable: executable, OwnedRoot: state.Root}
 	state.Process = &processRecord{Identity: oldIdentity}
 	if err := store.write(state); err != nil {
 		t.Fatal(err)
@@ -603,7 +603,7 @@ func TestStatusAndCleanupExcludeStalePIDReuse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wanted := ProcessIdentity{PID: 45123, StartSeconds: 100, StartMicroseconds: 123, Executable: filepath.Join(root, "app"), OwnedRoot: root}
+	wanted := ProcessIdentity{PID: 45123, StartSeconds: 100, StartMicroseconds: 123, Executable: filepath.Join(state.Root, "app"), OwnedRoot: state.Root}
 	state.Process = &processRecord{Identity: wanted}
 	if err := store.write(state); err != nil {
 		t.Fatal(err)
@@ -654,7 +654,7 @@ func TestCleanupProcessActionCarriesExactIdentityForRevalidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wanted := ProcessIdentity{PID: 45124, StartSeconds: 321, StartMicroseconds: 456, Executable: filepath.Join(root, "app"), OwnedRoot: root}
+	wanted := ProcessIdentity{PID: 45124, StartSeconds: 321, StartMicroseconds: 456, Executable: filepath.Join(state.Root, "app"), OwnedRoot: state.Root}
 	state.Process = &processRecord{Identity: wanted}
 	if err := store.write(state); err != nil {
 		t.Fatal(err)
@@ -745,7 +745,7 @@ func TestStatusUnknownProcessProbeProducesNoCleanupOperations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	state.Process = &processRecord{Identity: ProcessIdentity{PID: 199, StartSeconds: 200, Executable: "/tmp/app", OwnedRoot: root}}
+	state.Process = &processRecord{Identity: ProcessIdentity{PID: 199, StartSeconds: 200, Executable: "/tmp/app", OwnedRoot: state.Root}}
 	if err := store.write(state); err != nil {
 		t.Fatal(err)
 	}
@@ -830,7 +830,7 @@ exit 2
 func fixtureResources(state privateProjectState, namedState ResourceState) []ResourceSnapshot {
 	return []ResourceSnapshot{
 		{Kind: ResourceDatabase, Name: state.Identity.Project + "-db-*", State: namedState, Labels: state.Resources[ResourceDatabase].Labels},
-		{Kind: ResourceDatabaseNetwork, Name: state.Resources[ResourceDatabaseNetwork].Name, State: namedState, Labels: state.Resources[ResourceDatabaseNetwork].Labels},
+		{Kind: ResourceDatabaseNetwork, Name: state.Resources[ResourceDatabaseNetwork].Name, ID: strings.Repeat("b", 64), State: namedState, Labels: state.Resources[ResourceDatabaseNetwork].Labels},
 		{Kind: ResourceDatabaseVolume, Name: state.Resources[ResourceDatabaseVolume].Name, State: namedState, Labels: state.Resources[ResourceDatabaseVolume].Labels},
 	}
 }

@@ -26,6 +26,18 @@ func ExecuteCleanup(ctx context.Context, options StatusOptions, deleteData bool)
 }
 
 func executeCleanup(ctx context.Context, options StatusOptions, deleteData bool, command cleanupCommand, signal cleanupSignal, probe cleanupProbe) (CleanupResult, error) {
+	if ctx == nil || ctx.Err() != nil {
+		return CleanupResult{Completed: []CleanupAction{}}, ErrProjectStateUnavailable
+	}
+	store, err := newPrivateStateStore(options.WorkingDir, options.Project, false)
+	if err != nil {
+		return CleanupResult{Completed: []CleanupAction{}}, ErrProjectStateUnavailable
+	}
+	_, release, err := store.lockLifecycle(ctx, nil)
+	if err != nil {
+		return CleanupResult{Completed: []CleanupAction{}}, err
+	}
+	defer release()
 	plan, err := PlanCleanup(ctx, options, deleteData)
 	result := CleanupResult{Plan: plan, Completed: []CleanupAction{}}
 	if err != nil {
@@ -54,6 +66,13 @@ func executeCleanupAction(ctx context.Context, options StatusOptions, expected P
 	state, err := loadCleanupState(options)
 	if err != nil || state.Identity.ID != expected.ID || state.Identity.Project != expected.Project {
 		return ErrProjectIdentityMismatch
+	}
+	if action.Operation != "stop-process" && state.Process != nil {
+		// A new run recorded after planning must not lose its live resources.
+		_, probeErr := probe(ctx, state.Process.Identity.PID, state.Process.Identity.Executable, state.Root)
+		if !errors.Is(probeErr, errProcessNotFound) {
+			return ErrProcessIdentityMismatch
+		}
 	}
 	switch action.Operation {
 	case "retain-volume":
@@ -107,7 +126,7 @@ func executeCleanupAction(ctx context.Context, options StatusOptions, expected P
 		}
 		observed, decodeErr := decodeResourceLabels(parts[0])
 		id := strings.ToLower(parts[1])
-		if decodeErr != nil || !exactLabels(labels, observed) || !fullResourceIDRE.MatchString(id) {
+		if decodeErr != nil || !exactLabels(labels, observed) || (!fullResourceIDRE.MatchString(id) || action.ID != id) {
 			return ErrResourceConflict
 		}
 		if _, err := command(ctx, options.PodmanBinary, "network", "rm", id); err != nil {

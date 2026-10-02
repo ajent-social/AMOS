@@ -8,14 +8,14 @@ import (
 	"syscall"
 )
 
-func openPrivateStateUpdateLock(root *os.Root) (*os.File, error) {
-	if root == nil {
+func openPrivateLock(root *os.Root, name string) (*os.File, error) {
+	if root == nil || !validPrivateLockName(name) {
 		return nil, ErrProjectStateUnavailable
 	}
-	return root.OpenFile(stateLockName, os.O_CREATE|os.O_RDWR|syscall.O_NOFOLLOW, 0600)
+	return root.OpenFile(name, os.O_CREATE|os.O_RDWR|syscall.O_NOFOLLOW, 0600)
 }
 
-func tryLockPrivateStateUpdate(file *os.File) (bool, error) {
+func tryLockPrivate(file *os.File) (bool, error) {
 	if file == nil {
 		return false, ErrProjectStateUnavailable
 	}
@@ -26,7 +26,7 @@ func tryLockPrivateStateUpdate(file *os.File) (bool, error) {
 	return err == nil, err
 }
 
-func unlockPrivateStateUpdate(file *os.File) error {
+func unlockPrivate(file *os.File) error {
 	if file == nil {
 		return ErrProjectStateUnavailable
 	}

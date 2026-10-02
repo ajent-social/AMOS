@@ -27,7 +27,7 @@ func TestExecuteCleanupRetainsVolumeAndRemovesOnlyVerifiedResources(t *testing.T
 	networkID := strings.Repeat("b", 64)
 	resources := []ResourceSnapshot{
 		{Kind: ResourceDatabase, Name: containerName, ID: containerID, State: ResourceRunning, Labels: state.Resources[ResourceDatabase].Labels},
-		{Kind: ResourceDatabaseNetwork, Name: state.Resources[ResourceDatabaseNetwork].Name, State: ResourcePresent, Labels: state.Resources[ResourceDatabaseNetwork].Labels},
+		{Kind: ResourceDatabaseNetwork, Name: state.Resources[ResourceDatabaseNetwork].Name, ID: networkID, State: ResourcePresent, Labels: state.Resources[ResourceDatabaseNetwork].Labels},
 		{Kind: ResourceDatabaseVolume, Name: state.Resources[ResourceDatabaseVolume].Name, State: ResourcePresent, Labels: state.Resources[ResourceDatabaseVolume].Labels},
 	}
 	options := StatusOptions{Project: identity.Project, WorkingDir: root, resourceProbe: func(context.Context, privateProjectState) ([]ResourceSnapshot, error) {
@@ -100,7 +100,7 @@ func TestExecuteCleanupRefusesForeignResourceAndStaleProcessIdentity(t *testing.
 		t.Fatal("foreign resource was removed")
 	}
 
-	stale := ProcessIdentity{PID: os.Getpid(), StartSeconds: 1, StartMicroseconds: 0, Executable: "/stale", OwnedRoot: root}
+	stale := ProcessIdentity{PID: os.Getpid(), StartSeconds: 1, StartMicroseconds: 0, Executable: "/stale", OwnedRoot: state.Root}
 	if err := storeCleanupProcess(root, identity.Project, stale); err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestExecuteCleanupRefusesForeignResourceAndStaleProcessIdentity(t *testing.
 		if err != nil {
 			return ProcessIdentity{}, err
 		}
-		actual.OwnedRoot = root
+		actual.OwnedRoot = state.Root
 		if actual.BootID != "" {
 			actual.StartTicks++
 		} else {
@@ -195,4 +195,56 @@ func storeCleanupProcess(root, project string, identity ProcessIdentity) error {
 	}
 	state.Process = &processRecord{Identity: identity}
 	return store.write(state)
+}
+
+func TestCleanupRefusesNetworkReplacementAfterPlanning(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	identity, err := InitializeProject(ctx, root, "network-generation")
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, err := loadCleanupState(StatusOptions{Project: identity.Project, WorkingDir: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	action := CleanupAction{Operation: "remove-network", Kind: ResourceDatabaseNetwork, Name: state.Resources[ResourceDatabaseNetwork].Name, ID: strings.Repeat("b", 64)}
+	removals := 0
+	command := func(_ context.Context, _ string, args ...string) ([]byte, error) {
+		if len(args) > 1 && args[1] == "inspect" {
+			labels, _ := json.Marshal(state.Resources[ResourceDatabaseNetwork].Labels)
+			return []byte(string(labels) + "\t" + strings.Repeat("c", 64)), nil
+		}
+		removals++
+		return nil, nil
+	}
+	err = executeCleanupAction(ctx, StatusOptions{Project: identity.Project, WorkingDir: root}, identity, action, false, command, defaultCleanupSignal, defaultProcessProbe)
+	if !errors.Is(err, ErrResourceConflict) || removals != 0 {
+		t.Fatal("replacement network generation was removed")
+	}
+}
+
+func TestCleanupRefusesNewRunRecordedAfterPlanning(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	identity, err := InitializeProject(ctx, root, "cleanup-new-run")
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, err := loadCleanupState(StatusOptions{Project: identity.Project, WorkingDir: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	live := ProcessIdentity{PID: os.Getpid(), StartSeconds: 1, Executable: "/owned-process", OwnedRoot: state.Root}
+	if err := storeCleanupProcess(root, identity.Project, live); err != nil {
+		t.Fatal(err)
+	}
+	action := CleanupAction{Operation: "remove-volume", Kind: ResourceDatabaseVolume, Name: state.Resources[ResourceDatabaseVolume].Name}
+	mutations := 0
+	command := func(context.Context, string, ...string) ([]byte, error) { mutations++; return nil, nil }
+	probe := func(context.Context, int, string, string) (ProcessIdentity, error) { return live, nil }
+	err = executeCleanupAction(ctx, StatusOptions{Project: identity.Project, WorkingDir: root}, identity, action, true, command, defaultCleanupSignal, probe)
+	if !errors.Is(err, ErrProcessIdentityMismatch) || mutations != 0 {
+		t.Fatal("new live run lost its resources")
+	}
 }

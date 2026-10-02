@@ -70,6 +70,7 @@ type resources struct {
 	createdNetwork                      bool
 	containerID                         string
 	networkID                           string
+	lifecycleRelease                    func()
 	config                              localConfig
 	options                             Options
 	redactor                            *redactor
@@ -104,17 +105,33 @@ func Run(ctx context.Context, options Options) (runErr error) {
 	if err != nil {
 		return fmt.Errorf("initialize private project identity: %w", err)
 	}
+	stateStore, err := newPrivateStateStore(options.WorkingDir, options.Project, false)
+	if err != nil {
+		return fmt.Errorf("open private project state: %w", err)
+	}
+	_, release, err := stateStore.lockLifecycle(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("lock project lifecycle: %w", err)
+	}
 	r := &resources{
-		identity: identity,
-		project:  options.Project,
-		volume:   options.Project + "-postgres-data",
-		network:  options.Project + "-database",
-		options:  options,
-		config:   config,
-		redactor: newRedactor(config),
+		identity:         identity,
+		project:          options.Project,
+		volume:           options.Project + "-postgres-data",
+		network:          options.Project + "-database",
+		options:          options,
+		config:           config,
+		redactor:         newRedactor(config),
+		lifecycleRelease: release,
 	}
 	defer func() {
-		if cleanupErr := r.cleanup(); cleanupErr != nil {
+		var cleanupErr error
+		if r.lifecycleRelease != nil {
+			cleanupErr = r.cleanupLocked()
+			r.releaseLifecycle()
+		} else {
+			cleanupErr = r.cleanup()
+		}
+		if cleanupErr != nil {
 			runErr = errors.Join(runErr, cleanupErr)
 		}
 	}()
@@ -482,6 +499,7 @@ func (r *resources) runServer(ctx context.Context) (runErr error) {
 			runErr = errors.Join(runErr, errors.New("application process exit not observed; record retained"))
 		}
 	}()
+	r.releaseLifecycle()
 
 	readyCtx, cancelReady := context.WithTimeout(ctx, r.options.AppReadyTimeout)
 	readyErr := waitForReady(readyCtx, r.options.ReadinessURL, done)
@@ -601,6 +619,42 @@ func stopProcess(cmd *exec.Cmd, done *processCompletion, grace time.Duration) er
 var fullResourceIDRE = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 func (r *resources) cleanup() error {
+	store, err := newPrivateStateStore(r.options.WorkingDir, r.options.Project, false)
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
+	_, release, err := store.lockLifecycle(context.Background(), nil)
+	if err != nil {
+		return fmt.Errorf("lock project lifecycle for cleanup: %w", err)
+	}
+	defer release()
+	return r.cleanupLocked()
+}
+
+func (r *resources) releaseLifecycle() {
+	if r == nil || r.lifecycleRelease == nil {
+		return
+	}
+	release := r.lifecycleRelease
+	r.lifecycleRelease = nil
+	release()
+}
+
+func (r *resources) cleanupLocked() error {
+	store, err := newPrivateStateStore(r.options.WorkingDir, r.options.Project, false)
+	if err != nil {
+		return ErrProjectStateUnavailable
+	}
+	state, err := store.load()
+	if err != nil || state.Identity.ID != r.identity.ID || state.Identity.Project != r.identity.Project {
+		return ErrProjectIdentityMismatch
+	}
+	if state.Process != nil {
+		_, probeErr := defaultProcessProbe(context.Background(), state.Process.Identity.PID, state.Process.Identity.Executable, state.Process.Identity.OwnedRoot)
+		if !errors.Is(probeErr, errProcessNotFound) {
+			return ErrProcessIdentityMismatch
+		}
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
 	defer cancel()
 	var failures []error
@@ -609,7 +663,10 @@ func (r *resources) cleanup() error {
 		parts := strings.Split(output, "\t")
 		var labels map[string]string
 		if err != nil || len(parts) != 3 || json.Unmarshal([]byte(parts[0]), &labels) != nil || !r.ownsLabels(labels, ResourceDatabase) || parts[2] != r.containerID || !fullResourceIDRE.MatchString(parts[2]) {
-			failures = append(failures, errors.New("local database cleanup ownership unavailable"))
+			absent, absentErr := r.ownedResourceAbsent(ctx, "container", r.containerID)
+			if absentErr != nil || !absent {
+				failures = append(failures, errors.New("local database cleanup ownership unavailable"))
+			}
 		} else {
 			if parts[1] == "true" {
 				if _, err := r.podman(ctx, "database", "stop", "--time", "5", r.containerID); err != nil {
@@ -631,13 +688,31 @@ func (r *resources) cleanup() error {
 				Labels map[string]string `json:"labels"`
 			}
 			if err != nil || json.Unmarshal([]byte(out), &records) != nil || len(records) != 1 || records[0].ID != r.networkID || !r.ownsLabels(records[0].Labels, ResourceDatabaseNetwork) {
-				failures = append(failures, errors.New("local network cleanup ownership unavailable"))
+				absent, absentErr := r.ownedResourceAbsent(ctx, "network", r.networkID)
+				if absentErr != nil || !absent {
+					failures = append(failures, errors.New("local network cleanup ownership unavailable"))
+				}
 			} else if _, err := r.podman(ctx, "database", "network", "rm", r.networkID); err != nil {
 				failures = append(failures, fmt.Errorf("remove owned local database network: %w", err))
 			}
 		}
 	}
 	return errors.Join(failures...)
+}
+
+func (r *resources) ownedResourceAbsent(ctx context.Context, kind, id string) (bool, error) {
+	if (kind != "container" && kind != "network") || !fullResourceIDRE.MatchString(id) {
+		return false, ErrProjectStateUnavailable
+	}
+	_, err := r.podman(ctx, "", kind, "exists", id)
+	if err == nil {
+		return false, nil
+	}
+	var commandErr *commandError
+	if errors.As(err, &commandErr) && commandErr.code == 1 {
+		return true, nil
+	}
+	return false, err
 }
 
 func (r *resources) podman(ctx context.Context, label string, args ...string) (string, error) {

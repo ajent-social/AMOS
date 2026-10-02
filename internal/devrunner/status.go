@@ -20,17 +20,18 @@ import (
 )
 
 const (
-	stateVersion   = 1
-	stateFileName  = "state.json"
-	stateLockName  = "state.update.lock"
-	maxStateBytes  = 16 << 10
-	maxProbeOutput = 64 << 10
-	probeTimeout   = 2 * time.Second
-	stateLockWait  = 5 * time.Second
-	stateLockPoll  = 10 * time.Millisecond
-	projectLabel   = "io.amos.project"
-	projectIDLabel = "io.amos.project_id"
-	resourceLabel  = "io.amos.resource"
+	stateVersion      = 1
+	stateFileName     = "state.json"
+	stateLockName     = "state.update.lock"
+	lifecycleLockName = "lifecycle.lock"
+	maxStateBytes     = 16 << 10
+	maxProbeOutput    = 64 << 10
+	probeTimeout      = 2 * time.Second
+	stateLockWait     = 5 * time.Second
+	stateLockPoll     = 10 * time.Millisecond
+	projectLabel      = "io.amos.project"
+	projectIDLabel    = "io.amos.project_id"
+	resourceLabel     = "io.amos.resource"
 )
 
 var (
@@ -363,7 +364,7 @@ func PlanCleanup(ctx context.Context, options StatusOptions, deleteData bool) (C
 		case resource.Kind == ResourceDatabase && (resource.State == ResourceRunning || resource.State == ResourceStopped) && podmanIDRE.MatchString(resource.ID):
 			plan.Actions = append(plan.Actions, CleanupAction{Operation: "remove-container", Kind: resource.Kind, Name: resource.Name, ID: resource.ID})
 		case resource.Kind == ResourceDatabaseNetwork && resource.State == ResourcePresent && resource.Name != "":
-			plan.Actions = append(plan.Actions, CleanupAction{Operation: "remove-network", Kind: resource.Kind, Name: resource.Name})
+			plan.Actions = append(plan.Actions, CleanupAction{Operation: "remove-network", Kind: resource.Kind, Name: resource.Name, ID: resource.ID})
 		case resource.Kind == ResourceDatabaseVolume && resource.State == ResourcePresent && resource.Name != "":
 			if deleteData {
 				plan.Actions = append(plan.Actions, CleanupAction{Operation: "remove-volume", Kind: resource.Kind, Name: resource.Name})
@@ -562,7 +563,15 @@ func (s *privateStateStore) encode(state privateProjectState) ([]byte, error) {
 }
 
 func (s *privateStateStore) lockProcessUpdate(ctx context.Context, onWait func()) (*os.Root, func(), error) {
-	if ctx == nil || ctx.Err() != nil || s == nil {
+	return s.lockPrivateFile(ctx, stateLockName, onWait)
+}
+
+func (s *privateStateStore) lockLifecycle(ctx context.Context, onWait func()) (*os.Root, func(), error) {
+	return s.lockPrivateFile(ctx, lifecycleLockName, onWait)
+}
+
+func (s *privateStateStore) lockPrivateFile(ctx context.Context, name string, onWait func()) (*os.Root, func(), error) {
+	if ctx == nil || ctx.Err() != nil || s == nil || !validPrivateLockName(name) {
 		return nil, nil, ErrProjectStateUnavailable
 	}
 	lockCtx, cancel := context.WithTimeout(ctx, stateLockWait)
@@ -571,8 +580,8 @@ func (s *privateStateStore) lockProcessUpdate(ctx context.Context, onWait func()
 		cancel()
 		return nil, nil, ErrProjectStateUnavailable
 	}
-	file, err := openPrivateStateUpdateLock(root)
-	if err != nil || verifyPrivateStateUpdateLock(s, root, file) != nil {
+	file, err := openPrivateLock(root, name)
+	if err != nil || verifyPrivateLock(s, root, file, name) != nil {
 		if file != nil {
 			_ = file.Close()
 		}
@@ -592,19 +601,19 @@ func (s *privateStateStore) lockProcessUpdate(ctx context.Context, onWait func()
 			closeResources()
 			return nil, nil, ErrProjectStateUnavailable
 		}
-		locked, lockErr := tryLockPrivateStateUpdate(file)
+		locked, lockErr := tryLockPrivate(file)
 		if lockErr != nil {
 			closeResources()
 			return nil, nil, ErrProjectStateUnavailable
 		}
 		if locked {
-			if lockCtx.Err() != nil || verifyPrivateStateUpdateLock(s, root, file) != nil {
-				_ = unlockPrivateStateUpdate(file)
+			if lockCtx.Err() != nil || verifyPrivateLock(s, root, file, name) != nil {
+				_ = unlockPrivate(file)
 				closeResources()
 				return nil, nil, ErrProjectStateUnavailable
 			}
 			unlock := func() {
-				_ = unlockPrivateStateUpdate(file)
+				_ = unlockPrivate(file)
 				closeResources()
 			}
 			return root, unlock, nil
@@ -622,8 +631,12 @@ func (s *privateStateStore) lockProcessUpdate(ctx context.Context, onWait func()
 	}
 }
 
-func verifyPrivateStateUpdateLock(store *privateStateStore, root *os.Root, file *os.File) error {
-	if store == nil || root == nil || file == nil {
+func validPrivateLockName(name string) bool {
+	return name == stateLockName || name == lifecycleLockName
+}
+
+func verifyPrivateLock(store *privateStateStore, root *os.Root, file *os.File, name string) error {
+	if store == nil || root == nil || file == nil || !validPrivateLockName(name) {
 		return ErrProjectStateUnavailable
 	}
 	opened, err := file.Stat()
@@ -634,7 +647,7 @@ func verifyPrivateStateUpdateLock(store *privateStateStore, root *os.Root, file 
 	if !statOK || openedStat.Nlink != 1 || opened.Size() != 0 || !opened.Mode().IsRegular() || opened.Mode().Perm() != 0600 || opened.Mode()&^os.ModePerm != 0 || !ownedByCurrentUser(opened) {
 		return ErrProjectStateUnavailable
 	}
-	entry, err := root.Lstat(stateLockName)
+	entry, err := root.Lstat(name)
 	if err != nil {
 		return ErrProjectStateUnavailable
 	}
@@ -1010,25 +1023,39 @@ func inspectPodmanResources(ctx context.Context, state privateProjectState, bina
 		}
 		var args []string
 		if kind == ResourceDatabaseNetwork {
-			args = []string{"network", "inspect", "--format", "{{json .Labels}}", ref.Name}
+			args = []string{"network", "inspect", "--format", "{{json .Labels}}\t{{.ID}}", ref.Name}
 		} else {
 			args = []string{"volume", "inspect", "--format", "{{json .Labels}}", ref.Name}
 		}
 		output, inspectErr := runPodmanStatus(ctx, binary, args...)
-		if errors.Is(inspectErr, errResourceNotFound) {
-			resources = append(resources, ResourceSnapshot{Kind: kind, Name: ref.Name, State: ResourceMissing, Labels: labels})
-			continue
-		}
 		if inspectErr != nil {
-			resources = append(resources, ResourceSnapshot{Kind: kind, Name: ref.Name, State: ResourceUnknown, Labels: labels})
+			// Inspect failure alone is not evidence of absence. The documented
+			// exists command distinguishes a missing owned name from a failed
+			// service, permission check, or malformed inspection.
+			_, existsErr := runPodmanStatus(ctx, binary, strings.TrimPrefix(string(kind), "database-"), "exists", ref.Name)
+			state := ResourceUnknown
+			if errors.Is(existsErr, errResourceNotFound) {
+				state = ResourceMissing
+			}
+			resources = append(resources, ResourceSnapshot{Kind: kind, Name: ref.Name, State: state, Labels: labels})
 			continue
 		}
-		observed, decodeErr := decodeResourceLabels(string(output))
+		rawLabels := string(output)
+		id := ""
+		if kind == ResourceDatabaseNetwork {
+			parts := strings.Split(strings.TrimSpace(rawLabels), "\t")
+			if len(parts) != 2 || !fullResourceIDRE.MatchString(parts[1]) {
+				resources = append(resources, ResourceSnapshot{Kind: kind, Name: ref.Name, State: ResourceUnknown, Labels: labels})
+				continue
+			}
+			rawLabels, id = parts[0], parts[1]
+		}
+		observed, decodeErr := decodeResourceLabels(rawLabels)
 		if decodeErr != nil || !exactLabels(labels, observed) {
 			resources = append(resources, ResourceSnapshot{Kind: kind, Name: ref.Name, State: ResourceUnknown, Labels: labels})
 			continue
 		}
-		resources = append(resources, ResourceSnapshot{Kind: kind, Name: ref.Name, State: ResourcePresent, Labels: labels})
+		resources = append(resources, ResourceSnapshot{Kind: kind, Name: ref.Name, ID: id, State: ResourcePresent, Labels: labels})
 	}
 	return resources, nil
 }
@@ -1045,7 +1072,7 @@ func runPodmanStatus(ctx context.Context, binary string, args ...string) ([]byte
 	cmd.Stderr = io.Discard
 	if err := cmd.Run(); err != nil {
 		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 && len(args) >= 2 && (args[0] == "network" || args[0] == "volume") {
+		if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 && len(args) >= 2 && (args[0] == "network" || args[0] == "volume") && args[1] == "exists" {
 			return nil, errResourceNotFound
 		}
 		return nil, ErrProjectStateUnavailable

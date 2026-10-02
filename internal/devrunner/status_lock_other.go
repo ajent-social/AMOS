@@ -4,14 +4,14 @@ package devrunner
 
 import "os"
 
-func openPrivateStateUpdateLock(*os.Root) (*os.File, error) {
+func openPrivateLock(*os.Root, string) (*os.File, error) {
 	return nil, ErrProjectStateUnavailable
 }
 
-func tryLockPrivateStateUpdate(*os.File) (bool, error) {
+func tryLockPrivate(*os.File) (bool, error) {
 	return false, ErrProjectStateUnavailable
 }
 
-func unlockPrivateStateUpdate(*os.File) error {
+func unlockPrivate(*os.File) error {
 	return ErrProjectStateUnavailable
 }
