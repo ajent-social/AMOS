@@ -103,21 +103,40 @@ func (s *Store) MarkDirty(ctx context.Context, id uuid.UUID, binding provider.Bi
 // ClaimDue atomically leases the next due work item. Expired leases can be
 // reclaimed; SKIP LOCKED permits independent workers without duplicate claims.
 func (s *Store) ClaimDue(ctx context.Context, token uuid.UUID, lease time.Duration) (Work, bool, error) {
+	return s.claimDue(ctx, token, lease, nil)
+}
+
+// ClaimDueInScope atomically leases due work for exactly one provider endpoint.
+// Installation and application are both part of this security boundary.
+func (s *Store) ClaimDueInScope(ctx context.Context, token uuid.UUID, lease time.Duration, scope ScanScope) (Work, bool, error) {
+	if !scope.valid() {
+		return Work{}, false, ErrInvalidInput
+	}
+	return s.claimDue(ctx, token, lease, &scope)
+}
+
+func (s *Store) claimDue(ctx context.Context, token uuid.UUID, lease time.Duration, scope *ScanScope) (Work, bool, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validID(token) || lease <= 0 || lease > 15*time.Minute {
 		return Work{}, false, ErrInvalidInput
 	}
+	scopeFilter := ""
+	args := []any{token, lease.Milliseconds()}
+	if scope != nil {
+		scopeFilter = `w.installation_id=$3 AND w.application_id=$4 AND w.environment_id=$5 AND w.provider=$6 AND w.provider_account_id=$7 AND w.account_mode=$8 AND `
+		args = append(args, scope.InstallationID, scope.ApplicationID, scope.EnvironmentID, scope.Provider, scope.ProviderAccountID, string(scope.AccountMode))
+	}
 	var out Work
-	err := s.tx.QueryRowContext(ctx, `WITH candidate AS (
+	err := s.tx.QueryRowContext(ctx, fmt.Sprintf(`WITH candidate AS (
 		SELECT w.id FROM billing_reconcile_work w
 		JOIN billing_workspace_accounts a ON a.id=w.billing_account_id AND a.state='active'
 		JOIN billing_customer_bindings c ON c.id=w.customer_binding_id AND c.billing_account_id=w.billing_account_id AND c.installation_id=w.installation_id AND c.application_id=w.application_id AND c.environment_id=w.environment_id AND c.workspace_id=w.workspace_id AND c.provider=w.provider AND c.provider_account_id=w.provider_account_id AND c.account_mode=w.account_mode AND c.state='active' AND c.customer_ref=w.customer_ref
 		JOIN workspaces x ON (x.id,x.installation_id,x.application_id)=(w.workspace_id,w.installation_id,w.application_id) AND x.state='active'
-		WHERE ((w.claim_token IS NULL AND w.next_attempt_at<=transaction_timestamp()) OR (w.claim_token IS NOT NULL AND w.lease_until<=transaction_timestamp()))
+		WHERE %s((w.claim_token IS NULL AND w.next_attempt_at<=transaction_timestamp()) OR (w.claim_token IS NOT NULL AND w.lease_until<=transaction_timestamp()))
 		ORDER BY w.next_attempt_at,w.updated_at,w.id FOR UPDATE OF w SKIP LOCKED LIMIT 1
 		) UPDATE billing_reconcile_work w SET claim_token=$1,claim_version=w.dirty_version,lease_until=transaction_timestamp()+($2 * interval '1 millisecond'),
 		attempts=w.attempts+1,updated_at=transaction_timestamp()
 	FROM candidate c WHERE w.id=c.id
-		RETURNING w.id,w.billing_account_id,w.customer_binding_id,w.installation_id,w.application_id,w.environment_id,w.workspace_id,w.provider,w.provider_account_id,w.account_mode,w.customer_ref,w.claim_version,w.claim_token,w.lease_until,w.attempts`, token, lease.Milliseconds()).Scan(
+		RETURNING w.id,w.billing_account_id,w.customer_binding_id,w.installation_id,w.application_id,w.environment_id,w.workspace_id,w.provider,w.provider_account_id,w.account_mode,w.customer_ref,w.claim_version,w.claim_token,w.lease_until,w.attempts`, scopeFilter), args...).Scan(
 		&out.ID, &out.BillingAccountID, &out.CustomerBindingID, &out.Binding.InstallationID, &out.ApplicationID, &out.Binding.EnvironmentID, &out.Binding.WorkspaceID, &out.Binding.Provider, &out.Binding.AccountID, &out.Binding.AccountMode, &out.CustomerRef, &out.Version, &out.Token, &out.LeaseUntil, &out.Attempts)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Work{}, false, nil

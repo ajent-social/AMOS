@@ -77,6 +77,9 @@ type TxRunner interface {
 // Config bounds provider reads, durable retries, request rate, snapshot age,
 // and the catalog price identifiers accepted by this worker.
 type Config struct {
+	// Scopes bounds claims to configured provider endpoints. Empty preserves
+	// the legacy global worker behavior for compatibility.
+	Scopes             []ScanScope
 	Lease              time.Duration
 	RequestTimeout     time.Duration
 	Freshness          time.Duration
@@ -94,6 +97,8 @@ type Reconciler struct {
 	db          TxRunner
 	source      SnapshotSource
 	cfg         Config
+	scopes      []ScanScope
+	scopeAt     int
 	mu          sync.Mutex
 	nextRequest time.Time
 	runGate     chan struct{}
@@ -106,10 +111,23 @@ var revisionPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`)
 // access evaluator is willing to treat as current.
 const MaxEntitlementFreshness = 5 * time.Minute
 
+const maxReconciliationScopes = 64
+
 // New validates the required provider source and all retry/lease limits.
 func New(db TxRunner, source SnapshotSource, cfg Config) (*Reconciler, error) {
-	if db == nil || source == nil || cfg.Lease <= 0 || cfg.Lease > 15*time.Minute || cfg.RequestTimeout <= 0 || cfg.RequestTimeout > 30*time.Second || cfg.Lease < cfg.RequestTimeout || cfg.Freshness <= 0 || cfg.Freshness > MaxEntitlementFreshness || cfg.RefreshAfter <= 0 || cfg.RefreshAfter > 24*time.Hour || cfg.RetryBase <= 0 || cfg.RetryMax < cfg.RetryBase || cfg.RetryMax > time.Hour || cfg.MaxAttempts == 0 || cfg.MaxAttempts > 10 || cfg.MinRequestInterval <= 0 || cfg.MinRequestInterval > time.Minute || len(cfg.PriceKeys) == 0 {
+	if db == nil || source == nil || cfg.Lease <= 0 || cfg.Lease > 15*time.Minute || cfg.RequestTimeout <= 0 || cfg.RequestTimeout > 30*time.Second || cfg.Lease < cfg.RequestTimeout || cfg.Freshness <= 0 || cfg.Freshness > MaxEntitlementFreshness || cfg.RefreshAfter <= 0 || cfg.RefreshAfter > 24*time.Hour || cfg.RetryBase <= 0 || cfg.RetryMax < cfg.RetryBase || cfg.RetryMax > time.Hour || cfg.MaxAttempts == 0 || cfg.MaxAttempts > 10 || cfg.MinRequestInterval <= 0 || cfg.MinRequestInterval > time.Minute || len(cfg.PriceKeys) == 0 || len(cfg.Scopes) > maxReconciliationScopes {
 		return nil, ErrInvalidInput
+	}
+	scopes := append([]ScanScope(nil), cfg.Scopes...)
+	seenScopes := make(map[ScanScope]struct{}, len(scopes))
+	for _, scope := range scopes {
+		if !scope.valid() {
+			return nil, ErrInvalidInput
+		}
+		if _, exists := seenScopes[scope]; exists {
+			return nil, ErrInvalidInput
+		}
+		seenScopes[scope] = struct{}{}
 	}
 	prices := make(map[string]struct{}, len(cfg.PriceKeys))
 	for key := range cfg.PriceKeys {
@@ -119,7 +137,8 @@ func New(db TxRunner, source SnapshotSource, cfg Config) (*Reconciler, error) {
 		prices[key] = struct{}{}
 	}
 	cfg.PriceKeys = prices
-	return &Reconciler{db: db, source: source, cfg: cfg, runGate: make(chan struct{}, 1)}, nil
+	cfg.Scopes = nil
+	return &Reconciler{db: db, source: source, cfg: cfg, scopes: scopes, runGate: make(chan struct{}, 1)}, nil
 }
 
 // RunOne claims and processes at most one durable customer. The database
@@ -152,8 +171,21 @@ func (r *Reconciler) RunOne(ctx context.Context) (bool, error) {
 		if e != nil {
 			return e
 		}
-		work, claimed, e = s.ClaimDue(ctx, token, r.cfg.Lease)
-		return e
+		if len(r.scopes) == 0 {
+			work, claimed, e = s.ClaimDue(ctx, token, r.cfg.Lease)
+			return e
+		}
+		for offset := 0; offset < len(r.scopes); offset++ {
+			index := (r.scopeAt + offset) % len(r.scopes)
+			work, claimed, e = s.ClaimDueInScope(ctx, token, r.cfg.Lease, r.scopes[index])
+			if e != nil || claimed {
+				if claimed {
+					r.scopeAt = (index + 1) % len(r.scopes)
+				}
+				return e
+			}
+		}
+		return nil
 	})
 	if err != nil || !claimed {
 		return claimed, err

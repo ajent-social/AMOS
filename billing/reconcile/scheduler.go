@@ -59,6 +59,9 @@ func NewScheduler(cfg SchedulerConfig) (*Scheduler, error) {
 		cfg.MaxWebhookJobsPerPass < 1 || cfg.MaxWebhookJobsPerPass > maxSchedulerWork || cfg.MaxReconciliationsPerPass < 1 || cfg.MaxReconciliationsPerPass > maxSchedulerWork || cfg.MaxScanPagesPerPass < len(cfg.Endpoints) || cfg.MaxScanPagesPerPass > maxSchedulerEndpoints || cfg.OnError == nil {
 		return nil, ErrInvalidInput
 	}
+	if len(cfg.Reconciler.scopes) != len(cfg.Endpoints) {
+		return nil, ErrInvalidInput
+	}
 	endpoints := append([]ScanScope(nil), cfg.Endpoints...)
 	checkpoints := make(map[ScanScope]uuid.UUID, len(endpoints))
 	for _, endpoint := range endpoints {
@@ -66,6 +69,9 @@ func NewScheduler(cfg SchedulerConfig) (*Scheduler, error) {
 			return nil, ErrInvalidInput
 		}
 		if _, duplicate := checkpoints[endpoint]; duplicate {
+			return nil, ErrInvalidInput
+		}
+		if !containsScope(cfg.Reconciler.scopes, endpoint) {
 			return nil, ErrInvalidInput
 		}
 		id, err := uuid.NewV7()
@@ -81,6 +87,15 @@ func NewScheduler(cfg SchedulerConfig) (*Scheduler, error) {
 		maxWebhookJobs: cfg.MaxWebhookJobsPerPass, maxReconcile: cfg.MaxReconciliationsPerPass,
 		maxScanPages: cfg.MaxScanPagesPerPass, onError: cfg.OnError, runGate: make(chan struct{}, 1),
 	}, nil
+}
+
+func containsScope(scopes []ScanScope, target ScanScope) bool {
+	for _, scope := range scopes {
+		if scope == target {
+			return true
+		}
+	}
+	return false
 }
 
 // Run continuously schedules bounded service passes until its context ends.

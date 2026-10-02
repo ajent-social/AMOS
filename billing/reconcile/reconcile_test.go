@@ -472,6 +472,116 @@ func TestT5_8_WorkerAppliesBoundSnapshotAndReschedulesResponseLoss(t *testing.T)
 	}
 }
 
+func TestT5_8_ScopedWorkerLeavesForeignApplicationWorkUntouched(t *testing.T) {
+	ctx := context.Background()
+	db, binding, applicationID, _, _ := newReconcileDB(t)
+	foreignApplicationID := newID(t)
+	var foreignWorkspaceID uuid.UUID
+	person, err := store.NewID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		if _, e := tx.ExecContext(ctx, `INSERT INTO identity_persons(id,installation_id,application_id,state) VALUES($1,$2,$3,'active')`, person, binding.InstallationID, foreignApplicationID); e != nil {
+			return e
+		}
+		ws, e := workspacestore.New(tx)
+		if e != nil {
+			return e
+		}
+		workspaceID, e := store.NewID()
+		if e != nil {
+			return e
+		}
+		foreignWorkspaceID = workspaceID
+		_, e = ws.CreatePersonalWorkspace(ctx, workspacestore.CreatePersonalInput{ID: workspaceID, Scope: workspacestore.Scope{InstallationID: uuid.MustParse(binding.InstallationID), ApplicationID: foreignApplicationID}, OwnerPersonID: person})
+		if e != nil {
+			return e
+		}
+		foreignBinding := binding
+		foreignBinding.WorkspaceID = workspaceID.String()
+		bs, e := billingstore.New(tx)
+		if e != nil {
+			return e
+		}
+		account, e := bs.EnsureWorkspaceAccount(ctx, newID(t), foreignBinding)
+		if e != nil {
+			return e
+		}
+		_, e = bs.BindCustomer(ctx, newID(t), account.ID, foreignBinding, "cus_foreign_application")
+		return e
+	}); err != nil {
+		t.Fatalf("create valid foreign-application binding: %v", err)
+	}
+	foreignBinding := binding
+	foreignBinding.WorkspaceID = foreignWorkspaceID.String()
+	markDirty(t, db, foreignBinding, "cus_foreign_application")
+
+	now := time.Now().UTC()
+	source := &testSnapshotSource{snapshot: snapshot(binding, "cus_current", "rev_scoped", now, Subscription{Reference: "sub_scoped", Status: StatusActive, PriceKey: "price_monthly", Quantity: 1, PeriodStart: now.Add(-time.Hour), PeriodEnd: now.Add(time.Hour)})}
+	cfg := workerConfig()
+	cfg.Scopes = []ScanScope{scanScope(binding, applicationID)}
+	runner, err := New(db, source, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if worked, runErr := runner.RunOne(ctx); runErr != nil || worked {
+		t.Fatalf("scoped worker claimed foreign application work: worked=%v err=%v", worked, runErr)
+	}
+	assertForeignWorkUntouched := func() {
+		t.Helper()
+		var attempts int
+		var token sql.NullString
+		var claimVersion sql.NullInt64
+		var dirtyVersion int64
+		if err := db.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `SELECT attempts,claim_token,claim_version,dirty_version FROM billing_reconcile_work WHERE customer_ref='cus_foreign_application'`).Scan(&attempts, &token, &claimVersion, &dirtyVersion)
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if attempts != 0 || token.Valid || claimVersion.Valid || dirtyVersion != 1 {
+			t.Fatalf("foreign work was changed: attempts=%d token=%v claimVersion=%v dirtyVersion=%d", attempts, token, claimVersion, dirtyVersion)
+		}
+	}
+	assertForeignWorkUntouched()
+	if source.calls != 0 {
+		t.Fatalf("foreign-only queue triggered %d provider calls", source.calls)
+	}
+
+	markDirty(t, db, binding, "cus_current")
+	if worked, runErr := runner.RunOne(ctx); runErr != nil || !worked {
+		t.Fatalf("scoped worker did not process configured application: worked=%v err=%v", worked, runErr)
+	}
+	if source.calls != 1 || source.last.Binding != binding || source.last.CustomerRef != "cus_current" {
+		t.Fatalf("provider call escaped exact configured binding: calls=%d request=%#v", source.calls, source.last)
+	}
+	assertForeignWorkUntouched()
+}
+
+func TestT5_8_ReconcilerCopiesAndBoundsConfiguredScopes(t *testing.T) {
+	db, binding, applicationID, _, _ := newReconcileDB(t)
+	scopes := []ScanScope{scanScope(binding, applicationID)}
+	cfg := workerConfig()
+	cfg.Scopes = scopes
+	runner, err := New(db, &testSnapshotSource{}, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	scopes[0].ProviderAccountID = "acct_mutated"
+	if runner.scopes[0].ProviderAccountID != binding.AccountID || len(runner.scopes) != 1 {
+		t.Fatalf("reconciler retained caller-owned scope slice: %#v", runner.scopes)
+	}
+	cfg.Scopes = make([]ScanScope, maxReconciliationScopes+1)
+	if _, err := New(db, &testSnapshotSource{}, cfg); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("unbounded scope list error=%v, want ErrInvalidInput", err)
+	}
+	cfg = workerConfig()
+	cfg.Scopes = []ScanScope{runner.scopes[0], runner.scopes[0]}
+	if _, err := New(db, &testSnapshotSource{}, cfg); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("duplicate scope list error=%v, want ErrInvalidInput", err)
+	}
+}
+
 func TestT5_8_RunOneBoundsProviderCallsBeforeClaiming(t *testing.T) {
 	db, binding, applicationID, _, _ := newReconcileDB(t)
 	var owner uuid.UUID

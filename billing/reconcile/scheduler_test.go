@@ -17,7 +17,9 @@ func TestT5_8_SchedulerScansAndReconcilesOnlyConfiguredBinding(t *testing.T) {
 		Reference: "sub_scheduled", Status: StatusActive, PriceKey: "price_monthly", Quantity: 1,
 		PeriodStart: now.Add(-time.Hour), PeriodEnd: now.Add(24 * time.Hour),
 	})}
-	reconciler, err := New(fixture.db, source, workerConfig())
+	cfg := workerConfig()
+	cfg.Scopes = []ScanScope{fixture.scope}
+	reconciler, err := New(fixture.db, source, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +56,9 @@ func TestT5_8_SchedulerScansAndReconcilesOnlyConfiguredBinding(t *testing.T) {
 
 func TestT5_8_SchedulerRejectsUnboundedOrUnobservedConfiguration(t *testing.T) {
 	fixture := newWebhookJobsFixture(t)
-	reconciler, err := New(fixture.db, &testSnapshotSource{}, workerConfig())
+	workerCfg := workerConfig()
+	workerCfg.Scopes = []ScanScope{fixture.scope}
+	reconciler, err := New(fixture.db, &testSnapshotSource{}, workerCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,6 +75,9 @@ func TestT5_8_SchedulerRejectsUnboundedOrUnobservedConfiguration(t *testing.T) {
 		{name: "missing error observer", mutate: func(cfg *SchedulerConfig) { cfg.OnError = nil }},
 		{name: "excessive page size", mutate: func(cfg *SchedulerConfig) { cfg.ScanPageSize = 501 }},
 		{name: "unbounded endpoint set", mutate: func(cfg *SchedulerConfig) { cfg.MaxScanPagesPerPass = maxSchedulerEndpoints + 1 }},
+		{name: "endpoint outside reconciliation claim scope", mutate: func(cfg *SchedulerConfig) {
+			cfg.Endpoints[0].ProviderAccountID = "acct_other"
+		}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
