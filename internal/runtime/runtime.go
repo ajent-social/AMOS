@@ -62,7 +62,10 @@ func New(opts Options) (*Runtime, error) {
 			return nil, ErrInvalidOptions
 		}
 	}
-	return &Runtime{identity: opts.Identity.routes(), checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}, nil
+	routes := opts.Identity.routes()
+	routes["GET /workspaces"] = opts.Workspaces
+	routes["POST /workspaces"] = opts.Workspaces
+	return &Runtime{identity: routes, checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}, nil
 }
 
 func (r *Runtime) Register(method, pattern string, handler http.Handler) error {
