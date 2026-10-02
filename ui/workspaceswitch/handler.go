@@ -150,16 +150,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) renderChoices(w http.ResponseWriter, r *http.Request, principal identity.Principal, hint uuid.UUID, token string) {
 	current, items, currentErr := h.service.Choices(r.Context(), principal, hint)
+	staleHint := false
 	if errors.Is(currentErr, ErrDenied) && hint != uuid.Nil {
 		// A denied snapshot may contain data from before membership changed.
 		// Discard every returned field before retrying without the stale hint.
+		staleHint = true
 		http.SetCookie(w, &http.Cookie{Name: hintCookie, Value: "", Path: "/", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode, MaxAge: -1})
 		current, items, currentErr = h.service.Choices(r.Context(), principal, uuid.Nil)
 	}
-	h.renderWorkspacePage(w, current, items, currentErr, token)
+	h.renderWorkspacePage(w, current, items, currentErr, token, staleHint)
 }
 
-func (h *Handler) renderWorkspacePage(w http.ResponseWriter, current Workspace, items []Workspace, snapshotErr error, token string) {
+func (h *Handler) renderWorkspacePage(w http.ResponseWriter, current Workspace, items []Workspace, snapshotErr error, token string, staleHint bool) {
 	if snapshotErr != nil {
 		writeDomainError(w, snapshotErr)
 		return
@@ -170,7 +172,11 @@ func (h *Handler) renderWorkspacePage(w http.ResponseWriter, current Workspace, 
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if err := h.page.Execute(w, view{Current: current, Workspaces: items, CSRFToken: token}); err != nil {
+	notice := ""
+	if staleHint {
+		notice = "Your selected workspace is no longer available. Choose an available workspace to continue."
+	}
+	if err := h.page.Execute(w, view{Current: current, Workspaces: items, CSRFToken: token, Notice: notice}); err != nil {
 		return
 	}
 }
@@ -179,6 +185,7 @@ type view struct {
 	Current    Workspace
 	Workspaces []Workspace
 	CSRFToken  string
+	Notice     string
 }
 
 func hintFromRequest(r *http.Request) (uuid.UUID, error) {
@@ -255,7 +262,7 @@ func writeError(w http.ResponseWriter, status int, code string) {
 const pageHTML = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Workspaces</title></head>
 <body><a href="#main">Skip to main content</a><header><a href="/">AMOS</a><span aria-label="Current workspace">{{.Current.Name}}</span></header>
-<main id="main"><h1>Workspaces</h1><p id="current-workspace">Current workspace: {{.Current.Name}}</p>
+<main id="main"><h1>Workspaces</h1>{{if .Notice}}<p role="status">{{.Notice}}</p>{{end}}<p id="current-workspace">Current workspace: {{.Current.Name}}</p>
 <form method="post" action="/workspaces" hx-post="/workspaces" hx-target="body" hx-swap="outerHTML"><input type="hidden" name="_csrf" value="{{.CSRFToken}}"><label for="workspace_id">Switch workspace</label><select id="workspace_id" name="workspace_id" required aria-describedby="workspace-help">
 {{range .Workspaces}}<option value="{{.ID}}"{{if eq .ID $.Current.ID}} selected{{end}}>{{.Name}}</option>{{end}}</select><p id="workspace-help">Choose a workspace you currently belong to.</p>
 <button type="submit">Switch workspace</button></form></main></body></html>`

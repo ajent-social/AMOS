@@ -61,7 +61,7 @@ func TestT6_4_DeniedSnapshotNeverRendersForeignWorkspaceData(t *testing.T) {
 	}
 	w := httptest.NewRecorder()
 	gotCurrent, gotOptions, snapshotErr := snapshot.Choices(context.Background(), identity.Principal{}, uuid.Nil)
-	h.renderWorkspacePage(w, gotCurrent, gotOptions, snapshotErr, "token")
+	h.renderWorkspacePage(w, gotCurrent, gotOptions, snapshotErr, "token", false)
 	body := w.Body.String()
 	if w.Code != http.StatusForbidden || !strings.Contains(body, "workspace.denied") {
 		t.Fatalf("status=%d body=%q, want generic workspace denial", w.Code, body)
@@ -90,7 +90,7 @@ func TestT6_4_StaleHintRetriesWithEmptyHintAndRendersAuthorizedChoices(t *testin
 	w := httptest.NewRecorder()
 	h.renderChoices(w, r, identity.Principal{}, staleID, "token")
 
-	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), current.Name) || strings.Contains(w.Body.String(), "Stale foreign label") {
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), current.Name) || !strings.Contains(w.Body.String(), "Your selected workspace is no longer available") || strings.Contains(w.Body.String(), "Stale foreign label") {
 		t.Fatalf("status=%d body=%q, want only current authorized remediation", w.Code, w.Body.String())
 	}
 	if len(svc.hints) != 2 || svc.hints[0] != staleID || svc.hints[1] != uuid.Nil {
