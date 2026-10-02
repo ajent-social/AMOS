@@ -43,6 +43,7 @@ type IdentityHandlers = runtime.IdentityHandlers
 // Empty ReadinessChecks means the app declares no external readiness dependency.
 type Options struct {
 	Identity         IdentityHandlers
+	Workspaces       http.Handler
 	ReadinessChecks  []ReadinessCheck
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -75,6 +76,7 @@ func New(options Options) (*App, error) {
 	}
 	composed, err := runtime.New(runtime.Options{
 		Identity:         options.Identity,
+		Workspaces:       options.Workspaces,
 		ReadinessChecks:  checks,
 		ReadinessTimeout: readinessTimeout,
 		ShutdownTimeout:  shutdownTimeout,

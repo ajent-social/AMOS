@@ -32,6 +32,7 @@ import (
 	"github.com/ajent-social/amos/jobs/sqlstore"
 	"github.com/ajent-social/amos/storage"
 	"github.com/ajent-social/amos/ui/authpassword"
+	"github.com/ajent-social/amos/ui/workspaceswitch"
 	"github.com/google/uuid"
 	"mime"
 )
@@ -222,7 +223,15 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	}
 	factorRead := sessions.Middleware(factors.Handler())
 	factorWrite := sessions.Middleware(mutations)
-	shared, err := app.New(app.Options{Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, ReadinessChecks: []app.ReadinessCheck{func(ctx context.Context) error {
+	workspaceService, err := workspaceswitch.NewSQLService(db, workspaceswitch.Config{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID})
+	if err != nil {
+		return nil, err
+	}
+	workspacePage, err := workspaceswitch.New(workspaceService, workspaceRequestCheck{sessions})
+	if err != nil {
+		return nil, err
+	}
+	shared, err := app.New(app.Options{Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, ReadinessChecks: []app.ReadinessCheck{func(ctx context.Context) error {
 		if err := pool.PingContext(ctx); err != nil {
 			return err
 		}
@@ -321,4 +330,26 @@ func (h *Host) schemaReady(ctx context.Context) error {
 		}
 		return nil
 	})
+}
+
+type workspaceRequestCheck struct{ sessions *session.Service }
+
+func (c workspaceRequestCheck) Token(r *http.Request) (string, error) {
+	token, ok := c.sessions.CSRFToken(r)
+	if !ok {
+		return "", ErrLocalDependency
+	}
+	return token, nil
+}
+
+// sessions.Middleware validates origin and session-bound CSRF for every unsafe
+// method before invoking the workspace handler. This second check also binds
+// the finite form contract to that exact token.
+func (c workspaceRequestCheck) Valid(r *http.Request) bool {
+	token, ok := c.sessions.CSRFToken(r)
+	if !ok || !c.sessions.AllowsOrigin(r) {
+		return false
+	}
+	provided := r.PostForm["_csrf"]
+	return len(provided) == 1 && hmac.Equal([]byte(provided[0]), []byte(token))
 }

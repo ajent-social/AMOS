@@ -31,6 +31,7 @@ var reservedRoots = []string{"/signin", "/signout", "/signup", "/auth", "/verify
 
 type Options struct {
 	Identity         IdentityHandlers
+	Workspaces       http.Handler
 	ReadinessChecks  []func(context.Context) error
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
