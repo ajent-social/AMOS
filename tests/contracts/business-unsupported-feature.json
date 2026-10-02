@@ -1,0 +1,23 @@
+{
+  "contract": "amos-contract-v1",
+  "operations": [
+    {
+      "operationId": "catalog.list",
+      "method": "GET",
+      "path": "/catalog",
+      "inputType": "catalog.ListInput",
+      "outputType": "catalog.ListOutput",
+      "permissions": [
+        "catalog.read"
+      ],
+      "entitlements": [],
+      "assurance": "aal1",
+      "sideEffect": "read",
+      "idempotency": "forbidden",
+      "mcp": "never",
+      "features": [
+        "unsupported"
+      ]
+    }
+  ]
+}

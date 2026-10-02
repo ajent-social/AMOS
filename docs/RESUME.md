@@ -2,7 +2,7 @@
 
 Updated: 2026-10-01. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
-Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 50 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Generated application composition, complete auth and organization policy, live subscriptions and deployment remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
+Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 52 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Generated application composition, complete auth and organization policy, live subscriptions and deployment remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
 
 Integrated foundations cover PostgreSQL/migrations, policy/configuration, jobs/outbox/email/audit, identity storage/sessions/passwords/email verification, workspace persistence/bootstrap/context, OpenAPI/Go generation, tenant-scoped reference todos and the default UI renderer. The fragment swap regression failed before the renderer fix and passes afterward in a real browser.
 
@@ -155,3 +155,15 @@ receipts to reconciliation work, with database-clock lease guards after lock
 waits. Duplicate receipts preserve active work leases and dirty generation.
 T5.8 remains in progress; executable scheduling and live Stripe qualification
 remain separate. See [evidence](evidence/billing-webhook-jobs-20261001.md).
+
+## Inflight integration audit
+
+The already integrated CI trust and operations target design contracts are now
+accepted as T9.1 and T10.1 after fresh checks and negative/restored replay.
+The business-extension schema participates in the root contract checker; T12.1
+remains in progress at its shared API, wire-code, path and policy-schema gates.
+Older lane commits are not blanket merge candidates: native/billing components
+and the revised RFC are already integrated, and old trees contain stale copies.
+No existing lane worktree was reset or cleaned. See the
+[integration audit](evidence/inflight-integration-20261001.md) for current checks
+and remaining implementation gates.

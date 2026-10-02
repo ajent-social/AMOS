@@ -517,5 +517,32 @@
       "Genuine ownership, runtime environment and Clear-lock mutants fail intended regressions; restored scoped checks pass.",
       "CLI clean --plan is advisory only. Full cleanup executor, whole Linux runner and cloud deployment are not qualified. No full task acceptance."
     ]
+  },
+  "T9.1": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Previously independently reviewed CI trust contract is already integrated on main; lane patch replay is empty.",
+      "Fresh scoped tests, race tests, vet and zero-issue lint pass. Integrator replay removed the privileged-event guard; trusted PR and merge-group negatives failed, exact restoration passed.",
+      "Accepted as a design contract only. Generated workflow wiring, protected environments and live GitHub checks remain separate tasks."
+    ]
+  },
+  "T10.1": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Previously independently reviewed operational target contract is already integrated on main; lane patch replay is empty.",
+      "Fresh scoped tests, race tests, vet and zero-issue lint pass. Integrator replay removed the backup/RPO denial; negative tests failed, exact restoration passed.",
+      "Defaults require explicit profile/owners; invalid, non-finite and impossible targets fail validation. Accepted design contract only; scheduler, measured SLO/recovery, backup execution and deployment are not claimed."
+    ]
+  },
+  "T12.1": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Previously independently reviewed business-extension design/schema and reserved-route fixtures are already integrated on main; lane patch replay is empty.",
+      "Fresh scoped tests, race tests, vet and zero-issue lint pass. Root contract checker now validates this third schema with five positive/negative fixtures using pinned jsonschema 4.26.0. Weakened unsupported-feature allowlist failed the checker and exact restoration passed.",
+      "Shared identity/policy API compatibility, unsupported-feature wire-code binding, consumer output-path adoption and frozen policy control-character handling remain integration gates. No runtime registry/startup or generator qualification is claimed."
+    ]
   }
 }

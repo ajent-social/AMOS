@@ -34,6 +34,7 @@ def main() -> int:
     schemas = {
         "policy": read_json(ROOT / "api" / "policy.schema.json"),
         "config": read_json(ROOT / "config" / "schema.json"),
+        "business": read_json(ROOT / "api" / "extensions" / "business.schema.json"),
     }
     validators = {}
     for name, schema in schemas.items():
@@ -53,6 +54,11 @@ def main() -> int:
         "config-missing-proxy-mode.json": ("config", False, "proxyMode"),
         "config-production-disabled.json": ("config", False, "state"),
         "config-unsupported-profile.json": ("config", False, "cloudflare"),
+        "business-valid.json": ("business", True, None),
+        "business-missing-policy.json": ("business", False, "permissions"),
+        "business-unsupported-feature.json": ("business", False, "unsupported"),
+        "business-control-character.json": ("business", False, "pattern"),
+        "business-unknown-field.json": ("business", False, "untrusted"),
     }
     if set(expectations) != {path.name for path in FIXTURES.glob("*.json")}:
         raise ValueError("contract fixture inventory differs from the checker manifest")
