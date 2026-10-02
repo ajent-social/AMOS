@@ -337,6 +337,132 @@ func TestClaimKindsPreservesOtherConsumersAndExpiredLeases(t *testing.T) {
 	}
 }
 
+func TestClaimScopesPreserveOtherEndpointsAndMaintenance(t *testing.T) {
+	db, all := testStore(t)
+	ctx := context.Background()
+	allowed := newClaimScope(t)
+	otherEnvironment := allowed
+	otherEnvironment.EnvironmentID = newClaimUUID(t)
+	otherApplication := allowed
+	otherApplication.ApplicationID = newClaimUUID(t)
+
+	foreignDeadline := claimScopeIntent(t, "foreign-deadline", otherEnvironment)
+	deadlineJob, err := all.Enqueue(ctx, foreignDeadline)
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreignLease := claimScopeIntent(t, "foreign-expired-lease", otherApplication)
+	leaseJob, err := all.Enqueue(ctx, foreignLease)
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreignQueued := claimScopeIntent(t, "foreign-queued", otherEnvironment)
+	queuedJob, err := all.Enqueue(ctx, foreignQueued)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wanted := claimScopeIntent(t, "configured-endpoint", allowed)
+	wantedJob, err := all.Enqueue(ctx, wanted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE amos_jobs SET deadline_at=clock_timestamp()-interval '1 second' WHERE id=$1`, deadlineJob.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE amos_jobs SET status='leased',lease_owner='foreign-owner',lease_action='execute',lease_until=clock_timestamp()-interval '1 second',attempt_count=1 WHERE id=$1`, leaseJob.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	scopes := []ClaimScope{allowed}
+	cfg := all.config
+	cfg.ClaimKinds = []string{"billing.webhook.reconcile"}
+	cfg.ClaimScopes = scopes
+	scoped, err := New(db, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Mutating caller-owned config after construction must not widen or redirect
+	// the scope used by maintenance or candidate selection.
+	scopes[0].EnvironmentID = otherEnvironment.EnvironmentID
+
+	claimed, ok, err := scoped.Claim(ctx, "scoped-worker", time.Second)
+	if err != nil || !ok || claimed.ID != wantedJob.ID {
+		t.Fatalf("scope claim=%+v ok=%v err=%v, want configured endpoint job %s", claimed, ok, err, wantedJob.ID)
+	}
+	for id, wantState := range map[uuid.UUID]string{
+		deadlineJob.ID: "queued",
+		leaseJob.ID:    "leased",
+		queuedJob.ID:   "queued",
+	} {
+		var gotState string
+		var owner string
+		if err := db.QueryRowContext(ctx, `SELECT status,COALESCE(lease_owner,'') FROM amos_jobs WHERE id=$1`, id).Scan(&gotState, &owner); err != nil {
+			t.Fatal(err)
+		}
+		if gotState != wantState || id == leaseJob.ID && owner != "foreign-owner" {
+			t.Fatalf("foreign job %s was modified: state=%s owner=%s", id, gotState, owner)
+		}
+	}
+}
+
+func TestClaimScopeConfigurationIsBoundedAndCopied(t *testing.T) {
+	_, all := testStore(t)
+	scope := newClaimScope(t)
+	cfg := all.config
+	cfg.ClaimKinds = []string{"billing.webhook.reconcile"}
+	cfg.ClaimScopes = []ClaimScope{scope}
+	store, err := New(all.db, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.ClaimScopes[0].Provider = "changed"
+	if store.config.ClaimScopes[0].Provider != scope.Provider {
+		t.Fatal("store retained caller-owned claim scope slice")
+	}
+	invalid := cfg
+	invalid.ClaimScopes = []ClaimScope{scope, scope}
+	if _, err := New(all.db, invalid); !errors.Is(err, ErrInvalidConfig) {
+		t.Fatalf("duplicate scope error=%v, want ErrInvalidConfig", err)
+	}
+	invalid = cfg
+	invalid.ClaimKinds = nil
+	if _, err := New(all.db, invalid); !errors.Is(err, ErrInvalidConfig) {
+		t.Fatalf("scope without kind allowlist error=%v, want ErrInvalidConfig", err)
+	}
+	invalid = cfg
+	invalid.ClaimScopes = make([]ClaimScope, maxClaimScopes+1)
+	if _, err := New(all.db, invalid); !errors.Is(err, ErrInvalidConfig) {
+		t.Fatalf("oversized scope error=%v, want ErrInvalidConfig", err)
+	}
+}
+
+func newClaimScope(t *testing.T) ClaimScope {
+	t.Helper()
+	return ClaimScope{
+		InstallationID: newClaimUUID(t), ApplicationID: newClaimUUID(t), EnvironmentID: newClaimUUID(t),
+		Provider: "stripe", ProviderAccountID: "acct_example", AccountMode: "test",
+	}
+}
+
+func newClaimUUID(t *testing.T) uuid.UUID {
+	t.Helper()
+	id, err := uuid.NewV7()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id
+}
+
+func claimScopeIntent(t *testing.T, key string, scope ClaimScope) jobs.Intent {
+	t.Helper()
+	in := intent(t, key, false)
+	in.InstallationID = scope.InstallationID
+	in.ApplicationID = scope.ApplicationID
+	in.Kind = "billing.webhook.reconcile"
+	in.Payload = []byte(`{"ingress_id":"` + newClaimUUID(t).String() + `","environment_id":"` + scope.EnvironmentID.String() + `","provider":"` + scope.Provider + `","provider_account_id":"` + scope.ProviderAccountID + `","account_mode":"` + scope.AccountMode + `"}`)
+	return in
+}
+
 func TestTxWriterEnqueueRollbackAndStableReplay(t *testing.T) {
 	db, reader := testStore(t)
 	writer, err := NewTxWriter(reader.config)

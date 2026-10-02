@@ -30,7 +30,10 @@ const (
 type Config struct {
 	// ClaimKinds limits execution and lease maintenance to selected consumers.
 	// Empty preserves the existing general-purpose repository behavior.
-	ClaimKinds                []string
+	ClaimKinds []string
+	// ClaimScopes further limits those consumers to explicitly configured
+	// billing endpoints. Empty preserves kind-only compatibility.
+	ClaimScopes               []ClaimScope
 	MaxPayloadBytes           int
 	MaxAttempts               int
 	MaxReconciliationAttempts int
@@ -38,9 +41,24 @@ type Config struct {
 	MaxRetryDelay             time.Duration
 }
 
+// ClaimScope identifies one immutable billing endpoint embedded in job payloads.
+// It is deliberately independent of billing packages so the durable jobs layer
+// can enforce scope before leasing rows.
+type ClaimScope struct {
+	InstallationID    uuid.UUID `json:"installation_id"`
+	ApplicationID     uuid.UUID `json:"application_id"`
+	EnvironmentID     uuid.UUID `json:"environment_id"`
+	Provider          string    `json:"provider"`
+	ProviderAccountID string    `json:"provider_account_id"`
+	AccountMode       string    `json:"account_mode"`
+}
+
+const maxClaimScopes = 64
+
 type Store struct {
-	db     *sql.DB
-	config Config
+	db              *sql.DB
+	config          Config
+	claimScopesJSON string
 }
 
 func New(db *sql.DB, cfg Config) (*Store, error) {
@@ -48,7 +66,15 @@ func New(db *sql.DB, cfg Config) (*Store, error) {
 		return nil, ErrInvalidConfig
 	}
 	cfg.ClaimKinds = append([]string(nil), cfg.ClaimKinds...)
-	return &Store{db: db, config: cfg}, nil
+	cfg.ClaimScopes = append([]ClaimScope(nil), cfg.ClaimScopes...)
+	if cfg.ClaimScopes == nil {
+		cfg.ClaimScopes = []ClaimScope{}
+	}
+	scopesJSON, err := json.Marshal(cfg.ClaimScopes)
+	if err != nil {
+		return nil, ErrInvalidConfig
+	}
+	return &Store{db: db, config: cfg, claimScopesJSON: string(scopesJSON)}, nil
 }
 
 func validConfig(cfg Config) bool {
@@ -64,6 +90,55 @@ func validConfig(cfg Config) bool {
 			return false
 		}
 		seen[kind] = true
+	}
+	if len(cfg.ClaimScopes) > maxClaimScopes || len(cfg.ClaimScopes) > 0 && len(cfg.ClaimKinds) == 0 {
+		return false
+	}
+	scopes := make(map[ClaimScope]bool, len(cfg.ClaimScopes))
+	for _, scope := range cfg.ClaimScopes {
+		if !validClaimScope(scope) || scopes[scope] {
+			return false
+		}
+		scopes[scope] = true
+	}
+	return true
+}
+
+func validClaimScope(scope ClaimScope) bool {
+	return validScopeID(scope.InstallationID) && validScopeID(scope.ApplicationID) && validScopeID(scope.EnvironmentID) &&
+		validScopeProvider(scope.Provider) && validScopeToken(scope.ProviderAccountID, 128, true) &&
+		(scope.AccountMode == "test" || scope.AccountMode == "live")
+}
+
+func validScopeID(id uuid.UUID) bool {
+	return id != uuid.Nil && id.Version() == 7 && id.Variant() == uuid.RFC4122
+}
+
+func validScopeProvider(value string) bool {
+	if len(value) == 0 || len(value) > 63 || value[0] < 'a' || value[0] > 'z' {
+		return false
+	}
+	for index, r := range value {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || (index > 0 && (r == '-' || r == '_')) {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func validScopeToken(value string, max int, allowUnderscore bool) bool {
+	if len(value) == 0 || len(value) > max {
+		return false
+	}
+	for index, r := range value {
+		if r > unicode.MaxASCII {
+			return false
+		}
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || (index > 0 && r == '-') || (allowUnderscore && index > 0 && r == '_') {
+			continue
+		}
+		return false
 	}
 	return true
 }
@@ -150,16 +225,16 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 		return jobs.Job{}, false, ErrUnavailable
 	}
 	defer func() { _ = tx.Rollback() }() // Commit consumes the transaction; failures already return unavailable.
-	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs SET status='dead', lease_owner=NULL, lease_action=NULL, lease_until=NULL, updated_at=clock_timestamp()
-		WHERE status='queued' AND deadline_at <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[]))`, s.config.ClaimKinds)
+	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs AS j SET status='dead', lease_owner=NULL, lease_action=NULL, lease_until=NULL, updated_at=clock_timestamp()
+		WHERE status='queued' AND deadline_at <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[])) AND `+claimScopePredicate("$2", "j"), s.config.ClaimKinds, s.claimScopesJSON)
 	if err != nil {
 		return jobs.Job{}, false, ErrUnavailable
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs SET
+	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs AS j SET
 		status=CASE WHEN external_effect THEN 'unknown' WHEN attempt_count >= max_attempts THEN 'dead' ELSE 'queued' END,
 		manual_review=CASE WHEN external_effect AND reconciliation_attempt_count >= max_reconciliation_attempts THEN true ELSE manual_review END,
 		lease_owner=NULL, lease_action=NULL, lease_until=NULL, next_reconciliation_at=clock_timestamp(), updated_at=clock_timestamp()
-		WHERE lease_owner IS NOT NULL AND lease_until <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[]))`, s.config.ClaimKinds)
+		WHERE lease_owner IS NOT NULL AND lease_until <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[])) AND `+claimScopePredicate("$2", "j"), s.config.ClaimKinds, s.claimScopesJSON)
 	if err != nil {
 		return jobs.Job{}, false, ErrUnavailable
 	}
@@ -167,8 +242,9 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 	result, err = scanClaim(tx.QueryRowContext(ctx, `WITH candidate AS (
 		SELECT id, status FROM amos_jobs
 		WHERE ((status='queued' AND available_at <= clock_timestamp() AND deadline_at > clock_timestamp())
-		 OR (status='unknown' AND manual_review=false AND lease_owner IS NULL AND next_reconciliation_at <= clock_timestamp() AND reconciliation_attempt_count < max_reconciliation_attempts))
+			 OR (status='unknown' AND manual_review=false AND lease_owner IS NULL AND next_reconciliation_at <= clock_timestamp() AND reconciliation_attempt_count < max_reconciliation_attempts))
 		AND (COALESCE(cardinality($3::text[]),0)=0 OR kind=ANY($3::text[]))
+		AND `+claimScopePredicate("$4", "amos_jobs")+`
 		ORDER BY CASE WHEN status='queued' THEN available_at ELSE next_reconciliation_at END, created_at, id
 		FOR UPDATE SKIP LOCKED LIMIT 1
 	)
@@ -180,7 +256,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 		fence_token=j.fence_token+1,
 		lease_until=clock_timestamp()+($2 * interval '1 microsecond'), updated_at=clock_timestamp()
 	FROM candidate c WHERE j.id=c.id
-	RETURNING `+jobReturningColumns, owner, lease.Microseconds(), s.config.ClaimKinds))
+	RETURNING `+jobReturningColumns, owner, lease.Microseconds(), s.config.ClaimKinds, s.claimScopesJSON))
 	if errors.Is(err, jobs.ErrNotFound) {
 		if err := tx.Commit(); err != nil {
 			return jobs.Job{}, false, ErrUnavailable
@@ -194,6 +270,22 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 		return jobs.Job{}, false, ErrUnavailable
 	}
 	return result, true, nil
+}
+
+func claimScopePredicate(parameter, table string) string {
+	return `(
+		jsonb_array_length(` + parameter + `::jsonb)=0 OR EXISTS (
+			SELECT 1 FROM jsonb_to_recordset(` + parameter + `::jsonb) AS allowed(
+				installation_id text, application_id text, environment_id text,
+				provider text, provider_account_id text, account_mode text)
+			WHERE allowed.installation_id=` + table + `.installation_id::text
+			AND allowed.application_id=` + table + `.application_id::text
+			AND allowed.environment_id=` + table + `.payload->>'environment_id'
+			AND allowed.provider=` + table + `.payload->>'provider'
+			AND allowed.provider_account_id=` + table + `.payload->>'provider_account_id'
+			AND allowed.account_mode=` + table + `.payload->>'account_mode'
+		)
+	)`
 }
 
 func (s *Store) Resolve(ctx context.Context, job jobs.Job, owner string, resolution jobs.Resolution) error {

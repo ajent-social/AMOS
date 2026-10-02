@@ -16,6 +16,7 @@ func NewTxWriter(cfg Config) (*TxWriter, error) {
 		return nil, ErrInvalidConfig
 	}
 	cfg.ClaimKinds = append([]string(nil), cfg.ClaimKinds...)
+	cfg.ClaimScopes = append([]ClaimScope(nil), cfg.ClaimScopes...)
 	return &TxWriter{store: &Store{config: cfg}}, nil
 }
 func (w *TxWriter) EnqueueTx(ctx context.Context, tx *sql.Tx, intent jobs.Intent) (jobs.Job, error) {
