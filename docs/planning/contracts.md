@@ -200,3 +200,25 @@ authorizing new checkout. Complete bounded official SDK reads are compared for
 changes; this is not atomic upstream snapshot isolation. Rate spacing is per
 reconciler instance. Durable job composition, migration sequence allocation,
 account-wide throttling and live provider/release qualification are separate.
+
+## Amendment v1.10: scheduled complete reconciliation
+
+ADR 020 requires explicit complete-collection evidence before reconciliation
+can apply a snapshot. The default is incomplete; all observations must be
+non-future and no older than five minutes. The scheduler binds each persisted
+scan checkpoint to an immutable provider/account/mode scope and bounds every
+pass. Reconciliation migration sequence 15 and federation sequence 16 are
+reserved after immutable local evaluation history. These additions do not
+qualify live provider operation, cloud deployment or atomic upstream snapshots.
+
+## Amendment v1.11: current workspace and person-extension profile
+
+ADR 021 adds the finite shared GET/POST /workspaces seam and the SQL-backed
+current-authority selector. The staged person-extension profile consumes current
+public immutable principal getters plus a separately resolved workspace/context
+selection; absent machine or policy dependencies fail closed. Managed consumer
+output is adopted at internal/amosgen/business/** with journal/preimage guards.
+Unsupported extension features use extension.unsupported_feature, HTTP 422.
+Shared policy identifiers explicitly reject ASCII controls, including terminal
+line feeds, to match canonical identifier meaning across schema engines. Future
+registry/generator transport and live operation qualification remain separate.
