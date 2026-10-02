@@ -21,6 +21,7 @@ var (
 	ErrNotClaimed         = errors.New("reconciliation work is not claimed")
 	ErrStaleClaim         = errors.New("reconciliation claim is stale")
 	ErrStaleSnapshot      = errors.New("provider snapshot is older than current projection")
+	ErrIncompleteSnapshot = errors.New("provider snapshot is incomplete")
 	ErrAmbiguousSnapshot  = errors.New("provider returned ambiguous subscription snapshot")
 	ErrUnknownPrice       = errors.New("provider snapshot contains an unknown price")
 	ErrBindingUnavailable = errors.New("active billing customer binding unavailable")
@@ -145,10 +146,13 @@ func (s *Store) Retry(ctx context.Context, work Work, next time.Time) error {
 // transaction. A concurrent dirty signal or reclaimed lease rejects the whole
 // operation, so no stale worker can overwrite a newer reconciliation.
 func (s *Store) applySnapshot(ctx context.Context, work Work, snapshot CustomerSnapshot, refreshAfter, freshness time.Duration) error {
-	if s == nil || s.tx == nil || ctx == nil || !validWork(work) || snapshot.Binding != work.Binding || snapshot.CustomerRef != work.CustomerRef || snapshot.ObservedAt.IsZero() || refreshAfter <= 0 || refreshAfter > 24*time.Hour || freshness <= 0 || freshness > 15*time.Minute {
+	if s == nil || s.tx == nil || ctx == nil || !validWork(work) || snapshot.Binding != work.Binding || snapshot.CustomerRef != work.CustomerRef || snapshot.ObservedAt.IsZero() || refreshAfter <= 0 || refreshAfter > 24*time.Hour || freshness <= 0 || freshness > MaxEntitlementFreshness {
 		return ErrInvalidInput
 	}
-	if snapshot.ObservedAt.After(time.Now().UTC().Add(30*time.Second)) || time.Since(snapshot.ObservedAt) > freshness {
+	if !snapshot.Complete {
+		return ErrIncompleteSnapshot
+	}
+	if snapshot.ObservedAt.After(time.Now().UTC()) || time.Since(snapshot.ObservedAt) > freshness {
 		return ErrStaleSnapshot
 	}
 	var dirtyVersion int64

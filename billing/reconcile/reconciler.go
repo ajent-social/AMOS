@@ -56,6 +56,9 @@ type CustomerSnapshot struct {
 	Revision      string
 	ObservedAt    time.Time
 	Subscriptions []Subscription
+	// Complete is true only when the provider source exhausted every page for
+	// the customer and verified the complete snapshot before returning it.
+	Complete bool
 }
 
 // SnapshotSource is implemented by an official provider adapter. It must
@@ -98,9 +101,14 @@ type Reconciler struct {
 
 var revisionPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`)
 
+// MaxEntitlementFreshness matches the upper bound enforced by the billing
+// catalog. Reconciliation must never accept older provider data than the
+// access evaluator is willing to treat as current.
+const MaxEntitlementFreshness = 5 * time.Minute
+
 // New validates the required provider source and all retry/lease limits.
 func New(db TxRunner, source SnapshotSource, cfg Config) (*Reconciler, error) {
-	if db == nil || source == nil || cfg.Lease <= 0 || cfg.Lease > 15*time.Minute || cfg.RequestTimeout <= 0 || cfg.RequestTimeout > 30*time.Second || cfg.Lease < cfg.RequestTimeout || cfg.Freshness <= 0 || cfg.Freshness > 15*time.Minute || cfg.RefreshAfter <= 0 || cfg.RefreshAfter > 24*time.Hour || cfg.RetryBase <= 0 || cfg.RetryMax < cfg.RetryBase || cfg.RetryMax > time.Hour || cfg.MaxAttempts == 0 || cfg.MaxAttempts > 10 || cfg.MinRequestInterval <= 0 || cfg.MinRequestInterval > time.Minute || len(cfg.PriceKeys) == 0 {
+	if db == nil || source == nil || cfg.Lease <= 0 || cfg.Lease > 15*time.Minute || cfg.RequestTimeout <= 0 || cfg.RequestTimeout > 30*time.Second || cfg.Lease < cfg.RequestTimeout || cfg.Freshness <= 0 || cfg.Freshness > MaxEntitlementFreshness || cfg.RefreshAfter <= 0 || cfg.RefreshAfter > 24*time.Hour || cfg.RetryBase <= 0 || cfg.RetryMax < cfg.RetryBase || cfg.RetryMax > time.Hour || cfg.MaxAttempts == 0 || cfg.MaxAttempts > 10 || cfg.MinRequestInterval <= 0 || cfg.MinRequestInterval > time.Minute || len(cfg.PriceKeys) == 0 {
 		return nil, ErrInvalidInput
 	}
 	prices := make(map[string]struct{}, len(cfg.PriceKeys))
@@ -223,8 +231,11 @@ func (r *Reconciler) retry(ctx context.Context, work Work, cause error) error {
 }
 
 func validateSnapshot(work Work, s CustomerSnapshot, now time.Time, freshness time.Duration, prices map[string]struct{}) error {
-	if !validWork(work) || s.Binding.Validate() != nil || s.Binding != work.Binding || s.CustomerRef != work.CustomerRef || !revisionPattern.MatchString(s.Revision) || s.ObservedAt.IsZero() || s.ObservedAt.After(now.Add(30*time.Second)) || now.Sub(s.ObservedAt) > freshness || len(s.Subscriptions) > 500 {
+	if !validWork(work) || freshness <= 0 || freshness > MaxEntitlementFreshness || s.Binding.Validate() != nil || s.Binding != work.Binding || s.CustomerRef != work.CustomerRef || !revisionPattern.MatchString(s.Revision) || s.ObservedAt.IsZero() || s.ObservedAt.After(now) || now.Sub(s.ObservedAt) > freshness || len(s.Subscriptions) > 500 {
 		return ErrInvalidInput
+	}
+	if !s.Complete {
+		return ErrIncompleteSnapshot
 	}
 	nonterminal := 0
 	seen := make(map[string]struct{}, len(s.Subscriptions))

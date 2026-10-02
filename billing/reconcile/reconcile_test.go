@@ -46,7 +46,7 @@ func TestT5_8_DirtyGenerationFencesWorkerAndCurrentSnapshotWins(t *testing.T) {
 		if e != nil {
 			return e
 		}
-		return s.applySnapshot(ctx, first, baseline, time.Minute, 15*time.Minute)
+		return s.applySnapshot(ctx, first, baseline, time.Minute, MaxEntitlementFreshness)
 	}); err != nil {
 		t.Fatalf("apply initial subscription snapshot: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestT5_8_DirtyGenerationFencesWorkerAndCurrentSnapshotWins(t *testing.T) {
 		if e != nil {
 			return e
 		}
-		return s.applySnapshot(ctx, first, old, time.Minute, 15*time.Minute)
+		return s.applySnapshot(ctx, first, old, time.Minute, MaxEntitlementFreshness)
 	}); !errors.Is(err, ErrStaleClaim) {
 		t.Fatalf("dirty signal did not fence old provider response: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestT5_8_DirtyGenerationFencesWorkerAndCurrentSnapshotWins(t *testing.T) {
 		if e != nil {
 			return e
 		}
-		return s.applySnapshot(ctx, second, newer, time.Hour, 15*time.Minute)
+		return s.applySnapshot(ctx, second, newer, time.Hour, MaxEntitlementFreshness)
 	}); err != nil {
 		t.Fatalf("apply current replacement snapshot: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestT5_8_DirtyGenerationFencesWorkerAndCurrentSnapshotWins(t *testing.T) {
 		if e != nil {
 			return e
 		}
-		return s.applySnapshot(ctx, third, late, time.Hour, 15*time.Minute)
+		return s.applySnapshot(ctx, third, late, time.Hour, MaxEntitlementFreshness)
 	}); !errors.Is(err, ErrStaleSnapshot) {
 		t.Fatalf("late old snapshot error=%v, want ErrStaleSnapshot", err)
 	}
@@ -178,7 +178,7 @@ func TestT5_8_ExpiredDatabaseLeaseCannotApplySnapshot(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		return store.applySnapshot(ctx, work, current, time.Minute, 15*time.Minute)
+		return store.applySnapshot(ctx, work, current, time.Minute, MaxEntitlementFreshness)
 	})
 	if !errors.Is(err, ErrStaleClaim) {
 		t.Fatalf("expired database-clock lease error=%v, want ErrStaleClaim", err)
@@ -347,6 +347,53 @@ func TestT5_8_RejectsAmbiguousAndUnknownPriceSnapshots(t *testing.T) {
 	valid.Subscriptions[0].PriceKey = "price_unconfigured"
 	if err := validateSnapshot(work, valid, observed, time.Minute, map[string]struct{}{"price_monthly": {}}); !errors.Is(err, ErrUnknownPrice) {
 		t.Fatalf("unknown price error=%v", err)
+	}
+}
+
+func TestT5_8_SnapshotCompletenessAndClockMustFailClosed(t *testing.T) {
+	db, binding, applicationID, accountID, customerID := newReconcileDB(t)
+	work := Work{ID: newID(t), BillingAccountID: accountID, CustomerBindingID: customerID, ApplicationID: applicationID, Binding: binding, CustomerRef: "cus_current", Version: 1, Token: newID(t), LeaseUntil: time.Now().Add(time.Minute), Attempts: 1}
+	now := time.Now().UTC()
+	complete := snapshot(binding, "cus_current", "rev-complete", now, Subscription{Reference: "sub_current", Status: StatusActive, PriceKey: "price_monthly", Quantity: 1})
+	if err := validateSnapshot(work, complete, now, MaxEntitlementFreshness, map[string]struct{}{"price_monthly": {}}); err != nil {
+		t.Fatalf("complete current snapshot rejected: %v", err)
+	}
+	incomplete := complete
+	incomplete.Complete = false
+	if err := validateSnapshot(work, incomplete, now, MaxEntitlementFreshness, map[string]struct{}{"price_monthly": {}}); !errors.Is(err, ErrIncompleteSnapshot) {
+		t.Fatalf("incomplete snapshot error=%v, want ErrIncompleteSnapshot", err)
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		store, err := NewStore(tx)
+		if err != nil {
+			return err
+		}
+		return store.applySnapshot(context.Background(), work, incomplete, time.Minute, MaxEntitlementFreshness)
+	}); !errors.Is(err, ErrIncompleteSnapshot) {
+		t.Fatalf("storage accepted incomplete snapshot: %v", err)
+	}
+	future := complete
+	future.ObservedAt = now.Add(time.Minute)
+	if err := validateSnapshot(work, future, now, MaxEntitlementFreshness, map[string]struct{}{"price_monthly": {}}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("future snapshot error=%v, want ErrInvalidInput", err)
+	}
+	if err := db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		store, err := NewStore(tx)
+		if err != nil {
+			return err
+		}
+		return store.applySnapshot(context.Background(), work, future, time.Minute, MaxEntitlementFreshness)
+	}); !errors.Is(err, ErrStaleSnapshot) {
+		t.Fatalf("storage accepted future snapshot: %v", err)
+	}
+}
+
+func TestT5_8_ReconcilerCannotExceedEntitlementFreshness(t *testing.T) {
+	db, _, _, _, _ := newReconcileDB(t)
+	cfg := workerConfig()
+	cfg.Freshness = MaxEntitlementFreshness + time.Nanosecond
+	if _, err := New(db, &testSnapshotSource{}, cfg); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("reconciler freshness over access bound error=%v, want ErrInvalidInput", err)
 	}
 }
 
@@ -590,7 +637,7 @@ func (s *testSnapshotSource) GetCustomerSnapshot(_ context.Context, request Snap
 	return s.snapshot, s.err
 }
 func workerConfig() Config {
-	return Config{Lease: time.Minute, RequestTimeout: 5 * time.Second, Freshness: 10 * time.Minute, RefreshAfter: time.Hour, RetryBase: time.Second, RetryMax: time.Minute, MaxAttempts: 4, MinRequestInterval: time.Millisecond, PriceKeys: map[string]struct{}{"price_monthly": {}}}
+	return Config{Lease: time.Minute, RequestTimeout: 5 * time.Second, Freshness: MaxEntitlementFreshness, RefreshAfter: time.Hour, RetryBase: time.Second, RetryMax: time.Minute, MaxAttempts: 4, MinRequestInterval: time.Millisecond, PriceKeys: map[string]struct{}{"price_monthly": {}}}
 }
 
 func newReconcileDB(t *testing.T) (*storage.DB, billingprovider.Binding, uuid.UUID, uuid.UUID, uuid.UUID) {
@@ -717,7 +764,7 @@ func claim(t *testing.T, db *storage.DB) Work {
 	return w
 }
 func snapshot(binding billingprovider.Binding, customer, revision string, observed time.Time, subs ...Subscription) CustomerSnapshot {
-	return CustomerSnapshot{Binding: binding, CustomerRef: customer, Revision: revision, ObservedAt: observed, Subscriptions: subs}
+	return CustomerSnapshot{Binding: binding, CustomerRef: customer, Revision: revision, ObservedAt: observed, Subscriptions: subs, Complete: true}
 }
 func scanScope(b billingprovider.Binding, application uuid.UUID) ScanScope {
 	return ScanScope{InstallationID: uuid.MustParse(b.InstallationID), ApplicationID: application, EnvironmentID: uuid.MustParse(b.EnvironmentID), Provider: b.Provider, ProviderAccountID: b.AccountID, AccountMode: b.AccountMode}
