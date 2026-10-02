@@ -18,3 +18,18 @@ and shared lease. The coordinator allocates heavy verification. Missing services
 fail visibly; fixtures cannot qualify live providers. Workers report exact
 commits, real tests and negatives, limitations and proposed root wiring.
 They do not push, merge main or update acceptance records.
+
+## Integration follow-up ownership
+
+- The queue-scope lane owns `jobs/sqlstore/**`: claim predicates must constrain
+  maintenance updates and selection to installation/application and endpoint
+  payload scope before leasing a job. The coordinator owns caller composition.
+- The lifecycle lane owns `internal/devrunner/**`, including the coordinator's
+  staged cleanup hardening: serialize resource startup and cleanup with a
+  separate private project operation lock. Process updates retain their own lock.
+- Workspace browser qualification additionally delegates
+  `apphost/workspace_browser_test.go` and
+  `tests/browser/workspace.playwright.config.ts` to the workspace lane.
+- The coordinator allocates reconciliation migration 15 and federation migration
+  16, retains explicit unavailable provider routes by default, and owns the
+  finite callback composition field and generated migration registry.

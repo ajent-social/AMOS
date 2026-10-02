@@ -1,12 +1,12 @@
 # Current implementation checkpoint
 
-Updated: 2026-10-01. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
+Updated: 2026-10-02. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
-Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 52 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Generated application composition, complete auth and organization policy, live subscriptions and deployment remain in progress. Do not assume that a task worktree is merged or accepted merely because it exists.
+Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 57 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Parallel takeover completed federation coordination, bounded reconciliation scheduling, current workspace selection, exact-owned local cleanup and the person-extension contract. Complete authentication and organization policy, live subscriptions and deployment remain planned. Do not assume that a task worktree is merged or accepted merely because it exists.
 
 Integrated foundations cover PostgreSQL/migrations, policy/configuration, jobs/outbox/email/audit, identity storage/sessions/passwords/email verification, workspace persistence/bootstrap/context, OpenAPI/Go generation, tenant-scoped reference todos and the default UI renderer. The fragment swap regression failed before the renderer fix and passes afterward in a real browser.
 
-AMOS is not yet a complete runnable SaaS. Generated application and executable wiring, full identity and organization flows, subscription processing, cloud deployment, generated MCP, upgrades and operating recovery remain incomplete. No live provider or production deployment qualification is claimed.
+The generated personal application has local database/browser lifecycle evidence. The full SaaS product remains incomplete: full identity and organization flows, complete subscription products, cloud deployment, generated MCP, upgrades and operating recovery are separate tasks. No live provider or production deployment qualification is claimed.
 
 Prioritize a generated runnable app with signup, verification, sign-in, a personal workspace and the reference business feature; follow with billing and qualified deployment. Preserve the complete later architecture in the staged plan rather than narrowing the product vision to this first slice.
 
@@ -167,3 +167,10 @@ and the revised RFC are already integrated, and old trees contain stale copies.
 No existing lane worktree was reset or cleaned. See the
 [integration audit](evidence/inflight-integration-20261001.md) for current checks
 and remaining implementation gates.
+
+## Parallel takeover checkpoint
+
+Five in-progress tasks are accepted at their recorded component/design boundaries.
+See [obtained evidence](evidence/luna-takeover-20261002.md). Live provider, whole
+Linux runner and production release qualification are not claimed. Preserve worker
+worktrees and read the execution registry before admitting the next planned task.

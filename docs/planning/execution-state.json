@@ -321,10 +321,13 @@
     ]
   },
   "T3.10": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Coordinator task claimed; durable flow and transactional session seam under integration design."
+      "Coordinator task claimed; durable flow and transactional session seam under integration design.",
+      "Accepted durable federation coordinator after independent source review, PostgreSQL race checks and genuine negative/restored epoch, session, realm and missing-cookie guards.",
+      "Browser/provider/issuer/intent and live session authority are bound transactionally; migration16 and finite optional callback seam are integrated. Live identity-provider adapters and qualification remain separate.",
+      "Obtained checks, corrections and qualification limits: docs/evidence/luna-takeover-20261002.md."
     ]
   },
   "T6.14": {
@@ -492,31 +495,45 @@
     ]
   },
   "T5.8": {
-    "status": "IN_PROGRESS",
+    "status": "ACCEPTED",
     "evidence": [
       "Independent headless re-review of exact ccc119c closed the expired Retry lease blocker and found no remaining standalone component source blocker. Integrator-owned catalog/SDK support and explicitly delegated snapshot paths are recorded in the task file.",
       "Isolated reconciliation core and official Stripe snapshot component batch ccc119c passes fresh PostgreSQL race tests, scoped vet and zero-issue lint.",
       "Apply and retry database-clock lease regressions, per-instance serialization, SDK mode/logging and immutable catalog alias mutations fail as intended and restored checks pass.",
       "Fixtures do not qualify live Stripe; live credentials are absent. Durable job/executable composition, migration allocation, account-wide throttling and integrated access policy remain separate. No full task or release acceptance.",
-      "Durable webhook jobs component b9311ea plus daaa4dd independently headless reviewed; actual PostgreSQL table-lock lease regression and genuine final-guard mutation pass after restoration. Component checks and limits in docs/evidence/billing-webhook-jobs-20261001.md; executable scheduling remains separate."
-    ]
+      "Durable webhook jobs component b9311ea plus daaa4dd independently headless reviewed; actual PostgreSQL table-lock lease regression and genuine final-guard mutation pass after restoration. Component checks and limits in docs/evidence/billing-webhook-jobs-20261001.md; executable scheduling remains separate.",
+      "Accepted bounded authoritative reconciliation service after PostgreSQL scheduler/reconciliation race checks, official SDK contract checks, scoped vet/lint and independent integration review.",
+      "CLI and scheduler bind exact endpoint scopes before both job maintenance/claim and reconciliation selection. Foreign-scope mutations fail real PostgreSQL regressions and restoration passes; incomplete/future/stale snapshots fail closed.",
+      "Live Stripe credentials are unavailable; account-wide throttling, provider qualification and complete subscription product/release remain separate. Fixtures are not live evidence.",
+      "Obtained checks, corrections and qualification limits: docs/evidence/luna-takeover-20261002.md."
+    ],
+    "certification": "REVIEWED"
   },
   "T6.4": {
-    "status": "IN_PROGRESS",
+    "status": "ACCEPTED",
     "evidence": [
       "Workspace switch UI source component f941a53 independently reviewed after stale-hint remediation and denial-response corrections. Fresh scoped race, vet and zero-issue lint pass.",
       "Genuine error-guard mutations disclose foreign DTO values and fail the regression; byte-identical restoration and positive checks pass. Pinned browser formatter and public artifact checks pass.",
-      "Browser NOT_RUN without composed organization fixture; real membership/selection adapters and native host wiring remain separate. No full task, organization or deployment acceptance."
-    ]
+      "Browser NOT_RUN without composed organization fixture; real membership/selection adapters and native host wiring remain separate. No full task, organization or deployment acceptance.",
+      "Accepted current-state workspace selector and composed scoped-resource UI after real PostgreSQL/Chrome signup, verification, sign-in, organization switch, Back, unauthorized selection and membership-revocation checks.",
+      "Current SQL person/epoch/ownership/membership authority and native host finite route composition are integrated; wrong-selection mutation fails browser check and restoration passes. Generated application remains the personal profile; complete organization product flows are separate.",
+      "Obtained checks, corrections and qualification limits: docs/evidence/luna-takeover-20261002.md."
+    ],
+    "certification": "REVIEWED"
   },
   "T7.7": {
-    "status": "IN_PROGRESS",
+    "status": "ACCEPTED",
     "evidence": [
       "Native runner/CLI component and persistent private process-state lock independently headless reviewed; source corrections retain immutable resource identity and reject foreign ownership.",
       "Fresh real PostgreSQL/generated native runner/Chromium race checks, scoped vet and lint pass before final lock correction; final integrated gates recorded in component evidence.",
       "Genuine ownership, runtime environment and Clear-lock mutants fail intended regressions; restored scoped checks pass.",
-      "CLI clean --plan is advisory only. Full cleanup executor, whole Linux runner and cloud deployment are not qualified. No full task acceptance."
-    ]
+      "CLI clean --plan is advisory only. Full cleanup executor, whole Linux runner and cloud deployment are not qualified. No full task acceptance.",
+      "Accepted exact-owned local cleanup executor after independent review and real Podman retained-volume/content, foreign-ownership refusal and explicit deletion checks.",
+      "Separate private lifecycle lock serializes startup and cleanup; startup refuses recorded live/unverifiable processes before resource creation. Actual Run, lock-contention, cancellation, network replacement, process reuse and genuine negative/restored guards pass.",
+      "Full native runner race package passes after correction; evidence is local Mac qualification, not whole Linux, cloud or production recovery. CLI explicitly selects --plan or --execute and retains data by default.",
+      "Obtained checks, corrections and qualification limits: docs/evidence/luna-takeover-20261002.md."
+    ],
+    "certification": "REVIEWED"
   },
   "T9.1": {
     "status": "ACCEPTED",
@@ -537,12 +554,15 @@
     ]
   },
   "T12.1": {
-    "status": "IN_PROGRESS",
+    "status": "ACCEPTED",
     "certification": "REVIEWED",
     "evidence": [
       "Previously independently reviewed business-extension design/schema and reserved-route fixtures are already integrated on main; lane patch replay is empty.",
       "Fresh scoped tests, race tests, vet and zero-issue lint pass. Root contract checker now validates this third schema with five positive/negative fixtures using pinned jsonschema 4.26.0. Weakened unsupported-feature allowlist failed the checker and exact restoration passed.",
-      "Shared identity/policy API compatibility, unsupported-feature wire-code binding, consumer output-path adoption and frozen policy control-character handling remain integration gates. No runtime registry/startup or generator qualification is claimed."
+      "Shared identity/policy API compatibility, unsupported-feature wire-code binding, consumer output-path adoption and frozen policy control-character handling remain integration gates. No runtime registry/startup or generator qualification is claimed.",
+      "Accepted reviewed person-extension design contract against current public Principal and workspace/context APIs, stable unsupported-feature wire code and adopted managed output paths.",
+      "Scoped tests/vet/lint and three schemas with nineteen root fixtures pass; shared control-character exclusions and unsupported-feature negative mutations fail as intended and restored checks pass. Runtime registry/general policy evaluator and release qualification remain separate.",
+      "Obtained checks, corrections and qualification limits: docs/evidence/luna-takeover-20261002.md."
     ]
   }
 }

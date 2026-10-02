@@ -29,3 +29,11 @@ qualification follows from local tests.
 Real PostgreSQL tests must cover scheduling, fencing and incomplete/future/stale
 negative cases. Official SDK fixture checks qualify the adapter contract only;
 provider qualification requires genuine configured account evidence.
+
+Scheduled service composition must bind both the job repository and reconciler
+claim selection to the exact configured installation, application, environment,
+provider, account and mode. Scope is applied before deadline/lease maintenance
+and before claiming work; rejecting a foreign job after claiming it is unsafe.
+Scheduler endpoints and reconciler scopes must match exactly. Legacy direct
+unscoped repository operations remain explicit compatibility surfaces, not a
+scheduled service default.
