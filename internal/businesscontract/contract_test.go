@@ -1,9 +1,10 @@
 // Package businesscontract contains design-only fixtures for the business
-// extension descriptor and uses the current public route guard where possible.
-// These tests do not exercise a business registry or startup composition.
+// extension descriptor and checks current public identity and route surfaces.
+// These tests do not exercise a business registry or automatic startup wiring.
 package businesscontract
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -14,9 +15,34 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ajent-social/amos/app"
+	"github.com/ajent-social/amos/identity"
+	workspacecontext "github.com/ajent-social/amos/workspace/context"
 )
+
+type currentPrincipalSurface interface {
+	InstallationID() identity.ID
+	ApplicationID() identity.ID
+	EnvironmentID() identity.ID
+	PersonID() identity.ID
+	SecurityEpoch() int64
+	AuthenticationMethod() string
+	AuthenticatedAt() time.Time
+	Assurance() identity.Assurance
+	Actor() identity.Actor
+	Grants() []identity.Grant
+}
+
+type currentActorSurface interface {
+	Kind() string
+	PersonID() identity.ID
+	MachineID() identity.ID
+}
+
+var _ currentPrincipalSurface = identity.Principal{}
+var _ currentActorSurface = identity.Actor{}
 
 type descriptor struct {
 	Contract   string      `json:"contract"`
@@ -309,8 +335,8 @@ func assertSharedPatternWithControlExclusion(t *testing.T, extension, frozen any
 			t.Errorf("extension %s constraint %q differs from frozen policy schema", name, key)
 		}
 	}
-	if extensionObject["not"] == nil {
-		t.Errorf("extension %s must explicitly reject control characters", name)
+	if extensionObject["not"] == nil || !reflect.DeepEqual(extensionObject["not"], frozenObject["not"]) {
+		t.Errorf("extension %s control-character exclusion differs from frozen policy schema", name)
 	}
 }
 
@@ -370,6 +396,50 @@ func TestBusinessContractRejectsReservedCatchAllShadow(t *testing.T) {
 	}
 	if err := a.RegisterBusinessRoute("POST", "/orders/current", h); err != nil {
 		t.Fatalf("distinct method collision: %v", err)
+	}
+}
+
+func TestBusinessAdapterUsesCurrentPrincipalAndWorkspaceSelectionSurface(t *testing.T) {
+	var principal identity.Principal
+	actor := principal.Actor()
+	if actor.Kind() != "" || actor.PersonID() != (identity.ID{}) || actor.MachineID() != (identity.ID{}) {
+		t.Fatalf("zero principal unexpectedly supplies an actor: %+v", actor)
+	}
+	if _, ok := identity.PrincipalFromContext(context.Background()); ok {
+		t.Fatal("an arbitrary context supplied an authenticated principal")
+	}
+	if _, ok := workspacecontext.FromContext(context.Background()); ok {
+		t.Fatal("an arbitrary context supplied a resolved workspace")
+	}
+	var selection workspacecontext.Selection
+	_ = selection.Workspace
+	_ = selection.Membership
+	_ = selection.Permissions
+	_ = selection.MembershipEpoch
+}
+
+func TestPublicRouteGuardRejectsReservedPrefixesBeforeServe(t *testing.T) {
+	a, err := app.New(app.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reservedRoots := []string{
+		"/signin", "/signup", "/signout", "/auth", "/verify-email",
+		"/forgot-password", "/reset-password", "/oauth", "/.well-known",
+		"/account", "/workspaces", "/billing", "/api", "/mcp", "/healthz", "/readyz",
+	}
+	for _, root := range reservedRoots {
+		for _, pattern := range []string{root, strings.ToUpper(root) + "/child", root + "/*"} {
+			if err := a.RegisterBusinessRoute("get", pattern, httpHandler()); !errors.Is(err, app.ErrReservedRoute) {
+				t.Errorf("pre-serve route %q error=%v, want reserved-route rejection", pattern, err)
+			}
+		}
+	}
+	if err := a.RegisterBusinessRoute("GET", "/*", httpHandler()); !errors.Is(err, app.ErrInvalidRoute) {
+		t.Fatalf("root catch-all error=%v, want invalid-route rejection", err)
+	}
+	if err := a.RegisterBusinessRoute("GET", "/catalog", httpHandler()); err != nil {
+		t.Fatalf("ordinary business route rejected during composition: %v", err)
 	}
 }
 
