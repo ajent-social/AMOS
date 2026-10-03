@@ -1,5 +1,7 @@
 # Current implementation checkpoint
 
+Owner direction recorded 2026-10-03: qualify AMOS as the owner-hosted replacement journey for a separately operated customer runtime. The [replacement qualification record](planning/replacement-qualification.md) defines composed identity, billing, deployment, migration and retirement evidence. No task acceptance or provider/deployment claim follows from this decision.
+
 Updated: 2026-10-02. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
 Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 57 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Parallel takeover completed federation coordination, bounded reconciliation scheduling, current workspace selection, exact-owned local cleanup and the person-extension contract. Complete authentication and organization policy, live subscriptions and deployment remain planned. Do not assume that a task worktree is merged or accepted merely because it exists.
