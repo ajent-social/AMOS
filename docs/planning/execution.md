@@ -8,6 +8,12 @@ One integrator owns shared contracts, dependency pins, migration numbering, cano
 
 Task readiness requires all dependencies accepted, a current frozen contract, resolved file ownership and no unsatisfied external gate. Later stages have complete draft task inventories because full-scope preservation is required; revalidate them at their stage boundary. A lower-reasoning worker does not decide unrecorded security or commercial policy.
 
+## Code-change lifecycle handoff
+
+Every code-changing PR requires an independent review at the exact proposed head. Review is an executable plan task claimed through the ordinary apply-and-claim loop, not a dashboard status or hidden controller step. Coding completes when the author hands off the PR URL and exact head. A blocking finding creates explicit bounded fix and re-review tasks. A negative review does not release the delivery gate; fixes must not depend on a successful original review task. Ordinary descendants wait for reviewed merge and verified landing. Only an explicitly speculative dependency may start earlier, and it has no release authority.
+
+Each enrolled lifecycle has one canonical scheduler and eligibility owner. Shared generic plan/apply/claim representations and stage routing remain reusable, while the owning code-change lifecycle service supplies authoritative admission and result handling. A product workflow controller owns product delivery and qualification. The application foundation keeps its domain jobs and owner-local diagnosis/proposal/upgrade work and does not duplicate task/PR orchestration. A service outage does not make the application foundation unusable.
+
 Use GPT-6-Luna, Claude Sonnet or another qualified inexpensive coding agent for bounded implementation. Use Astra/frontier review for novel identity, billing, proxy, release-policy and maintenance trust boundaries. Provider/model selection uses existing owner credentials and budgets, not a new billing mode chosen by a worker.
 
 ## Sixteen ownership lanes

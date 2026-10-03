@@ -40,6 +40,8 @@ This is a public, self-contained handoff. Product implementation has not been cl
 - Both AWS profiles are selected per installation, with separate operational guarantees.
 - AMSL is a candidate reusable foundation requiring qualification; application policy and composition stay in AMOS. Upstream maturity/review rules are not bypassed.
 - A complete future task inventory is not evidence of implementation or cheap-tier execution certification.
+- AMOS remains useful during external workflow-service outages. It owns identity, workspaces, policy, audit, billing and API/MCP. The code-change lifecycle service owns PR safety and executable review/fix/re-review/landing work; the product workflow controller owns product delivery and qualification. AMOS retains owner-local diagnosis, proposal/upgrade generation and bounded domain jobs, not a duplicate task/PR orchestrator.
+- Release and upgrade profiles are immutable, versioned inputs to owner review. Restricted implementation source does not belong in this public repository.
 
 ## Before dispatch
 

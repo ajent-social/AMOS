@@ -1,6 +1,6 @@
 # AMOS vision
 
-Recorded: 2026 09 30 UTC. Product direction and proposed implementation boundaries. Implementation is not claimed. This document and RFC 0001 supersede conflicting early brainstorming proposals.
+Recorded: 2026 09 30 UTC. Product direction and proposed implementation boundaries. This document and RFC 0001 supersede conflicting early brainstorming proposals. Current implementation status is in the execution registry and roadmap.
 
 ## Purpose
 
@@ -13,6 +13,8 @@ AMOS is intended for independent developers and learners building their own busi
 The initializer asks about the application, AWS, Cloudflare, DNS and relevant provider configuration. It prepares frontend and backend code, GitHub Actions workflows and infrastructure as code. The complete target includes sign-up/sign-in, profiles, personal and organization workspaces, invitations, roles, account administration and subscriptions. Provider registration and account approval remain visible prerequisites rather than silently fabricated success.
 
 AMOS owns the public request boundary. At one public domain, shared routes such as `/signin` belong to AMOS while the landing page and business routes belong to the business app. The business implementation may be integrated into the Go app or run as a separate service in another stack. Internal routing does not expose an alternate business-service hostname or path to users.
+
+AMOS owns identity, workspaces, policy, audit, billing and API/MCP application capabilities, and remains useful during external workflow outages. A code-change lifecycle service owns PR safety and first-class executable author/review/fix/re-review/landing tasks. A product workflow controller owns product delivery and qualification. AMOS retains owner-local diagnosis, proposal and upgrade generation, and bounded domain jobs without implementing another task/PR orchestrator. Release and upgrade profiles are immutable and versioned. Restricted implementation source is not transplanted into this public repository.
 
 The default stack is Go, server-rendered HTML, HTMX and plain JavaScript/CSS. Business behavior is defined contract-first in OpenAPI. AMOS generates Go API scaffolding and MCP tools, with explicit permissions, entitlement requirements and exposure metadata. The web interface and generated interfaces reach the same application behavior. Later clients can use the APIs without redefining access rules.
 
@@ -32,7 +34,7 @@ The default stack is Go, server-rendered HTML, HTMX and plain JavaScript/CSS. Bu
 - Shared pages are fully replaceable. An upgradable core, optional default UI, developer-owned code and managed deployment files form a hybrid distribution.
 - Automated upgrade pull requests belong in the first release scope.
 - Operational tooling includes deployment, monitoring, backups and recovery.
-- Self-improvement observes metrics, logs and crashes; agents may investigate, fix, verify, release and deploy eligible changes under owner-controlled policies and strict independent gates.
+- Self-improvement observes metrics, logs and crashes; owner-local agents may investigate, propose bounded domain jobs and generate upgrades. Code-changing PRs use the external lifecycle service with independent exact-head review and verified landing; product delivery and qualification remain separately controlled.
 - Shared AMOS code/infrastructure fixes go upstream. Business-code and custom-UI fixes stay in the application's private repository.
 - Application maintenance executes in owner-controlled infrastructure with owner model credentials and spending limits. AMOS upstream has its own maintenance system. Managed application maintenance is deferred.
 - Default upstream reporting contains sanitized diagnostics only: versions, bounded metrics, error signatures and redacted stack information; no raw logs, business data or secrets.
