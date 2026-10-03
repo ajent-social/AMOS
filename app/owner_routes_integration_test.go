@@ -77,6 +77,7 @@ func TestOwnerBusinessRouteUsesScopedSessionAndBindsConfiguredPerson(t *testing.
 	serve := func(method, path string, cookie *http.Cookie, originValue string) *httptest.ResponseRecorder {
 		t.Helper()
 		request := httptest.NewRequest(method, origin+path, nil)
+		request.RequestURI = request.URL.RequestURI()
 		if cookie != nil {
 			request.AddCookie(cookie)
 		}
@@ -100,6 +101,7 @@ func TestOwnerBusinessRouteUsesScopedSessionAndBindsConfiguredPerson(t *testing.
 		t.Fatalf("protected handler ran for unauthenticated/different-person requests: %d", handlerCalls)
 	}
 	forged := httptest.NewRequest(http.MethodGet, origin+"/owner/private", nil)
+	forged.RequestURI = forged.URL.RequestURI()
 	forged.AddCookie(ownerCookie)
 	forged.Header.Set("X-AMOS-Person-ID", otherID.String())
 	forged.Header.Set("X-Authenticated-User", otherID.String())
@@ -110,6 +112,7 @@ func TestOwnerBusinessRouteUsesScopedSessionAndBindsConfiguredPerson(t *testing.
 	}
 
 	missingCSRF := httptest.NewRequest(http.MethodPost, origin+"/owner/private", strings.NewReader("value=1"))
+	missingCSRF.RequestURI = missingCSRF.URL.RequestURI()
 	missingCSRF.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	missingCSRF.Header.Set("Origin", origin)
 	missingCSRF.AddCookie(ownerCookie)
@@ -126,6 +129,7 @@ func TestOwnerBusinessRouteUsesScopedSessionAndBindsConfiguredPerson(t *testing.
 		t.Fatal("native session cookie did not yield its bound CSRF token")
 	}
 	foreignOrigin := httptest.NewRequest(http.MethodPost, origin+"/owner/private", strings.NewReader(url.Values{"_csrf": {csrf}}.Encode()))
+	foreignOrigin.RequestURI = foreignOrigin.URL.RequestURI()
 	foreignOrigin.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	foreignOrigin.Header.Set("Origin", "https://foreign.example.test")
 	foreignOrigin.AddCookie(ownerCookie)
@@ -136,6 +140,7 @@ func TestOwnerBusinessRouteUsesScopedSessionAndBindsConfiguredPerson(t *testing.
 	}
 
 	validMutation := httptest.NewRequest(http.MethodPost, origin+"/owner/private", strings.NewReader(url.Values{"_csrf": {csrf}}.Encode()))
+	validMutation.RequestURI = validMutation.URL.RequestURI()
 	validMutation.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	validMutation.Header.Set("Origin", origin)
 	validMutation.AddCookie(ownerCookie)
