@@ -1,10 +1,10 @@
 # AMOS implementation plan
 
-Date: 2026 09 30 UTC. Status: complete initial task inventory, implementation not started. This is an engineering, documentation and operations plan. It preserves the full product architecture while delivering independently qualified stages.
+Date: 2026 10 03. Status: complete initial task inventory; implementation underway. This is an engineering, documentation and operations plan. It preserves the full product architecture while delivering independently qualified stages. Current acceptance is 57 of 257 tasks per the execution registry; this count is not a product-completion measure.
 
 ## Context
 
-AMOS supplies a complete open-source application foundation: owner-hosted web application, shared accounts/workspaces/subscriptions, developer initialization/deployment CLI, business extension routing, OpenAPI-derived APIs/MCP, customizable UI, upgrades, operational tooling and bounded autonomous maintenance. See [VISION](VISION.md), [RFC 0001](rfc/rfc-0001.md) and the [decision records](adr/001-application-boundary.md).
+AMOS supplies a complete open-source application foundation: owner-hosted web application, identity/workspaces/policy/audit/billing, developer initialization/deployment CLI, business extension routing, OpenAPI-derived APIs/MCP, customizable UI, upgrades, operational tooling and bounded domain maintenance. AMOS remains useful during external workflow outages and does not duplicate task/PR orchestration. See [VISION](VISION.md), [RFC 0001](rfc/rfc-0001.md), [RFC 0002](rfc/rfc-0002.md) and the [decision records](adr/001-application-boundary.md).
 
 Default development stack is Go SSR, HTMX and plain JavaScript/CSS. Owners select either managed containers/managed PostgreSQL or a smaller VM running the app and PostgreSQL. Both profiles use AWS and required Cloudflare. External agents run independently. Personal and organization subscriptions remain separate. All selected authentication and pricing models are in scope even when an early staged release is narrower.
 
@@ -54,7 +54,7 @@ Out of scope for this plan: GCP implementation, SAML, end-user native/mobile/SMS
 
 ## Checkable Work Breakdown
 
-Every epic below links to checkbox tasks and per-task contracts. All counts are zero complete. `fidelity: executable` indicates detailed task format, not permission/readiness/certification; external gates and unmet dependencies remain binding.
+Every epic below links to checkbox tasks and per-task contracts. The generated epic checkbox totals are the initial inventory snapshot and are not current acceptance status; consult the authoritative execution registry. `fidelity: executable` indicates detailed task format, not permission/readiness/certification; external gates and unmet dependencies remain binding.
 
 ### E1 -- Foundation contracts provenance and verification harness -> docs/plans/E1.md (0/13)
 
@@ -164,9 +164,19 @@ Follow [execution.md](planning/execution.md). An implementation task needs meani
 
 A new worker starts from [RESUME](RESUME.md), reads its task and completed dependencies, claims ownership, and uses an isolated worktree. A single integrator updates this plan. Re-render after reviewed changes to canonical planning data and run `python3 scripts/check-plan.py`. Never promote a task to execution-certified without the intended cheap-tier run and reviewed evidence.
 
+### Accepted delivery and review boundary (2026-10-03)
+
+The immutable approved product plan remains the source for product scope and aggregate admission. An enrolled code-change lifecycle has one canonical scheduler and authoritative admission/result adapter. It exposes executable author, independent review, bounded fix, re-review and delivery rows through ordinary plan/apply/claim; a projection or checkbox alone is not a task acceptance. Coding finishes at PR URL and exact-head handoff. Every code-changing PR receives independent exact-head review. A blocking finding creates visible bounded fix and re-review rows; attempted negative review does not release the delivery gate. Ordinary descendants wait for reviewed merge and verified landing. Explicit speculative dependencies may start earlier, without release authority. No task acceptance is inferred or changed here.
+
+AMOS owns identity, workspaces, policy, audit, billing and API/MCP. The code-change lifecycle service owns PR safety and its executable child tasks. The product workflow controller owns delivery, qualification and product-level dependencies. Shared generic plan/apply/claim representation, readiness and stage routing remain reusable; an enrolled lifecycle uses its service's authoritative admission/result adapter. AMOS retains owner-local diagnosis, proposal/upgrade generation and bounded domain jobs, and remains useful if either external service is unavailable. Do not build a second task/PR orchestrator in AMOS. Release and upgrade profiles are immutable and versioned; restricted source is not transplanted into this public repository.
+
+The execution record remains authoritative for accepted tasks. This documentation reconciliation does not modify its records or infer acceptance from local generation, billing components, a design artifact or external-service contracts.
+
 ## Progress Log
 
-2026 09 30: created public VISION/RFC, ADRs 001-008, E1-E16 full inventory, 257 task contracts, 116 use cases, resolved dependency waves and review corrections; implementation and provider qualification remain not started.
+2026 09 30: created public VISION/RFC, ADRs 001-008, E1-E16 full inventory, 257 task contracts, 116 use cases, resolved dependency waves and review corrections; implementation and provider qualification remained not started at that time. This is historical; later acceptance evidence is recorded only in the execution registry.
+
+2026 10 03: reconciled accepted external lifecycle boundaries and current public status. No execution-state record changed; no new task acceptance, provider qualification or production readiness is claimed.
 
 ## Hand off Notes
 

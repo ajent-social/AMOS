@@ -19,3 +19,15 @@ Inventory all requirements and granular task contracts now. Require dependency/o
 ## Consequences
 
 Later task contracts remain provisional and uncertified. Current capacity and build leases can reduce concurrency; task count is not delivery-time evidence. Never bypass review to satisfy a calendar target.
+
+## Boundary clarification (2026-10-03)
+
+Each enrolled code-change lifecycle has one canonical scheduler and admission
+authority. Review and any bounded fix/re-review are executable ordinary
+apply-and-claim tasks. Coding ends at PR URL and exact-head handoff. Every
+code-changing PR receives independent exact-head review; ordinary descendants
+wait for reviewed merge and verified landing. Explicit speculative dependencies
+may start earlier without release authority. Shared generic plan/apply/claim
+representation and routing remain reusable, with lifecycle-specific admission
+and result handling supplied by the owning service. Product delivery and
+qualification remain separate. This clarification changes no task acceptance.

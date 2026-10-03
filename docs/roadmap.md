@@ -1,12 +1,14 @@
 # AMOS roadmap
 
-Updated: 2026-10-01. Public implementation status.
+Updated: 2026-10-03. Public implementation status.
 
 ## Current status
 
 The reviewed foundation is merged into `main`. There is no released, complete runnable SaaS and no qualified production deployment yet.
 
-The execution record contains 50 accepted tasks out of 257 planned tasks. Atomic initializer generation, signup/sign-in components, default reference browser flows, billing persistence and replaceable UI overrides are reviewed. Task counts measure accepted work items, not percentage of product completion. Consult the [execution record](planning/execution-state.json) for current evidence.
+The execution record contains 57 accepted tasks out of 257 planned tasks. Atomic initializer generation, signup/sign-in components, default reference browser flows, billing persistence and replaceable UI overrides are reviewed. Task counts measure accepted work items, not percentage of product completion. Consult the [execution record](planning/execution-state.json) for current evidence.
+
+The generated local evaluation path supports qualified local generation only. It does not qualify complete billing, live providers, a production deployment or operational readiness. AMOS owns identity, workspaces, policy, audit, billing and API/MCP application boundaries. A code-change lifecycle service owns PR safety and the executable author/review/fix/re-review/landing tasks; a product workflow controller owns product delivery and qualification. AMOS can operate independently during either service's outage and retains owner-local diagnosis, proposal/upgrade generation and bounded domain jobs without duplicating task or PR orchestration.
 
 ## Integrated foundation
 
@@ -33,12 +35,12 @@ A generated runnable application is the next milestone; the full identity, billi
 
 - Complete account flows, recovery, social providers, passkeys, enterprise OIDC and MFA.
 - Organization creation, invitations, role management and account administration.
-- Stripe subscription processing, seat/usage accounting and enforced entitlements.
+- Complete Stripe subscription processing, seat/usage accounting and enforced entitlements. Existing billing persistence and local generation do not qualify billing.
 - Generated repositories, business extension templates and `amos deploy`.
 - Go Pulumi infrastructure for managed and small-VM AWS profiles, Cloudflare and CI/CD.
 - OpenAPI-generated MCP with the same current application permissions as other interfaces.
 - Monitoring, backups, tested recovery, explicit profile migration and release qualification.
-- Automated upgrade pull requests and bounded autonomous maintenance with independent verification and release controls.
+- Immutable release/upgrade profiles, automated upgrade proposals and bounded owner-local domain maintenance, integrated with the external code-change lifecycle for PR safety and the product workflow for delivery/qualification.
 
 ## Complete staged delivery
 

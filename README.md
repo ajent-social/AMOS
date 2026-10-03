@@ -13,7 +13,7 @@ amos deploy
 
 The interactive initializer and deployment commands are the target workflow. A config-driven local initializer is available below. The initializer will generate a Go application, default UI, GitHub Actions workflows and infrastructure as code. Deployment will bring the application online at its own domain.
 
-AMOS will handle shared routes such as `/signin` and account settings, while the business application owns its landing page and business routes on the same public domain. The default integrates business code into the Go application; a separate-service option will support other stacks.
+AMOS owns identity, workspace, policy, audit, billing and API/MCP application capabilities. The business application owns its landing page and business routes on the same public domain. The default integrates business code into the Go application; a separate-service option will support other stacks. AMOS remains useful during external workflow-service outages.
 
 ## Planned capabilities
 
@@ -22,7 +22,7 @@ AMOS will handle shared routes such as `/signin` and account settings, while the
 - Flat-rate, seat-based and usage-based subscriptions through a provider abstraction, starting with Stripe.
 - Web interfaces and APIs, with MCP generated from OpenAPI so independently operated agents can connect. Mobile, SMS and end-user CLI clients come later.
 - AWS deployment with required Cloudflare integration, offering managed containers/database and a small virtual machine profile.
-- Deployment, monitoring, backups, recovery, automated upgrade pull requests and controlled autonomous maintenance.
+- Deployment, monitoring, backups, recovery, immutable release and upgrade profiles, and owner controlled bounded domain maintenance.
 
 Application code and Pulumi infrastructure programs use Go. The default UI uses server-rendered HTML, HTMX and plain JavaScript/CSS, and is replaceable. AMOS enforces application authorization; external agents retain their own governance.
 
@@ -32,7 +32,9 @@ AMOS is under active development. It is not yet a complete runnable SaaS or a qu
 
 Implemented foundations include real PostgreSQL test infrastructure and transactional migrations; configuration and policy validation; durable jobs and an outbox; email delivery and audit components; identity storage, sessions, password hashing, email verification and signup/sign-in components; workspace persistence, personal workspace bootstrap and request context; OpenAPI validation and Go code generation; a tenant-scoped reference todo service; the default UI renderer and protected template overrides; atomic initializer generation; and scoped billing intents and persistence.
 
-The generated local application now composes signup, explicit email verification, sign-in, a personal workspace, reference todos, password recovery and guarded TOTP services. Organization administration, subscription processing, deployment commands, cloud infrastructure, MCP, upgrades and operational recovery remain to be completed. Local tests and provider fixtures do not qualify live services.
+The generated local application composes signup, explicit email verification, sign-in, a personal workspace, reference todos, password recovery and guarded TOTP services. The execution record currently accepts 57 of 257 planned tasks; this is a task count, not a completion percentage. Organization administration, complete subscription processing, deployment commands, cloud infrastructure, MCP, upgrades and operational recovery remain to be completed. Local generation is qualified only for the documented evaluation path; billing and production are not qualified. Local checks and provider fixtures do not qualify live services.
+
+AMOS owns application identity, workspaces, policy, audit, billing and API/MCP boundaries. An external code-change lifecycle service owns PR safety and the executable author, independent review, bounded fix, re-review and landing tasks. A separate product workflow controller owns product delivery and qualification. AMOS may diagnose owner-local issues, generate proposals and upgrades, and run bounded domain jobs; it does not build a second task or PR orchestrator. Release and upgrade profiles are immutable and owner reviewed. Restricted implementation source is not copied into this public repository.
 
 See the [current roadmap](docs/roadmap.md) and [execution record](docs/planning/execution-state.json) for task-level progress.
 
