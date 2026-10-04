@@ -132,7 +132,7 @@ func export(planBytes, stateBytes []byte) (any, error) {
 				meta["narrativeQualification"] = "unverified"
 			}
 			tasks = append(tasks, map[string]any{"id": id, "title": t.Title, "stage": t.Stage, "authoredStatus": "pending", "acceptance": strings.Join(t.Acceptance, "\n"), "source": map[string]any{"ref": sourceRef, "canonicalId": t.ID}, "dependencies": deps, "metadata": meta})
-			requirements = append(requirements, map[string]any{"id": "amos:acceptance:" + t.ID, "taskId": id, "predicate": "domain-accepted", "policyRevision": "amos-native/1", "subject": map[string]any{}, "domain": "amos:task-acceptance"})
+			requirements = append(requirements, map[string]any{"id": "amos:acceptance:" + t.ID, "taskId": id, "predicate": "domain-accepted", "policyRevision": "amos-native/1", "subject": map[string]any{"artifact": id}, "domain": "amos:task-acceptance"})
 		}
 	}
 	// Sorting is defensive: source order is stable, but callers should not rely on it.

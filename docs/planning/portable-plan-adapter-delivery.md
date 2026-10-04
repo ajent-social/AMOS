@@ -11,7 +11,11 @@ authored truth. This delivery does not qualify execution or deployment.
 - [x] Keep narrative `ACCEPTED`/`REVIEWED` unqualified; emit no execution
   snapshot, evidence, or evaluations.
 - [x] Verify focused Go tests, native plan integrity, and frozen schema shape.
-- [ ] Verify against the owning semantic validator at an exact qualified pin.
+- [x] Verify the full 257-task export against the owning offline semantic
+  validator from CI run 37184831031 (binary SHA-256
+  `f26d7731a0b4f9662dedb7d007ee375236c7dc8f7f3cff9393cf9d0aab59695e`):
+  valid, zero findings, `authorityAuthenticated=false`. Final owner handoff
+  remains pending.
 - [ ] Obtain independent exact-head review, address findings, and reverify.
 - [ ] Merge and verify the landed tree and public artifact scan.
 

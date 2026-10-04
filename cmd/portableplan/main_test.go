@@ -43,6 +43,17 @@ func TestNarrativeCannotQualifyGate(t *testing.T) {
 	if len(got.Definition.Tasks) != 2 || len(got.Definition.Requirements) != 2 {
 		t.Fatal("lost tasks or acceptance requirements")
 	}
+	var requirement struct {
+		Subject struct {
+			Artifact string `json:"artifact"`
+		} `json:"subject"`
+	}
+	if err := json.Unmarshal(got.Definition.Requirements[0], &requirement); err != nil {
+		t.Fatal(err)
+	}
+	if requirement.Subject.Artifact != "amos:task:T1" {
+		t.Fatalf("wrong logical acceptance subject: %+v", requirement.Subject)
+	}
 	first, second := got.Definition.Tasks[0], got.Definition.Tasks[1]
 	if first.AuthoredStatus != "pending" || first.Acceptance != "First line\nSecond line" || first.Metadata["narrativeStatus"] != "ACCEPTED" {
 		t.Fatalf("lossy or promoted narrative: %+v", first)

@@ -14,6 +14,9 @@ dependencies become `domain-accepted` dependencies on an
 `amos:acceptance:<native ID>` requirement. The domain is
 `amos:task-acceptance`. The source revision is the SHA-256 digest of the exact
 plan file bytes, so any authored change yields a different revision.
+Each acceptance requirement names its logical AMOS task ID in the portable
+subject's artifact field. That ID is an acceptance subject, not a claim that a
+built or deployed artifact exists.
 
 `docs/planning/execution-state.json` contributes only narrative status and
 certification metadata, with its own digest. Its `ACCEPTED` and `REVIEWED`
