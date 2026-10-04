@@ -14,9 +14,12 @@ authored truth. This delivery does not qualify execution or deployment.
 - [x] Verify the full 257-task export against the owning offline semantic
   validator from CI run 37184831031 (binary SHA-256
   `f26d7731a0b4f9662dedb7d007ee375236c7dc8f7f3cff9393cf9d0aab59695e`):
-  valid, zero findings, `authorityAuthenticated=false`. Final owner handoff
-  remains pending.
-- [ ] Obtain independent exact-head review, address findings, and reverify.
+  valid, zero findings, `authorityAuthenticated=false`. The owning verifier
+  landed in Wazi main at `47b9d91bca0d30ac44337a6e5aa710efa89bfcfd`;
+  validator and CLI source match the pinned offline binary's source.
+- [x] Obtain independent exact-head review, address findings, and reverify.
+  Review found and resolved graph/provenance gaps; final implementation head
+  `24d3326958921c382fcb99be89e92202f99b0b2f` received CLEAR.
 - [ ] Merge and verify the landed tree and public artifact scan.
 
 The shared contract digest is
