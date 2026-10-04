@@ -2,8 +2,8 @@
 
 `go run ./cmd/portableplan` writes a read-only JSON interchange for the frozen
 portable plan contract `0.0.1` (`sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d`).
-Run it from the repository root. `-plan` and `-state` may point to other local
-copies of the two native inputs. The adapter version is
+Run it from the repository root; the two canonical input paths are fixed so
+the exported source references identify the exact files read. The adapter version is
 `amos-portable-plan/0.0.1`; consumers must pin that version and the source
 digest rather than assuming later exports have identical meaning.
 

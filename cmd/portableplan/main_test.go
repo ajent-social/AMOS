@@ -55,6 +55,9 @@ func TestNarrativeCannotQualifyGate(t *testing.T) {
 func TestRejectDanglingNativeReferences(t *testing.T) {
 	for _, tc := range []struct{ plan, state string }{
 		{strings.Replace(samplePlan, `"deps":["T1"]`, `"deps":["missing"]`, 1), `{}`},
+		{strings.Replace(samplePlan, `"deps":["T1"]`, `"deps":["T2"]`, 1), `{}`},
+		{strings.Replace(samplePlan, `"deps":[]`, `"deps":["T2"]`, 1), `{}`},
+		{strings.Replace(samplePlan, `"deps":["T1"]`, `"deps":["T1","T1"]`, 1), `{}`},
 		{samplePlan, `{"missing":{"status":"ACCEPTED"}}`},
 	} {
 		if _, err := export([]byte(tc.plan), []byte(tc.state)); err == nil {
