@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"sort"
@@ -66,12 +65,47 @@ func export(planBytes, stateBytes []byte) (any, error) {
 	planDigest := digest(planBytes)
 	revision := planDigest
 	known := map[string]bool{}
+	graph := map[string][]string{}
 	for _, epic := range plan.Epics {
 		for _, t := range epic.Tasks {
 			if t.ID == "" || known[t.ID] {
 				return nil, fmt.Errorf("empty or duplicate task ID %q", t.ID)
 			}
 			known[t.ID] = true
+			graph[t.ID] = t.Deps
+		}
+	}
+	visit := map[string]uint8{}
+	var checkGraph func(string) error
+	checkGraph = func(id string) error {
+		if visit[id] == 1 {
+			return fmt.Errorf("native dependency cycle at %s", id)
+		}
+		if visit[id] == 2 {
+			return nil
+		}
+		visit[id] = 1
+		seen := map[string]bool{}
+		for _, dep := range graph[id] {
+			if !known[dep] {
+				return fmt.Errorf("task %s has unknown dependency %s", id, dep)
+			}
+			if seen[dep] {
+				return fmt.Errorf("task %s repeats dependency %s", id, dep)
+			}
+			seen[dep] = true
+			if err := checkGraph(dep); err != nil {
+				return err
+			}
+		}
+		visit[id] = 2
+		return nil
+	}
+	for _, epic := range plan.Epics {
+		for _, t := range epic.Tasks {
+			if err := checkGraph(t.ID); err != nil {
+				return nil, err
+			}
 		}
 	}
 	for id := range state {
@@ -89,9 +123,6 @@ func export(planBytes, stateBytes []byte) (any, error) {
 			id := "amos:task:" + t.ID
 			deps := make([]any, 0, len(t.Deps))
 			for _, dep := range t.Deps {
-				if !known[dep] {
-					return nil, fmt.Errorf("task %s has unknown dependency %s", t.ID, dep)
-				}
 				deps = append(deps, map[string]any{"taskId": "amos:task:" + dep, "predicate": "domain-accepted", "requirementId": "amos:acceptance:" + dep})
 			}
 			meta := map[string]any{"nativeStage": t.Stage, "nativeContract": plan.Contract, "nativeTask": t.Other}
@@ -121,19 +152,16 @@ func export(planBytes, stateBytes []byte) (any, error) {
 }
 
 func main() {
-	planPath := flag.String("plan", sourceRef, "native authored plan")
-	statePath := flag.String("state", stateRef, "native narrative state")
-	flag.Parse()
-	if flag.NArg() != 0 {
+	if len(os.Args) != 1 {
 		fmt.Fprintln(os.Stderr, "unexpected positional arguments")
 		os.Exit(2)
 	}
-	plan, err := os.ReadFile(*planPath)
+	plan, err := os.ReadFile(sourceRef)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	state, err := os.ReadFile(*statePath)
+	state, err := os.ReadFile(stateRef)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
