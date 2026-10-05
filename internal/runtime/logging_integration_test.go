@@ -29,7 +29,7 @@ func TestRuntimeAutomaticallyLogsSanitizedRouteTemplate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	request := httptest.NewRequest(http.MethodGet, "/orders/person@example.test?access_token=query-secret", nil)
+	request := httptest.NewRequest(http.MethodGet, "/orders/person@example.test?access_token=example", nil)
 	request.Header.Set("Authorization", "Bearer header-secret")
 	request.Header.Set("Cookie", "session=cookie-secret")
 	request.Header.Set("X-Request-ID", "caller-controlled-id")
@@ -46,9 +46,9 @@ func TestRuntimeAutomaticallyLogsSanitizedRouteTemplate(t *testing.T) {
 	if record["request_id"] != requestID || record["route"] != "/orders/*" || record["status"] != float64(http.StatusServiceUnavailable) || record["error_code"] != "http.error" {
 		t.Fatalf("unexpected request log: %#v", record)
 	}
-	for _, secret := range []string{"person@example.test", "query-secret", "header-secret", "cookie-secret", "sensitive response body", "caller-controlled-id"} {
-		if strings.Contains(output.String(), secret) {
-			t.Fatalf("request log contains sensitive value %q", secret)
+	for _, sensitiveInput := range []string{"person@example.test", "example", "header-secret", "cookie-secret", "sensitive response body", "caller-controlled-id"} {
+		if strings.Contains(output.String(), sensitiveInput) {
+			t.Fatalf("request log contains sensitive value %q", sensitiveInput)
 		}
 	}
 }
