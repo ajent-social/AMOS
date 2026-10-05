@@ -98,28 +98,51 @@ func (h *Handler) readiness(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 	dependencies := make(map[string]string, len(h.optional)+2)
-	if err := h.database.PingContext(ctx); err != nil || ctx.Err() != nil {
+	databaseErr := h.database.PingContext(ctx)
+	if r.Context().Err() != nil {
+		return
+	}
+	if databaseErr != nil || ctx.Err() != nil {
 		dependencies["database"] = "unavailable"
 		writeJSON(w, r, http.StatusServiceUnavailable, response(w, readinessError(dependencies)))
 		return
 	}
 	dependencies["database"] = "available"
-	if err := h.migrationCheck(ctx); err != nil || ctx.Err() != nil {
+	migrationErr := h.migrationCheck(ctx)
+	if r.Context().Err() != nil {
+		return
+	}
+	if migrationErr != nil || ctx.Err() != nil {
 		dependencies["migrations"] = "unavailable"
 		writeJSON(w, r, http.StatusServiceUnavailable, response(w, readinessError(dependencies)))
 		return
 	}
 	dependencies["migrations"] = "available"
 	degraded := false
-	for _, check := range h.optional {
-		if err := check.Check(ctx); err != nil || ctx.Err() != nil {
-			if ctx.Err() != nil {
-				dependencies[check.Name] = "unavailable"
-				writeJSON(w, r, http.StatusServiceUnavailable, response(w, readinessError(dependencies)))
-				return
+	for i, check := range h.optional {
+		if r.Context().Err() != nil {
+			return
+		}
+		if ctx.Err() != nil {
+			degraded = true
+			for _, pending := range h.optional[i:] {
+				dependencies[pending.Name] = "unavailable"
 			}
+			break
+		}
+		checkErr := check.Check(ctx)
+		if r.Context().Err() != nil {
+			return
+		}
+		if checkErr != nil || ctx.Err() != nil {
 			degraded = true
 			dependencies[check.Name] = "unavailable"
+			if ctx.Err() != nil {
+				for _, pending := range h.optional[i+1:] {
+					dependencies[pending.Name] = "unavailable"
+				}
+				break
+			}
 		} else {
 			dependencies[check.Name] = "available"
 		}
@@ -131,6 +154,9 @@ func (h *Handler) readiness(w http.ResponseWriter, r *http.Request) {
 	}
 	if degraded {
 		body["degraded"] = true
+	}
+	if r.Context().Err() != nil {
+		return
 	}
 	writeJSON(w, r, http.StatusOK, response(w, body))
 }
