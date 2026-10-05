@@ -51,3 +51,7 @@ Go's HTTP transport unexpectedly replayed a lost-response write despite zero SDK
 retries; disabling connection reuse prevented it and a transport mutation proved
 the regression. These qualify the adapter boundary, not live Stripe delivery,
 subscriptions, a generated executable or cloud deployment.
+
+## 2026-10-04 — First-class SDLC and production planning
+
+Owner-requested plan refinement preserves 257 original tasks and 57 accepted records. Added six dependency-linked delivery stages for each of 200 unaccepted tasks, plus 15 shared/production gates and a local draft graph. Maximum eligible GPT-6-Luna execution now continues through independent review, rebase merge, landed verification, release/staging, AWS production at https://amos.sire.run, live checks and operating acceptance. Missing runtime/provider/account/budget prerequisites remain visible gates. No source implementation, acceptance-state mutation, merge, release or deployment is claimed by this planning update.

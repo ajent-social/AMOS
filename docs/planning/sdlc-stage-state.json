@@ -1,0 +1,19 @@
+{
+  "schema": "amos-local-sdlc-stage-receipts-v1",
+  "status": "PLANNING_ONLY",
+  "plan": "docs/planning/sdlc-plan.json",
+  "product_acceptance_registry": "docs/planning/execution-state.json",
+  "tasks": {},
+  "receipt_requirements": [
+    "task_id",
+    "status",
+    "owner",
+    "claim",
+    "dependency_receipts",
+    "source_or_artifact_identity",
+    "commands_and_results",
+    "independent_review_and_findings",
+    "external_blockers",
+    "next_action"
+  ]
+}
