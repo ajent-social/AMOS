@@ -126,6 +126,9 @@ func (w *responseWriter) WriteHeader(status int) {
 	if w.wroteHeader {
 		return
 	}
+	// Restore the trusted ID before every committed header block, including
+	// informational responses, which are sent before a final status.
+	w.Header().Set("X-Request-ID", w.requestID)
 	// Informational responses do not finalize the response. Forward them while
 	// preserving the chance to capture and log the eventual final status.
 	if status >= 100 && status < 200 && status != http.StatusSwitchingProtocols {
@@ -134,9 +137,6 @@ func (w *responseWriter) WriteHeader(status int) {
 	}
 	w.wroteHeader = true
 	w.status = status
-	// The middleware-generated ID is authoritative. A handler or client-supplied
-	// value must never become the trusted response or log correlation ID.
-	w.Header().Set("X-Request-ID", w.requestID)
 	w.ResponseWriter.WriteHeader(status)
 }
 
