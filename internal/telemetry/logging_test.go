@@ -64,9 +64,9 @@ func TestLogging(t *testing.T) {
 			if _, ok := record["duration_ms"]; !ok {
 				t.Fatalf("missing duration: %#v", record)
 			}
-			for _, secret := range []string{bearer, cookie, "secret-cookie-value", "query-secret", "body-secret", "private-value", "external-correlation-value"} {
-				if strings.Contains(logs.String(), secret) {
-					t.Fatalf("log contains sensitive input %q", secret)
+			for _, sensitiveInput := range []string{bearer, cookie, "secret-cookie-value", "query-secret", "body-secret", "private-value", "external-correlation-value"} {
+				if strings.Contains(logs.String(), sensitiveInput) {
+					t.Fatalf("log contains sensitive input %q", sensitiveInput)
 				}
 			}
 		})
@@ -80,7 +80,7 @@ func TestLoggingMalformedCorrelationAndErrorCode(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(`{"code":"bad\ncode","private":"do-not-log"}`))
 	}))
-	req := httptest.NewRequest(http.MethodGet, "/raw-secret-path?password=secret", nil)
+	req := httptest.NewRequest(http.MethodGet, "/raw-secret-path?password=example", nil)
 	req.Header.Set("X-Request-ID", "bad\nexternal")
 	res := httptest.NewRecorder()
 	h.ServeHTTP(res, req)
