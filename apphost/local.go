@@ -28,6 +28,7 @@ import (
 	"github.com/ajent-social/amos/identity/protection"
 	"github.com/ajent-social/amos/identity/recovery"
 	"github.com/ajent-social/amos/identity/session"
+	"github.com/ajent-social/amos/internal/health"
 	"github.com/ajent-social/amos/jobs"
 	"github.com/ajent-social/amos/jobs/sqlstore"
 	"github.com/ajent-social/amos/storage"
@@ -231,12 +232,15 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	shared, err := app.New(app.Options{Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, ReadinessChecks: []app.ReadinessCheck{func(ctx context.Context) error {
-		if err := pool.PingContext(ctx); err != nil {
-			return err
-		}
-		return h.schemaReady(ctx)
-	}}})
+	healthHandler, err := health.NewHandler(health.Options{
+		Database:         pool,
+		MigrationCheck:   h.schemaReady,
+		ReadinessTimeout: 2 * time.Second, // Keep the health budget aligned with app's default readiness timeout.
+	})
+	if err != nil {
+		return nil, err
+	}
+	shared, err := app.New(app.Options{Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, HealthHandler: healthHandler})
 	if err != nil {
 		return nil, err
 	}
