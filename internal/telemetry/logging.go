@@ -23,7 +23,7 @@ type RouteTemplate func(*http.Request) string
 
 var (
 	// Request IDs are opaque 128-bit lowercase hex values. This matches the
-	// runtime's generated IDs and prevents caller-controlled log content.
+	// runtime's server-generated IDs and prevents caller-controlled log content.
 	validID    = regexp.MustCompile(`^[a-f0-9]{32}$`)
 	validRoute = regexp.MustCompile(`^/[A-Za-z0-9_./{}:*~-]{0,255}$`)
 	knownCodes = map[string]struct{}{
@@ -35,8 +35,8 @@ var (
 var fallbackIDSequence atomic.Uint64
 
 // Logging returns middleware that emits one structured record for each request.
-// It validates client correlation headers and never logs request
-// headers, query values, bodies, response bodies, or panic values.
+// It creates a server-generated request ID and never logs request headers,
+// query values, bodies, response bodies, or panic values.
 func Logging(logger *slog.Logger, route RouteTemplate, next http.Handler) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
@@ -47,9 +47,16 @@ func Logging(logger *slog.Logger, route RouteTemplate, next http.Handler) http.H
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
 		rw := &responseWriter{ResponseWriter: w}
-		requestID := r.Header.Get("X-Request-ID")
-		if !validID.MatchString(requestID) {
-			requestID = newID()
+		requestID := newID()
+		rw.requestID = requestID
+		if flusher, ok := w.(http.Flusher); ok {
+			rw.flusher = flusher
+		}
+		if hijacker, ok := w.(http.Hijacker); ok {
+			rw.hijacker = hijacker
+		}
+		if pusher, ok := w.(http.Pusher); ok {
+			rw.pusher = pusher
 		}
 		rw.Header().Set("X-Request-ID", requestID)
 		panicked := false
@@ -57,14 +64,14 @@ func Logging(logger *slog.Logger, route RouteTemplate, next http.Handler) http.H
 			defer func() {
 				if recover() != nil {
 					panicked = true
-					if !rw.wroteHeader {
+					if !rw.wroteHeader && !rw.hijacked {
 						http.Error(rw, "internal server error", http.StatusInternalServerError)
 					}
 				}
 			}()
-			next.ServeHTTP(rw, r)
+			next.ServeHTTP(wrapResponseWriter(rw), r)
 		}()
-		if !rw.wroteHeader {
+		if !rw.wroteHeader && !rw.hijacked {
 			rw.WriteHeader(http.StatusOK)
 		}
 		id := rw.requestID
@@ -78,8 +85,14 @@ func Logging(logger *slog.Logger, route RouteTemplate, next http.Handler) http.H
 		if panicked {
 			code = "handler.panic"
 		}
-		logger.Info("http request", "request_id", id, "route", routeValue, "method", r.Method,
-			"status", rw.status, "duration_ms", time.Since(started).Milliseconds(), "error_code", code)
+		attrs := []any{"request_id", id, "route", routeValue, "method", r.Method,
+			"duration_ms", time.Since(started).Milliseconds(), "error_code", code}
+		if rw.hijacked {
+			attrs = append(attrs, "hijacked", true)
+		} else {
+			attrs = append(attrs, "status", rw.status)
+		}
+		logger.Info("http request", attrs...)
 	})
 }
 
@@ -88,6 +101,10 @@ type responseWriter struct {
 	status      int
 	wroteHeader bool
 	requestID   string
+	hijacked    bool
+	flusher     http.Flusher
+	hijacker    http.Hijacker
+	pusher      http.Pusher
 	body        bytes.Buffer
 }
 
@@ -97,10 +114,9 @@ func (w *responseWriter) WriteHeader(status int) {
 	}
 	w.wroteHeader = true
 	w.status = status
-	if id := w.Header().Get("X-Request-ID"); !validID.MatchString(id) {
-		w.Header().Set("X-Request-ID", newID())
-	}
-	w.requestID = w.Header().Get("X-Request-ID")
+	// The middleware-generated ID is authoritative. A handler or client-supplied
+	// value must never become the trusted response or log correlation ID.
+	w.Header().Set("X-Request-ID", w.requestID)
 	w.ResponseWriter.WriteHeader(status)
 }
 
@@ -119,32 +135,99 @@ func (w *responseWriter) Write(p []byte) (int, error) {
 	return w.ResponseWriter.Write(p)
 }
 
-func (w *responseWriter) Flush() {
+func (w *responseWriter) flush() {
 	if !w.wroteHeader {
 		w.WriteHeader(http.StatusOK)
 	}
-	if f, ok := w.ResponseWriter.(http.Flusher); ok {
-		f.Flush()
-	}
+	w.flusher.Flush()
 }
 
-func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	h, ok := w.ResponseWriter.(http.Hijacker)
-	if !ok {
-		return nil, nil, http.ErrNotSupported
+func (w *responseWriter) hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn, rw, err := w.hijacker.Hijack()
+	if err == nil {
+		w.hijacked = true
 	}
-	return h.Hijack()
+	return conn, rw, err
 }
 
-func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
-	p, ok := w.ResponseWriter.(http.Pusher)
-	if !ok {
-		return http.ErrNotSupported
-	}
-	return p.Push(target, opts)
+func (w *responseWriter) push(target string, opts *http.PushOptions) error {
+	return w.pusher.Push(target, opts)
 }
 
 func (w *responseWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
+// Optional writer adapters expose only the capabilities supported by the
+// underlying ResponseWriter. Embedding the base keeps ResponseController's
+// Unwrap path available without advertising unsupported interfaces.
+type flushResponseWriter struct{ *responseWriter }
+
+func (w *flushResponseWriter) Flush() { w.flush() }
+
+type hijackResponseWriter struct{ *responseWriter }
+
+func (w *hijackResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return w.hijack()
+}
+
+type pushResponseWriter struct{ *responseWriter }
+
+func (w *pushResponseWriter) Push(target string, opts *http.PushOptions) error {
+	return w.push(target, opts)
+}
+
+type flushHijackResponseWriter struct{ *responseWriter }
+
+func (w *flushHijackResponseWriter) Flush() { w.flush() }
+func (w *flushHijackResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return w.hijack()
+}
+
+type flushPushResponseWriter struct{ *responseWriter }
+
+func (w *flushPushResponseWriter) Flush() { w.flush() }
+func (w *flushPushResponseWriter) Push(target string, opts *http.PushOptions) error {
+	return w.push(target, opts)
+}
+
+type hijackPushResponseWriter struct{ *responseWriter }
+
+func (w *hijackPushResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return w.hijack()
+}
+func (w *hijackPushResponseWriter) Push(target string, opts *http.PushOptions) error {
+	return w.push(target, opts)
+}
+
+type flushHijackPushResponseWriter struct{ *responseWriter }
+
+func (w *flushHijackPushResponseWriter) Flush() { w.flush() }
+func (w *flushHijackPushResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return w.hijack()
+}
+func (w *flushHijackPushResponseWriter) Push(target string, opts *http.PushOptions) error {
+	return w.push(target, opts)
+}
+
+func wrapResponseWriter(w *responseWriter) http.ResponseWriter {
+	switch {
+	case w.flusher != nil && w.hijacker != nil && w.pusher != nil:
+		return &flushHijackPushResponseWriter{w}
+	case w.flusher != nil && w.hijacker != nil:
+		return &flushHijackResponseWriter{w}
+	case w.flusher != nil && w.pusher != nil:
+		return &flushPushResponseWriter{w}
+	case w.hijacker != nil && w.pusher != nil:
+		return &hijackPushResponseWriter{w}
+	case w.flusher != nil:
+		return &flushResponseWriter{w}
+	case w.hijacker != nil:
+		return &hijackResponseWriter{w}
+	case w.pusher != nil:
+		return &pushResponseWriter{w}
+	default:
+		return w
+	}
+}
 
 func responseCode(body []byte) string {
 	if len(body) == 0 {

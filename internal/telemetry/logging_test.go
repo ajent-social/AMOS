@@ -1,9 +1,13 @@
 package telemetry
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
+	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -95,7 +99,7 @@ func TestLoggingMalformedCorrelationAndErrorCode(t *testing.T) {
 	}
 }
 
-func TestLoggingAcceptsBoundedCorrelationID(t *testing.T) {
+func TestLoggingNeverTrustsClientCorrelationID(t *testing.T) {
 	t.Parallel()
 	const correlationID = "0123456789abcdef0123456789abcdef"
 	var logs bytes.Buffer
@@ -106,19 +110,19 @@ func TestLoggingAcceptsBoundedCorrelationID(t *testing.T) {
 	req.Header.Set("X-Request-ID", correlationID)
 	res := httptest.NewRecorder()
 	h.ServeHTTP(res, req)
-	if got := res.Header().Get("X-Request-ID"); got != correlationID {
-		t.Fatalf("response ID = %q, want accepted correlation ID", got)
+	if got := res.Header().Get("X-Request-ID"); got == correlationID || !validID.MatchString(got) {
+		t.Fatalf("response ID = %q, want a distinct server-generated ID", got)
 	}
 	var record map[string]any
 	if err := json.Unmarshal(logs.Bytes(), &record); err != nil {
 		t.Fatal(err)
 	}
-	if record["request_id"] != correlationID {
-		t.Fatalf("logged ID = %#v, want accepted correlation ID", record["request_id"])
+	if record["request_id"] != res.Header().Get("X-Request-ID") || record["request_id"] == correlationID {
+		t.Fatalf("logged ID = %#v, want server-generated response ID", record["request_id"])
 	}
 }
 
-func TestLoggingUsesRuntimeRequestID(t *testing.T) {
+func TestLoggingDoesNotTrustHandlerRequestID(t *testing.T) {
 	const runtimeID = "0123456789abcdef0123456789abcdef"
 	var logs bytes.Buffer
 	inner := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -129,16 +133,142 @@ func TestLoggingUsesRuntimeRequestID(t *testing.T) {
 	h := Logging(slog.New(slog.NewJSONHandler(&logs, nil)), nil, inner)
 	res := httptest.NewRecorder()
 	h.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/", nil))
-	if res.Header().Get("X-Request-ID") != runtimeID {
-		t.Fatalf("response ID = %q, want runtime ID", res.Header().Get("X-Request-ID"))
+	if res.Header().Get("X-Request-ID") == runtimeID || !validID.MatchString(res.Header().Get("X-Request-ID")) {
+		t.Fatalf("response ID = %q, want middleware-generated ID", res.Header().Get("X-Request-ID"))
 	}
 	var record map[string]any
 	if err := json.Unmarshal(logs.Bytes(), &record); err != nil {
 		t.Fatal(err)
 	}
-	if record["request_id"] != runtimeID {
-		t.Fatalf("logged ID = %#v, want runtime ID", record["request_id"])
+	if record["request_id"] != res.Header().Get("X-Request-ID") {
+		t.Fatalf("logged ID = %#v, want response ID", record["request_id"])
 	}
+}
+
+type bareTestResponseWriter struct {
+	header http.Header
+	status int
+}
+
+func (w *bareTestResponseWriter) Header() http.Header {
+	if w.header == nil {
+		w.header = make(http.Header)
+	}
+	return w.header
+}
+func (w *bareTestResponseWriter) WriteHeader(status int) { w.status = status }
+func (w *bareTestResponseWriter) Write(p []byte) (int, error) {
+	if w.status == 0 {
+		w.status = 200
+	}
+	return len(p), nil
+}
+
+type flushTestResponseWriter struct {
+	*bareTestResponseWriter
+	flushed bool
+}
+
+func (w *flushTestResponseWriter) Flush() { w.flushed = true }
+
+type hijackTestResponseWriter struct {
+	*bareTestResponseWriter
+	conn     net.Conn
+	hijacked bool
+}
+
+func (w *hijackTestResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	w.hijacked = true
+	server, client := net.Pipe()
+	w.conn = client
+	return server, bufio.NewReadWriter(bufio.NewReader(server), bufio.NewWriter(server)), nil
+}
+
+type pushTestResponseWriter struct {
+	*bareTestResponseWriter
+	pushed bool
+}
+
+func (w *pushTestResponseWriter) Push(string, *http.PushOptions) error { w.pushed = true; return nil }
+
+func TestLoggingPreservesResponseWriterCapabilities(t *testing.T) {
+	t.Run("bare writer has no optional capabilities", func(t *testing.T) {
+		base := &bareTestResponseWriter{}
+		h := Logging(slog.New(slog.NewJSONHandler(io.Discard, nil)), nil, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			if _, ok := w.(http.Flusher); ok {
+				t.Error("wrapper falsely implements Flusher")
+			}
+			if _, ok := w.(http.Hijacker); ok {
+				t.Error("wrapper falsely implements Hijacker")
+			}
+			if _, ok := w.(http.Pusher); ok {
+				t.Error("wrapper falsely implements Pusher")
+			}
+			if err := http.NewResponseController(w).Flush(); !errors.Is(err, http.ErrNotSupported) {
+				t.Errorf("Flush error = %v, want ErrNotSupported", err)
+			}
+		}))
+		h.ServeHTTP(base, httptest.NewRequest(http.MethodGet, "/", nil))
+	})
+	t.Run("flush only", func(t *testing.T) {
+		base := &flushTestResponseWriter{bareTestResponseWriter: &bareTestResponseWriter{}}
+		Logging(slog.New(slog.NewJSONHandler(io.Discard, nil)), nil, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			if _, ok := w.(http.Flusher); !ok {
+				t.Error("Flusher capability missing")
+			}
+			if _, ok := w.(http.Hijacker); ok {
+				t.Error("wrapper falsely implements Hijacker")
+			}
+			if _, ok := w.(http.Pusher); ok {
+				t.Error("wrapper falsely implements Pusher")
+			}
+			if err := http.NewResponseController(w).Flush(); err != nil {
+				t.Errorf("Flush error = %v", err)
+			}
+		})).ServeHTTP(base, httptest.NewRequest(http.MethodGet, "/", nil))
+		if !base.flushed || base.status != http.StatusOK {
+			t.Fatalf("flush=%v status=%d", base.flushed, base.status)
+		}
+	})
+	t.Run("push only", func(t *testing.T) {
+		base := &pushTestResponseWriter{bareTestResponseWriter: &bareTestResponseWriter{}}
+		Logging(slog.New(slog.NewJSONHandler(io.Discard, nil)), nil, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			if _, ok := w.(http.Pusher); !ok {
+				t.Error("Pusher capability missing")
+			}
+			if _, ok := w.(http.Flusher); ok {
+				t.Error("wrapper falsely implements Flusher")
+			}
+			if _, ok := w.(http.Hijacker); ok {
+				t.Error("wrapper falsely implements Hijacker")
+			}
+			_ = w.(http.Pusher).Push("/asset", nil)
+		})).ServeHTTP(base, httptest.NewRequest(http.MethodGet, "/", nil))
+		if !base.pushed {
+			t.Fatal("push was not forwarded")
+		}
+	})
+	t.Run("hijack omits synthetic status", func(t *testing.T) {
+		var logs bytes.Buffer
+		base := &hijackTestResponseWriter{bareTestResponseWriter: &bareTestResponseWriter{}}
+		Logging(slog.New(slog.NewJSONHandler(&logs, nil)), nil, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			conn, _, err := http.NewResponseController(w).Hijack()
+			if err != nil {
+				t.Fatal(err)
+			}
+			_ = conn.Close()
+		})).ServeHTTP(base, httptest.NewRequest(http.MethodGet, "/", nil))
+		if base.status != 0 {
+			t.Fatalf("status after successful hijack = %d", base.status)
+		}
+		if !base.hijacked {
+			t.Fatal("underlying writer was not hijacked")
+		}
+		if !strings.Contains(logs.String(), `"hijacked":true`) || strings.Contains(logs.String(), `"status"`) {
+			t.Fatalf("unexpected hijack log: %s", logs.String())
+		}
+		_ = base.conn.Close()
+	})
 }
 
 func TestLoggingComposesWithRuntime(t *testing.T) {
