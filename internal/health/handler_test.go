@@ -100,6 +100,96 @@ func TestReadinessTimeoutIsUnavailable(t *testing.T) {
 	}
 }
 
+func TestOptionalReadinessTimeoutDegrades(t *testing.T) {
+	t.Parallel()
+	checks := []struct {
+		name  string
+		check Check
+	}{
+		{
+			name: "returns context error",
+			check: func(ctx context.Context) error {
+				<-ctx.Done()
+				return ctx.Err()
+			},
+		},
+		{
+			name: "returns nil after context expires",
+			check: func(ctx context.Context) error {
+				<-ctx.Done()
+				return nil
+			},
+		},
+	}
+	for _, tc := range checks {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			h, err := NewHandler(Options{
+				Database:         testPinger{},
+				MigrationCheck:   func(context.Context) error { return nil },
+				OptionalChecks:   []OptionalCheck{{Name: "mail", Check: tc.check}},
+				ReadinessTimeout: 10 * time.Millisecond,
+			})
+			if err != nil {
+				t.Fatalf("NewHandler() error = %v", err)
+			}
+			recorder := httptest.NewRecorder()
+			h.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, ReadinessPath, nil))
+			if recorder.Code != http.StatusOK {
+				t.Fatalf("HTTP status = %d, want 200", recorder.Code)
+			}
+			for _, fragment := range []string{`"status":"ready"`, `"degraded":true`, `"mail":"unavailable"`} {
+				if !strings.Contains(recorder.Body.String(), fragment) {
+					t.Errorf("body %q does not contain %q", recorder.Body.String(), fragment)
+				}
+			}
+		})
+	}
+}
+
+func TestParentRequestCancellationDoesNotBecomeOptionalDegradation(t *testing.T) {
+	t.Parallel()
+	started := make(chan struct{})
+	h, err := NewHandler(Options{
+		Database:       testPinger{},
+		MigrationCheck: func(context.Context) error { return nil },
+		OptionalChecks: []OptionalCheck{{
+			Name: "mail",
+			Check: func(ctx context.Context) error {
+				close(started)
+				<-ctx.Done()
+				return ctx.Err()
+			},
+		}},
+		ReadinessTimeout: time.Second,
+	})
+	if err != nil {
+		t.Fatalf("NewHandler() error = %v", err)
+	}
+	requestContext, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	recorder := httptest.NewRecorder()
+	done := make(chan struct{})
+	go func() {
+		h.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, ReadinessPath, nil).WithContext(requestContext))
+		close(done)
+	}()
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("optional check did not start")
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("request cancellation did not stop readiness")
+	}
+	if recorder.Body.Len() != 0 || recorder.Header().Get("Content-Type") != "" {
+		t.Fatalf("canceled request wrote a response body/header: body=%q content-type=%q", recorder.Body.String(), recorder.Header().Get("Content-Type"))
+	}
+}
+
 func TestNewHandlerRejectsMissingRequiredChecks(t *testing.T) {
 	t.Parallel()
 	_, err := NewHandler(Options{ReadinessTimeout: time.Second})
