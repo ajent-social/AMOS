@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
@@ -39,12 +40,14 @@ type ReadinessCheck func(context.Context) error
 // This constructor seam does not relax business route reservations.
 type IdentityHandlers = runtime.IdentityHandlers
 
-// Options configure the app's required dependency checks and HTTP lifecycle.
-// Empty ReadinessChecks means the app declares no external readiness dependency.
+// Options configure the app's routes, required dependency checks, logging and
+// HTTP lifecycle. A nil Logger uses slog.Default. Empty ReadinessChecks means
+// the app declares no external readiness dependency.
 type Options struct {
 	Identity         IdentityHandlers
 	Workspaces       http.Handler
 	HealthHandler    http.Handler
+	Logger           *slog.Logger
 	ReadinessChecks  []ReadinessCheck
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -79,6 +82,7 @@ func New(options Options) (*App, error) {
 		Identity:         options.Identity,
 		Workspaces:       options.Workspaces,
 		HealthHandler:    options.HealthHandler,
+		Logger:           options.Logger,
 		ReadinessChecks:  checks,
 		ReadinessTimeout: readinessTimeout,
 		ShutdownTimeout:  shutdownTimeout,
