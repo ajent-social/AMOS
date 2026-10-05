@@ -34,6 +34,7 @@ var reservedRoots = []string{"/signin", "/signout", "/signup", "/auth", "/verify
 type Options struct {
 	Identity         IdentityHandlers
 	Workspaces       http.Handler
+	HealthHandler    http.Handler
 	ReadinessChecks  []func(context.Context) error
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -49,6 +50,7 @@ type Runtime struct {
 	identity         map[string]http.Handler
 	mu               sync.RWMutex
 	routes           []route
+	healthHandler    http.Handler
 	checks           []func(context.Context) error
 	readinessTimeout time.Duration
 	shutdownTimeout  time.Duration
@@ -56,7 +58,7 @@ type Runtime struct {
 }
 
 func New(opts Options) (*Runtime, error) {
-	if opts.ReadinessTimeout <= 0 || opts.ShutdownTimeout <= 0 {
+	if opts.ReadinessTimeout <= 0 || opts.ShutdownTimeout <= 0 || (opts.HealthHandler != nil && len(opts.ReadinessChecks) != 0) {
 		return nil, ErrInvalidOptions
 	}
 	for _, check := range opts.ReadinessChecks {
@@ -67,7 +69,7 @@ func New(opts Options) (*Runtime, error) {
 	routes := opts.Identity.routes()
 	routes["GET /workspaces"] = opts.Workspaces
 	routes["POST /workspaces"] = opts.Workspaces
-	return &Runtime{identity: routes, checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}, nil
+	return &Runtime{identity: routes, healthHandler: opts.HealthHandler, checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}, nil
 }
 
 func (r *Runtime) Register(method, pattern string, handler http.Handler) error {
@@ -205,6 +207,10 @@ func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if req.Method != http.MethodGet && req.Method != http.MethodHead {
 				w.Header().Set("Allow", "GET, HEAD")
 				writeError(w, http.StatusMethodNotAllowed, requestID, "method.not_allowed", "method is not allowed")
+				return
+			}
+			if r.healthHandler != nil {
+				r.healthHandler.ServeHTTP(w, req)
 				return
 			}
 			if path == "/healthz" {
