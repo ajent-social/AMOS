@@ -1,0 +1,152 @@
+openapi: 3.1.1
+info:
+  title: AMOS Personal Billing API
+  version: 1.0.0
+paths:
+  /billing/personal:
+    get:
+      operationId: billing.personal.subscription.read
+      summary: Inspect the current personal workspace subscription
+      x-amos-policy:
+        operationId: billing.personal.subscription.read
+        permissions: [billing.manage]
+        entitlements: []
+        assurance: aal1
+        sideEffect: read
+        idempotency: forbidden
+        mcp: never
+      responses:
+        '200':
+          description: Current provider subscription snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalSubscription'
+        '403':
+          description: Current personal workspace ownership or recent password proof is required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
+        '503':
+          description: Required billing or provider state is unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
+  /billing/personal/portal:
+    post:
+      operationId: billing.personal.portal.create
+      summary: Enter the provider portal for the current personal workspace
+      description: A recent password-authenticated session is required. Portal return does not confirm any billing change.
+      x-amos-policy:
+        operationId: billing.personal.portal.create
+        permissions: [billing.manage]
+        entitlements: []
+        assurance: aal1
+        sideEffect: external
+        idempotency: forbidden
+        mcp: never
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 256 }
+      responses:
+        '200':
+          description: Provider portal session created
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [state, redirect_url]
+                properties:
+                  state:
+                    const: portal_ready
+                  redirect_url:
+                    type: string
+                    format: uri
+        '403':
+          description: Current personal workspace ownership or recent password proof is required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
+        '503':
+          description: Provider portal is unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
+  /billing/personal/cancel:
+    post:
+      operationId: billing.personal.cancel.portal
+      summary: Enter the provider portal to manage cancellation
+      description: Opens the provider portal. Cancellation is not requested or confirmed by this API operation; authoritative provider reconciliation remains required.
+      x-amos-policy:
+        operationId: billing.personal.cancel.portal
+        permissions: [billing.manage]
+        entitlements: []
+        assurance: aal1
+        sideEffect: external
+        idempotency: forbidden
+        mcp: never
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 256 }
+      responses:
+        '200':
+          description: Provider portal session created
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [state, redirect_url]
+                properties:
+                  state:
+                    const: portal_ready
+                  redirect_url:
+                    type: string
+                    format: uri
+        '403':
+          description: Current personal workspace ownership or recent password proof is required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
+        '503':
+          description: Provider portal is unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
+components:
+  schemas:
+    PersonalBillingError:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string }
+    PersonalSubscription:
+      type: object
+      additionalProperties: false
+      required: [snapshot_state, price_key, quantity, period_start, period_end, observed_at]
+      properties:
+        snapshot_state:
+          type: string
+          const: confirmed
+        price_key:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        observed_at:
+          type: string
+          format: date-time
