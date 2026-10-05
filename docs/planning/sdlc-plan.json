@@ -26532,7 +26532,7 @@
       ],
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
-      "acceptance": "Existing approved product scope, original task contracts, mapped use cases and currently documented privacy and regulatory constraints are reconciled against docs/VISION.md, docs/planning/requirements.md and docs/planning/contracts.md. No product capability, use case or regulatory obligation is added, removed or narrowed. Any contradiction or unresolved interpretation is recorded as an owner decision and blocks affected downstream work; all 257 original task IDs and accepted evidence remain unchanged.",
+      "acceptance": "Existing approved product scope, original task contracts, mapped use cases and currently documented privacy and regulatory constraints are reconciled against docs/VISION.md, docs/planning/requirements.md and docs/planning/contracts.md. No product capability, use case or regulatory obligation is added, removed or narrowed. Any contradiction or unresolved interpretation is recorded as an owner decision and blocks affected downstream work; all 257 original task IDs and accepted evidence remain unchanged. Completion additionally requires independent domain/content review by a reviewer distinct from the preparer, with the reviewed scope and baseline revision, validation evidence, stable findings and their dispositions recorded. Unresolved review findings block completion and every dependent gate.",
       "status": "PLANNED",
       "dependency_depth": 2,
       "projection_id": "E-SDLC-PROD.T-PROD.14"
@@ -26547,7 +26547,7 @@
       ],
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
-      "acceptance": "Crosscutting design assumptions in docs/VISION.md, docs/rfc/rfc-0001.md, accepted ADRs and docs/planning/contracts.md are qualified against the accepted requirements baseline, with authority, privacy, tenancy, interface ownership, billing, migrations, provider failure and recovery boundaries consistent. Conflicts are recorded as owner decisions and block affected work. Existing subsystem task owners retain their specific designs; this gate creates no competing design or new product scope.",
+      "acceptance": "Crosscutting design assumptions in docs/VISION.md, docs/rfc/rfc-0001.md, accepted ADRs and docs/planning/contracts.md are qualified against the accepted requirements baseline, with authority, privacy, tenancy, interface ownership, billing, migrations, provider failure and recovery boundaries consistent. Conflicts are recorded as owner decisions and block affected work. Existing subsystem task owners retain their specific designs; this gate creates no competing design or new product scope. Completion additionally requires independent domain/content review by a reviewer distinct from the preparer, with the reviewed scope and baseline revision, validation evidence, stable findings and their dispositions recorded. Unresolved review findings block completion and every dependent gate.",
       "status": "PLANNED",
       "dependency_depth": 3,
       "projection_id": "E-SDLC-PROD.T-PROD.15"
