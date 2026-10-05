@@ -3,11 +3,10 @@ package runtime
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -31,10 +30,13 @@ var (
 
 var reservedRoots = []string{"/signin", "/signout", "/signup", "/auth", "/verify-email", "/forgot-password", "/reset-password", "/oauth", "/.well-known", "/account", "/workspaces", "/billing", "/api", "/mcp", "/healthz", "/readyz"}
 
+// Options configure route composition and HTTP lifecycle. A nil Logger uses
+// slog.Default for one privacy-preserving record per request.
 type Options struct {
 	Identity         IdentityHandlers
 	Workspaces       http.Handler
 	HealthHandler    http.Handler
+	Logger           *slog.Logger
 	ReadinessChecks  []func(context.Context) error
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -51,6 +53,7 @@ type Runtime struct {
 	mu               sync.RWMutex
 	routes           []route
 	healthHandler    http.Handler
+	handler          http.Handler
 	checks           []func(context.Context) error
 	readinessTimeout time.Duration
 	shutdownTimeout  time.Duration
@@ -69,7 +72,9 @@ func New(opts Options) (*Runtime, error) {
 	routes := opts.Identity.routes()
 	routes["GET /workspaces"] = opts.Workspaces
 	routes["POST /workspaces"] = opts.Workspaces
-	return &Runtime{identity: routes, healthHandler: opts.HealthHandler, checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}, nil
+	runtime := &Runtime{identity: routes, healthHandler: opts.HealthHandler, checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}
+	runtime.handler = telemetry.Logging(opts.Logger, runtime.routeTemplate, http.HandlerFunc(runtime.serveHTTP))
+	return runtime, nil
 }
 
 func (r *Runtime) Register(method, pattern string, handler http.Handler) error {
@@ -185,10 +190,51 @@ func isReserved(path string) bool {
 }
 
 func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	requestID := telemetry.RequestID(req.Context())
-	if requestID == "" {
-		requestID = newRequestID()
+	// An explicitly composed outer telemetry middleware already owns the
+	// request ID and log record. Do not nest another logger or replace its ID.
+	if telemetry.RequestID(req.Context()) != "" {
+		r.serveHTTP(w, req)
+		return
 	}
+	r.handler.ServeHTTP(w, req)
+}
+
+func (r *Runtime) routeTemplate(req *http.Request) string {
+	if r == nil || req == nil || req.URL == nil {
+		return ""
+	}
+	raw := req.RequestURI
+	if raw == "" {
+		raw = req.URL.EscapedPath()
+	}
+	if i := strings.IndexByte(raw, '?'); i >= 0 {
+		raw = raw[:i]
+	}
+	path, err := normalizePath(raw, false)
+	if err != nil {
+		return ""
+	}
+	if path == "/healthz" || path == "/readyz" {
+		return path
+	}
+	if isReserved(path) {
+		if _, ok := r.identity[req.Method+" "+path]; ok {
+			return path
+		}
+		return ""
+	}
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, candidate := range r.routes {
+		if candidate.method == req.Method && (candidate.pattern == path || candidate.wildcard && strings.HasPrefix(path, strings.TrimSuffix(candidate.pattern, "*"))) {
+			return candidate.pattern
+		}
+	}
+	return ""
+}
+
+func (r *Runtime) serveHTTP(w http.ResponseWriter, req *http.Request) {
+	requestID := telemetry.RequestID(req.Context())
 	w.Header().Set("X-Request-ID", requestID)
 	raw := req.RequestURI
 	if raw == "" {
@@ -257,13 +303,6 @@ func (r *Runtime) readiness(w http.ResponseWriter, req *http.Request) {
 
 func writeError(w http.ResponseWriter, status int, requestID, code, message string) {
 	writeJSON(w, status, map[string]string{"code": code, "message": message, "request_id": requestID})
-}
-func newRequestID() string {
-	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "unavailable"
-	}
-	return hex.EncodeToString(b[:])
 }
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
