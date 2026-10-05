@@ -163,9 +163,10 @@ func TestLoggingPublishesMiddlewareRequestIDInContext(t *testing.T) {
 }
 
 type bareTestResponseWriter struct {
-	header   http.Header
-	status   int
-	statuses []int
+	header           http.Header
+	status           int
+	statuses         []int
+	committedHeaders []http.Header
 }
 
 func (w *bareTestResponseWriter) Header() http.Header {
@@ -176,6 +177,7 @@ func (w *bareTestResponseWriter) Header() http.Header {
 }
 func (w *bareTestResponseWriter) WriteHeader(status int) {
 	w.statuses = append(w.statuses, status)
+	w.committedHeaders = append(w.committedHeaders, w.Header().Clone())
 	if status >= 200 || status == http.StatusSwitchingProtocols {
 		w.status = status
 	}
@@ -298,12 +300,21 @@ func TestLoggingForwardsInformationalStatusWithoutFinalizing(t *testing.T) {
 	var logs bytes.Buffer
 	base := &bareTestResponseWriter{}
 	h := Logging(slog.New(slog.NewJSONHandler(&logs, nil)), nil, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("X-Request-ID", "handler-early-hints-id")
 		w.WriteHeader(http.StatusEarlyHints)
+		w.Header().Set("X-Request-ID", "handler-final-id")
 		w.WriteHeader(http.StatusCreated)
 	}))
 	h.ServeHTTP(base, httptest.NewRequest(http.MethodGet, "/", nil))
 	if len(base.statuses) != 2 || base.statuses[0] != http.StatusEarlyHints || base.statuses[1] != http.StatusCreated {
 		t.Fatalf("forwarded statuses = %v, want [103 201]", base.statuses)
+	}
+	if len(base.committedHeaders) != 2 {
+		t.Fatalf("captured %d header blocks, want 2", len(base.committedHeaders))
+	}
+	trustedID := base.committedHeaders[1].Get("X-Request-ID")
+	if !validID.MatchString(trustedID) || base.committedHeaders[0].Get("X-Request-ID") != trustedID {
+		t.Fatalf("forwarded request IDs = [%q %q], want the same middleware-generated ID", base.committedHeaders[0].Get("X-Request-ID"), trustedID)
 	}
 	var record map[string]any
 	if err := json.Unmarshal(logs.Bytes(), &record); err != nil {
