@@ -44,6 +44,7 @@ type IdentityHandlers = runtime.IdentityHandlers
 type Options struct {
 	Identity         IdentityHandlers
 	Workspaces       http.Handler
+	HealthHandler    http.Handler
 	ReadinessChecks  []ReadinessCheck
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -77,6 +78,7 @@ func New(options Options) (*App, error) {
 	composed, err := runtime.New(runtime.Options{
 		Identity:         options.Identity,
 		Workspaces:       options.Workspaces,
+		HealthHandler:    options.HealthHandler,
 		ReadinessChecks:  checks,
 		ReadinessTimeout: readinessTimeout,
 		ShutdownTimeout:  shutdownTimeout,
