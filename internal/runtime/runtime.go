@@ -16,6 +16,8 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/ajent-social/amos/internal/telemetry"
 )
 
 var (
@@ -181,7 +183,10 @@ func isReserved(path string) bool {
 }
 
 func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	requestID := newRequestID()
+	requestID := telemetry.RequestID(req.Context())
+	if requestID == "" {
+		requestID = newRequestID()
+	}
 	w.Header().Set("X-Request-ID", requestID)
 	raw := req.RequestURI
 	if raw == "" {
