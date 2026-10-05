@@ -4,6 +4,7 @@ package telemetry
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
@@ -32,6 +33,18 @@ var (
 	}
 )
 
+type requestIDContextKey struct{}
+
+// RequestID returns the server-generated request ID installed by Logging.
+// It returns an empty string when the context did not originate in the middleware.
+func RequestID(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	id, _ := ctx.Value(requestIDContextKey{}).(string)
+	return id
+}
+
 var fallbackIDSequence atomic.Uint64
 
 // Logging returns middleware that emits one structured record for each request.
@@ -48,6 +61,7 @@ func Logging(logger *slog.Logger, route RouteTemplate, next http.Handler) http.H
 		started := time.Now()
 		rw := &responseWriter{ResponseWriter: w}
 		requestID := newID()
+		r = r.WithContext(context.WithValue(r.Context(), requestIDContextKey{}, requestID))
 		rw.requestID = requestID
 		if flusher, ok := w.(http.Flusher); ok {
 			rw.flusher = flusher
@@ -110,6 +124,12 @@ type responseWriter struct {
 
 func (w *responseWriter) WriteHeader(status int) {
 	if w.wroteHeader {
+		return
+	}
+	// Informational responses do not finalize the response. Forward them while
+	// preserving the chance to capture and log the eventual final status.
+	if status >= 100 && status < 200 && status != http.StatusSwitchingProtocols {
+		w.ResponseWriter.WriteHeader(status)
 		return
 	}
 	w.wroteHeader = true
