@@ -21,7 +21,7 @@ func (p testPinger) PingContext(context.Context) error { return p.err }
 
 func TestHTTP(t *testing.T) {
 	t.Parallel()
-	privateDetail := "postgres://user:secret@private.internal/db SELECT private_data"
+	privateDetail := "postgres://user:secret@example.invalid/db SELECT private_data"
 	tests := []struct {
 		name       string
 		path       string
@@ -34,11 +34,11 @@ func TestHTTP(t *testing.T) {
 		wantBody   []string
 		wantAbsent []string
 	}{
-		{name: "live independent of database", path: LivenessPath, method: http.MethodGet, dbErr: errors.New(privateDetail), migration: func(context.Context) error { return nil }, wantStatus: http.StatusOK, wantBody: []string{`"status":"ok"`, `"checked_at":`}, wantAbsent: []string{"secret", "private.internal", "SELECT"}},
+		{name: "live independent of database", path: LivenessPath, method: http.MethodGet, dbErr: errors.New(privateDetail), migration: func(context.Context) error { return nil }, wantStatus: http.StatusOK, wantBody: []string{`"status":"ok"`, `"checked_at":`}, wantAbsent: []string{"secret", "example.invalid", "SELECT"}},
 		{name: "ready", path: ReadinessPath, method: http.MethodGet, requestID: "server-generated-id", migration: func(context.Context) error { return nil }, wantStatus: http.StatusOK, wantBody: []string{`"status":"ready"`, `"checked_at":`, `"request_id":"server-generated-id"`, `"database":"available"`, `"migrations":"available"`}},
-		{name: "database unavailable", path: ReadinessPath, method: http.MethodGet, requestID: "server-generated-id", dbErr: errors.New(privateDetail), migration: func(context.Context) error { return nil }, wantStatus: http.StatusServiceUnavailable, wantBody: []string{`"status":"unavailable"`, `"code":"dependency.unavailable"`, `"request_id":"server-generated-id"`, `"database":"unavailable"`}, wantAbsent: []string{"secret", "private.internal", "SELECT"}},
-		{name: "migration incompatible", path: ReadinessPath, method: http.MethodGet, migration: func(context.Context) error { return errors.New(privateDetail) }, wantStatus: http.StatusServiceUnavailable, wantAbsent: []string{"secret", "private.internal", "SELECT"}},
-		{name: "optional provider degraded", path: ReadinessPath, method: http.MethodGet, migration: func(context.Context) error { return nil }, optional: []OptionalCheck{{Name: "mail", Check: func(context.Context) error { return errors.New(privateDetail) }}}, wantStatus: http.StatusOK, wantBody: []string{`"status":"ready"`, `"degraded":true`, `"mail":"unavailable"`}, wantAbsent: []string{"secret", "private.internal", "SELECT"}},
+		{name: "database unavailable", path: ReadinessPath, method: http.MethodGet, requestID: "server-generated-id", dbErr: errors.New(privateDetail), migration: func(context.Context) error { return nil }, wantStatus: http.StatusServiceUnavailable, wantBody: []string{`"status":"unavailable"`, `"code":"dependency.unavailable"`, `"request_id":"server-generated-id"`, `"database":"unavailable"`}, wantAbsent: []string{"secret", "example.invalid", "SELECT"}},
+		{name: "migration incompatible", path: ReadinessPath, method: http.MethodGet, migration: func(context.Context) error { return errors.New(privateDetail) }, wantStatus: http.StatusServiceUnavailable, wantAbsent: []string{"secret", "example.invalid", "SELECT"}},
+		{name: "optional provider degraded", path: ReadinessPath, method: http.MethodGet, migration: func(context.Context) error { return nil }, optional: []OptionalCheck{{Name: "mail", Check: func(context.Context) error { return errors.New(privateDetail) }}}, wantStatus: http.StatusOK, wantBody: []string{`"status":"ready"`, `"degraded":true`, `"mail":"unavailable"`}, wantAbsent: []string{"secret", "example.invalid", "SELECT"}},
 		{name: "head omits body", path: LivenessPath, method: http.MethodHead, migration: func(context.Context) error { return nil }, wantStatus: http.StatusOK},
 		{name: "method rejected", path: LivenessPath, method: http.MethodPost, requestID: "server-generated-id", migration: func(context.Context) error { return nil }, wantStatus: http.StatusMethodNotAllowed, wantBody: []string{`"code":"method.not_allowed"`, `"request_id":"server-generated-id"`}},
 	}
