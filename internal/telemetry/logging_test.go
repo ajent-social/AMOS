@@ -3,6 +3,7 @@ package telemetry
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -12,9 +13,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
-
-	appRuntime "github.com/ajent-social/amos/internal/runtime"
 )
 
 func TestLogging(t *testing.T) {
@@ -145,9 +143,29 @@ func TestLoggingDoesNotTrustHandlerRequestID(t *testing.T) {
 	}
 }
 
+func TestLoggingPublishesMiddlewareRequestIDInContext(t *testing.T) {
+	var logs bytes.Buffer
+	var contextID string
+	h := Logging(slog.New(slog.NewJSONHandler(&logs, nil)), nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		contextID = RequestID(r.Context())
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("X-Request-ID", "client-value")
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, req)
+	if !validID.MatchString(contextID) || contextID == "client-value" || contextID != res.Header().Get("X-Request-ID") {
+		t.Fatalf("context request ID %q does not match server response ID %q", contextID, res.Header().Get("X-Request-ID"))
+	}
+	if got := RequestID(context.Background()); got != "" {
+		t.Fatalf("untrusted context returned request ID %q", got)
+	}
+}
+
 type bareTestResponseWriter struct {
-	header http.Header
-	status int
+	header   http.Header
+	status   int
+	statuses []int
 }
 
 func (w *bareTestResponseWriter) Header() http.Header {
@@ -156,7 +174,12 @@ func (w *bareTestResponseWriter) Header() http.Header {
 	}
 	return w.header
 }
-func (w *bareTestResponseWriter) WriteHeader(status int) { w.status = status }
+func (w *bareTestResponseWriter) WriteHeader(status int) {
+	w.statuses = append(w.statuses, status)
+	if status >= 200 || status == http.StatusSwitchingProtocols {
+		w.status = status
+	}
+}
 func (w *bareTestResponseWriter) Write(p []byte) (int, error) {
 	if w.status == 0 {
 		w.status = 200
@@ -271,33 +294,23 @@ func TestLoggingPreservesResponseWriterCapabilities(t *testing.T) {
 	})
 }
 
-func TestLoggingComposesWithRuntime(t *testing.T) {
+func TestLoggingForwardsInformationalStatusWithoutFinalizing(t *testing.T) {
 	var logs bytes.Buffer
-	runtime, err := appRuntime.New(appRuntime.Options{ReadinessTimeout: time.Second, ShutdownTimeout: time.Second})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := runtime.Register(http.MethodGet, "/orders/*", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, "unavailable", http.StatusServiceUnavailable)
-	})); err != nil {
-		t.Fatal(err)
-	}
-	h := Logging(slog.New(slog.NewJSONHandler(&logs, nil)), func(*http.Request) string { return "/orders/*" }, runtime)
-	res := httptest.NewRecorder()
-	h.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/orders/42?token=private", nil))
-	if res.Code != http.StatusServiceUnavailable {
-		t.Fatalf("status = %d, want %d", res.Code, http.StatusServiceUnavailable)
-	}
-	id := res.Header().Get("X-Request-ID")
-	if !validID.MatchString(id) {
-		t.Fatalf("runtime request ID is invalid: %q", id)
+	base := &bareTestResponseWriter{}
+	h := Logging(slog.New(slog.NewJSONHandler(&logs, nil)), nil, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusEarlyHints)
+		w.WriteHeader(http.StatusCreated)
+	}))
+	h.ServeHTTP(base, httptest.NewRequest(http.MethodGet, "/", nil))
+	if len(base.statuses) != 2 || base.statuses[0] != http.StatusEarlyHints || base.statuses[1] != http.StatusCreated {
+		t.Fatalf("forwarded statuses = %v, want [103 201]", base.statuses)
 	}
 	var record map[string]any
 	if err := json.Unmarshal(logs.Bytes(), &record); err != nil {
 		t.Fatal(err)
 	}
-	if record["request_id"] != id || record["route"] != "/orders/*" || record["status"] != float64(http.StatusServiceUnavailable) {
-		t.Fatalf("log does not match runtime response: %#v", record)
+	if record["status"] != float64(http.StatusCreated) {
+		t.Fatalf("logged final status = %#v, want 201", record["status"])
 	}
 }
 
