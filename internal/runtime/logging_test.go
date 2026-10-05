@@ -26,7 +26,12 @@ func TestLoggingComposesWithRuntime(t *testing.T) {
 				t.Fatal(err)
 			}
 			var logs bytes.Buffer
-			h := telemetry.Logging(slog.New(slog.NewJSONHandler(&logs, nil)), func(*http.Request) string { return "/orders/*" }, rt)
+			h := telemetry.Logging(slog.New(slog.NewJSONHandler(&logs, nil)), func(r *http.Request) string {
+				if strings.HasPrefix(r.URL.Path, "/orders/") {
+					return "/orders/*"
+				}
+				return ""
+			}, rt)
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set("X-Request-ID", strings.Repeat("a", 32))
 			w := httptest.NewRecorder()
@@ -36,8 +41,10 @@ func TestLoggingComposesWithRuntime(t *testing.T) {
 				t.Fatalf("untrusted request ID %q", id)
 			}
 			wantStatus := http.StatusServiceUnavailable
+			wantRoute := "/orders/*"
 			if strings.HasPrefix(path, "/missing") {
 				wantStatus = http.StatusNotFound
+				wantRoute = "unmatched"
 				var body struct {
 					RequestID string `json:"request_id"`
 				}
@@ -59,7 +66,7 @@ func TestLoggingComposesWithRuntime(t *testing.T) {
 			if err := json.Unmarshal(logs.Bytes(), &record); err != nil {
 				t.Fatal(err)
 			}
-			if record.RequestID != id || record.Status != wantStatus || record.Route != "/orders/*" {
+			if record.RequestID != id || record.Status != wantStatus || record.Route != wantRoute {
 				t.Fatalf("inconsistent log: %+v", record)
 			}
 			if strings.Contains(logs.String(), "private") {
