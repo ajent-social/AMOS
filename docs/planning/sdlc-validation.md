@@ -53,3 +53,15 @@ No build, product test, independent code review execution, merge, release, cloud
 - Repository plan validation and the changed-path public artifact scan pass.
   Existing full-scan backup findings remain separately classified; this is no
   claim of full repository scanner success or hosted CI.
+
+
+## Stage status reconciliation (2026-10-06)
+
+The routing delivery receipt adds six complete source stages. The JSON graph,
+Markdown checkboxes and index counts now mirror all 19 existing journal entries:
+18 complete stages and one in-progress component implementation stage. Old
+planning-only status wording is replaced where execution evidence exists. No
+node, dependency, wave or original product acceptance changes in this update.
+A fresh canonical parser check covers all 1,281 rows without authoring,
+duplicate, undefined or ambiguous errors. Remaining product and production
+gates are still open; partial implementation does not close those dependencies.
