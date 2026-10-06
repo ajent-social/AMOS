@@ -47,6 +47,7 @@ const manifestFormat = "amos-database-backup-v1"
 const (
 	maxBackupTimeout = time.Hour
 	cleanupTimeout   = 5 * time.Second
+	dumpWaitDelay    = 500 * time.Millisecond
 )
 
 var (
@@ -228,7 +229,7 @@ func Create(ctx context.Context, request Request) (Manifest, error) {
 	for _, schema := range schemas {
 		args = append(args, `--schema="`+strings.ReplaceAll(schema, `"`, `""`)+`"`)
 	}
-	command := exec.CommandContext(backupCtx, request.PGDumpPath, args...)
+	command := commandWithWaitDelay(backupCtx, request.PGDumpPath, args...)
 	command.Env = childEnvironment(servicePath, passwordPath)
 	command.Stdout = limited
 	command.Stderr = io.Discard
@@ -294,11 +295,22 @@ func Create(ctx context.Context, request Request) (Manifest, error) {
 	if len(migrations) > 0 {
 		manifest.SchemaVersion = migrations[len(migrations)-1].Sequence
 	}
-	if err := writeCompletionManifest(finalDir, manifest); err != nil {
+	if err := writeCompletionManifest(backupCtx, finalDir, manifest); err != nil {
+		if errors.Is(err, ErrCanceled) {
+			return Manifest{}, ErrCanceled
+		}
 		return Manifest{}, errors.Join(ErrDestination, errors.New("could not publish the completion manifest"))
 	}
 	published = true
 	return manifest, nil
+}
+
+func commandWithWaitDelay(ctx context.Context, name string, args ...string) *exec.Cmd {
+	command := exec.CommandContext(ctx, name, args...)
+	// Cancellation kills the process; WaitDelay also bounds os/exec's
+	// copy-goroutine wait if a descendant keeps an inherited pipe open.
+	command.WaitDelay = dumpWaitDelay
+	return command
 }
 
 func validateRequest(ctx context.Context, request Request) error {
@@ -334,7 +346,7 @@ func validVersion(value string) bool {
 }
 
 func pinnedToolVersion(ctx context.Context, request Request) (string, int, error) {
-	command := exec.CommandContext(ctx, request.PGDumpPath, "--version")
+	command := commandWithWaitDelay(ctx, request.PGDumpPath, "--version")
 	command.Env = childEnvironment("", "")
 	output, err := command.Output()
 	if err != nil {
@@ -612,7 +624,7 @@ func (w *limitedHashWriter) Write(p []byte) (int, error) {
 	return written, err
 }
 
-func writeCompletionManifest(directory string, manifest Manifest) error {
+func writeCompletionManifest(ctx context.Context, directory string, manifest Manifest) error {
 	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		return err
@@ -622,6 +634,13 @@ func writeCompletionManifest(directory string, manifest Manifest) error {
 	complete := filepath.Join(directory, "manifest.json")
 	if err := writePrivateFile(temporary, data); err != nil {
 		return err
+	}
+	// The hard-link of manifest.json is the publication commit point. Refuse
+	// to publish a backup whose deadline/caller context expired while the
+	// archive or manifest was being finalized.
+	if err := ctx.Err(); err != nil {
+		_ = os.Remove(temporary)
+		return ErrCanceled
 	}
 	if err := os.Link(temporary, complete); err != nil {
 		_ = os.Remove(temporary)

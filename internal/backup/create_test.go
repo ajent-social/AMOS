@@ -1,16 +1,19 @@
 package backup
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -246,6 +249,57 @@ func TestCreateCancellationDoesNotPublishPartialDump(t *testing.T) {
 	backupDir := filepath.Join(directory, "backup-cancel-midstream")
 	if _, err := os.Lstat(backupDir); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("incomplete backup is still selectable at %s: %v", backupDir, err)
+	}
+}
+
+func TestCreateDatabaseFailureDoesNotPublishBackup(t *testing.T) {
+	_, _, databaseURL := createFixtureSchema(t)
+	parsed, err := url.Parse(databaseURL)
+	if err != nil {
+		t.Fatal("parse synthetic fixture connection")
+	}
+	parsed.Path = "/amos_backup_missing_database_fixture"
+	directory := privateDirectory(t)
+	request := fixtureRequest(t, parsed.String(), directory, "database-failure", nil)
+	if _, err := Create(context.Background(), request); !errors.Is(err, ErrDumpFailed) {
+		t.Fatalf("Create() database failure = %v, want ErrDumpFailed", err)
+	}
+	if _, err := os.Lstat(filepath.Join(directory, "backup-database-failure")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("failed database backup left a selectable artifact: %v", err)
+	}
+}
+
+func TestCompletionManifestCancellationDoesNotPublish(t *testing.T) {
+	directory := privateDirectory(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	manifest := Manifest{Format: manifestFormat, State: "complete", ID: "cancelled"}
+	if err := writeCompletionManifest(ctx, directory, manifest); !errors.Is(err, ErrCanceled) {
+		t.Fatalf("writeCompletionManifest() error = %v, want ErrCanceled", err)
+	}
+	for _, name := range []string{"manifest.json", "manifest.json.partial"} {
+		if _, err := os.Lstat(filepath.Join(directory, name)); !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("canceled publication left %s: %v", name, err)
+		}
+	}
+}
+
+func TestDumpCommandWaitDelayBoundsInheritedOutputPipe(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("synthetic inherited-pipe process fixture requires a Unix shell")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	command := commandWithWaitDelay(ctx, "/bin/sh", "-c", "(sleep 2) & wait")
+	var output bytes.Buffer
+	command.Stdout = &output
+	started := time.Now()
+	err := command.Run()
+	if err == nil {
+		t.Fatal("canceled dump command unexpectedly succeeded")
+	}
+	if elapsed := time.Since(started); elapsed > 1500*time.Millisecond {
+		t.Fatalf("inherited output pipe delayed cancellation for %s", elapsed)
 	}
 }
 
