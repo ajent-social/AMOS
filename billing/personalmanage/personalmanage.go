@@ -157,13 +157,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "request.invalid")
 		return
 	}
-	if r.Method == http.MethodPost && (r.URL.Path == "/billing/personal/portal" || r.URL.Path == "/billing/personal/cancel") && !h.cfg.RequestCheck.Valid(r) {
-		writeError(w, http.StatusForbidden, "request.csrf_denied")
-		return
-	}
 	access, ok := h.cfg.ResolveAuthority(r.Context())
 	if !ok && !hasVerifiedPrincipal(r.Context()) {
 		writeError(w, http.StatusUnauthorized, "authentication.required")
+		return
+	}
+	if r.Method == http.MethodPost && (r.URL.Path == "/billing/personal/portal" || r.URL.Path == "/billing/personal/cancel") && !h.cfg.RequestCheck.Valid(r) {
+		writeError(w, http.StatusForbidden, "request.csrf_denied")
 		return
 	}
 	if !ok || !h.authorized(access) {
