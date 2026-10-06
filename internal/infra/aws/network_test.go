@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -40,12 +41,28 @@ func (m *awsMocks) all() []recordedResource {
 
 func TestNetworkPulumiMocksCreateBoundedSingleAZOrigin(t *testing.T) {
 	mocks := &awsMocks{}
+	resolvedOutputs := make(chan []any, 1)
 	err := pulumi.RunErr(func(ctx *pulumi.Context) error {
-		_, err := NewNetwork(ctx, "reference", NetworkArgs{Name: "example", Environment: "staging", InstallationID: "01890f3e-7c00-7000-8000-000000000001", AvailabilityZone: "us-east-1a", VPCCIDR: "10.24.0.0/16", PublicSubnetCIDR: "10.24.1.0/24"})
-		return err
+		network, err := NewNetwork(ctx, "reference", NetworkArgs{Name: "example", Environment: "staging", InstallationID: "01890f3e-7c00-7000-8000-000000000001", AvailabilityZone: "us-east-1a", VPCCIDR: "10.24.0.0/16", PublicSubnetCIDR: "10.24.1.0/24"})
+		if err != nil {
+			return err
+		}
+		pulumi.All(network.VPCID, network.PublicSubnetID, network.SecurityGroupID, network.ElasticIP, network.ElasticIPAllocID).ApplyT(func(values []any) bool {
+			resolvedOutputs <- values
+			return true
+		})
+		return nil
 	}, pulumi.WithMocks("amos", "test", mocks))
 	if err != nil {
 		t.Fatal(err)
+	}
+	select {
+	case values := <-resolvedOutputs:
+		if len(values) != 5 || values[0] != "reference-vpc-id" || values[1] != "reference-public-id" || values[2] != "reference-origin-id" || values[3] != "198.51.100.12" || values[4] != "reference-origin-ip-id" {
+			t.Fatalf("unexpected component outputs: %#v", values)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("component outputs did not resolve in Pulumi mocks")
 	}
 	resources := mocks.all()
 	find := func(token string) (resource.PropertyMap, bool) {

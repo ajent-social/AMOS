@@ -158,6 +158,27 @@ func TestIdentityRegionMustMatchARNPartition(t *testing.T) {
 	}
 }
 
+func TestIdentityValidatesGeneralPurposeS3BucketNames(t *testing.T) {
+	base := IdentityArgs{Name: "x", Environment: "staging", InstallationID: "01890f3e-7c00-7000-8000-000000000001", ManagementProfile: ManagementProfileSessionManager, Region: "us-east-1", LogGroupARN: "arn:aws:logs:us-east-1:123456789012:log-group:amos-host", RepositoryARNs: []string{"arn:aws:ecr:us-east-1:123456789012:repository/amos"}, SecretARNs: []string{"arn:aws:secretsmanager:us-east-1:123456789012:secret:amos/runtime"}, BackupBucketARN: "arn:aws:s3:::amos-backups-123", BackupObjectPrefix: "installations/01890f3e-7c00-7000-8000-000000000001/staging", BackupKMSKeyARN: "arn:aws:kms:us-east-1:123456789012:key/key-id"}
+	for _, name := range []string{"amos-backups-123", "example.bucket", "a1b", "backup-123456789012-us-east-1-an"} {
+		base.BackupBucketARN = "arn:aws:s3:::" + name
+		if _, err := validateIdentityArgs(base); err != nil {
+			t.Errorf("rejected syntactically valid general-purpose bucket %q: %v", name, err)
+		}
+	}
+	for _, name := range []string{
+		"ab", strings.Repeat("a", 64), "bad_bucket", "Uppercase", "-leading", "trailing-",
+		"example..bucket", "192.168.5.4", "xn--reserved", "sthree-reserved", "amzn-s3-demo-test",
+		"backup-s3alias", "backup--ol-s3", "backup.mrap", "backup--x-s3", "backup--table-s3",
+		"backup-an", "backup-1234-us-east-1-an",
+	} {
+		base.BackupBucketARN = "arn:aws:s3:::" + name
+		if _, err := validateIdentityArgs(base); err == nil {
+			t.Errorf("accepted syntactically invalid or reserved bucket %q", name)
+		}
+	}
+}
+
 func TestIdentityDoesNotGrantCustomSecretKMSWithoutExplicitKey(t *testing.T) {
 	args := IdentityArgs{Name: "x", Environment: "staging", InstallationID: "01890f3e-7c00-7000-8000-000000000001", ManagementProfile: ManagementProfileSessionManager, Region: "us-east-1", LogGroupARN: "arn:aws:logs:us-east-1:123456789012:log-group:amos-host", RepositoryARNs: []string{"arn:aws:ecr:us-east-1:123456789012:repository/amos"}, SecretARNs: []string{"arn:aws:secretsmanager:us-east-1:123456789012:secret:amos/runtime"}, BackupBucketARN: "arn:aws:s3:::amos-backup", BackupObjectPrefix: "installations/01890f3e-7c00-7000-8000-000000000001/staging", BackupKMSKeyARN: "arn:aws:kms:us-east-1:123456789012:key/key-id"}
 	prefix, err := validateIdentityArgs(args)

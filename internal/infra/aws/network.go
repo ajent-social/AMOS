@@ -48,6 +48,9 @@ func ownerTags(name, environment, installationID string) pulumi.StringMap {
 	}
 }
 
+// validAWSRegion checks partition-specific region syntax only. It does not
+// establish that a region or AZ exists, is enabled, or is available to the
+// selected account; those remain provider/deployment checks.
 func validAWSRegion(region, partition string) bool {
 	switch partition {
 	case "aws":
