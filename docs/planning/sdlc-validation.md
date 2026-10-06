@@ -37,3 +37,19 @@ No build, product test, independent code review execution, merge, release, cloud
   57 historical seeds), no authoring/duplicate/undefined/ambiguous errors, and
   every row has a wave. The Markdown projection and JSON graph were also
   compared directly; this remains ordinary local repository delivery.
+
+
+## Finite host routing plan update (2026-10-06)
+
+- Adds six first-class routing delivery stages, bringing the graph to 1,224
+  nodes. Product reconciliation depends on the landed routing gate. All 1,218
+  prior nodes are unchanged except that one explicit additional dependency.
+- Canonical parser: 1,281 rows including the 57 historical seeds; no authoring,
+  duplicate, undefined or ambiguous errors. Every graph dependency and wave
+  matches its Markdown projection, and the terminal gate reaches all nodes.
+- The original 257-task inventory and current acceptance registry are unchanged.
+  Routing and production storage remain separately gated; no execution receipt
+  or product acceptance is created by this planning update.
+- Repository plan validation and the changed-path public artifact scan pass.
+  Existing full-scan backup findings remain separately classified; this is no
+  claim of full repository scanner success or hosted CI.
