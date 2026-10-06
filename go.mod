@@ -39,6 +39,8 @@ require (
 	github.com/pb33f/jsonpath v0.8.2 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	github.com/pquerna/otp v1.5.0
+	github.com/pulumi/pulumi-aws/sdk/v7 v7.48.0
+	github.com/pulumi/pulumi/sdk/v3 v3.267.0
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect

@@ -63,6 +63,10 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pquerna/otp v1.5.0 h1:NMMR+WrmaqXU4EzdGJEE1aUUI0AMRzsp96fFFWNPwxs=
 github.com/pquerna/otp v1.5.0/go.mod h1:dkJfzwRKNiegxyNb54X/3fLwhCynbMspSyWKnvi1AEg=
+github.com/pulumi/pulumi-aws/sdk/v7 v7.48.0 h1:+SQvjdBT2CenYYmu2ehZe3x9PylTal8VvbXHRp/xih4=
+github.com/pulumi/pulumi-aws/sdk/v7 v7.48.0/go.mod h1:nhIaBxnniaMZevWJTmP06Du/NADWclVJsgIk7DoSn84=
+github.com/pulumi/pulumi/sdk/v3 v3.267.0 h1:fannfwJKxGwybpCgflADIVE3ZqYtdNFpXdRU9tfAWgw=
+github.com/pulumi/pulumi/sdk/v3 v3.267.0/go.mod h1:zRkd7bKRwqeIpHxGeACXBJXNGe/kz+RINyMtmY4GtE8=
 github.com/shopspring/decimal v1.4.0 h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp81k=
 github.com/shopspring/decimal v1.4.0/go.mod h1:gawqmDU56v4yIKSwfBSFip1HdCCXN8/+DMd9qYNcwME=
 github.com/stretchr/objx v0.1.0 h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=
