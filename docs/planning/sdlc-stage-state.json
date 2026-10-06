@@ -427,6 +427,174 @@
       },
       "dependency_receipts": [],
       "dependency_scope": "Only the explicitly assigned registry slice was admitted against landed v1.13/v1.14 design; full task dependency/preflight completion is not inferred."
+    },
+    "T-INT-HOST-02.1": {
+      "task_id": "T-INT-HOST-02.1",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "INT-HOST-02",
+        "tip": "4e94f5ce58ddcd87b8c9356d63cbd7ca44500bde"
+      },
+      "dependency_receipts": [
+        "T-PROD.15"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "f440120c7dea85cd0f20eeb67ea5b99f2d7dc4ca",
+        "reviewed_base": "9c9bbb0e0c7884e84d4dc350f0b6330ccdd159b6",
+        "landed": "bd94b74a967ed2cfa7924729f2215851055c2b10",
+        "evidence": "docs/evidence/host-routing-20261006.md"
+      },
+      "commands_and_results": [
+        "PR19 adopted frozen v1.14 routing design after independent review. Exclusive claim and four-path worker assignment were recorded before coding; legacy behavior and acceptance matrix were reconciled."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "logging_verify source and negative checks; bootstrap_fix design",
+        "scope": "routing source only; original task and production acceptance unchanged"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately assigned runtime-only storage and production composition; protocol and deployment qualification remain open."
+    },
+    "T-INT-HOST-02.2": {
+      "task_id": "T-INT-HOST-02.2",
+      "status": "COMPLETE",
+      "owner": "billing_resume",
+      "claim": {
+        "resource": "INT-HOST-02",
+        "tip": "4e94f5ce58ddcd87b8c9356d63cbd7ca44500bde"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-02.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "f440120c7dea85cd0f20eeb67ea5b99f2d7dc4ca",
+        "reviewed_base": "9c9bbb0e0c7884e84d4dc350f0b6330ccdd159b6",
+        "landed": "bd94b74a967ed2cfa7924729f2215851055c2b10",
+        "evidence": "docs/evidence/host-routing-20261006.md"
+      },
+      "commands_and_results": [
+        "Author implemented only app/app.go, app/routing_test.go, internal/runtime/runtime.go and internal/runtime/routing_test.go. Rebase onto final base preserved all four file bytes."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "logging_verify source and negative checks; bootstrap_fix design",
+        "scope": "routing source only; original task and production acceptance unchanged"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately assigned runtime-only storage and production composition; protocol and deployment qualification remain open."
+    },
+    "T-INT-HOST-02.3": {
+      "task_id": "T-INT-HOST-02.3",
+      "status": "COMPLETE",
+      "owner": "billing_resume",
+      "claim": {
+        "resource": "INT-HOST-02",
+        "tip": "4e94f5ce58ddcd87b8c9356d63cbd7ca44500bde"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-02.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "f440120c7dea85cd0f20eeb67ea5b99f2d7dc4ca",
+        "reviewed_base": "9c9bbb0e0c7884e84d4dc350f0b6330ccdd159b6",
+        "landed": "bd94b74a967ed2cfa7924729f2215851055c2b10",
+        "evidence": "docs/evidence/host-routing-20261006.md"
+      },
+      "commands_and_results": [
+        "Author scoped normal/race/vet/lint passed. Expanded all-eight-slot actual HTTP test coverage was followed by final runtime normal/race/vet/lint. Compliant protocol-alias negative/restored checks passed; an earlier invalid load-guard attempt was explicitly excluded."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "logging_verify source and negative checks; bootstrap_fix design",
+        "scope": "routing source only; original task and production acceptance unchanged"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately assigned runtime-only storage and production composition; protocol and deployment qualification remain open."
+    },
+    "T-INT-HOST-02.4": {
+      "task_id": "T-INT-HOST-02.4",
+      "status": "COMPLETE",
+      "owner": "logging_verify",
+      "claim": {
+        "resource": "INT-HOST-02",
+        "tip": "4e94f5ce58ddcd87b8c9356d63cbd7ca44500bde"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-02.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "f440120c7dea85cd0f20eeb67ea5b99f2d7dc4ca",
+        "reviewed_base": "9c9bbb0e0c7884e84d4dc350f0b6330ccdd159b6",
+        "landed": "bd94b74a967ed2cfa7924729f2215851055c2b10",
+        "evidence": "docs/evidence/host-routing-20261006.md"
+      },
+      "commands_and_results": [
+        "Independent normal and race checks passed for both app and runtime. Removing new-business alias rejection made its focused test fail (204 instead of400); exact restoration passed. Reviewer cleared final head against final base."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "logging_verify source and negative checks; bootstrap_fix design",
+        "scope": "routing source only; original task and production acceptance unchanged"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately assigned runtime-only storage and production composition; protocol and deployment qualification remain open."
+    },
+    "T-INT-HOST-02.5": {
+      "task_id": "T-INT-HOST-02.5",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "INT-HOST-02",
+        "tip": "4e94f5ce58ddcd87b8c9356d63cbd7ca44500bde"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-02.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "f440120c7dea85cd0f20eeb67ea5b99f2d7dc4ca",
+        "reviewed_base": "9c9bbb0e0c7884e84d4dc350f0b6330ccdd159b6",
+        "landed": "bd94b74a967ed2cfa7924729f2215851055c2b10",
+        "evidence": "docs/evidence/host-routing-20261006.md"
+      },
+      "commands_and_results": [
+        "PR22 rebase-merged reviewed f440120 after immediate head/base/check-state readback. No required check entries existed; no policy bypass or hosted CI claim."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "logging_verify source and negative checks; bootstrap_fix design",
+        "scope": "routing source only; original task and production acceptance unchanged"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately assigned runtime-only storage and production composition; protocol and deployment qualification remain open."
+    },
+    "T-INT-HOST-02.6": {
+      "task_id": "T-INT-HOST-02.6",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "INT-HOST-02",
+        "tip": "4e94f5ce58ddcd87b8c9356d63cbd7ca44500bde"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-02.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "f440120c7dea85cd0f20eeb67ea5b99f2d7dc4ca",
+        "reviewed_base": "9c9bbb0e0c7884e84d4dc350f0b6330ccdd159b6",
+        "landed": "bd94b74a967ed2cfa7924729f2215851055c2b10",
+        "evidence": "docs/evidence/host-routing-20261006.md"
+      },
+      "commands_and_results": [
+        "Fetched merged main, verified all four reviewed file bytes and reachability, and repeated landed app package test successfully. Original product acceptance registry unchanged."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "logging_verify source and negative checks; bootstrap_fix design",
+        "scope": "routing source only; original task and production acceptance unchanged"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately assigned runtime-only storage and production composition; protocol and deployment qualification remain open."
     }
   },
   "receipt_requirements": [
