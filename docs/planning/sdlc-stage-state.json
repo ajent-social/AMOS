@@ -1,6 +1,6 @@
 {
   "schema": "amos-local-sdlc-stage-receipts-v1",
-  "status": "PREPARING",
+  "status": "IN_PROGRESS",
   "plan": "docs/planning/sdlc-plan.json",
   "product_acceptance_registry": "docs/planning/execution-state.json",
   "tasks": {
@@ -28,7 +28,7 @@
       ],
       "independent_review_and_findings": {
         "status": "CLEAR",
-        "reviewer": "independent domain reviewer",
+        "reviewer": "logging_verify (independent agent; preparer: root coordinator)",
         "reviewed_revision": "4fcc9c9c91bc4f11f2c1a313c26ec511b204cd6d",
         "scope": "Reconciled preflight and public publication boundary.",
         "findings": [
@@ -72,13 +72,72 @@
       ],
       "independent_review_and_findings": {
         "status": "CLEAR",
-        "reviewer": "independent domain reviewer distinct from preparer",
+        "reviewer": "logging_verify (independent agent; preparer: root coordinator)",
         "reviewed_revision": "956ca5d5411f1d36854444756d025a0b3a7e818c",
         "scope": "Requirements/domain content against the existing approved staged scope; no scope changes or unresolved contradictions found.",
         "findings": []
       },
       "external_blockers": [],
       "next_action": "Qualify crosscutting design contracts at T-PROD.15 with a distinct domain/content reviewer before admitting dependent source preflights."
+    },
+    "T-PROD.15": {
+      "task_id": "T-PROD.15",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-PROD.14"
+      ],
+      "source_or_artifact_identity": {
+        "baseline": "956ca5d5411f1d36854444756d025a0b3a7e818c",
+        "sha256": {
+          "docs/VISION.md": "03150ab4f583ec2345ddbed168444986d7b8f600f153463a33f7720925a5d623",
+          "docs/rfc/rfc-0001.md": "ae00de39c8aad569174bb074f5322107e8983725304f4094db734edc9003e6a6",
+          "docs/planning/requirements.md": "a43989b2f160aedf1d744f307569c04b9ab4f5bbeea425d0bb9303ed0edc5ac6",
+          "docs/planning/contracts.md": "554a83d4267477535f064fb78b2dae6e51b6b3de4f7ceb7d0f3ea7de00c65dff",
+          "docs/adr/001-application-boundary.md": "8319798b0cb163f5c3fde9b46676a8042af9f14dc3760e9ae05f03dbd720bece",
+          "docs/adr/002-contract-first-interfaces.md": "f972e449e2c80bfcd0fe592754475c713a1530ba9efa1b50fe327836d63b0697",
+          "docs/adr/003-hybrid-upgrades.md": "5652b80ddd76ec68220c01267b1d806b3c934bcb6d1ab9cdbf808c8d58e06665",
+          "docs/adr/004-identity-billing-scope.md": "de06a0ef1dd60b21c053916c3eaf88981a8d176d1465aa61cc1c9f1bd53a0740",
+          "docs/adr/005-bounded-autonomous-maintenance.md": "bd718ad9f186f66419cc5107cb61a9a2420d5f098827f1c8f13a11f56867933e",
+          "docs/adr/006-amsl-consumer-boundary.md": "c31ff1cb09a5e7962fdd72bdf6e1042ebdeb2cdacd79d06fe490ea501c69f398",
+          "docs/adr/007-staged-parallel-delivery.md": "e41dacd38e8155d4b3966d89c83a477e16351c4552f6c6132f70d746ab678740",
+          "docs/adr/008-selectable-aws-profiles.md": "814090bb07bd04488618273ef9ebb380e399ea5c31c56d3e673272f69d01bcc8",
+          "docs/adr/009-frozen-cross-lane-contracts.md": "a0e529fd683049b4e42ddfabd614a001bbe065d18b22f5ea5df22c83d22d6083",
+          "docs/adr/010-pending-registration-transaction.md": "1bdf17788b67dd975f4afb9e46488c573f9ab5234a180afb62fce0240a882988",
+          "docs/adr/011-initializer-filesystem-boundary.md": "bcb50c4c7680ea03e71c044ceaa3fa351d22456608ea6016deb07247b13153e0",
+          "docs/adr/012-authentication-route-composition.md": "5aeedb6cbdc5617d4d7463fcdb7675bd422a94d62e1db250191ade6695488256",
+          "docs/adr/013-explicit-loopback-email-development.md": "e35444a4db6126a10089ef3fa1aee65dc794b8b59e63b2ebfb9f9afed98ab3dd",
+          "docs/adr/014-foundation-migration-composition.md": "d23693d11fa9613209f69d74ce578ac49352b0ba880b2d550b438bccdff761ae",
+          "docs/adr/016-password-mutation-admission.md": "f090720f334e12993abe1a2695635aa00533984453b7331c426657499f2693d9",
+          "docs/adr/017-local-runtime-and-magic-link-composition.md": "627754a4e59656b24d123a9075c4927f1a6c46eed7d1acc68d1965b0f46225b0",
+          "docs/adr/018-native-authentication-form-referrer-policy.md": "736c995084a9b1cbaa586bad60ddedb77d8cdf6476d4085ac0fc35d64525ab6a",
+          "docs/adr/019-native-evaluation-authentication-and-resume.md": "8cf4de885d3b8fa641e0a488a9d22a4e6d655cbb876c1e34a4faeeb492da6b09",
+          "docs/adr/020-bounded-reconciliation-scheduling.md": "8f7b8661b2e4af47ddf1eb7c4c1bcd5c854e3c5fe953cdbb8cb520cb1aa1e91b",
+          "docs/adr/021-workspace-and-extension-composition.md": "2a6b989b92516baf1c2ad58c796502a4d3f787075eab69845f0f7914d6fa409c",
+          "docs/adr/022-first-class-sdlc-production-plan.md": "374d747128a3c6a8fba941660541b0c631a5e6dd987cb6282f55ba699a456838",
+          "docs/adr/README.md": "dff131f4e08358f9e4796f4696da3b283279d92115306e851ae9fef911ddb500"
+        },
+        "reviewed_receipt_revision": "454ede50d04dd7ec76be5d55562346757a556f2a"
+      },
+      "commands_and_results": [
+        "Crosscutting domain review reconciled authority, privacy, tenancy, interface ownership, billing, migration ordering, provider failures and recovery against the accepted requirements baseline.",
+        "No contradiction was found. Proposed decisions retain their qualification gates and do not confer runtime, provider, release or deployment authority.",
+        "Reviewed recovery sequence keeps restored systems isolated with external effects paused until provider reconciliation, credential/session invalidation and explicit cutover.",
+        "Original source task ownership and the existing acceptance registry remain unchanged."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "logging_verify (independent agent; preparer: root coordinator)",
+        "reviewed_revision": "454ede50d04dd7ec76be5d55562346757a556f2a",
+        "scope": "Crosscutting design content in VISION, RFC, ADR decisions and frozen contracts through amendment v1.11; no unresolved findings.",
+        "findings": []
+      },
+      "external_blockers": [],
+      "next_action": "Admit dependency-ready original source tasks through their individual preflight, implementation, verification, independent review, merge and landed checks. Provider and production gates remain separate."
     }
   },
   "receipt_requirements": [
