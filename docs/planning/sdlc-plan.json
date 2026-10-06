@@ -14432,7 +14432,7 @@
       "kind": "agent",
       "stage": "merge",
       "deps": [
-        "T-SDLC-10-7.4"
+        "T-SDLC-10-7.4.R1"
       ],
       "owner": "Integrator",
       "estimate": "revalidate at preflight",
@@ -14443,7 +14443,7 @@
         "UC-063",
         "UC-075"
       ],
-      "dependency_depth": 8,
+      "dependency_depth": 11,
       "projection_id": "E-SDLC-10.T-SDLC-10-7.5"
     },
     {
@@ -14463,7 +14463,7 @@
         "UC-063",
         "UC-075"
       ],
-      "dependency_depth": 9,
+      "dependency_depth": 12,
       "projection_id": "E-SDLC-10.T-SDLC-10-7.6"
     },
     {
@@ -14487,7 +14487,7 @@
         "UC-078"
       ],
       "external_gate": "Backup bucket creation, storage charges and retention/destruction policy require authorized owner configuration.",
-      "dependency_depth": 10,
+      "dependency_depth": 13,
       "projection_id": "E-SDLC-10.T-SDLC-10-8.1"
     },
     {
@@ -14508,7 +14508,7 @@
         "UC-078"
       ],
       "external_gate": "Backup bucket creation, storage charges and retention/destruction policy require authorized owner configuration.",
-      "dependency_depth": 11,
+      "dependency_depth": 14,
       "projection_id": "E-SDLC-10.T-SDLC-10-8.2"
     },
     {
@@ -14529,7 +14529,7 @@
         "UC-078"
       ],
       "external_gate": "Backup bucket creation, storage charges and retention/destruction policy require authorized owner configuration.",
-      "dependency_depth": 12,
+      "dependency_depth": 15,
       "projection_id": "E-SDLC-10.T-SDLC-10-8.3"
     },
     {
@@ -14550,7 +14550,7 @@
         "UC-078"
       ],
       "external_gate": "Backup bucket creation, storage charges and retention/destruction policy require authorized owner configuration.",
-      "dependency_depth": 13,
+      "dependency_depth": 16,
       "projection_id": "E-SDLC-10.T-SDLC-10-8.4"
     },
     {
@@ -14571,7 +14571,7 @@
         "UC-078"
       ],
       "external_gate": "Backup bucket creation, storage charges and retention/destruction policy require authorized owner configuration.",
-      "dependency_depth": 14,
+      "dependency_depth": 17,
       "projection_id": "E-SDLC-10.T-SDLC-10-8.5"
     },
     {
@@ -14592,7 +14592,7 @@
         "UC-078"
       ],
       "external_gate": "Backup bucket creation, storage charges and retention/destruction policy require authorized owner configuration.",
-      "dependency_depth": 15,
+      "dependency_depth": 18,
       "projection_id": "E-SDLC-10.T-SDLC-10-8.6"
     },
     {
@@ -14616,7 +14616,7 @@
         "UC-075",
         "UC-078"
       ],
-      "dependency_depth": 16,
+      "dependency_depth": 19,
       "projection_id": "E-SDLC-10.T-SDLC-10-9.1"
     },
     {
@@ -14637,7 +14637,7 @@
         "UC-075",
         "UC-078"
       ],
-      "dependency_depth": 17,
+      "dependency_depth": 20,
       "projection_id": "E-SDLC-10.T-SDLC-10-9.2"
     },
     {
@@ -14658,7 +14658,7 @@
         "UC-075",
         "UC-078"
       ],
-      "dependency_depth": 18,
+      "dependency_depth": 21,
       "projection_id": "E-SDLC-10.T-SDLC-10-9.3"
     },
     {
@@ -14679,7 +14679,7 @@
         "UC-075",
         "UC-078"
       ],
-      "dependency_depth": 19,
+      "dependency_depth": 22,
       "projection_id": "E-SDLC-10.T-SDLC-10-9.4"
     },
     {
@@ -14700,7 +14700,7 @@
         "UC-075",
         "UC-078"
       ],
-      "dependency_depth": 20,
+      "dependency_depth": 23,
       "projection_id": "E-SDLC-10.T-SDLC-10-9.5"
     },
     {
@@ -14721,7 +14721,7 @@
         "UC-075",
         "UC-078"
       ],
-      "dependency_depth": 21,
+      "dependency_depth": 24,
       "projection_id": "E-SDLC-10.T-SDLC-10-9.6"
     },
     {
@@ -14744,7 +14744,7 @@
         "UC-063",
         "UC-076"
       ],
-      "dependency_depth": 10,
+      "dependency_depth": 13,
       "projection_id": "E-SDLC-10.T-SDLC-10-10.1"
     },
     {
@@ -14764,7 +14764,7 @@
         "UC-063",
         "UC-076"
       ],
-      "dependency_depth": 11,
+      "dependency_depth": 14,
       "projection_id": "E-SDLC-10.T-SDLC-10-10.2"
     },
     {
@@ -14784,7 +14784,7 @@
         "UC-063",
         "UC-076"
       ],
-      "dependency_depth": 12,
+      "dependency_depth": 15,
       "projection_id": "E-SDLC-10.T-SDLC-10-10.3"
     },
     {
@@ -14804,7 +14804,7 @@
         "UC-063",
         "UC-076"
       ],
-      "dependency_depth": 13,
+      "dependency_depth": 16,
       "projection_id": "E-SDLC-10.T-SDLC-10-10.4"
     },
     {
@@ -14824,7 +14824,7 @@
         "UC-063",
         "UC-076"
       ],
-      "dependency_depth": 14,
+      "dependency_depth": 17,
       "projection_id": "E-SDLC-10.T-SDLC-10-10.5"
     },
     {
@@ -14844,7 +14844,7 @@
         "UC-063",
         "UC-076"
       ],
-      "dependency_depth": 15,
+      "dependency_depth": 18,
       "projection_id": "E-SDLC-10.T-SDLC-10-10.6"
     },
     {
@@ -26551,6 +26551,66 @@
       "status": "PLANNED",
       "dependency_depth": 3,
       "projection_id": "E-SDLC-PROD.T-PROD.15"
+    },
+    {
+      "id": "T-SDLC-10-7.2.F1",
+      "title": "Fix backup timeout, cancellation publication and database-failure coverage",
+      "kind": "agent",
+      "stage": "implement",
+      "deps": [
+        "T-SDLC-10-7.4"
+      ],
+      "owner": "L13",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Source corrections preserve the snapshot and no-overwrite boundaries.",
+      "status": "PLANNED",
+      "source_task": "T10.7",
+      "use_cases": [
+        "UC-063",
+        "UC-075"
+      ],
+      "dependency_depth": 8,
+      "projection_id": "E-SDLC-10.T-SDLC-10-7.2.F1"
+    },
+    {
+      "id": "T-SDLC-10-7.3.F1",
+      "title": "Verify backup review fixes and genuine negative regression",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-SDLC-10-7.2.F1"
+      ],
+      "owner": "L13",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Real service checks and removed-guard failure followed by exact restored success are recorded.",
+      "status": "PLANNED",
+      "source_task": "T10.7",
+      "use_cases": [
+        "UC-063",
+        "UC-075"
+      ],
+      "dependency_depth": 9,
+      "projection_id": "E-SDLC-10.T-SDLC-10-7.3.F1"
+    },
+    {
+      "id": "T-SDLC-10-7.4.R1",
+      "title": "Independently review final backup fixes",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-SDLC-10-7.3.F1"
+      ],
+      "owner": "Integrator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Reviewer is distinct from fix author and clears exact final source head.",
+      "status": "PLANNED",
+      "source_task": "T10.7",
+      "use_cases": [
+        "UC-063",
+        "UC-075"
+      ],
+      "dependency_depth": 10,
+      "projection_id": "E-SDLC-10.T-SDLC-10-7.4.R1"
     }
   ],
   "terminal_task": "T-PROD.13"

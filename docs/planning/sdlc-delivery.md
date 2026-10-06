@@ -2,7 +2,7 @@
 
 Updated: 2026-10-05. Planning draft; execution starts through `/ship`, not this refinement.
 
-The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, using maximum eligible parallel **GPT-6-Luna** agents. The draft graph contains 1,215 delivery nodes: 1,200 stages for 200 unaccepted source tasks and 15 shared/production gates. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
+The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, using maximum eligible parallel **GPT-6-Luna** agents. The draft graph contains 1,218 delivery nodes: the original 1,200 stages for 200 baseline-unaccepted source tasks, 15 shared/production gates and three explicit backup review-fix stages. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
 
 ## Graph and execution contract
 
