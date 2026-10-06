@@ -1,6 +1,6 @@
-# Shared operation invocation contract (v1.12)
+# Shared operation invocation contract (v1.13)
 
-Status: accepted for implementation as a design contract under ADR 023, pending independent exact-head review and merge. This amends frozen v1.11 only after that review/merge. It does not authorize runtime dispatch, claim implemented adapters, or establish runtime/provider acceptance. Migration 17 remains a candidate until the integrator allocates it.
+Status: v1.12 design landed under ADR 023; v1.13 codec binding amendment under ADR 024 becomes frozen after independent exact-head review and merge. It does not authorize runtime dispatch, claim implemented adapters, or establish runtime/provider acceptance. Migration 17 remains a candidate until the integrator allocates it.
 
 ## Decision and ownership
 
@@ -86,6 +86,7 @@ type Metadata struct {
 // decodes to I, and deterministically serializes that typed value. It never
 // hashes arbitrary raw JSON or an unvalidated map.
 type InputCodec[I any] interface {
+    SchemaDigest() [32]byte
     DecodeCanonical(RawInput) (typed I, canonical []byte, err error)
 }
 
@@ -113,6 +114,7 @@ type CachedResult struct {
 // OutputCodec serializes typed output to canonical JSON, validates it against
 // the registered output schema, and validates stored bytes again on read.
 type OutputCodec[O any] interface {
+    SchemaDigest() [32]byte
     EncodeCanonical(O) ([]byte, error)
     ValidateCanonical([]byte) error
 }
@@ -229,6 +231,20 @@ argument. A pre-existing domain participant that requires `*sql.Tx` cannot be
 passed through this wrapper as if compatible; root must provide an explicit
 transaction-bound adapter or assign a separate integration change before that
 participant is used. Handlers are trusted, owner-reviewed application code; this narrow interface prevents accidental transaction ownership changes, not malicious SQL execution. SQL access is not a sandbox and cannot prevent arbitrary database functions or a handler using other process capabilities. The concrete rejection mechanism and its limits require tests before the interface is qualified.
+
+Both codecs are immutable, trusted, owner-reviewed implementations. Each
+`SchemaDigest` returns the SHA-256 of the exact canonical schema artifact used
+by that codec. The generator supplies those artifact bytes and pins their
+canonicalization; the registry does not reconstruct schemas from Go type names.
+`Bind` calls each codec's `SchemaDigest` once and rejects an all-zero metadata or codec digest and rejects either codec
+whose digest differs from the corresponding metadata digest, before constructing
+any definition. It snapshots the accepted digests into copied metadata and never recomputes
+descriptor identity by calling those methods again. Codecs
+must not change their schema, digest, decoding or validation behavior after
+binding. Equality detects inconsistent bindings; it does not prove that a
+malicious codec truthfully validates its declared schema. Independent codec and
+generator verification remains required. A changed schema uses a new descriptor
+revision and remains subject to the existing replay conflict rule.
 
 At registration, copy all metadata slices and reject duplicate IDs, missing or invalid requirements, absent codecs/resolver/handler, unsupported side-effect/idempotency combinations, schema-digest mismatch, and mutable aliases. `required` is valid only for write or external-intent operations whose output class is explicitly `replay_safe`, with a strict output codec and maximum result reservation in `1..65536`; `sensitive` and `secret` outputs cannot be replay-cached. Output classification is an explicit reviewable schema decision, not a field-name heuristic. The registry rejects any operation with an undeclared resource resolver. It snapshots before serving and accepts no later registrations.
 

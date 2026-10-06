@@ -24,7 +24,7 @@ These bounded assignments complete application composition for existing source t
 ## T2.8: operation invocation implementation gates
 
 - Owner: integrator; independent security and compatibility review is a separate lane.
-- Status: v1.12 design amendment accepted for implementation pending independent exact-head review and merge; runtime dispatch and source acceptance remain held.
+- Status: v1.12 design landed; v1.13 explicit codec schema binding becomes frozen after independent exact-head review and merge. Runtime dispatch and source acceptance remain held.
 - Initial source slice: T2.8 worker may implement only immutable registry construction and typed descriptor validation under `app/operation/**`, consuming frozen policy contract types. No `app/policy/` path is owned by the worker.
 - Root-owned integration assignments: policy implementation/adapters, transactional current-authority and session recheck seam, invocation SQL storage, finite audit API/schema, migration content/sequence/registry, and executable composition. Migration 17 stays a candidate until actually allocated.
 - Runtime prerequisite: all adapters must implement the contract lock order or fail closed before dispatch; supported compositions must include the allocated migration. Exact replay must return the original validated result only after fresh authority checks; changed input/revision must conflict without callback. Required real PostgreSQL transactions prove scope isolation, revocation ordering, replay, audit/outbox/mutation atomic rollback, and explicit capacity exhaustion/increase.

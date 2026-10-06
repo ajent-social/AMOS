@@ -1,6 +1,6 @@
 # ADR 023: Shared operation invocation and replay boundary
 
-Status: accepted for implementation as a design contract; independent exact-head review and merge of v1.12 adoption preparation are pending. Runtime dispatch and source acceptance remain held.
+Status: accepted design, independently reviewed and landed as v1.12. ADR 024 defines the subsequent codec binding amendment. Runtime dispatch and source acceptance remain held.
 Date: 2026-10-06.
 
 ## Problem
@@ -14,7 +14,7 @@ from worker ownership by this amendment.
 ## Proposed decision
 
 Adopt the [operation invocation contract](../contracts/operation-invocation.md)
-as semantic amendment v1.12, pending independent exact-head review and merge of this adoption preparation.
+as the landed semantic amendment v1.12.
 Keep the existing policy names and three decision states. Use one typed registry
 and executor, trusted person plus current workspace context, transaction-time
 resource/session/permission/entitlement rechecks and payload-bound durable replay.
@@ -43,8 +43,8 @@ conflicts are not audit policy denials and produce no invocation audit event.
 
 ## Implementation ownership and gates
 
-The v1.12 semantic design amendment and its affected task/assignment records are
-prepared together; independent exact-head review and merge remain pending. T2.8
+The v1.12 semantic design amendment and its affected task/assignment records
+landed together after independent exact-head review. T2.8
 worker scope is limited to `app/operation/**`, beginning with registry and typed
 metadata validation against the frozen policy contract types. The integrator must
 separately assign policy implementation/adapters, invocation SQL storage, audit

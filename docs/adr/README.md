@@ -12,4 +12,5 @@ Decisions distinguish accepted product direction from proposed implementation po
 - [ADR 008: Selectable AWS deployment profiles](008-selectable-aws-profiles.md)
 - [ADR 009: Freeze cross-lane semantic contracts](009-frozen-cross-lane-contracts.md)
 
-- [ADR 023: Shared operation invocation and replay boundary (proposed)](023-shared-operation-invocation.md)
+- [ADR 023: Shared operation invocation and replay boundary](023-shared-operation-invocation.md)
+- [ADR 024: Explicit codec schema binding](024-codec-schema-binding.md)

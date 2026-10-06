@@ -257,3 +257,17 @@ validated string derived from the current `Actor.Kind()` API, with the initial
 profile accepting `person` only. No identity type is added. Runtime dispatch,
 transport qualification, required real-PostgreSQL acceptance, provider
 qualification, and release acceptance remain separate gates.
+
+
+## Amendment v1.13: explicit codec schema binding
+
+[ADR 024](../adr/024-codec-schema-binding.md) and the updated
+[operation contract](../contracts/operation-invocation.md) add
+`SchemaDigest() [32]byte` to both immutable typed codec interfaces. After
+independent exact-head review and merge, `Bind` must reject zero or unequal
+metadata/codec digests before constructing a definition and snapshot accepted
+metadata. Schema artifacts and codec behavior require independent qualification;
+digest equality proves binding consistency only. This changes a proposed Go
+interface, with no landed codecs or stored-data migration. T2.8 acceptance adds
+explicit input/output mismatch, zero-digest and snapshot-isolation tests. Runtime
+dispatch and remaining v1.12 integration gates stay held.
