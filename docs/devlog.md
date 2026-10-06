@@ -52,6 +52,17 @@ retries; disabling connection reuse prevented it and a transport mutation proved
 the regression. These qualify the adapter boundary, not live Stripe delivery,
 subscriptions, a generated executable or cloud deployment.
 
+## 2026-10-06 — runtime-only PostgreSQL contract drafted
+
+Added a proposed v1.15 boundary for a single-pool runtime database handle while
+preserving the development `storage.Open`/`*storage.DB`/`storage.Migrate` APIs.
+The initial implementation scope is limited to the opener and its tests. The
+design specifies explicit PEM trust, pinned pgx environment/file isolation,
+sanitized storage-generated errors, callback-error ownership, panic rollback,
+and actual least-privilege PostgreSQL checks. The public amendment remains
+subject to independent exact-head review and merge; no implementation,
+production role, TLS endpoint, or runtime acceptance is claimed.
+
 ## 2026-10-04 — First-class SDLC and production planning
 
 Owner-requested plan refinement preserves 257 original tasks and 57 accepted records. Added six dependency-linked delivery stages for each of 200 unaccepted tasks, plus 15 shared/production gates and a local draft graph. Maximum eligible GPT-6-Luna execution now continues through independent review, rebase merge, landed verification, release/staging, AWS production at https://amos.sire.run, live checks and operating acceptance. Missing runtime/provider/account/budget prerequisites remain visible gates. No source implementation, acceptance-state mutation, merge, release or deployment is claimed by this planning update.

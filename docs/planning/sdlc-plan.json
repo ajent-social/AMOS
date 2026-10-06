@@ -26360,7 +26360,8 @@
         "T-SDLC-16-10.6",
         "T-SDLC-16-11.6",
         "T-SDLC-16-12.6",
-        "T-INT-HOST-02.6"
+        "T-INT-HOST-02.6",
+        "T-INT-HOST-03.6"
       ],
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
@@ -26702,6 +26703,97 @@
       "status": "COMPLETE",
       "projection_id": "E-SDLC-HOST.T-INT-HOST-02.6",
       "dependency_depth": 9
+    },
+    {
+      "id": "T-INT-HOST-03.1",
+      "title": "Reconcile runtime-only PostgreSQL assignment",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-PROD.15",
+        "T-INT-HOST-02.6"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Frozen v1.15 design is reviewed and landed; exact two-file ownership, exclusive claim, isolated TLS fixture capacity and legacy API compatibility are recorded before dispatch.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.1",
+      "dependency_depth": 10
+    },
+    {
+      "id": "T-INT-HOST-03.2",
+      "title": "Implement runtime-only PostgreSQL pool",
+      "kind": "agent",
+      "stage": "implement",
+      "deps": [
+        "T-INT-HOST-03.1"
+      ],
+      "owner": "Storage worker",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Only storage/runtime.go and storage/runtime_test.go implement the distinct one-pool RuntimeDB and TxRunner boundary; explicit verified TLS and ambient configuration rejection preserve legacy Open, DB and Migrate APIs.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.2",
+      "dependency_depth": 11
+    },
+    {
+      "id": "T-INT-HOST-03.3",
+      "title": "Verify runtime-only PostgreSQL isolation",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-INT-HOST-03.2"
+      ],
+      "owner": "Storage worker",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Required real TLS PostgreSQL checks prove DML, rollback, denied DDL and migration-role authority, root and hostname failures, bounded startup, safe failures and compile-negative Migrate incompatibility; scoped race/vet/lint and genuine negative/restored evidence pass.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.3",
+      "dependency_depth": 12
+    },
+    {
+      "id": "T-INT-HOST-03.4",
+      "title": "Independently review runtime-only PostgreSQL",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-INT-HOST-03.3"
+      ],
+      "owner": "Independent GPT-6-Luna reviewer",
+      "estimate": "revalidate at preflight",
+      "acceptance": "A separate reviewer clears exact source head and base, isolation and compatibility; accepted findings receive explicit fix, affected verification and re-review stages before merge.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.4",
+      "dependency_depth": 13
+    },
+    {
+      "id": "T-INT-HOST-03.5",
+      "title": "Rebase merge runtime-only PostgreSQL",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-INT-HOST-03.4"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "The independently reviewed exact head lands through guarded GitHub rebase merge without bypassing branch policy; local verification is distinguished from hosted CI.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.5",
+      "dependency_depth": 14
+    },
+    {
+      "id": "T-INT-HOST-03.6",
+      "title": "Verify landed runtime-only PostgreSQL",
+      "kind": "agent",
+      "stage": "verify-landed",
+      "deps": [
+        "T-INT-HOST-03.5"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Landed files equal reviewed bytes, affected checks pass and bounded source receipts are recorded; consumer migration, production grants, migration-secret absence and deployment remain open.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.6",
+      "dependency_depth": 15
     }
   ],
   "terminal_task": "T-PROD.13"

@@ -65,3 +65,21 @@ node, dependency, wave or original product acceptance changes in this update.
 A fresh canonical parser check covers all 1,281 rows without authoring,
 duplicate, undefined or ambiguous errors. Remaining product and production
 gates are still open; partial implementation does not close those dependencies.
+
+
+## Runtime-only PostgreSQL plan update (2026-10-06)
+
+Six planned source-delivery stages extend the graph to 1,230 nodes. The only
+prior-node change adds the landed runtime-storage stage to product reconciliation.
+All prior stage statuses, dependencies, waves and execution receipts are preserved
+except that explicit dependency; no original source acceptance changes. The first
+new preflight depends on the reviewed design gate and landed finite routing.
+
+Graph validation confirms unique IDs, resolved dependencies, acyclic ordering and
+terminal reachability of every node. Canonical parser validation passes with
+1,287 rows, no authoring, duplicate, undefined or ambiguous errors and matching
+graph/projection waves. These are local planning checks only; runtime storage,
+TLS/least-privilege tests, independent source review and production remain open.
+
+Repository plan validation, changed-document public artifact checks and whitespace
+checks also pass. Hosted CI and product execution are not asserted.
