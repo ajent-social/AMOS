@@ -1,7 +1,8 @@
 # Business extension contract (design)
 
 Status: design seam only; runtime operation registration is not implemented here.
-This document records the v1.12 typed-handler amendment under ADR 023, pending
+This document records the landed v1.12 typed-handler design under ADR 023.
+The v1.13 codec schema binding amendment under ADR 024 becomes frozen after
 independent exact-head review and merge. It does not claim application startup
 composition or runtime dispatch.
 
@@ -30,7 +31,12 @@ Go API. Their required meaning is:
   reject control-bearing operation and requirement names. The Go parity test
   checks that these exclusions agree.
 - `OperationDefinition` binds that complete metadata to one validated typed
-  handler and an explicit dependency set. A generic `Bind[I,O]` semantic
+  handler and an explicit dependency set. Immutable input and output codecs
+  expose `SchemaDigest() [32]byte`; `Bind` reads each once, rejects zero or
+  metadata-mismatched digests, and snapshots the accepted values. Equality
+  checks trusted binding consistency, not a dishonest codec's implementation.
+  Future generated codecs derive the digest from the canonical schema artifact
+  they implement and require independent generator fixtures. A generic `Bind[I,O]` semantic
   constructor accepts a non-nil
   `func(context.Context, operation.InvocationContext, I) (operation.Result[O], error)`, checks policy
   metadata and required dependencies, and creates the private erased invoke
