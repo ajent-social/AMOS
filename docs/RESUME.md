@@ -185,3 +185,14 @@ T10.7 is accepted at the local adapter boundary after real PostgreSQL checks,
 independent source/fix review, genuine negative/restored evidence and verified
 landing. See [evidence](evidence/logical-backup-20261006.md). Remote encrypted
 retention, actual restore, scheduling/RPO and provider/production gates remain open.
+
+
+## Operation registry component
+
+T2.8 is in progress after its independently reviewed immutable registry and
+policy-type slice. Normal/race/vet/lint, independent negative/restored checks
+and a fresh landed package test pass. See [evidence](evidence/operation-registry-20261006.md).
+No executor or evaluator is exposed; current-authority adapters, durable replay,
+trusted generator binding and real transaction/transport qualification remain.
+The separate finite host routing assignment follows v1.14 and its six explicit
+SDLC stages. No provider or production readiness follows from either design.

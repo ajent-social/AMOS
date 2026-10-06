@@ -611,5 +611,14 @@
       "Removing the completion cancellation guard made its regression fail; exact restoration passed. Review fixes added finite cleanup and inherited-pipe wait bounds. Nine artifact-scanner matches were manually cleared as source expressions, format text or synthetic fixtures; automated scan is not claimed passing.",
       "Accepted local source adapter only. Remote encrypted storage/retention, actual restore execution, scheduling/RPO, production credentials and provider/deployment qualification remain separate tasks."
     ]
+  },
+  "T2.8": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
+      "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed.",
+      "Registry/type binding only. Evaluator, current authority/session, SQL/replay/capacity/audit/effects, trusted generator metadata bridge, real PostgreSQL and transport dispatch remain unqualified. See docs/evidence/operation-registry-20261006.md."
+    ]
   }
 }

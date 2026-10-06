@@ -398,6 +398,35 @@
       },
       "external_blockers": [],
       "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-2-8.2": {
+      "task_id": "T-SDLC-2-8.2",
+      "status": "IN_PROGRESS",
+      "owner": "Coordinator",
+      "source_or_artifact_identity": {
+        "pr": 20,
+        "reviewed_head": "0a098c60210252bb3829cdda8753f88d9644d280",
+        "reviewed_base": "229885fa50ee52237ebe9c3d3228b1c3b30879e3",
+        "landed": "8181fc48bf12cce569ab50d68cd261cca0ebd071"
+      },
+      "commands_and_results": [
+        "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
+        "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR_COMPONENT_ONLY",
+        "reviewer": "bootstrap_fix",
+        "scope": "registry and frozen policy types only; no executor",
+        "genuine_negative": "Digest comparison removal failed mismatch regression; exact restoration passed"
+      },
+      "external_blockers": [],
+      "next_action": "Implement separately assigned authority, SQL, replay, audit/effect and generator adapters; satisfy full task real-service acceptance before completing implementation/verification stages.",
+      "claim": {
+        "resource": "T2.8",
+        "tip": "df6030adf83a15dae812a688dfbf3f7b51e10124"
+      },
+      "dependency_receipts": [],
+      "dependency_scope": "Only the explicitly assigned registry slice was admitted against landed v1.13/v1.14 design; full task dependency/preflight completion is not inferred."
     }
   },
   "receipt_requirements": [
