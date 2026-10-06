@@ -14,3 +14,4 @@ Decisions distinguish accepted product direction from proposed implementation po
 
 - [ADR 023: Shared operation invocation and replay boundary](023-shared-operation-invocation.md)
 - [ADR 024: Explicit codec schema binding](024-codec-schema-binding.md)
+- [ADR 025: Finite host protocol and business routing](025-finite-host-routing.md)

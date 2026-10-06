@@ -43,3 +43,22 @@ These bounded assignments complete application composition for existing source t
 - Frozen profile: single-AZ public EC2 with an Elastic IP and direct TLS; no NAT, load balancer, public database, or SSH. Workload identity is limited to exact-scope host IAM and SSM.
 - Worker-owned paths: `internal/infra/aws/network.go`, `internal/infra/aws/network_test.go`, `internal/infra/aws/identity.go`, and `internal/infra/aws/identity_test.go` only. The integrator owns `go.mod`/`go.sum` and pins Pulumi SDK v3.267.0 and AWS provider SDK v7.48.0 from official Go module metadata.
 - Verification boundary: isolated Pulumi mocks prove source topology and least-privilege IAM negatives only. Provider credential bridge and actual infrastructure execution remain separate gates; no deployment permission or production claim is granted.
+
+
+### INT-HOST-02 routing implementation slice
+
+- Owner: assigned routing worker; independent review by another agent. Dispatch only after v1.14 design merge and an exclusive claim.
+- Frozen contract: [finite host routing](../contracts/host-routing.md), ADR 025. The coordinator adopts exported aliases/options and delegates this bounded implementation.
+- Owned paths: `app/app.go`, new routing tests under `app/`, `internal/runtime/runtime.go`, and new routing implementation/tests under `internal/runtime/`. Existing unrelated tests may change only for explicit late-registration compatibility cases after coordinator review.
+- Required behavior: all-or-none eight protocol slots, explicit method-neutral business manifest, strict aliases/reserved boundaries, copied routing configuration, legacy compatibility, shared telemetry matching and permanent atomic registration freeze.
+- Verification: contract route/method/auth-equivalence matrix, actual local HTTP boundary checks, deterministic race tests, genuine negative/restored checks, scoped race/vet/lint, independent exact-head review, guarded rebase merge and landed verification.
+- Stage chain: `T-INT-HOST-02.1` through `.6` in the SDLC graph; complete product reconciliation depends on `.6`. No original accepted task is reopened or falsely reaccepted by this additive composition work.
+- Deferred stages: runtime-only PostgreSQL, least-privilege role/TLS checks, production origin/cookies/proxy composition and deployed protocol acceptance remain unqualified. Routing may proceed independently; it does not enable the gated operation executor.
+
+### T8.4 storage follow-up constraint
+
+The host backup KMS policy scopes the encryption context to the installation and
+environment object prefix. The later storage adapter must disable S3 Bucket Keys
+for that profile so the encryption context remains an object ARN, then qualify
+actual multipart backup writes and denied foreign-prefix access. Mock IAM source
+checks alone do not qualify that provider behavior.

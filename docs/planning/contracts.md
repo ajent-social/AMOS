@@ -271,3 +271,16 @@ digest equality proves binding consistency only. This changes a proposed Go
 interface, with no landed codecs or stored-data migration. T2.8 acceptance adds
 explicit input/output mismatch, zero-digest and snapshot-isolation tests. Runtime
 dispatch and remaining v1.12 integration gates stay held.
+
+
+## Amendment v1.14: finite host routing and immutable startup snapshot
+
+[ADR 025](../adr/025-finite-host-routing.md) adopts the
+[host routing contract](../contracts/host-routing.md) after independent review
+and merge. `app.Options` gains optional finite protocol and business bundles;
+all valid HTTP methods reach selected handlers unchanged. Reserved paths stay
+unavailable when absent, aliases cannot reach new handlers, and legacy routing
+retains its old match behavior. Route registration freezes permanently at first
+handler exposure, valid Serve attempt or direct request; late valid registration
+returns `ErrRoutesFrozen`. This is an intentional startup compatibility change.
+Identity/authority, production storage and deployment remain separately gated.
