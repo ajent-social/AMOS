@@ -81,7 +81,8 @@ An unmatched path remains 404. A valid path under an unbound reserved root keeps
 the current sanitized unavailable response; there is no reserved fallback.
 
 Protocol canonicality is strict: encoded aliases or trailing slash variants of
-protocol paths do not dispatch. Malformed/ambiguous paths return 400; otherwise
+protocol paths return 400 and do not dispatch, whether the bundle is present or
+absent. Malformed/ambiguous paths return 400; otherwise
 unrecognized reserved paths return the existing unavailable response. Existing
 legacy business normalization remains compatible. An encoded or trailing alias
 must never normalize into a new manifest or protocol handler; aliases of new
