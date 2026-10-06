@@ -10,3 +10,12 @@ These bounded assignments complete application composition for existing source t
 - Deliverable: install structured logging once at the shared runtime boundary, forward an optional logger, and derive log templates from recognized fixed routes and registered business routes. Unmatched requests receive the bounded unmatched label. Raw URL paths and request secrets must not become log templates.
 - Verification: scoped tests, race checks, vet and lint under shared capacity rules; tests cover automatic runtime installation, dynamic templates, unmatched paths, structured error correlation and request privacy. Independent exact-head review precedes merge and landed verification.
 - Remaining acceptance: generated executable output and host configuration are checked separately; local source results do not qualify cloud providers or production.
+
+## T10.7: consistent logical backup adapter
+
+- Owner: backup source worker; independent review remains a distinct lane.
+- Prerequisites: accepted operations, persistence and deployment-profile design components plus reviewed shared SDLC gates.
+- Owned paths: `internal/backup/create.go` and `internal/backup/create_test.go` only.
+- Design: exported repeatable-read snapshot ties a complete logical archive to the migration ledger. Caller pins the exact compatible tool version, supplies trusted module metadata and scoped credentials, and sets finite duration/size limits. Private staging and no-overwrite publication must never expose a failed or partial artifact as complete.
+- Verification: real disposable PostgreSQL and pg_dump, interruption and collision negatives, restored positive checks, race/vet/lint and independent review.
+- Boundaries: one database snapshot; no schedule/RPO, remote encrypted storage, production role, live-provider or restore qualification. These remain separate tasks.
