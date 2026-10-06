@@ -29,6 +29,9 @@ var (
 	ErrAlreadyServing = runtime.ErrAlreadyServing
 	// ErrNotServing reports that shutdown was requested without an active server.
 	ErrNotServing = runtime.ErrNotServing
+	// ErrRoutesFrozen reports a valid route registration after the serving
+	// snapshot became immutable.
+	ErrRoutesFrozen = runtime.ErrRoutesFrozen
 )
 
 // ReadinessCheck evaluates one required dependency using the request-bounded
@@ -40,12 +43,23 @@ type ReadinessCheck func(context.Context) error
 // This constructor seam does not relax business route reservations.
 type IdentityHandlers = runtime.IdentityHandlers
 
+// ProtocolHandlersV1 binds the fixed, reserved MCP/OAuth protocol slots.
+type ProtocolHandlersV1 = runtime.ProtocolHandlersV1
+
+// BusinessRouteV1 binds one exact canonical path or terminal prefix.
+type BusinessRouteV1 = runtime.BusinessRouteV1
+
+// BusinessRoutesV1 is a finite method-neutral business route manifest.
+type BusinessRoutesV1 = runtime.BusinessRoutesV1
+
 // Options configure the app's routes, required dependency checks, logging and
 // HTTP lifecycle. A nil Logger uses slog.Default. Empty ReadinessChecks means
 // the app declares no external readiness dependency.
 type Options struct {
 	Identity         IdentityHandlers
 	Workspaces       http.Handler
+	Protocol         *ProtocolHandlersV1
+	Business         *BusinessRoutesV1
 	HealthHandler    http.Handler
 	Logger           *slog.Logger
 	ReadinessChecks  []ReadinessCheck
@@ -81,6 +95,8 @@ func New(options Options) (*App, error) {
 	composed, err := runtime.New(runtime.Options{
 		Identity:         options.Identity,
 		Workspaces:       options.Workspaces,
+		Protocol:         options.Protocol,
+		Business:         options.Business,
 		HealthHandler:    options.HealthHandler,
 		Logger:           options.Logger,
 		ReadinessChecks:  checks,
@@ -108,7 +124,7 @@ func (a *App) Handler() http.Handler {
 	if a == nil || a.runtime == nil {
 		return http.NotFoundHandler()
 	}
-	return a.runtime
+	return a.runtime.Handler()
 }
 
 // Serve runs the app on listener until ctx is canceled or the server fails.
