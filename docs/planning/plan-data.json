@@ -828,7 +828,7 @@
             "Only after root-owned adapters, audit/schema, allocated migration, and transport composition pass those real-database checks can the executor be enabled. Source-task acceptance remains pending independent review, merge, landed checks, and required real-service evidence; no provider/deployment/release claim follows."
           ],
           "verification": [
-            "go test ./app/operation (initial registry/type-validation slice; load guard before each Go command)"
+            "go test ./app/operation"
           ],
           "negative_test": "Use an isolated disposable test mutation to weaken descriptor validation or bypass current authority on replay; prove the scoped check fails, restore the exact source, and rerun the passing check. Real PostgreSQL negative cases must prove changed intent never invokes twice and revoked authority never discloses cached output.",
           "risks": [
