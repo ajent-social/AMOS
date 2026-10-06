@@ -163,7 +163,8 @@
         "Implement one logical custom-format dump with an exported repeatable-read snapshot and migration ledger read in the same transaction. Credentials use private connection files, never process arguments or diagnostics.",
         "Require caller-supplied exact tool-version pin, matching supported server major, trusted module metadata, bounded duration and byte limit. Reject unsupported versions rather than imply managed-provider compatibility.",
         "Private staging files and atomic no-overwrite publication bind a complete manifest to actual digest, size, schema and consistency evidence. Publication failure or cancellation leaves no selectable complete backup.",
-        "Real disposable PostgreSQL and pg_dump checks are required, including interrupted dump and restored positive behavior. Encrypted remote retention, scoped production credentials and deployment qualification belong to later tasks."
+        "Real disposable PostgreSQL and pg_dump checks are required, including interrupted dump and restored positive behavior. Encrypted remote retention, scoped production credentials and deployment qualification belong to later tasks.",
+        "Preserve the task documentation requirement: explicit mandatory size limits, no scheduling/RPO guarantee from a single dump, managed automated-backup/PITR complements and VM crash-consistent snapshot limits."
       ],
       "independent_review_and_findings": {
         "status": "CLEAR_SOURCE_PREFLIGHT",
