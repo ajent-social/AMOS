@@ -807,25 +807,30 @@
             "UC-004"
           ],
           "owned_paths": [
-            "app/operation/",
-            "app/policy/"
+            "app/operation/"
           ],
-          "objective": "All transports can consume one current-state invocation decision and duplicate payload-bound mutations cannot silently repeat.",
+          "objective": "One shared typed operation boundary rechecks current authority for new mutations and replay, and prevents duplicate payload-bound writes across transports.",
           "instructions": [
-            "Resolve verified principal/current workspace before any operation, keeping selection separate from authority.",
-            "Evaluate permissions/entitlements/assurance from the operation registry and return allowed/denied/unavailable faithfully.",
-            "Bind idempotency to actor, workspace, operation and canonical payload; conflict on changed intent.",
-            "Invoke domain work under defined transaction/outbox ownership and record material audit results.",
-            "Expose one adapter seam used by web/REST/MCP/proxy transports; never permit transport-specific authorization shortcuts."
+            "Implement the first bounded slice in app/operation/: immutable registry construction and typed descriptor validation against the frozen policy contract types. Do not create app/policy or invent policy vocabulary.",
+            "Keep worker ownership to app/operation/**. The integrator separately owns policy implementation/adapters, current session recheck, invocation SQL storage, audit API/schema, migration content/sequence/registry, and executable composition.",
+            "Derive actor kind from trusted Actor.Kind() as a private validated string; the initial profile accepts person only. Callers and operation input cannot select actor, tenant, workspace, authority, or session values.",
+            "For integrated dispatch, use one executor for web, REST, MCP, and proxy. Recheck current active person/session, selected workspace/membership, complete resource lock set, permission, assurance, and entitlement in the transaction; recheck authority before any replay result is disclosed.",
+            "For required writes, bind idempotency to trusted realm, actor, workspace, operation, immutable descriptor revision/schema digests, and canonical path/query/body input. Exact authorized replay returns the original typed result; changed input or revision conflicts without rerunning the handler.",
+            "Commit domain mutation, bounded replay result, success audit, and durable effect intent atomically; never call providers in the transaction. Enforce typed effect payload schema/size/privacy/deadline and unique effect ordinals.",
+            "Keep replay outputs bounded and replay-safe; sensitive and secret output is not cached. Completed replay records have no implicit expiry or automatic deletion. Exhausted explicit capacity fails unavailable until an operator raises and assigns capacity.",
+            "Do not enable executor dispatch until root-owned adapters, current-session seam, SQL/audit schema, allocated migration, and every supported executable composition are integrated and independently qualified."
           ],
           "acceptance": [
-            "All transports can consume one current-state invocation decision and duplicate payload-bound mutations cannot silently repeat.",
-            "Revoked membership and stale billing state produce the documented denied/unavailable outcomes at the real boundary."
+            "Registry tests reject duplicate/incomplete descriptors, schema or transport-binding mismatch, unknown/duplicate input fields, invalid typed codecs, duplicate effect ordinals, and unknown, oversized, or privacy-disallowed effect payloads.",
+            "Real PostgreSQL transaction tests prove exact same-key/hash replay returns the original canonical result once; changed input/revision conflicts without a second callback or false denial audit; scopes isolate installation/application/environment/actor/workspace/operation; concurrent duplicates invoke once; corrupt stored results fail closed.",
+            "Real PostgreSQL tests prove current person/session/workspace/membership/resource/assurance/permission/entitlement state is rechecked before mutation and replay disclosure, with denied versus unavailable preserved; revocation/permission writes serialize with invocation using the documented lock order.",
+            "Real PostgreSQL failure tests prove mutation, replay row/capacity reservation, success audit, and durable effect intent roll back together on callback/output/audit/outbox/commit failure; capacity admission is bounded and exhaustion prevents callback until explicit operator allocation is increased.",
+            "Only after root-owned adapters, audit/schema, allocated migration, and transport composition pass those real-database checks can the executor be enabled. Source-task acceptance remains pending independent review, merge, landed checks, and required real-service evidence; no provider/deployment/release claim follows."
           ],
           "verification": [
-            "go test ./app/operation ./app/policy"
+            "go test ./app/operation (initial registry/type-validation slice; load guard before each Go command)"
           ],
-          "negative_test": "Change only the browser control while retaining the backend denial, then prove forged direct API mutation still fails.",
+          "negative_test": "Use an isolated disposable test mutation to weaken descriptor validation or bypass current authority on replay; prove the scoped check fails, restore the exact source, and rerun the passing check. Real PostgreSQL negative cases must prove changed intent never invokes twice and revoked authority never discloses cached output.",
           "risks": [
             "Security-sensitive seam requires independent review and real transport denial tests."
           ],

@@ -1,8 +1,9 @@
 # Business extension contract (design)
 
 Status: design seam only; runtime operation registration is not implemented here.
-This document applies to `amos-contract-v1`. It does not amend that frozen
-contract, implement a registry, or claim application startup composition.
+This document records the v1.12 typed-handler amendment under ADR 023, pending
+independent exact-head review and merge. It does not claim application startup
+composition or runtime dispatch.
 
 ## Registration seam and ownership
 
@@ -31,11 +32,14 @@ Go API. Their required meaning is:
 - `OperationDefinition` binds that complete metadata to one validated typed
   handler and an explicit dependency set. A generic `Bind[I,O]` semantic
   constructor accepts a non-nil
-  `func(context.Context, identity.Principal, I) (O, error)`, checks policy
+  `func(context.Context, operation.InvocationContext, I) (operation.Result[O], error)`, checks policy
   metadata and required dependencies, and creates the private erased invoke
-  closure used to store heterogeneous operations. That closure decodes only
-  into `I`, invokes the typed handler, and encodes only `O`; business handlers
-  never receive an untyped map.
+  closure used to store heterogeneous operations. The context carries the
+  trusted principal and current selection, resolved resources, invocation ID,
+  transaction-scoped database wrapper, and bound effect enqueuer. The finite
+  typed `Result[O]` carries one declared result kind and typed value; the
+  executor validates and canonically encodes the output for replay. The closure
+  decodes only into `I`; business handlers never receive an untyped map.
 - Construction rejects missing metadata, nil handlers (including typed nil),
   missing required dependency keys, and required dependencies whose resolved
   value is nil. Policy validation and typed binding both complete before
@@ -77,9 +81,11 @@ resolved workspace selection**. After trusted authentication middleware,
 `identity.Principal`. After `workspace/context.Resolver.Middleware` has
 revalidated the requested workspace against current rows, the same request
 context supplies `workspace/context.Selection` through
-`workspace/context.FromContext(ctx)`. A future typed adapter may pass those
-values and its typed input to a domain handler. This describes the authority
-tuple only; it does not declare a Go constructor or handler API.
+`workspace/context.FromContext(ctx)`. The v1.12 typed adapter passes `InvocationContext` and typed input to the
+handler. The context actor kind is derived from the trusted principal’s current
+`Actor.Kind()` string and validated against the private initial `person`-only
+profile; it does not add an `identity.ActorKind` type or accept caller-selected
+identity fields.
 
 The current `Principal` getters are `InstallationID`, `ApplicationID`,
 `EnvironmentID`, `PersonID`, `SecurityEpoch`, `AuthenticationMethod`,

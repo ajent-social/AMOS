@@ -1,12 +1,12 @@
-# Shared operation invocation contract (proposed v1.12)
+# Shared operation invocation contract (v1.12)
 
-Status: proposed under ADR 023; independent review is pending. This document does not yet amend frozen v1.11, assign a migration sequence, or authorize runtime dispatch. The integrator owns adoption, task-scope reconciliation and shared API changes.
+Status: accepted for implementation as a design contract under ADR 023, pending independent exact-head review and merge. This amends frozen v1.11 only after that review/merge. It does not authorize runtime dispatch, claim implemented adapters, or establish runtime/provider acceptance. Migration 17 remains a candidate until the integrator allocates it.
 
 ## Decision and ownership
 
 All web, REST, MCP, and proxy adapters use one `app/operation` executor. It consumes only the verified principal and current workspace selection attached by trusted middleware; caller selectors and resource IDs are untrusted input until the executor resolves and rechecks them. It returns one logical result/error that each transport maps using its existing contract. No transport maintains a policy table or calls a domain mutation outside the executor.
 
-The canonical exported policy surface remains the frozen root `policy/` contract in `docs/planning/contracts.md`, owned by the root integrator. `app/operation` consumes `policy.Evaluator`; it does not add transport-specific policy types or define a competing evaluator. Before dispatch, the root must reconcile the existing T2.8 `app/policy/` scope with this ownership and publish an explicit integrator-owned implementation/adapter assignment. A worker may not create or edit `policy/`, `audit/`, migrations, migration registry, app composition, or executable wiring under the current source-task scope.
+The canonical exported policy surface remains the frozen root `policy/` contract in `docs/planning/contracts.md`, owned by the root integrator. `app/operation` consumes `policy.Evaluator`; it does not add transport-specific policy types or define a competing evaluator. T2.8 worker ownership is limited to `app/operation/**`, beginning with operation registry and typed metadata validation against the frozen policy contract types. The root separately owns and must explicitly assign `policy/` implementation/adapters, invocation SQL storage, audit API/schema, migration content and registry, current-session recheck seam, and executable composition. No runtime dispatch is available until the compatible adapters, SQL schema, migration composition, and transaction ordering are independently qualified.
 
 The operation executor always rechecks current authority before new work and before replay disclosure. It does not persist or reuse an `Allowed` decision. `Allowed`, `Denied`, and `Unavailable` remain distinct. Missing/revoked authority or insufficient permission is denied; inability to establish current state is unavailable; neither result is converted to the other.
 
@@ -265,14 +265,14 @@ For policy-denied/unavailable attempts, no idempotency claim, callback, domain m
 
 ## Store and transactional seams
 
-The invocation store, audit extension, and migration are root-integrator-owned preconditions, outside the current T2.8 source-worker paths. They are not an extension of `jobs/sqlstore`.
+The invocation store, audit extension, policy adapter, and migration are root-integrator-owned preconditions, outside the current T2.8 source-worker paths. They are not an extension of `jobs/sqlstore`. `Scope.ActorKind` is a private validated string rather than a new identity API type; the initial accepted extension profile derives its only permitted value from trusted `Actor.Kind()` and accepts `person` only. Input, transport metadata, and application handlers cannot choose or invent that value.
 
 ```go
 package operationsqlstore
 
 type Scope struct {
     InstallationID, ApplicationID, EnvironmentID, WorkspaceID identity.ID
-    ActorKind identity.ActorKind
+    ActorKind string // private validated value; initial profile accepts only "person"
     ActorID identity.ID
     OperationID string
 }
@@ -322,14 +322,14 @@ The additive migration creates the scoped invocation table, installation capacit
 
 ## Prerequisites and ownership
 
-- Root reconciles the T2.8 task path `app/policy/` with frozen integrator-owned `policy/`; root supplies the frozen evaluator and transaction-authorizer implementation. No new permission vocabulary or transport wire permission is introduced.
-- T2.8 worker scope is only `app/operation/**`; root separately owns invocation SQL storage, `audit` API/schema, sequence 17, migration registration, and executable composition. These dependencies must land or be explicitly co-developed by the integrator before runtime use.
-- Root reconciles the operation callback with the accepted typed business-extension contract and generator seam; this proposal requires full path/query/body decoding, `ResourceResolver`, `OutputCodec`, and invocation ID in the shared transaction context.
+- The prior `app/policy/` task path is removed; the frozen integrator-owned `policy/` contract remains authoritative. The integrator supplies evaluator and transaction-authorizer implementations. No new permission vocabulary or transport wire permission is introduced.
+- T2.8 worker scope is only `app/operation/**`; its bounded first source slice may implement registry construction and typed descriptor validation against the frozen policy contract types. Root separately assigns policy implementation/adapters, invocation SQL storage, audit API/schema, current-session recheck, sequence 17, migration registration, and executable composition. These dependencies must land and qualify before executor dispatch can be enabled.
+- The handler shape is aligned with the v1.12 typed business-extension design and generator seam; dispatch requires full path/query/body decoding, `ResourceResolver`, `OutputCodec`, and invocation ID in the shared transaction context.
 - Independent security/privacy review approves the finite audit extension and replay-output classification. Owner separately approves any future retention/capacity reclamation rule; no replay expiry is implied here.
 
 ## Verification plan
 
-Unit tests cover duplicate/invalid registry metadata, complete descriptor and transport-binding mismatch, unknown/duplicate JSON fields, typed canonicalization, path/query/body and complete lock-set resolution, workspace mismatch, output validation/classification/limits, tenant-bound effect enqueueing, duplicate ordinal rejection, and rejection of unknown, oversized, or privacy-disallowed effect payloads. They also cover stable result mapping and the three policy outcomes. Same-key operation-revision/output-schema changes conflict without a second callback; corrupt result digest/bytes fail unavailable. Missing principal or current selection cannot invoke a callback; stale/revoked current state returns the frozen denied/unavailable result without disclosing replay data.
+The initial registry/type-validation slice is unit-tested independently. Full implementation acceptance additionally requires real PostgreSQL transaction tests covering duplicate/invalid registry metadata, complete descriptor and transport-binding mismatch, unknown/duplicate JSON fields, typed canonicalization, path/query/body and complete lock-set resolution, workspace mismatch, output validation/classification/limits, tenant-bound effect enqueueing, duplicate ordinal rejection, and rejection of unknown, oversized, or privacy-disallowed effect payloads. They also cover stable result mapping and the three policy outcomes. Same-key operation-revision/output-schema changes conflict without a second callback; corrupt result digest/bytes fail unavailable. Missing principal or current selection cannot invoke a callback; stale/revoked current state returns the frozen denied/unavailable result without disclosing replay data.
 
 Real PostgreSQL tests cover same realm/key/hash returning exact canonical result; changed hash/revision conflict with no callback or false denial audit; actor/workspace/environment/operation isolation; concurrent duplicate callback exactly once; active account/session/security-epoch, membership, resource, assurance and entitlement rechecks; lock ordering against revocation and membership mutation; database-time behavior after lock waits; callback/output/audit/outbox/capacity failure rollback; denied/unavailable audit-only commit; replay audit behavior; installation, actor, and workspace capacity reservation/fairness before callback; operator capacity increase; and migration 17 after unchanged migrations 1–16. Audit tests reject arbitrary action/resource/operation ID and payloads and preserve append-only enforcement.
 

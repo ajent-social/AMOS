@@ -21,10 +21,25 @@ These bounded assignments complete application composition for existing source t
 - Boundaries: one database snapshot; no schedule/RPO, remote encrypted storage, production role, live-provider or restore qualification. These remain separate tasks.
 - Documentation: state mandatory size limits and that one logical snapshot proves no schedule or RPO target. Managed automated backups/PITR complement it; VM volume snapshots are crash-consistent complements, never replacements for a verified logical backup.
 
-## T2.8: operation contract preflight
+## T2.8: operation invocation implementation gates
 
 - Owner: integrator; independent security and compatibility review is a separate lane.
-- Status: proposed ADR 023 and invocation contract; runtime dispatch remains held.
-- Scope: reconcile frozen `policy/` with task `app/policy/`, the typed extension callback, current identity/workspace/session authority, durable replay storage and finite audit changes.
-- Source prerequisite: adopt the reviewed amendment, update task ownership and acceptance together, then explicitly assign each source slice. Proposal text grants no source or migration ownership to a worker.
-- Verification: independent privacy/security and compatibility review against current source and contracts; plan/public-artifact checks. Real database and transport tests remain required for implementation acceptance.
+- Status: v1.12 design amendment accepted for implementation pending independent exact-head review and merge; runtime dispatch and source acceptance remain held.
+- Initial source slice: T2.8 worker may implement only immutable registry construction and typed descriptor validation under `app/operation/**`, consuming frozen policy contract types. No `app/policy/` path is owned by the worker.
+- Root-owned integration assignments: policy implementation/adapters, transactional current-authority and session recheck seam, invocation SQL storage, finite audit API/schema, migration content/sequence/registry, and executable composition. Migration 17 stays a candidate until actually allocated.
+- Runtime prerequisite: all adapters must implement the contract lock order or fail closed before dispatch; supported compositions must include the allocated migration. Exact replay must return the original validated result only after fresh authority checks; changed input/revision must conflict without callback. Required real PostgreSQL transactions prove scope isolation, revocation ordering, replay, audit/outbox/mutation atomic rollback, and explicit capacity exhaustion/increase.
+- Verification: independent review against current source and contracts; plan/public-artifact checks for this design bundle. The implementation gate additionally requires scoped registry tests, required real database transaction tests and qualified transport integration. No fixture, design, or local unit check substitutes for those gates.
+
+## INT-HOST-02: external consumer protocol and runtime preflight
+
+- Owner: Coordinator; a distinct read-only reviewer must review the preflight. This assignment does not authorize dispatch or source changes.
+- Scope: define finite versioned protocol-handler slots for the eight exact MCP/OAuth routes; define a method-neutral explicit business-route set with no root wildcard or reserved fallback; specify a production HTTPS/cookie/proxy constructor and a runtime-only PostgreSQL opener that receives no migration credentials and performs no DDL. Keep the requirements public-safe and consumer-neutral.
+- Required evidence for a later source assignment: exact route/method/auth equivalence and non-alias/reserved-route rejection; real native-session deployment scope and current-proof behavior; verified TLS, rejection of ambient PostgreSQL configuration, least-privilege pool readiness and close behavior.
+- Boundary: this preflight does not adopt an alternate identity model or infer production readiness. Source ownership follows only after contract review.
+
+## T8.4: AWS network and workload identity source preflight
+
+- Owner: integrator; the source component requires an independent exact-head review.
+- Frozen profile: single-AZ public EC2 with an Elastic IP and direct TLS; no NAT, load balancer, public database, or SSH. Workload identity is limited to exact-scope host IAM and SSM.
+- Worker-owned paths: `internal/infra/aws/network.go`, `internal/infra/aws/network_test.go`, `internal/infra/aws/identity.go`, and `internal/infra/aws/identity_test.go` only. The integrator owns `go.mod`/`go.sum` and pins Pulumi SDK v3.267.0 and AWS provider SDK v7.48.0 from official Go module metadata.
+- Verification boundary: isolated Pulumi mocks prove source topology and least-privilege IAM negatives only. Provider credential bridge and actual infrastructure execution remain separate gates; no deployment permission or production claim is granted.

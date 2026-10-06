@@ -1,19 +1,20 @@
 # ADR 023: Shared operation invocation and replay boundary
 
-Status: proposed; independent security and compatibility review pending.
+Status: accepted for implementation as a design contract; independent exact-head review and merge of v1.12 adoption preparation are pending. Runtime dispatch and source acceptance remain held.
 Date: 2026-10-06.
 
 ## Problem
 
 T2.8 requires one current authorization and durable invocation boundary for all
 transports. The existing policy names are frozen, but no callable policy package,
-operation registry or transaction adapter implements that boundary. The task's
-`app/policy/` path also conflicts with integrator-owned `policy/`.
+operation registry or transaction adapter implements that boundary. The former
+`app/policy/` task path conflicted with integrator-owned `policy/` and is removed
+from worker ownership by this amendment.
 
 ## Proposed decision
 
 Adopt the [operation invocation contract](../contracts/operation-invocation.md)
-as semantic amendment v1.12 only after independent review and integrator adoption.
+as semantic amendment v1.12, pending independent exact-head review and merge of this adoption preparation.
 Keep the existing policy names and three decision states. Use one typed registry
 and executor, trusted person plus current workspace context, transaction-time
 resource/session/permission/entitlement rechecks and payload-bound durable replay.
@@ -40,14 +41,17 @@ automatically deleted. Transactional effect adapters bind job scope to the
 trusted invocation and reject incompatible effect metadata. Changed-key
 conflicts are not audit policy denials and produce no invocation audit event.
 
-## Adoption and ownership gates
+## Implementation ownership and gates
 
-This proposal changes no frozen contract yet. Adoption must update the frozen
-contract version, the business-extension handler design, T2.8 paths and acceptance
-criteria, and integration assignments together. The integrator exclusively owns
-policy, SQL storage, audit vocabulary, migration sequencing, session recheck seams
-and executable composition. Migration 17 is a candidate only; existing 1–16 bytes
-remain immutable. Source workers must not allocate it themselves.
+The v1.12 semantic design amendment and its affected task/assignment records are
+prepared together; independent exact-head review and merge remain pending. T2.8
+worker scope is limited to `app/operation/**`, beginning with registry and typed
+metadata validation against the frozen policy contract types. The integrator must
+separately assign policy implementation/adapters, invocation SQL storage, audit
+vocabulary/schema, current-session recheck, migration content/registry, and
+executable composition. Migration 17 is a candidate only until the integrator
+allocates it; existing 1–16 bytes remain immutable. Executor dispatch and
+provider/runtime acceptance stay held until compatible adapters and SQL qualify.
 
 Review must reconcile typed descriptor fields, callback transaction capabilities,
 current identity/selection APIs, finite audit data, output privacy, full replay
