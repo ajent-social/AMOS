@@ -1,6 +1,6 @@
 {
   "schema": "amos-local-sdlc-plan-v1",
-  "status": "DRAFT_NOT_EXECUTING",
+  "status": "IN_PROGRESS",
   "contract": "ordinary-unenrolled-repository-delivery",
   "scope": "Complete original product plus AWS production at https://amos.sire.run",
   "source_inventory": "docs/planning/plan-data.json",
@@ -76,7 +76,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Fetched main, clean or preserved changes, current execution registry, task and integrator claims, frozen contract revision and active process working directories are reconciled; SSD and build lease are usable; independent reviewers and available GPT-6-Luna capacity are recorded; ordinary repository lifecycle is confirmed or an enrolled authoritative binding replaces affected chains.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "dependency_depth": 1,
       "projection_id": "E-SDLC-PROD.T-PROD.1"
     },
@@ -506,7 +506,7 @@
       "owner": "L01",
       "estimate": "revalidate at preflight",
       "acceptance": "All transports can consume one current-state invocation decision and duplicate payload-bound mutations cannot silently repeat. Revoked membership and stale billing state produce the documented denied/unavailable outcomes at the real boundary. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "source_task": "T2.8",
       "use_cases": [
         "UC-004"
@@ -14357,7 +14357,7 @@
       "owner": "L13",
       "estimate": "revalidate at preflight",
       "acceptance": "Current task contract, owned paths, source changes and T10.1, T1.3, T8.1 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -14377,7 +14377,7 @@
       "owner": "L13",
       "estimate": "revalidate at preflight",
       "acceptance": "A failed or partial dump is never marked complete. Backup manifest identifies its actual recovery boundary and schema versions. Named scoped checks pass and the specified negative case is demonstrated; live/production qualification remains a separate explicitly authorized E16 gate where applicable. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -14397,7 +14397,7 @@
       "owner": "L13",
       "estimate": "revalidate at preflight",
       "acceptance": "At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -14417,7 +14417,7 @@
       "owner": "Independent GPT-6-Luna reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "Independent reviewer is named for T10.7 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -14437,7 +14437,7 @@
       "owner": "Integrator",
       "estimate": "revalidate at preflight",
       "acceptance": "GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -14457,7 +14457,7 @@
       "owner": "Integrator",
       "estimate": "revalidate at preflight",
       "acceptance": "Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -26534,7 +26534,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Existing approved product scope, original task contracts, mapped use cases and currently documented privacy and regulatory constraints are reconciled against docs/VISION.md, docs/planning/requirements.md and docs/planning/contracts.md. No product capability, use case or regulatory obligation is added, removed or narrowed. Any contradiction or unresolved interpretation is recorded as an owner decision and blocks affected downstream work; all 257 original task IDs and accepted evidence remain unchanged. Completion additionally requires independent domain/content review by a reviewer distinct from the preparer, with the reviewed scope and baseline revision, validation evidence, stable findings and their dispositions recorded. Unresolved review findings block completion and every dependent gate.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "dependency_depth": 2,
       "projection_id": "E-SDLC-PROD.T-PROD.14"
     },
@@ -26549,7 +26549,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Crosscutting design assumptions in docs/VISION.md, docs/rfc/rfc-0001.md, accepted ADRs and docs/planning/contracts.md are qualified against the accepted requirements baseline, with authority, privacy, tenancy, interface ownership, billing, migrations, provider failure and recovery boundaries consistent. Conflicts are recorded as owner decisions and block affected work. Existing subsystem task owners retain their specific designs; this gate creates no competing design or new product scope. Completion additionally requires independent domain/content review by a reviewer distinct from the preparer, with the reviewed scope and baseline revision, validation evidence, stable findings and their dispositions recorded. Unresolved review findings block completion and every dependent gate.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "dependency_depth": 3,
       "projection_id": "E-SDLC-PROD.T-PROD.15"
     },
@@ -26564,7 +26564,7 @@
       "owner": "L13",
       "estimate": "revalidate at preflight",
       "acceptance": "Source corrections preserve the snapshot and no-overwrite boundaries.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -26584,7 +26584,7 @@
       "owner": "L13",
       "estimate": "revalidate at preflight",
       "acceptance": "Real service checks and removed-guard failure followed by exact restored success are recorded.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -26604,7 +26604,7 @@
       "owner": "Integrator",
       "estimate": "revalidate at preflight",
       "acceptance": "Reviewer is distinct from fix author and clears exact final source head.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T10.7",
       "use_cases": [
         "UC-063",
@@ -26624,7 +26624,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Frozen v1.14 design, exact ownership and exclusive claim are recorded; legacy route and telemetry behavior is reconciled without production claims.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-HOST.T-INT-HOST-02.1",
       "dependency_depth": 4
     },
@@ -26639,7 +26639,7 @@
       "owner": "Routing worker",
       "estimate": "revalidate at preflight",
       "acceptance": "Protocol slots, business manifest, immutable routing snapshot and legacy compatibility follow the frozen contract in the assigned paths.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-HOST.T-INT-HOST-02.2",
       "dependency_depth": 5
     },
@@ -26654,7 +26654,7 @@
       "owner": "Routing worker",
       "estimate": "revalidate at preflight",
       "acceptance": "Required route/method/auth-equivalence, alias/reserved and deterministic freeze tests pass; actual local HTTP checks, race/vet/lint and genuine negative/restored evidence are recorded.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-HOST.T-INT-HOST-02.3",
       "dependency_depth": 6
     },
@@ -26669,7 +26669,7 @@
       "owner": "Independent GPT-6-Luna reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "A separate reviewer clears the exact source head and base; accepted findings require explicit fix, affected verification and re-review stages before merge.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-HOST.T-INT-HOST-02.4",
       "dependency_depth": 7
     },
@@ -26684,7 +26684,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "The reviewed exact head lands through guarded GitHub rebase merge without bypassing branch policy; local and hosted evidence remain distinct.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-HOST.T-INT-HOST-02.5",
       "dependency_depth": 8
     },
@@ -26699,7 +26699,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Landed source matches reviewed files, affected checks pass and execution receipts record bounded routing acceptance; protocol/provider/production gates remain open.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-HOST.T-INT-HOST-02.6",
       "dependency_depth": 9
     }
