@@ -27,6 +27,19 @@ Secret or sensitive output cannot use this replay cache. A retention change need
 a separate decision. Typed handlers receive a narrow transaction-scoped context;
 the interface is not a sandbox for untrusted application code.
 
+The operation binding preserves the complete business descriptor (method,
+canonical path, typed input/output names, features, policy, and MCP exposure) and
+freezes an immutable operation revision plus input/output schema digests.
+Required replay binds all of these version fields to the canonical request and
+persists them with the result; a changed revision conflicts without rerunning
+the mutation. The durable idempotency scope remains stable across revisions.
+Capacity has an installation hard limit plus smaller aggregate actor and
+workspace quotas; exhaustion is visible to the owner and remains unavailable
+until the owner explicitly raises capacity. Results never expire or get
+automatically deleted. Transactional effect adapters bind job scope to the
+trusted invocation and reject incompatible effect metadata. Changed-key
+conflicts are not audit policy denials and produce no invocation audit event.
+
 ## Adoption and ownership gates
 
 This proposal changes no frozen contract yet. Adoption must update the frozen
@@ -38,7 +51,12 @@ remain immutable. Source workers must not allocate it themselves.
 
 Review must reconcile typed descriptor fields, callback transaction capabilities,
 current identity/selection APIs, finite audit data, output privacy, full replay
-scope, deadlock ordering and revocation serialization. Tests must use real database
+scope, explicit lock order/deadlock handling, and revocation serialization. The
+current workspace store locks person before workspace and multiple resources in
+ascending ID order; the invocation order extends that with session, membership
+and role, billing, declared resources, capacity, idempotency, durable jobs, then
+audit. Every resource touched by a callback must be in its pre-resolved lock set;
+each composed adapter must comply or fail closed. Tests must use real database
 transactions; transport integration and provider/release gates remain separate.
 
 ## Consequences and evidence
