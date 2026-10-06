@@ -33,5 +33,7 @@ No build, product test, independent code review execution, merge, release, cloud
 - Repository plan validation and changed-document public-artifact checks pass.
   The known nine expression/synthetic-fixture scanner matches in the landed backup
   source remain manually classified; full repository scanner success is not claimed.
-- This update does not reuse the historical parser result as fresh evidence.
-  The changed Markdown projection and JSON graph were compared directly.
+- Fresh canonical parser check passed: 1,275 rows (1,218 delivery nodes and
+  57 historical seeds), no authoring/duplicate/undefined/ambiguous errors, and
+  every row has a wave. The Markdown projection and JSON graph were also
+  compared directly; this remains ordinary local repository delivery.
