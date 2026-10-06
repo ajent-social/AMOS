@@ -29,7 +29,11 @@ Go API. Their required meaning is:
   string. The frozen `api/policy.schema.json` now has matching explicit
   control exclusions, so engines that match `$` before a final line feed still
   reject control-bearing operation and requirement names. The Go parity test
-  checks that these exclusions agree.
+  checks that these exclusions agree. Runtime operation binding also supplies
+  the immutable `Revision`, `InputSchemaDigest` and `OutputSchemaDigest` fields
+  defined by the operation invocation contract. The digests identify the input
+  and output codec schema artifacts; these are trusted runtime binding fields,
+  not new caller-supplied fields in the business descriptor JSON schema.
 - `OperationDefinition` binds that complete metadata to one validated typed
   handler and an explicit dependency set. Immutable input and output codecs
   expose `SchemaDigest() [32]byte`; `Bind` reads each once, rejects zero or
