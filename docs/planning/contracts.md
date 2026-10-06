@@ -222,3 +222,38 @@ Unsupported extension features use extension.unsupported_feature, HTTP 422.
 Shared policy identifiers explicitly reject ASCII controls, including terminal
 line feeds, to match canonical identifier meaning across schema engines. Future
 registry/generator transport and live operation qualification remain separate.
+
+## Amendment v1.12: shared operation invocation and durable replay
+
+ADR 023 adopts the typed `app/operation` invocation design pending independent
+exact-head review and merge of this amendment. A single executor is the boundary
+for web, REST, MCP, and proxy adapters; it rechecks current person, session,
+workspace, membership, resource, assurance, permission, and entitlement state
+in the mutation transaction and before replay disclosure. Required idempotency
+binds the complete versioned operation descriptor and canonical path/query/body
+input; exact replay returns the preserved typed result only after current
+authority succeeds, while changed intent or revision conflicts without rerunning
+the callback. Domain mutation, replay result, success audit, and durable effect
+intent commit atomically; provider calls remain outside the transaction.
+
+Replay-safe outputs are bounded and classified; sensitive and secret outputs
+are not replay-cached. Completed replay records do not expire or get automatically
+deleted. Capacity uses explicit installation, actor, and workspace allocations;
+exhaustion fails unavailable until an operator explicitly increases allocated
+capacity. No automatic eviction, quota reclamation, tombstone, or retention
+expiry is introduced. Effects bind to trusted invocation scope, use unique
+per-invocation ordinals, and validate typed payload schema, size, privacy, effect
+class, and deadline. Changed-key conflicts are not misreported as policy denials
+or logged with a false denial outcome.
+
+T2.8 worker ownership is limited to `app/operation/**`; its first bounded source
+slice may implement registry construction and typed descriptor validation against
+frozen policy contract types. The integrator separately owns policy adapters,
+transactional current-authority/session seams, invocation SQL store, audit API
+and schema, migration allocation/content/registry, and executable composition.
+Migration 17 remains a candidate until actually allocated by the integrator;
+existing migration IDs and bytes remain immutable. `ActorKind` is a private
+validated string derived from the current `Actor.Kind()` API, with the initial
+profile accepting `person` only. No identity type is added. Runtime dispatch,
+transport qualification, required real-PostgreSQL acceptance, provider
+qualification, and release acceptance remain separate gates.
