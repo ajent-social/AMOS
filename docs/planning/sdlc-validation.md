@@ -1,5 +1,10 @@
 # SDLC plan validation
 
+## Historical planning baseline (2026-10-05)
+
+The following receipt describes the original planning-only snapshot. Its node
+counts, unchanged-file statements and empty journal are historical, not current.
+
 Date: 2026-10-05. Original planning baseline: `8fa4e9e948c997c2c43d9070c336e94312eedb0b`. Delivery was reconciled onto remote main `5e601eb96ba597108e3fa21589343a68e2ff8137`, preserving its accepted lifecycle and current-status clauses. These are planning checks only, not product, CI, provider, release or deployment qualification.
 
 - Existing repository validator: PASS; 16 original epics, 257 original tasks, 116 covered use cases and 48 original dependency/ownership waves.
@@ -12,3 +17,21 @@ Date: 2026-10-05. Original planning baseline: `8fa4e9e948c997c2c43d9070c336e9431
 - Original plan-data and execution-state files: unchanged. Stage receipt journal remains empty and PLANNING_ONLY; it has no plan-binding hash field to update.
 
 No build, product test, independent code review execution, merge, release, cloud mutation or production check was performed for this planning refinement. Runtime slots observed: four total; provider/account/budget/domain authority must be qualified at production preflight.
+
+## Backup delivery update (2026-10-06)
+
+- Original product inventory remains 257 tasks; all 61 previous execution records
+  remain value-identical. T10.7 is newly accepted at its local source boundary,
+  bringing accepted source tasks from 57 to 58.
+- The graph now has 1,218 unique nodes after three explicit backup review-fix
+  stages. All dependencies resolve, the graph is acyclic, and the sole terminal
+  gate reaches every node. Original accepted seeds and snapshot hashes remain
+  preserved as historical inputs; the execution journal records later delivery.
+- E10 projection retains all 30 external-gate statements, covers its 99 graph
+  nodes, and uses the recalculated dependency-depth waves. Backup stages and
+  their corrective chain have complete receipts; no production stage is inferred.
+- Repository plan validation and changed-document public-artifact checks pass.
+  The known nine expression/synthetic-fixture scanner matches in the landed backup
+  source remain manually classified; full repository scanner success is not claimed.
+- This update does not reuse the historical parser result as fresh evidence.
+  The changed Markdown projection and JSON graph were compared directly.
