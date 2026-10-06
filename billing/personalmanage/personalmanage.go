@@ -162,6 +162,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	access, ok := h.cfg.ResolveAuthority(r.Context())
+	if !ok && !hasVerifiedPrincipal(r.Context()) {
+		writeError(w, http.StatusUnauthorized, "authentication.required")
+		return
+	}
 	if !ok || !h.authorized(access) {
 		writeError(w, http.StatusForbidden, "billing.permission_denied")
 		return
@@ -276,6 +280,11 @@ func contextAuthority(ctx context.Context) (Authority, bool) {
 	return Authority{ActorKind: p.Actor().Kind(), AuthenticationMethod: p.AuthenticationMethod(), PersonID: p.PersonID(),
 		InstallationID: p.InstallationID(), ApplicationID: p.ApplicationID(), EnvironmentID: p.EnvironmentID(),
 		AuthenticatedAt: p.AuthenticatedAt(), Workspace: w.Workspace}, true
+}
+
+func hasVerifiedPrincipal(ctx context.Context) bool {
+	_, ok := identity.PrincipalFromContext(ctx)
+	return ok
 }
 
 func validateSnapshot(binding provider.Binding, customer string, out provider.Outcome[provider.SubscriptionSnapshot]) error {
