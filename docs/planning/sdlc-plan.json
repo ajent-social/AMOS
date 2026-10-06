@@ -26359,7 +26359,8 @@
         "T-SDLC-16-9.6",
         "T-SDLC-16-10.6",
         "T-SDLC-16-11.6",
-        "T-SDLC-16-12.6"
+        "T-SDLC-16-12.6",
+        "T-INT-HOST-02.6"
       ],
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
@@ -26611,6 +26612,96 @@
       ],
       "dependency_depth": 10,
       "projection_id": "E-SDLC-10.T-SDLC-10-7.4.R1"
+    },
+    {
+      "id": "T-INT-HOST-02.1",
+      "title": "Reconcile finite host routing assignment",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-PROD.15"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Frozen v1.14 design, exact ownership and exclusive claim are recorded; legacy route and telemetry behavior is reconciled without production claims.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-HOST.T-INT-HOST-02.1",
+      "dependency_depth": 4
+    },
+    {
+      "id": "T-INT-HOST-02.2",
+      "title": "Implement finite host routing",
+      "kind": "agent",
+      "stage": "implement",
+      "deps": [
+        "T-INT-HOST-02.1"
+      ],
+      "owner": "Routing worker",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Protocol slots, business manifest, immutable routing snapshot and legacy compatibility follow the frozen contract in the assigned paths.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-HOST.T-INT-HOST-02.2",
+      "dependency_depth": 5
+    },
+    {
+      "id": "T-INT-HOST-02.3",
+      "title": "Verify finite host routing",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-INT-HOST-02.2"
+      ],
+      "owner": "Routing worker",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Required route/method/auth-equivalence, alias/reserved and deterministic freeze tests pass; actual local HTTP checks, race/vet/lint and genuine negative/restored evidence are recorded.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-HOST.T-INT-HOST-02.3",
+      "dependency_depth": 6
+    },
+    {
+      "id": "T-INT-HOST-02.4",
+      "title": "Independently review finite host routing",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-INT-HOST-02.3"
+      ],
+      "owner": "Independent GPT-6-Luna reviewer",
+      "estimate": "revalidate at preflight",
+      "acceptance": "A separate reviewer clears the exact source head and base; accepted findings require explicit fix, affected verification and re-review stages before merge.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-HOST.T-INT-HOST-02.4",
+      "dependency_depth": 7
+    },
+    {
+      "id": "T-INT-HOST-02.5",
+      "title": "Rebase merge finite host routing",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-INT-HOST-02.4"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "The reviewed exact head lands through guarded GitHub rebase merge without bypassing branch policy; local and hosted evidence remain distinct.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-HOST.T-INT-HOST-02.5",
+      "dependency_depth": 8
+    },
+    {
+      "id": "T-INT-HOST-02.6",
+      "title": "Verify landed finite host routing",
+      "kind": "agent",
+      "stage": "verify-landed",
+      "deps": [
+        "T-INT-HOST-02.5"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Landed source matches reviewed files, affected checks pass and execution receipts record bounded routing acceptance; protocol/provider/production gates remain open.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-HOST.T-INT-HOST-02.6",
+      "dependency_depth": 9
     }
   ],
   "terminal_task": "T-PROD.13"

@@ -221,4 +221,6 @@ The following split index is the explicit `/ship` planning target for delivery s
 
 ### E-SDLC-PROD -- Production delivery -> sdlc/production.md (0/15)
 
+### E-SDLC-HOST -- Finite host routing -> sdlc/host-routing.md (0/6)
+
 Validation: [obtained planning checks](sdlc-validation.md).
