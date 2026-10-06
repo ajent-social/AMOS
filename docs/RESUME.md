@@ -196,3 +196,14 @@ No executor or evaluator is exposed; current-authority adapters, durable replay,
 trusted generator binding and real transaction/transport qualification remain.
 The separate finite host routing assignment follows v1.14 and its six explicit
 SDLC stages. No provider or production readiness follows from either design.
+
+
+## Finite host routing component
+
+INT-HOST-02 routing is landed and independently reviewed under v1.14: eight
+fixed protocol slots, a finite business manifest and permanent startup freeze.
+Scoped normal/race/vet/lint and actual local HTTP checks pass, including independent
+negative/restored evidence and a fresh landed app test. See
+[evidence](evidence/host-routing-20261006.md). The six routing delivery receipts
+are complete; runtime-only storage, production composition, protocol authentication
+and deployment remain separate unqualified stages.
