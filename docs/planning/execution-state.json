@@ -564,5 +564,42 @@
       "Scoped tests/vet/lint and three schemas with nineteen root fixtures pass; shared control-character exclusions and unsupported-feature negative mutations fail as intended and restored checks pass. Runtime registry/general policy evaluator and release qualification remain separate.",
       "Obtained checks, corrections and qualification limits: docs/evidence/luna-takeover-20261002.md."
     ]
+  },
+  "T10.2": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Reviewed health component landed through PR6 and PR8; host database/schema composition landed through PR9 at 3377e4a9d33e45fbfc87eb839090054c637a4331. Reviewed source matches landed files.",
+      "Scoped real PostgreSQL normal/race tests, vet and lint passed. Controlled database stop/restart produced readiness 200/503/200 and liveness 200/200/200 on the same handler and pool. Actual schema incompatibility separately produced readiness 503.",
+      "Provider and deployed supervision acceptance remain separate. This entry records bounded source and local runtime evidence; no production acceptance."
+    ]
+  },
+  "T10.3": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Reviewed telemetry and trusted request-ID bridge landed through PR5. Automatic app/runtime logger composition landed through PR11 at 956ca5d5411f1d36854444756d025a0b3a7e818c; all four reviewed files match landing.",
+      "Independent exact-head review cleared a307c450369c02b168def1d67ccd0a6dcfdb7e65 against eeda2c35b247c94897ebeac7ee931ddcac449efd. Scoped app/runtime normal/race/vet/lint checks passed on identical implementation source; final runtime race and public-artifact checks passed at the reviewed head.",
+      "Registered route templates and unmatched labels exclude raw paths and request material. Generated executable configuration, complete task acceptance and production qualification remain separate."
+    ]
+  },
+  "T5.22": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Personal subscription management component landed through PR12 at a6e3cd7036ea11d7afbc59a110ba42f5d80bd901. Independent exact-head review cleared e5a710533f48b036944bec42dc3233bd40d3128c; all three reviewed files match landing.",
+      "Scoped normal/race tests, vet and zero-issue lint passed on source identical to reviewed head. Disabling the authentication guard failed all anonymous GET/portal/cancel regressions; byte-identical restoration and the focused rerun passed. Foreign-binding negative verification also failed as intended with restored passing checks.",
+      "Missing authentication returns 401 before CSRF checks; authenticated stale/foreign authority and invalid CSRF remain 403. Cancellation entry opens a hosted portal and does not assert completed cancellation.",
+      "Durable host composition, authoritative provider cancellation/reconciliation and real-provider qualification remain open. Full T5.22 and production acceptance are not claimed."
+    ]
+  },
+  "T16.1": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Release evidence matrix and strict checker landed through PR10 at eeda2c35b247c94897ebeac7ee931ddcac449efd after independent review of f4b900539ee34459a0852ea16b9e9ebc0f41631f; reviewed files match landing.",
+      "Checker self-test passed valid/rejected synthetic matrix cases. Default and strict runs correctly report incomplete release inputs; this is not release qualification.",
+      "Release candidate, completed acceptance evidence, real providers and production operating evidence remain open."
+    ]
   }
 }
