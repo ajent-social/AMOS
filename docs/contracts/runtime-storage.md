@@ -123,12 +123,17 @@ or migration is performed by the opener.
 
 `WithTx` starts a context-bound transaction and commits only when the callback
 returns nil; callback failure rolls back. If the callback panics, rollback is
-attempted and the original panic is rethrown unchanged. Storage-generated begin
-and commit errors use the safe transaction sentinel and never wrap driver
-diagnostics. Callback errors are intentionally propagated unchanged, matching
-existing `storage.DB.WithTx`; callback owners are responsible for mapping them
-before public exposure. Rollback failure is reported with the safe transaction
-sentinel. Nil, closed, or invalid handles fail visibly.
+attempted and the original panic is rethrown unchanged. Begin and commit failures
+return the caller's context cancellation/deadline error when present; other
+storage-generated failures use the safe transaction sentinel and never wrap
+driver diagnostics. When rollback succeeds or reports `sql.ErrTxDone`, a callback
+error is returned unchanged. If rollback otherwise fails on a non-panic path,
+return `errors.Join(callbackErr, ErrTransaction)` (or join the existing safe
+operation/context error with `ErrTransaction`), never the raw rollback error.
+This matches existing `storage.DB.WithTx`; callback owners remain responsible for
+public error mapping. On a panic path, always rethrow the exact original panic
+even if rollback fails; the rollback failure is suppressed and must not replace
+that panic. Nil, closed, or invalid handles fail visibly.
 
 `Close` is idempotent and linearizes by marking the handle closed before closing
 the single pool. Operations admitted before that point may finish or fail under
@@ -149,7 +154,8 @@ The source slice requires parser/configuration tests for every supported PG
 variable, non-discovery of service/passfile/TLS file contents, strict PEM parsing,
 copied trust input, finalized endpoint/TLS/pool fields, bounded startup and pool
 configuration, callback rollback and panic restoration, callback-error
-propagation, nil and closed handles, sanitized storage-generated errors, and
+propagation, begin/commit context cancellation, deterministic rollback-failure
+and panic-plus-rollback-failure cases, nil and closed handles, sanitized errors, and
 deterministic `WithTx`/`PingContext` versus `Close` plus post-close/idempotent
 close races. A real isolated TLS-enabled PostgreSQL service with a least-privilege
 runtime role must prove positive runtime DML, hostname and root-CA rejection,
