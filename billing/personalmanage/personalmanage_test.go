@@ -177,24 +177,30 @@ func TestPersonalBillingDeniesStaleOrForeignAuthority(t *testing.T) {
 
 func TestPersonalBillingRejectsMissingAuthentication(t *testing.T) {
 	now := time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
-	repo := &testRepository{}
-	p := &testProvider{}
-	newHandler := func(resolve AuthorityResolver) *Handler {
-		t.Helper()
-		h, err := New(Config{Repository: repo, Provider: p, RequestCheck: testRequestCheck{valid: true}, ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, ReturnURL: "https://app.example/billing", ReturnHosts: []string{"app.example"}, PortalHosts: []string{"billing.example"}, Now: func() time.Time { return now }, ResolveAuthority: resolve})
-		if err != nil {
-			t.Fatal(err)
-		}
-		return h
-	}
 	falseResolver := func(context.Context) (Authority, bool) { return Authority{}, false }
+	for _, tc := range []struct {
+		name, method, path string
+	}{
+		{name: "subscription inspection", method: http.MethodGet, path: "/billing/personal"},
+		{name: "portal entry", method: http.MethodPost, path: "/billing/personal/portal"},
+		{name: "cancel portal entry", method: http.MethodPost, path: "/billing/personal/cancel"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &testRepository{}
+			p := &testProvider{}
+			h, err := New(Config{Repository: repo, Provider: p, RequestCheck: testRequestCheck{valid: false}, ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, ReturnURL: "https://app.example/billing", ReturnHosts: []string{"app.example"}, PortalHosts: []string{"billing.example"}, Now: func() time.Time { return now }, ResolveAuthority: falseResolver})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	unauthenticated := httptest.NewRecorder()
-	newHandler(falseResolver).ServeHTTP(unauthenticated, httptest.NewRequest(http.MethodGet, "/billing/personal", nil))
-	if unauthenticated.Code != http.StatusUnauthorized || repo.calls != 0 || p.getCalls != 0 {
-		t.Fatalf("missing principal status=%d repoCalls=%d providerCalls=%d body=%s", unauthenticated.Code, repo.calls, p.getCalls, unauthenticated.Body.String())
+			unauthenticated := httptest.NewRecorder()
+			h.ServeHTTP(unauthenticated, httptest.NewRequest(tc.method, tc.path, nil))
+			if unauthenticated.Code != http.StatusUnauthorized || repo.calls != 0 || p.getCalls != 0 || p.portalCalls != 0 {
+				t.Fatalf("missing principal status=%d repoCalls=%d providerCalls=%d/%d body=%s", unauthenticated.Code, repo.calls, p.getCalls, p.portalCalls, unauthenticated.Body.String())
+			}
+			assertErrorContract(t, unauthenticated)
+		})
 	}
-	assertErrorContract(t, unauthenticated)
 }
 
 func TestPersonalBillingProviderUnavailableDoesNotFabricateSuccess(t *testing.T) {
