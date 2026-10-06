@@ -20,3 +20,11 @@ These bounded assignments complete application composition for existing source t
 - Verification: real disposable PostgreSQL and pg_dump, interruption and collision negatives, restored positive checks, race/vet/lint and independent review.
 - Boundaries: one database snapshot; no schedule/RPO, remote encrypted storage, production role, live-provider or restore qualification. These remain separate tasks.
 - Documentation: state mandatory size limits and that one logical snapshot proves no schedule or RPO target. Managed automated backups/PITR complement it; VM volume snapshots are crash-consistent complements, never replacements for a verified logical backup.
+
+## T2.8: operation contract preflight
+
+- Owner: integrator; independent security and compatibility review is a separate lane.
+- Status: proposed ADR 023 and invocation contract; runtime dispatch remains held.
+- Scope: reconcile frozen `policy/` with task `app/policy/`, the typed extension callback, current identity/workspace/session authority, durable replay storage and finite audit changes.
+- Source prerequisite: adopt the reviewed amendment, update task ownership and acceptance together, then explicitly assign each source slice. Proposal text grants no source or migration ownership to a worker.
+- Verification: independent privacy/security and compatibility review against current source and contracts; plan/public-artifact checks. Real database and transport tests remain required for implementation acceptance.
