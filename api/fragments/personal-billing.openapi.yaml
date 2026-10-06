@@ -22,8 +22,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PersonalSubscription'
+        '401':
+          description: No verified authentication principal is present
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
         '403':
-          description: Current personal workspace ownership or recent password proof is required
+          description: The authenticated principal has no current personal billing authority or recent password proof
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PersonalBillingError' }
@@ -65,8 +70,13 @@ paths:
                   redirect_url:
                     type: string
                     format: uri
+        '401':
+          description: No verified authentication principal is present
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
         '403':
-          description: Current personal workspace ownership or recent password proof is required
+          description: The authenticated principal has no current personal billing authority or recent password proof
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PersonalBillingError' }
@@ -108,8 +118,13 @@ paths:
                   redirect_url:
                     type: string
                     format: uri
+        '401':
+          description: No verified authentication principal is present
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonalBillingError' }
         '403':
-          description: Current personal workspace ownership or recent password proof is required
+          description: The authenticated principal has no current personal billing authority or recent password proof
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PersonalBillingError' }

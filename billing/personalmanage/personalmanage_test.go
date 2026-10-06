@@ -175,6 +175,28 @@ func TestPersonalBillingDeniesStaleOrForeignAuthority(t *testing.T) {
 	}
 }
 
+func TestPersonalBillingRejectsMissingAuthentication(t *testing.T) {
+	now := time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
+	repo := &testRepository{}
+	p := &testProvider{}
+	newHandler := func(resolve AuthorityResolver) *Handler {
+		t.Helper()
+		h, err := New(Config{Repository: repo, Provider: p, RequestCheck: testRequestCheck{valid: true}, ProviderAccountID: "acct_test", AccountMode: provider.AccountTest, ReturnURL: "https://app.example/billing", ReturnHosts: []string{"app.example"}, PortalHosts: []string{"billing.example"}, Now: func() time.Time { return now }, ResolveAuthority: resolve})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return h
+	}
+	falseResolver := func(context.Context) (Authority, bool) { return Authority{}, false }
+
+	unauthenticated := httptest.NewRecorder()
+	newHandler(falseResolver).ServeHTTP(unauthenticated, httptest.NewRequest(http.MethodGet, "/billing/personal", nil))
+	if unauthenticated.Code != http.StatusUnauthorized || repo.calls != 0 || p.getCalls != 0 {
+		t.Fatalf("missing principal status=%d repoCalls=%d providerCalls=%d body=%s", unauthenticated.Code, repo.calls, p.getCalls, unauthenticated.Body.String())
+	}
+	assertErrorContract(t, unauthenticated)
+}
+
 func TestPersonalBillingProviderUnavailableDoesNotFabricateSuccess(t *testing.T) {
 	now := time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
 	ids, _ := scopeIDs(t)
