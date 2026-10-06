@@ -1,9 +1,51 @@
 {
   "schema": "amos-local-sdlc-stage-receipts-v1",
-  "status": "PLANNING_ONLY",
+  "status": "PREPARING",
   "plan": "docs/planning/sdlc-plan.json",
   "product_acceptance_registry": "docs/planning/execution-state.json",
-  "tasks": {},
+  "tasks": {
+    "T-PROD.1": {
+      "task_id": "T-PROD.1",
+      "status": "REVIEW_PENDING",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [],
+      "source_or_artifact_identity": {
+        "baseline": "956ca5d5411f1d36854444756d025a0b3a7e818c",
+        "plan_sha256": "78ff3b6910710eeadf29a04ab31ebf5f101d816c13bcfb9362841cc4d4f43354",
+        "acceptance_registry_sha256": "cbfdf9d3f76f5a658103f0cdda1237b3723c3fde1d7a87e949bdff9cccd6c62f",
+        "contract": "amos-contract-v1",
+        "contract_sha256": "554a83d4267477535f064fb78b2dae6e51b6b3de4f7ceb7d0f3ea7de00c65dff"
+      },
+      "commands_and_results": [
+        "Fetched remote main and preserved authored changes; integration takes place in isolated task worktrees.",
+        "Current execution registry and frozen contract hashes were reconciled. The original 57 accepted source tasks remain unchanged.",
+        "Active assignments, ownership and verification capacity were reconciled in the private operational record; source authors and independent reviewers are distinct.",
+        "Plan validator passed: 16 epics, 257 original tasks, 116 covered use cases, 48 dependency-ordered waves. This is planning validation only."
+      ],
+      "independent_review_and_findings": {
+        "status": "CHANGES_REQUESTED_FIX_PREPARED",
+        "reviewer": "independent domain reviewer",
+        "reviewed_revision": "4c774a4ad0b65d5b3bef4da7b2904c6a034fdb0d",
+        "scope": "Reconciled preflight and public publication boundary.",
+        "findings": [
+          {
+            "id": "PREFLIGHT-PUBLIC-01",
+            "status": "FIX_PREPARED",
+            "description": "Keep private operating capacity and account state outside public planning records; public journal now records only coarse qualification status."
+          }
+        ]
+      },
+      "external_blockers": [
+        "Additional worker admission remains subject to independently verified capacity and ownership prerequisites.",
+        "Production prerequisites and complete-product qualification remain separate uncompleted gates."
+      ],
+      "next_action": "Independently review this refreshed preflight, then accept requirements and crosscutting-design baselines before dependent SDLC stages."
+    }
+  },
   "receipt_requirements": [
     "task_id",
     "status",
@@ -15,5 +57,7 @@
     "independent_review_and_findings",
     "external_blockers",
     "next_action"
-  ]
+  ],
+  "execution_mode": "ordinary_repository_lifecycle",
+  "authority_note": "This journal records coordinator work; it does not enroll a second scheduler, grant provider authority or qualify an execution adapter."
 }
