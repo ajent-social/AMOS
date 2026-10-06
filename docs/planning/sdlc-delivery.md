@@ -2,7 +2,7 @@
 
 Updated: 2026-10-06. Delivery is in progress through `/ship`; completed stages require the linked journal receipts and do not imply production acceptance.
 
-The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, using maximum eligible parallel **GPT-6-Luna** agents. The graph contains 1,224 delivery nodes: the original 1,200 stages for 200 baseline-unaccepted source tasks, 15 shared/production gates, three explicit backup review-fix stages and six finite host routing stages. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
+The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, using maximum eligible parallel **GPT-6-Luna** agents. The graph contains 1,230 delivery nodes: the original 1,200 stages for 200 baseline-unaccepted source tasks, 15 shared/production gates, three explicit backup review-fix stages, six finite host routing stages and six runtime-only storage stages. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
 
 ## Graph and execution contract
 
@@ -222,5 +222,7 @@ The following split index is the explicit `/ship` planning target for delivery s
 ### E-SDLC-PROD -- Production delivery -> sdlc/production.md (3/15)
 
 ### E-SDLC-HOST -- Finite host routing -> sdlc/host-routing.md (6/6)
+
+### E-SDLC-RUNTIME -- Runtime-only PostgreSQL -> sdlc/runtime-storage.md (0/6)
 
 Validation: [obtained planning checks](sdlc-validation.md).

@@ -62,3 +62,13 @@ environment object prefix. The later storage adapter must disable S3 Bucket Keys
 for that profile so the encryption context remains an object ARN, then qualify
 actual multipart backup writes and denied foreign-prefix access. Mock IAM source
 checks alone do not qualify that provider behavior.
+
+## INT-HOST-03: runtime-only PostgreSQL storage
+
+- Owner: integrator; source work is held until v1.15 is independently reviewed and merged and the exclusive source claim is confirmed.
+- Status: public contract adoption candidate; no source implementation or runtime acceptance is claimed by this assignment.
+- Frozen contract: [runtime-only PostgreSQL storage](../contracts/runtime-storage.md), ADR 026. Preserve development `storage.Open`, `*storage.DB`, and `storage.Migrate`; later production composition must receive only the distinct RuntimeDB runtime credential.
+- Initial owned paths: `storage/runtime.go` and `storage/runtime_test.go` only. Do not alter existing DB/migration code, services, module files, job-pool integration, production apphost, generator, reconcile command, executable wiring, or execution-state acceptance records.
+- Required behavior: one private runtime pool, no migration method or raw pool/config accessor, explicit copied PEM trust roots and bounded configuration, pinned pgx parser isolation, pre-network verified TLS/configuration, sanitized storage-generated errors, context-bounded startup ping and idempotent close. `TxRunner` exposes only `WithTx`; callback errors propagate unchanged and callers own public error mapping; callback panics roll back and rethrow unchanged.
+- Verification: poison tests for all 24 supported pgx environment variables; strict PEM and service/passfile/TLS-file-content non-discovery negatives; actual isolated TLS PostgreSQL with a synthetic least-privilege role for positive DML, hostname/root denial, rollback, and denied DDL/migration-ledger/role operations; compile-negative `RuntimeDB` to `Migrate`; deterministic operation-versus-close, panic, post-close and idempotent-close tests; scoped format, tests, race, vet and lint; genuine negative/restored check; independent exact-head review; guarded rebase merge and landed test.
+- Stage chain: `T-INT-HOST-03.1` through `.6`; production reconciliation depends on `.6`. No source task is accepted until its separate implementation, verification, review, merge and landed receipts exist. The added dependency does not establish production database role, TLS, deployment, or operational qualification.

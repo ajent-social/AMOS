@@ -284,3 +284,29 @@ retains its old match behavior. Route registration freezes permanently at first
 handler exposure, valid Serve attempt or direct request; late valid registration
 returns `ErrRoutesFrozen`. This is an intentional startup compatibility change.
 Identity/authority, production storage and deployment remain separately gated.
+
+## Amendment v1.15: runtime-only PostgreSQL storage
+
+[ADR 026](../adr/026-runtime-only-postgresql-storage.md) adopts the
+[runtime storage contract](../contracts/runtime-storage.md) after independent
+exact-head review and merge. Preserve the existing development `storage.Open`,
+`*storage.DB`, and `storage.Migrate` APIs. Add a distinct one-pool
+`*storage.RuntimeDB` that cannot be passed to `Migrate`, plus the minimal
+`TxRunner.WithTx` interface for later service adaptation. Its typed configuration
+requires one canonical lowercase ASCII DNS A-label host, explicit endpoint and
+runtime credentials, strictly parsed and copied PEM trust roots, and bounded
+startup and pool settings; it accepts no migration credential. The pgx v5.11.0
+parser bridge rejects all 24 supported nonempty `PG*` variables and uses
+internally constructed allow-listed input with `sslmode=disable` and
+`sslrootcert=` before replacing TLS with a verified configuration. Pgx metadata
+stats are permitted, but ambient values and service/passfile/TLS file contents
+must not influence connection, credentials, runtime parameters, or trust. The
+startup process does not mutate environment and concurrent `os.Setenv` is
+outside the contract. Callback errors intentionally propagate unchanged and
+callers own public mapping; storage-generated failures stay sanitized. Callback
+panics trigger rollback and are rethrown unchanged. Close marks the handle
+closed before pool shutdown; previously admitted operations may finish or fail
+under their contexts. The first source slice is limited to
+`storage/runtime.go` and `storage/runtime_test.go`; production composition,
+least-privilege role qualification and deployment remain separate gates. This
+amendment changes no migration bytes, stored data, or existing development API.

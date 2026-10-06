@@ -207,3 +207,13 @@ negative/restored evidence and a fresh landed app test. See
 [evidence](evidence/host-routing-20261006.md). The six routing delivery receipts
 are complete; runtime-only storage, production composition, protocol authentication
 and deployment remain separate unqualified stages.
+
+## Runtime-only PostgreSQL storage design
+
+The v1.15 runtime-storage contract and six-stage source assignment are proposed
+for independent exact-head review. The initial code scope is only
+`storage/runtime.go` and `storage/runtime_test.go`, preserving existing
+development and migration APIs. No implementation, database-role, production
+TLS, deployment, or acceptance evidence is claimed yet. Source dispatch remains
+held until the public amendment is reviewed and merged and its exact claim is
+confirmed.

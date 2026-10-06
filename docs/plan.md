@@ -181,6 +181,11 @@ AMOS owns identity, workspaces, policy, audit, billing and API/MCP. The code-cha
 
 The execution record remains authoritative for accepted tasks. This documentation reconciliation does not modify its records or infer acceptance from local generation, billing components, a design artifact or external-service contracts.
 
+Runtime-only PostgreSQL is an additive composition assignment under v1.15. Its
+[six delivery stages](planning/sdlc/runtime-storage.md) preserve legacy development
+APIs and gate complete-product reconciliation. Design delivery does not accept
+source implementation, production database grants or deployment.
+
 ## Progress Log
 
 2026 09 30: created public VISION/RFC, ADRs 001-008, E1-E16 full inventory, 257 task contracts, 116 use cases, resolved dependency waves and review corrections; implementation and provider qualification remained not started at that time. This is historical; later acceptance evidence is recorded only in the execution registry.
