@@ -3,6 +3,7 @@ package aws
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"regexp"
 	"strings"
 
@@ -21,10 +22,10 @@ type IdentityArgs struct {
 	LogGroupARN        string   // exact pre-created host log group
 	RepositoryARNs     []string // exact ECR repositories from which this host may pull
 	SecretARNs         []string // exact tagged runtime secrets for this installation
-	BackupBucketARN    string
-	BackupObjectPrefix string // must equal installations/<InstallationID>/<Environment>
-	BackupKMSKeyARN    string // exact customer-managed key for installation backups
-	SecretKMSKeyARN    string // optional exact customer-managed key for runtime secrets
+	BackupBucketARN    string   // general-purpose bucket ARN; syntax only, existence/namespace/ownership are provider gates
+	BackupObjectPrefix string   // must equal installations/<InstallationID>/<Environment>
+	BackupKMSKeyARN    string   // exact customer-managed key for installation backups
+	SecretKMSKeyARN    string   // optional exact customer-managed key for runtime secrets
 }
 
 // Identity is the EC2 instance role/profile. It has no deployment, state,
@@ -175,7 +176,9 @@ func validARN(value, service, region string) bool {
 		return false
 	}
 	if service == "s3" {
-		return supportedPartition(parts[1]) && parts[3] == "" && parts[4] == "" && !strings.Contains(parts[5], "/")
+		// This validates only general-purpose bucket name syntax. Bucket
+		// existence, namespace type, ownership and region are provider gates.
+		return supportedPartition(parts[1]) && parts[3] == "" && parts[4] == "" && validGeneralPurposeBucketName(parts[5])
 	}
 	if parts[3] == "" || !accountIDPattern.MatchString(parts[4]) {
 		return false
@@ -192,6 +195,29 @@ func validARN(value, service, region string) bool {
 	default:
 		return parts[5] != ""
 	}
+}
+
+var s3BucketNamePattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9.-]{1,61}[a-z0-9])$`)
+var s3AccountRegionalBucketPattern = regexp.MustCompile(`^.+-[0-9]{12}-[a-z]+(?:-[a-z]+)+-[0-9]+-an$`)
+
+func validGeneralPurposeBucketName(name string) bool {
+	if !s3BucketNamePattern.MatchString(name) || strings.Contains(name, "..") || net.ParseIP(name) != nil {
+		return false
+	}
+	if strings.HasSuffix(name, "-an") && !s3AccountRegionalBucketPattern.MatchString(name) {
+		return false
+	}
+	for _, prefix := range []string{"xn--", "sthree-", "amzn-s3-demo-"} {
+		if strings.HasPrefix(name, prefix) {
+			return false
+		}
+	}
+	for _, suffix := range []string{"-s3alias", "--ol-s3", ".mrap", "--x-s3", "--table-s3"} {
+		if strings.HasSuffix(name, suffix) {
+			return false
+		}
+	}
+	return true
 }
 
 var accountIDPattern = regexp.MustCompile(`^[0-9]{12}$`)
