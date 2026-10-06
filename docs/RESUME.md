@@ -178,3 +178,10 @@ Five in-progress tasks are accepted at their recorded component/design boundarie
 See [obtained evidence](evidence/luna-takeover-20261002.md). Live provider, whole
 Linux runner and production release qualification are not claimed. Preserve worker
 worktrees and read the execution registry before admitting the next planned task.
+
+## Logical backup source acceptance
+
+T10.7 is accepted at the local adapter boundary after real PostgreSQL checks,
+independent source/fix review, genuine negative/restored evidence and verified
+landing. See [evidence](evidence/logical-backup-20261006.md). Remote encrypted
+retention, actual restore, scheduling/RPO and provider/production gates remain open.

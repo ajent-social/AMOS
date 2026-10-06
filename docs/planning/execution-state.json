@@ -601,5 +601,15 @@
       "Checker self-test passed valid/rejected synthetic matrix cases. Default and strict runs correctly report incomplete release inputs; this is not release qualification.",
       "Release candidate, completed acceptance evidence, real providers and production operating evidence remain open."
     ]
+  },
+  "T10.7": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Consistent logical-backup adapter independently reviewed and landed through PR15 at cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2; both landed source files equal reviewed head 687b6d71e3f8af4869e76853fc4fa2e75372397e.",
+      "Real PostgreSQL package/race tests, vet and zero-issue lint pass. Root scoped database checks pass. Midstream cancellation, missing database, existing destination, tool pin, protected connection files and final-publication cancellation are covered.",
+      "Removing the completion cancellation guard made its regression fail; exact restoration passed. Review fixes added finite cleanup and inherited-pipe wait bounds. Nine artifact-scanner matches were manually cleared as source expressions, format text or synthetic fixtures; automated scan is not claimed passing.",
+      "Accepted local source adapter only. Remote encrypted storage/retention, actual restore execution, scheduling/RPO, production credentials and provider/deployment qualification remain separate tasks."
+    ]
   }
 }

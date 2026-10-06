@@ -173,7 +173,231 @@
         "findings": []
       },
       "external_blockers": [],
-      "next_action": "logging_verify implements only internal/backup/create.go and create_test.go; a distinct agent reviews the exact candidate. Required local service checks precede merge."
+      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2–6 and corrective chainF1/R1."
+    },
+    "T-SDLC-10-7.2": {
+      "task_id": "T-SDLC-10-7.2",
+      "status": "COMPLETE",
+      "owner": "Luna source/review lanes",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "Implemented exported-snapshot backup in exactly two owned files."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-10-7.3": {
+      "task_id": "T-SDLC-10-7.3",
+      "status": "COMPLETE",
+      "owner": "Luna source/review lanes",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "Real database checks, scoped race/vet/lint and negative verification passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-10-7.4": {
+      "task_id": "T-SDLC-10-7.4",
+      "status": "COMPLETE",
+      "owner": "Luna source/review lanes",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "Independent review identified bounded cleanup, cancellation publication and failure-case test improvements; corrective chain preserves those findings."
+      ],
+      "independent_review_and_findings": {
+        "status": "FINDINGS_RESOLVED_BY_R1",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-10-7.2.F1": {
+      "task_id": "T-SDLC-10-7.2.F1",
+      "status": "COMPLETE",
+      "owner": "Luna source/review lanes",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "Applied bounded cleanup/pipe wait, publication guard and missing-database test fixes."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-10-7.3.F1": {
+      "task_id": "T-SDLC-10-7.3.F1",
+      "status": "COMPLETE",
+      "owner": "Luna source/review lanes",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.2.F1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "Removed guard failed its regression; exact restored source passed, including full race checks after rebase."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-10-7.4.R1": {
+      "task_id": "T-SDLC-10-7.4.R1",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.3.F1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "Root independent final review cleared source/fixes at exact reviewed head; all scanner matches manually classified."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-10-7.5": {
+      "task_id": "T-SDLC-10-7.5",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.4.R1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "PR15 merged by guarded GitHub rebase; target base unchanged before merge. No hosted CI success claimed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
+    },
+    "T-SDLC-10-7.6": {
+      "task_id": "T-SDLC-10-7.6",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T10.7",
+        "tip": "4b51cad5eedc76105c92235380b84bb4c11c91d7"
+      },
+      "dependency_receipts": [
+        "T-SDLC-10-7.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "687b6d71e3f8af4869e76853fc4fa2e75372397e",
+        "reviewed_base": "1163655a86399943029464dc2b6da25a596ca1aa",
+        "landed": "cbceb0413ce48bb17e7eebe4ffe2980cff4c1cd2",
+        "evidence": "docs/evidence/logical-backup-20261006.md"
+      },
+      "commands_and_results": [
+        "Fetched main, confirmed merged state and equality of both reviewed source files; accepted only T10.7 local adapter."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "bootstrap_fix original review; root final fix review",
+        "scope": "Two backup source files; final reviewer did not author fixes."
+      },
+      "external_blockers": [],
+      "next_action": "Continue dependency-ready backup storage preflight; restore and production gates remain open."
     }
   },
   "receipt_requirements": [
