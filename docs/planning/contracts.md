@@ -302,9 +302,11 @@ internally constructed allow-listed input with `sslmode=disable` and
 stats are permitted, but ambient values and service/passfile/TLS file contents
 must not influence connection, credentials, runtime parameters, or trust. The
 startup process does not mutate environment and concurrent `os.Setenv` is
-outside the contract. Callback errors intentionally propagate unchanged and
-callers own public mapping; storage-generated failures stay sanitized. Callback
-panics trigger rollback and are rethrown unchanged. Close marks the handle
+outside the contract. Callback errors remain unchanged if rollback succeeds or
+is already done; otherwise non-panic paths join only the safe `ErrTransaction`
+sentinel. Callers own public mapping; storage-generated failures stay sanitized
+and begin/commit failures preserve caller context errors. Callback panics trigger
+rollback and are rethrown unchanged even when rollback fails. Close marks the handle
 closed before pool shutdown; previously admitted operations may finish or fail
 under their contexts. The first source slice is limited to
 `storage/runtime.go` and `storage/runtime_test.go`; production composition,

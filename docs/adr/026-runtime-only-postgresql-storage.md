@@ -35,9 +35,14 @@ rejects the pinned pgx version's supported nonempty `PG*` variables without
 mutating process environment; concurrent environment mutation is outside the
 contract.
 
-The callback error from `WithTx` propagates unchanged for compatibility; its
-caller owns safe public error mapping. Callback panic triggers deferred rollback
-and rethrows the same panic. Storage-generated errors remain sanitized.
+The callback error from `WithTx` propagates unchanged when rollback succeeds or
+is already done. Otherwise the result joins that callback error with the safe
+`ErrTransaction` sentinel, matching existing DB behavior without exposing driver
+diagnostics. Its caller owns public error mapping. Callback panic triggers
+deferred rollback and rethrows the exact same panic even if rollback fails;
+that rollback failure is suppressed. Begin/commit failures preserve caller
+context errors, otherwise returning safe transaction errors. Tests cover
+cancellation and rollback failure on callback-error and panic paths.
 Readiness performs bounded read-only checks and the runtime opener never
 migrates or repairs schema. Caller cancellation propagates from startup ping;
 the opener's own startup-timeout expiry and driver failures map to
