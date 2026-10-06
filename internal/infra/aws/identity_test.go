@@ -150,6 +150,9 @@ func TestIdentityRegionMustMatchARNPartition(t *testing.T) {
 	if validAWSRegion("us-gov-west-1", "aws") {
 		t.Fatal("accepted GovCloud region in aws partition")
 	}
+	if validAWSRegion("zz-east-1", "aws") {
+		t.Fatal("accepted an unknown AWS region prefix")
+	}
 	if !validAWSRegion("cn-north-1", "aws-cn") || !validAWSRegion("us-gov-west-1", "aws-us-gov") {
 		t.Fatal("rejected region for its matching partition")
 	}

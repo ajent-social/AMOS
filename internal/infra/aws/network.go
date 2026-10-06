@@ -25,7 +25,7 @@ type NetworkArgs struct {
 const ManagementProfileSessionManager = "session-manager"
 
 var installationIDPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
-var standardRegionPattern = regexp.MustCompile(`^[a-z]{2}-[a-z]+-[0-9]+$`)
+var standardRegionPattern = regexp.MustCompile(`^(us|eu|ap|sa|ca|me|af|il)-[a-z]+-[0-9]+$`)
 var govRegionPattern = regexp.MustCompile(`^[a-z]{2}-gov-[a-z]+-[0-9]+$`)
 var chinaRegionPattern = regexp.MustCompile(`^cn-[a-z]+-[0-9]+$`)
 
@@ -51,7 +51,7 @@ func ownerTags(name, environment, installationID string) pulumi.StringMap {
 func validAWSRegion(region, partition string) bool {
 	switch partition {
 	case "aws":
-		return standardRegionPattern.MatchString(region) && !strings.HasPrefix(region, "cn-") && !strings.Contains(region, "-gov-")
+		return standardRegionPattern.MatchString(region)
 	case "aws-us-gov":
 		return govRegionPattern.MatchString(region)
 	case "aws-cn":
