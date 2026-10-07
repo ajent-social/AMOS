@@ -1,6 +1,6 @@
 # Private callback database guard (v1.18)
 
-Status: proposed; freezes after independent exact-head review and merge.
+Status: frozen after independent exact-head review and PR30, landed at `de3461086262d2c68a7f7bb770c8858f92a30bab`.
 
 The private callback database factory has the package-private shape:
 

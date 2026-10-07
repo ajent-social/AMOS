@@ -1,6 +1,6 @@
 # Additive transaction-only service construction (v1.16)
 
-Status: proposed; freezes after independent exact-head review and merge. No production host or role qualification follows.
+Status: frozen after independent exact-head review and PR30, landed at `de3461086262d2c68a7f7bb770c8858f92a30bab`. No production host or role qualification follows.
 
 A new minor amendment adds transaction-only construction to identity/session, identity/email, identity/login, identity/recovery, identity/mfa, identity/protection and delivery/email/materialstore. Existing New signatures, Config field names/types/order, return types, defaults and valid development behavior remain supported. The amendment changes no stored data, SQL migration, authentication policy, HTTP route or wire contract.
 
