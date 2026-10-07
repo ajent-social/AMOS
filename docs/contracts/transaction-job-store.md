@@ -1,6 +1,6 @@
 # Transaction-only durable job store (v1.17)
 
-Status: proposed; freezes after independent exact-head review and merge.
+Status: frozen after independent exact-head review and PR30, landed at `de3461086262d2c68a7f7bb770c8858f92a30bab`.
 
 Add a transaction-only job-store constructor `NewWithTx(TxRunner, Config) (*Store, error)`. Its consumer-owned `TxRunner` has exactly `WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error`. Preserve `New(*sql.DB, Config)`, `NewTxWriter(Config)` and caller-owned `EnqueueTx` signatures. The runtime constructor stores no raw pool or DSN and opens no connection. It rejects nil and typed-nil runners and snapshots configuration identically to the legacy constructor. A runner is trusted infrastructure: it must invoke the callback once synchronously in one context-bound transaction, commit only after callback success, roll back failure, preserve panic identity after attempted rollback, honor transaction options and never replay callbacks.
 >

@@ -1,6 +1,6 @@
 # ADR 029: Finite callback SQL and lifetime guard
 
-Status: proposed pending independent exact-head review and merge.
+Status: accepted as a source contract through independently reviewed PR30, landed at `de3461086262d2c68a7f7bb770c8858f92a30bab`. No production qualification follows.
 Date: 2026-10-07.
 
 The abstract callback boundary needs exact SQL admission, concurrent-use and invalidation rules. Adopt a conservative SQL subset and cancel/drain ownership rules; trusted callbacks remain outside any SQL sandbox guarantee.
