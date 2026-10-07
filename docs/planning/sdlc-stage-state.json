@@ -484,6 +484,22 @@
             "Not a callback wrapper: transaction-control rejection and retained-handle invalidation remain required.",
             "No operation authority, executor, provider or production qualification."
           ]
+        },
+        {
+          "name": "private replay hash and result integrity",
+          "status": "COMPLETE_COMPONENT_ONLY",
+          "source_or_artifact_identity": {
+            "reviewed_head": "ac7e229efdf433b179133ae66e36b2d24ce3bed5",
+            "base": "de3461086262d2c68a7f7bb770c8858f92a30bab",
+            "landed": "e42634c74630699904cb3374573eb2a3f4868f7a",
+            "pr": 31,
+            "evidence": "docs/evidence/replay-primitives-20261007.md"
+          },
+          "verification": "Independent selected normal/race17 top-level PASS each, vet/lint PASS; separator/checksum/bound negative-restored checks; exact-byte rebase and landed helper PASS. Required SQL tests explicitly excluded.",
+          "limitations": [
+            "No persistence, current authority, executor or transport implementation.",
+            "Full T2.8 remains IN_PROGRESS."
+          ]
         }
       ]
     },
