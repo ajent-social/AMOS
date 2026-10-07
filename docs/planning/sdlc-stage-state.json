@@ -173,7 +173,7 @@
         "findings": []
       },
       "external_blockers": [],
-      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2–6 and corrective chainF1/R1."
+      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2\u20136 and corrective chainF1/R1."
     },
     "T-SDLC-10-7.2": {
       "task_id": "T-SDLC-10-7.2",
@@ -1496,7 +1496,15 @@
       "source_or_artifact_identity": {
         "contract_pr": 30,
         "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
-        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab",
+        "session": {
+          "pr": 32,
+          "reviewed_head": "cda605902bb1bea4415a9a4f87e717d160c9dc31",
+          "base": "e42634c74630699904cb3374573eb2a3f4868f7a",
+          "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
+          "status": "LANDED_LOCAL_COMPONENT",
+          "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
@@ -1507,7 +1515,7 @@
         "scope": "v1.16/v1.17 design only"
       },
       "external_blockers": [],
-      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
     },
     "T-INT-HOST-04.3": {
       "task_id": "T-INT-HOST-04.3",
@@ -1523,18 +1531,27 @@
       "source_or_artifact_identity": {
         "contract_pr": 30,
         "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
-        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab",
+        "session": {
+          "pr": 32,
+          "reviewed_head": "cda605902bb1bea4415a9a4f87e717d160c9dc31",
+          "base": "e42634c74630699904cb3374573eb2a3f4868f7a",
+          "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
+          "status": "LANDED_LOCAL_COMPONENT",
+          "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
-        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
+        "Session actual runtime-role normal/race each six entries PASS, no skips/failures; fresh landed service six PASS. Jobs normal/race each ten PASS, but old-behavior negative failed infrastructure observation instead of intended assertion; verification remains open."
       ],
       "independent_review_and_findings": {
         "status": "DESIGN_CLEAR_SOURCE_PENDING",
         "scope": "v1.16/v1.17 design only"
       },
       "external_blockers": [],
-      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
     },
     "T-INT-HOST-04.4": {
       "task_id": "T-INT-HOST-04.4",
@@ -1550,18 +1567,26 @@
       "source_or_artifact_identity": {
         "contract_pr": 30,
         "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
-        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab",
+        "session": {
+          "pr": 32,
+          "reviewed_head": "cda605902bb1bea4415a9a4f87e717d160c9dc31",
+          "base": "e42634c74630699904cb3374573eb2a3f4868f7a",
+          "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
+          "status": "LANDED_LOCAL_COMPONENT",
+          "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
         "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
       ],
       "independent_review_and_findings": {
-        "status": "DESIGN_CLEAR_SOURCE_PENDING",
-        "scope": "v1.16/v1.17 design only"
+        "session": "CLEAR exact candidate; landed verified",
+        "jobs": "P2 verification finding: isolated old-behavior negative did not reach intended assertion. Different correction author and final reviewer assigned."
       },
       "external_blockers": [],
-      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
     },
     "T-INT-HOST-04.5": {
       "task_id": "T-INT-HOST-04.5",
@@ -1577,7 +1602,15 @@
       "source_or_artifact_identity": {
         "contract_pr": 30,
         "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
-        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab",
+        "session": {
+          "pr": 32,
+          "reviewed_head": "cda605902bb1bea4415a9a4f87e717d160c9dc31",
+          "base": "e42634c74630699904cb3374573eb2a3f4868f7a",
+          "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
+          "status": "LANDED_LOCAL_COMPONENT",
+          "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
@@ -1588,7 +1621,7 @@
         "scope": "v1.16/v1.17 design only"
       },
       "external_blockers": [],
-      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
     },
     "T-INT-HOST-04.6": {
       "task_id": "T-INT-HOST-04.6",
@@ -1604,7 +1637,15 @@
       "source_or_artifact_identity": {
         "contract_pr": 30,
         "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
-        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab",
+        "session": {
+          "pr": 32,
+          "reviewed_head": "cda605902bb1bea4415a9a4f87e717d160c9dc31",
+          "base": "e42634c74630699904cb3374573eb2a3f4868f7a",
+          "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
+          "status": "LANDED_LOCAL_COMPONENT",
+          "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
@@ -1615,7 +1656,7 @@
         "scope": "v1.16/v1.17 design only"
       },
       "external_blockers": [],
-      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
     }
   },
   "receipt_requirements": [

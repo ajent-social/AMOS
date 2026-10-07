@@ -158,7 +158,8 @@
     "evidence": [
       "Immutable scoped principal and opaque session lifecycle independently reviewed.",
       "Real PostgreSQL race tests passed for rotation, CSRF, signout, expiry, security epoch, account disablement and database outage.",
-      "Integrated lint and current database suite passed; elevated assurance persistence remains staged and middleware supplies AAL1 only."
+      "Integrated lint and current database suite passed; elevated assurance persistence remains staged and middleware supplies AAL1 only.",
+      "Additive transaction-only session constructor landed through PR32 at 92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f from independently reviewed cda605902bb1bea4415a9a4f87e717d160c9dc31/base e42634c74630699904cb3374573eb2a3f4868f7a. Actual runtime-role normal/race each six entries PASS, typed-nil and actual commit-failure leak negatives RED/exact-restored PASS; fresh landed service six PASS and all three files equal. Supplemental local component only; production host and roles remain open. See docs/evidence/session-transaction-runner-20261007.md."
     ]
   },
   "T4.2": {
