@@ -198,7 +198,7 @@ func TestProtectedMaterialRotationAndInputBounds(t *testing.T) {
 	if _, e = s.PruneExpired(context.Background(), 1001); e != ErrConfiguration {
 		t.Fatal("unbounded deletion accepted")
 	}
-	if e = s.db.Close(); e != nil {
+	if e = cfg.DB.Close(); e != nil {
 		t.Fatal(e)
 	}
 	if _, e = s.ResolveDelivery(context.Background(), ref); e != ErrUnavailable {
