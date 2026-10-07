@@ -248,9 +248,11 @@ have now landed after source corrections, different independent actual-service
 review and fresh landed checks. Their combined landed tree matches the
 independently built aggregate; manifests, lockfiles and migrations are unchanged.
 The initial session/jobs composition stages are complete as local components.
-Next email and MFA constructor source lanes and their dedicated runtime-profile
-gates are recorded separately in the journal; a draft or source checkpoint is
-not acceptance. The original
+Email (PR38) and MFA (PR39) constructor leaves also landed after independent
+source and actual runtime-profile normal/race verification, with fresh landed
+checks. Their supplemental evidence is recorded separately in the journal.
+Login/recovery, magic-link admission, production composition and authority
+amendments remain open; these local components do not increase product acceptance. The original
 product registry remains authoritative. The session authority preflight has
 independent open findings for post-lock renewal time, refreshed-principal
 handoff, writer lock order and challenge freshness. No executor dispatch,
