@@ -350,3 +350,11 @@ The initial registry/type-validation slice is unit-tested independently. Full im
 Real PostgreSQL tests cover same realm/key/hash returning exact canonical result; changed hash/revision conflict with no callback or false denial audit; actor/workspace/environment/operation isolation; concurrent duplicate callback exactly once; active account/session/security-epoch, membership, resource, assurance and entitlement rechecks; lock ordering against revocation and membership mutation; database-time behavior after lock waits; callback/output/audit/outbox/capacity failure rollback; denied/unavailable audit-only commit; replay audit behavior; installation, actor, and workspace capacity reservation/fairness before callback; operator capacity increase; and migration 17 after unchanged migrations 1–16. Audit tests reject arbitrary action/resource/operation ID and payloads and preserve append-only enforcement.
 
 Transport integration proves web/REST/MCP/proxy map one executor's logical result/error and cannot bypass current authorization. These checks establish local source behavior only; no provider, deployment, production-readiness, hosted-CI, or full task-acceptance claim follows from this proposal.
+
+## Callback guard amendment v1.18
+
+After independent review and merge, the [finite callback guard](callback-database.md)
+specifies the formerly abstract SQL rejection and retained-handle lifetime rules.
+Its first source slice is private factory code only. Future handler integration
+must invalidate before output codec processing; all executor admission gates above
+remain mandatory. The finite SQL subset is intentionally narrower than PostgreSQL.

@@ -116,3 +116,14 @@ integrity evidence, not authentication. Independent known-answer and mutation/
 restoration tests, package normal/race/vet/lint, separate exact-head review and
 landed checks gate this pure component. Actual SQL/replay/transport acceptance
 remains required for the full task, which stays IN_PROGRESS.
+
+### Contract adoption candidates v1.16–v1.18
+
+The service, job-store and callback guard contracts and ADRs 027–029 are concrete
+coordinator proposals. Independent exact-head review and merge precede source
+assignment. Initial source ownership: session/session.go and new transaction/runtime
+tests; protection/limits.go and its package tests; jobs/sqlstore/store.go,
+txrunner.go and package tests; four new callback guard files named by its contract.
+No lane owns migrations, modules, apphost or executable wiring. Coordinator will
+record each actual dispatch and its exact frozen revision. Full product acceptance
+and production-role/provider/budget/DNS decisions remain separate gates.
