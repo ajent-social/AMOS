@@ -1736,20 +1736,31 @@
             "name": "Login",
             "owner": "Assigned login constructor author",
             "base": "4e7afabc28635be4e88e7f3e1cf0de6f4cf2e1f7",
-            "status": "QUEUED_SHARED_DISPATCHER",
+            "status": "SOURCE_VERIFIED_REQUIRED_SERVICE_PENDING",
             "paths": [
               "identity/login/login.go",
               "identity/login/transaction_test.go",
               "identity/login/runtime_integration_test.go"
             ],
             "gates": [
-              "Dispatcher admission",
-              "Source and scoped local verification",
-              "Independent exact-head review",
-              "Required actual same-database runtime profile verification",
+              "Fresh reviewed same-database runtime profile",
+              "Actual required normal/race and transaction-completion negative/restored",
+              "Final exact-head review with service evidence",
               "Guarded merge and fresh landed service checks",
               "Production host and role qualification remain separate"
-            ]
+            ],
+            "author_head": "6f731a2d8b97b2c04380f3c1d87d45786bfee20f",
+            "independent_review": {
+              "head": "6f731a2d8b97b2c04380f3c1d87d45786bfee20f",
+              "status": "CLEAR_SOURCE_REQUIRED_SERVICE_PENDING",
+              "normal_pass": 25,
+              "race_pass": 25,
+              "skips": 0,
+              "vet": "PASS",
+              "lint": "PASS",
+              "negative_restored": "nil/default/options intended RED; exact-restored25PASS"
+            },
+            "actual_service": "NOT_RUN; missing profile visibly fails"
           },
           {
             "name": "Recovery",
