@@ -15,6 +15,49 @@ import (
 	"github.com/ajent-social/amos/storage"
 )
 
+// This test-only shape matches the operator's standard runtime connection file.
+// Probe metadata is admitted explicitly; unknown fields remain rejected.
+type materialRuntimeConfig struct {
+	Host           string `json:"host"`
+	Port           uint16 `json:"port"`
+	Database       string `json:"database"`
+	User           string `json:"user"`
+	Password       string `json:"password"`
+	CAPath         string `json:"ca_path"`
+	WrongHost      string `json:"wrong_host"`
+	DMLTable       string `json:"dml_table"`
+	LedgerTable    string `json:"ledger_table"`
+	PrivilegedRole string `json:"privileged_role"`
+	OwnerRole      string `json:"owner_role"`
+}
+
+func decodeMaterialRuntimeConfig(r io.Reader) (materialRuntimeConfig, error) {
+	var cfg materialRuntimeConfig
+	dec := json.NewDecoder(io.LimitReader(r, 2<<20))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&cfg); err != nil {
+		return materialRuntimeConfig{}, errors.New("invalid runtime config")
+	}
+	if err := dec.Decode(new(any)); err != io.EOF {
+		return materialRuntimeConfig{}, errors.New("trailing runtime config data")
+	}
+	return cfg, nil
+}
+
+func TestMaterialRuntimeConfigFormat(t *testing.T) {
+	const standard = `{"host":"fixture.invalid","port":5432,"database":"fixture","user":"runtime","password":"synthetic","ca_path":"fixture-ca.pem","wrong_host":"wrong.invalid","dml_table":"email_delivery_material","ledger_table":"fixture_migration_ledger","privileged_role":"fixture_admin","owner_role":"fixture_owner"}`
+	cfg, err := decodeMaterialRuntimeConfig(bytes.NewBufferString(standard))
+	if err != nil || cfg.Host != "fixture.invalid" || cfg.Port != 5432 || cfg.OwnerRole != "fixture_owner" {
+		t.Fatal("standard eleven-field runtime configuration rejected")
+	}
+	for _, input := range []string{standard + `{}`, standard[:len(standard)-1] + `,"unexpected":true}`, `{"port":"invalid"}`} {
+		got, err := decodeMaterialRuntimeConfig(bytes.NewBufferString(input))
+		if err == nil || got != (materialRuntimeConfig{}) {
+			t.Fatal("invalid runtime configuration accepted or partially disclosed")
+		}
+	}
+}
+
 // The operator must precreate public.email_delivery_material from the exact
 // migration fragment and supply a TLS runtime DML role. This test performs no DDL.
 func materialRuntimeDB(t *testing.T) *storage.RuntimeDB {
@@ -32,21 +75,9 @@ func materialRuntimeDB(t *testing.T) *storage.RuntimeDB {
 			t.Error("runtime config close failed")
 		}
 	}()
-	var cfg struct {
-		Host     string `json:"host"`
-		Port     uint16 `json:"port"`
-		Database string `json:"database"`
-		User     string `json:"user"`
-		Password string `json:"password"`
-		CAPath   string `json:"ca_path"`
-	}
-	dec := json.NewDecoder(io.LimitReader(f, 2<<20))
-	dec.DisallowUnknownFields()
-	if e := dec.Decode(&cfg); e != nil {
+	cfg, e := decodeMaterialRuntimeConfig(f)
+	if e != nil {
 		t.Fatal("required material runtime JSON invalid")
-	}
-	if e := dec.Decode(new(any)); e != io.EOF {
-		t.Fatal("required material runtime JSON has trailing data")
 	}
 	roots, e := os.ReadFile(cfg.CAPath)
 	if e != nil {
