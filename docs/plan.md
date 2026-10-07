@@ -2,14 +2,14 @@
 
 ## 2026-10-04 SDLC and production refinement
 
-The current accepted registry preserves **57 accepted product tasks of 257**. The dated initial inventory description below is historical. This refinement adds **1,200 first-class delivery-stage tasks for the 200 unaccepted product tasks**, plus **15 shared/production gates**, without changing original IDs, task contracts or obtained acceptance evidence.
+The current accepted registry preserves **59 accepted product tasks of 257**. The dated initial inventory description below is historical. This refinement adds **1,200 first-class delivery-stage tasks for the 200 unaccepted product tasks**, plus **15 shared/production gates**, without changing original IDs, task contracts or obtained acceptance evidence.
 
 The delivery endpoint is now explicitly **the entire scoped product running in production at https://amos.sire.run on AWS**. See the [SDLC operating contract and task index](planning/sdlc-delivery.md), [local draft dependency graph](planning/sdlc-plan.json), [production stage tasks](planning/sdlc/production.md) and [delivery decision](adr/022-first-class-sdlc-production-plan.md). These supplement the existing split epics. Product milestones and full release T16.12 are intermediate; terminal completion requires `T-PROD.13` after live production and operating verification.
 
 Use maximum eligible GPT-6-Luna parallelism within actual runtime slots and the existing 16-lane ceiling, keeping independent reviews, integrator ownership and shared build limits. Continue dependency-ready waves through release, AWS deployment and final operating acceptance during `/ship`; this `/plan` refinement does not execute them.
 
 
-Date: 2026 10 03. Status: complete initial task inventory; implementation underway. This is an engineering, documentation and operations plan. It preserves the full product architecture while delivering independently qualified stages. Current acceptance is 57 of 257 tasks per the execution registry; this count is not a product-completion measure.
+Date: 2026 10 03. Status: complete initial task inventory; implementation underway. This is an engineering, documentation and operations plan. It preserves the full product architecture while delivering independently qualified stages. Current acceptance is 59 of 257 tasks per the execution registry; this count is not a product-completion measure.
 
 ## Context
 

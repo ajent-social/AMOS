@@ -8373,7 +8373,7 @@
       "owner": "L10",
       "estimate": "revalidate at preflight",
       "acceptance": "Current task contract, owned paths, source changes and T8.1, T8.2 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T8.4",
       "use_cases": [
         "UC-060",
@@ -8393,7 +8393,7 @@
       "owner": "L10",
       "estimate": "revalidate at preflight",
       "acceptance": "No ingress rule exposes PostgreSQL or SSH to the internet. Host identity cannot write infrastructure state or assume deployment roles. Named scoped checks pass and the specified negative case is demonstrated; live/production qualification remains a separate explicitly authorized E16 gate where applicable. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T8.4",
       "use_cases": [
         "UC-060",
@@ -8413,7 +8413,7 @@
       "owner": "L10",
       "estimate": "revalidate at preflight",
       "acceptance": "At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T8.4",
       "use_cases": [
         "UC-060",
@@ -8430,10 +8430,10 @@
       "deps": [
         "T-SDLC-8-4.3"
       ],
-      "owner": "Independent GPT-6-Luna reviewer",
+      "owner": "Independent Astra low reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "Independent reviewer is named for T8.4 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T8.4",
       "use_cases": [
         "UC-060",
@@ -8453,7 +8453,7 @@
       "owner": "Integrator",
       "estimate": "revalidate at preflight",
       "acceptance": "GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T8.4",
       "use_cases": [
         "UC-060",
@@ -8473,7 +8473,7 @@
       "owner": "Integrator",
       "estimate": "revalidate at preflight",
       "acceptance": "Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "source_task": "T8.4",
       "use_cases": [
         "UC-060",
@@ -26716,7 +26716,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Frozen v1.15 design is reviewed and landed; exact two-file ownership, exclusive claim, isolated TLS fixture capacity and legacy API compatibility are recorded before dispatch.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.1",
       "dependency_depth": 10
     },
@@ -26731,7 +26731,7 @@
       "owner": "Storage worker",
       "estimate": "revalidate at preflight",
       "acceptance": "Only storage/runtime.go and storage/runtime_test.go implement the distinct one-pool RuntimeDB and TxRunner boundary; explicit verified TLS and ambient configuration rejection preserve legacy Open, DB and Migrate APIs.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.2",
       "dependency_depth": 11
     },
@@ -26746,7 +26746,7 @@
       "owner": "Storage worker",
       "estimate": "revalidate at preflight",
       "acceptance": "Required real TLS PostgreSQL checks prove DML, rollback, denied DDL and migration-role authority, root and hostname failures, bounded startup, safe failures and compile-negative Migrate incompatibility; scoped race/vet/lint and genuine negative/restored evidence pass.",
-      "status": "PLANNED",
+      "status": "BLOCKED",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.3",
       "dependency_depth": 12
     },
@@ -26758,10 +26758,10 @@
       "deps": [
         "T-INT-HOST-03.3"
       ],
-      "owner": "Independent GPT-6-Luna reviewer",
+      "owner": "Independent Astra low reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "A separate reviewer clears exact source head and base, isolation and compatibility; accepted findings receive explicit fix, affected verification and re-review stages before merge.",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.4",
       "dependency_depth": 13
     },
@@ -26771,14 +26771,14 @@
       "kind": "agent",
       "stage": "merge",
       "deps": [
-        "T-INT-HOST-03.4"
+        "T-INT-HOST-03.4.R1"
       ],
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "The independently reviewed exact head lands through guarded GitHub rebase merge without bypassing branch policy; local verification is distinguished from hosted CI.",
-      "status": "PLANNED",
+      "status": "BLOCKED",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.5",
-      "dependency_depth": 14
+      "dependency_depth": 15
     },
     {
       "id": "T-INT-HOST-03.6",
@@ -26793,7 +26793,52 @@
       "acceptance": "Landed files equal reviewed bytes, affected checks pass and bounded source receipts are recorded; consumer migration, production grants, migration-secret absence and deployment remain open.",
       "status": "PLANNED",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.6",
-      "dependency_depth": 15
+      "dependency_depth": 16
+    },
+    {
+      "id": "T-INT-HOST-03.2.F1",
+      "title": "Fix runtime required-service coverage and strict PEM rejection",
+      "kind": "agent",
+      "stage": "implement",
+      "deps": [
+        "T-INT-HOST-03.2"
+      ],
+      "owner": "Astra runtime source author",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
+      "status": "COMPLETE",
+      "dependency_depth": 12,
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.2.F1"
+    },
+    {
+      "id": "T-INT-HOST-03.3.F1",
+      "title": "Verify runtime review corrections and negative evidence",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-INT-HOST-03.2.F1"
+      ],
+      "owner": "Astra runtime source author",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
+      "status": "BLOCKED",
+      "dependency_depth": 13,
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.3.F1"
+    },
+    {
+      "id": "T-INT-HOST-03.4.R1",
+      "title": "Independently review final runtime corrections",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-INT-HOST-03.3.F1"
+      ],
+      "owner": "Independent Astra low reviewer",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
+      "status": "IN_PROGRESS",
+      "dependency_depth": 14,
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.4.R1"
     }
   ],
   "terminal_task": "T-PROD.13"

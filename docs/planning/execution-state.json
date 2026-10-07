@@ -41,7 +41,8 @@
     "evidence": [
       "Transactional PostgreSQL storage and ordered checksum migration ledger reviewed and integrated.",
       "Real database tests passed for concurrent/repeated application, checksum mismatch, rollback, and durable ledger protection.",
-      "Integrated Go suite and vet passed under the shared build lease."
+      "Integrated Go suite and vet passed under the shared build lease.",
+      "Separate runtime-only storage follow-on INT-HOST-03 is source-reviewed at 79d3014c85c1a5884927bcff05f3e664b4f101a9 against 64ba2c8494fdef39da72a53df2bfcb495f79ec1d in draft PR26. Unit-only normal/race/vet/lint and independent negative/restored checks pass; actual required-service trial failed before startup. Follow-on verification, merge, landing and acceptance remain open; existing development storage acceptance is unchanged. See docs/evidence/runtime-storage-20261007.md."
     ]
   },
   "T1.5": {
@@ -618,7 +619,17 @@
     "evidence": [
       "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
       "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed.",
-      "Registry/type binding only. Evaluator, current authority/session, SQL/replay/capacity/audit/effects, trusted generator metadata bridge, real PostgreSQL and transport dispatch remain unqualified. See docs/evidence/operation-registry-20261006.md."
+      "Registry/type binding only. Evaluator, current authority/session, SQL/replay/capacity/audit/effects, trusted generator metadata bridge, real PostgreSQL and transport dispatch remain unqualified. See docs/evidence/operation-registry-20261006.md.",
+      "Source-grounded onward preflight identifies a private transaction adapter proposal and explicit current-authority, replay/capacity, migration, audit/effect and generator/transport gates. No executor or adapter source was dispatched or accepted. See docs/planning/onward-source-preflight.md."
+    ]
+  },
+  "T8.4": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Scoped AWS VM network and host identity source landed through PR25 at 64ba2c8494fdef39da72a53df2bfcb495f79ec1d; all six files equal independently reviewed head 9336ab38b63b48784c2e639b937a44dafe1c3991 against ba3565c416f912525743edd6c86c2d85dccb91ff.",
+      "Named tests, scoped race/vet and pinned zero-issue lint passed. Independent reviewer repeated scoped tests and public PostgreSQL ingress negative/restored evidence; existing 36 module versions preserved. Fresh landed package test passed.",
+      "Accepted source/Pulumi mock component only. No AWS calls, preview, provider qualification, spending or deployment; actual backup KMS context and all production gates remain separate. See docs/evidence/aws-network-20261007.md."
     ]
   }
 }
