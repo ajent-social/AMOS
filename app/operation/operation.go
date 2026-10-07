@@ -199,6 +199,8 @@ type Definition struct {
 	resolve          func(identity.Principal, workspacecontext.Selection, any) (ResolvedResources, error)
 	encode           func(any) ([]byte, error)
 	validateOutput   func([]byte) error
+	handle           func(context.Context, InvocationContext, any) (any, error)
+	complete         func(any) (CachedResult, error)
 	invoke           func(context.Context, InvocationContext, any) (CachedResult, error)
 }
 
@@ -291,16 +293,21 @@ func Bind[I, O any](metadata Metadata, input InputCodec[I], resolver ResourceRes
 	definition.validateOutput = func(value []byte) error {
 		return output.ValidateCanonical(append([]byte(nil), value...))
 	}
-	definition.invoke = func(ctx context.Context, invocation InvocationContext, value any) (CachedResult, error) {
+	definition.handle = func(ctx context.Context, invocation InvocationContext, value any) (any, error) {
 		typed, ok := value.(I)
 		if !ok {
-			return CachedResult{}, ErrInvalidDefinition
+			return nil, ErrInvalidDefinition
 		}
 		result, err := handler(ctx, cloneInvocationContext(invocation), typed)
 		if err != nil {
-			return CachedResult{}, err
+			return nil, err
 		}
-		if !validResultKind(result.Kind) {
+		// Box the entire result so an interface-typed nil output retains O.
+		return result, nil
+	}
+	definition.complete = func(value any) (CachedResult, error) {
+		result, ok := value.(Result[O])
+		if !ok || !validResultKind(result.Kind) {
 			return CachedResult{}, ErrInvalidDefinition
 		}
 		encoded, err := output.EncodeCanonical(result.Value)
@@ -311,6 +318,13 @@ func Bind[I, O any](metadata Metadata, input InputCodec[I], resolver ResourceRes
 			return CachedResult{}, err
 		}
 		return CachedResult{Kind: result.Kind, CanonicalJSON: append([]byte(nil), encoded...)}, nil
+	}
+	definition.invoke = func(ctx context.Context, invocation InvocationContext, value any) (CachedResult, error) {
+		result, err := definition.handle(ctx, invocation, value)
+		if err != nil {
+			return CachedResult{}, err
+		}
+		return definition.complete(result)
 	}
 	return definition, nil
 }
@@ -324,7 +338,7 @@ func NewRegistry(definitions ...Definition) (*FrozenRegistry, error) {
 	registry := &FrozenRegistry{definitions: make(map[string]Definition, len(definitions))}
 	routes := make([]routeBinding, 0, len(definitions))
 	for index, candidate := range definitions {
-		if candidate.metadata.OperationID == "" || candidate.decode == nil || candidate.resolve == nil || candidate.encode == nil || candidate.validateOutput == nil || candidate.invoke == nil {
+		if candidate.metadata.OperationID == "" || candidate.decode == nil || candidate.resolve == nil || candidate.encode == nil || candidate.validateOutput == nil || candidate.invoke == nil || candidate.handle == nil || candidate.complete == nil {
 			return nil, fmt.Errorf("%w: definition %d was not created by Bind", ErrInvalidDefinition, index)
 		}
 		meta, err := validateMetadata(candidate.metadata)
