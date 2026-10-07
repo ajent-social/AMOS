@@ -312,3 +312,30 @@ under their contexts. The first source slice is limited to
 `storage/runtime.go` and `storage/runtime_test.go`; production composition,
 least-privilege role qualification and deployment remain separate gates. This
 amendment changes no migration bytes, stored data, or existing development API.
+
+
+## Amendment v1.16: additive transaction-only service construction
+
+[ADR 027](../adr/027-transaction-services.md) and the
+[service contract](../contracts/transaction-services.md) freeze after independent
+review and merge. Add consumer-owned TxRunner and NewWithTxRunner entry points,
+with DB-free TxConfig where needed. Preserve all existing New/Config source
+shapes and service semantics; reject nil/typed-nil runners without I/O. Initial
+session/protection slices do not qualify complete production composition.
+
+## Amendment v1.17: transaction-only job worker store
+
+[ADR 028](../adr/028-transaction-job-store.md) and the
+[job-store contract](../contracts/transaction-job-store.md) freeze after independent
+review and merge. Preserve legacy New and TxWriter; add NewWithTx, one transaction
+per standalone method, runtime READ COMMITTED and post-lock expiry fencing.
+No pool exposure, new DSN, automatic callback replay or migration is introduced.
+
+## Amendment v1.18: finite callback SQL and lifetime guard
+
+[ADR 029](../adr/029-callback-database.md) and the
+[callback contract](../contracts/callback-database.md) freeze after independent
+review and merge. The private guard admits a finite single-statement DML profile,
+serializes one outstanding result lease, and invalidates/cancels/drains retained
+handles at handler return before codec work. Unfinished work requires rollback.
+This is not a SQL sandbox or an executor; future boundary wiring remains gated.
