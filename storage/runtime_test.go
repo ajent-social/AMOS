@@ -8,9 +8,12 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"io"
 	"math/big"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +22,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func testRootPEM(t *testing.T) []byte {
@@ -417,5 +423,439 @@ func TestRuntimeParserDoesNotReadAmbientFiles(t *testing.T) {
 	}
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("isolated parser check failed: %v: %s", err, output)
+	}
+}
+
+// runtimeServiceFixture is a freshly generated, owner-qualified fixture input,
+// not a production credential source. DMLTable has a bigint identity id and
+// text value. Only the fixture owner creates schemas, roles, and credentials.
+type runtimeServiceFixture struct {
+	RuntimeConfig
+	WrongHost      string
+	DMLTable       string
+	LedgerTable    string
+	PrivilegedRole string
+}
+
+func runtimeRequiredFixture(t *testing.T) runtimeServiceFixture {
+	t.Helper()
+	path := os.Getenv("AMOS_RUNTIME_TEST_CONFIG")
+	if path == "" {
+		t.Fatal("required TLS PostgreSQL fixture absent: set AMOS_RUNTIME_TEST_CONFIG to fresh owner-qualified fixture JSON")
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal("required TLS PostgreSQL fixture config cannot be opened")
+	}
+	defer f.Close()
+	var input struct {
+		Host           string `json:"host"`
+		Port           uint16 `json:"port"`
+		Database       string `json:"database"`
+		User           string `json:"user"`
+		Password       string `json:"password"`
+		CAPath         string `json:"ca_path"`
+		WrongHost      string `json:"wrong_host"`
+		DMLTable       string `json:"dml_table"`
+		LedgerTable    string `json:"ledger_table"`
+		PrivilegedRole string `json:"privileged_role"`
+		OwnerRole      string `json:"owner_role"`
+	}
+	dec := json.NewDecoder(io.LimitReader(f, 2<<20))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&input); err != nil {
+		t.Fatal("required TLS PostgreSQL fixture config is invalid")
+	}
+	if err := dec.Decode(new(any)); err != io.EOF {
+		t.Fatal("required TLS PostgreSQL fixture config has trailing data")
+	}
+	roots, err := os.ReadFile(input.CAPath)
+	if err != nil {
+		t.Fatal("required TLS PostgreSQL fixture CA cannot be read")
+	}
+	fixture := runtimeServiceFixture{
+		RuntimeConfig: RuntimeConfig{Host: input.Host, Port: input.Port, Database: input.Database, User: input.User, Password: input.Password, RootCAPEM: roots, StartupTimeout: 3 * time.Second, MaxOpenConns: 2, MaxIdleConns: 1, ConnMaxLifetime: time.Minute, ConnMaxIdleTime: time.Minute},
+		WrongHost:     input.WrongHost, DMLTable: input.DMLTable, LedgerTable: input.LedgerTable, PrivilegedRole: input.OwnerRole,
+	}
+	if !validName(input.PrivilegedRole) {
+		t.Fatal("required privileged fixture role is invalid")
+	}
+	if validateRuntimeConfig(fixture.RuntimeConfig) != nil || !validDNSName(fixture.WrongHost) || fixture.WrongHost == fixture.Host || !validName(fixture.PrivilegedRole) {
+		t.Fatal("required TLS PostgreSQL fixture fields are invalid")
+	}
+	for _, table := range []string{fixture.DMLTable, fixture.LedgerTable} {
+		parts := strings.Split(table, ".")
+		if len(parts) != 2 || !validName(parts[0]) || !validName(parts[1]) {
+			t.Fatal("fixture tables must be schema-qualified names")
+		}
+	}
+	return fixture
+}
+
+func runtimeServiceOpen(t *testing.T, config RuntimeConfig) *RuntimeDB {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	db, err := OpenRuntime(ctx, config)
+	if err != nil {
+		t.Fatalf("required TLS PostgreSQL runtime connection failed: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			t.Errorf("runtime close failed: %v", err)
+		}
+	})
+	return db
+}
+
+func runtimeServiceTx(t *testing.T, db *RuntimeDB, fn func(context.Context, *sql.Tx) error) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.WithTx(ctx, nil, func(tx *sql.Tx) error { return fn(ctx, tx) }); err != nil {
+		// SQL diagnostics can contain private connection and fixture identifiers.
+		t.Fatal("required runtime transaction failed")
+	}
+}
+
+func TestRuntimeRequiredService(t *testing.T) {
+	fixture := runtimeRequiredFixture(t)
+	db := runtimeServiceOpen(t, fixture.RuntimeConfig)
+	table := pgx.Identifier(strings.Split(fixture.DMLTable, ".")).Sanitize()
+	ledger := pgx.Identifier(strings.Split(fixture.LedgerTable, ".")).Sanitize()
+	role := pgx.Identifier{fixture.PrivilegedRole}.Sanitize()
+	var id int64
+	t.Cleanup(func() {
+		runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+			_, err := tx.ExecContext(ctx, "DELETE FROM "+table+" WHERE id = $1", id)
+			return err
+		})
+	})
+
+	t.Run("verified TLS and least privilege prerequisites", func(t *testing.T) {
+		runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+			var ssl, super, createDB, createRole, replication, bypassRLS bool
+			var version string
+			if err := tx.QueryRowContext(ctx, `SELECT s.ssl, s.version, r.rolsuper, r.rolcreatedb, r.rolcreaterole, r.rolreplication, r.rolbypassrls FROM pg_stat_ssl s JOIN pg_roles r ON r.rolname = current_user WHERE s.pid = pg_backend_pid()`).Scan(&ssl, &version, &super, &createDB, &createRole, &replication, &bypassRLS); err != nil {
+				return err
+			}
+			if !ssl || (version != "TLSv1.2" && version != "TLSv1.3") || super || createDB || createRole || replication || bypassRLS {
+				t.Error("fixture lacks verified TLS or a least-privilege runtime role")
+			}
+			var present bool
+			for _, name := range []string{fixture.DMLTable, fixture.LedgerTable} {
+				if err := tx.QueryRowContext(ctx, "SELECT to_regclass($1) IS NOT NULL", name).Scan(&present); err != nil {
+					return err
+				}
+				if !present {
+					t.Error("required precreated fixture table is absent")
+				}
+			}
+			if err := tx.QueryRowContext(ctx, "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $1)", fixture.PrivilegedRole).Scan(&present); err != nil {
+				return err
+			}
+			if !present {
+				t.Error("required privileged fixture role is absent")
+			}
+			return nil
+		})
+	})
+	if t.Failed() {
+		t.Fatal("fixture prerequisites failed")
+	}
+
+	readValue := func(t *testing.T, want string) {
+		t.Helper()
+		runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+			var got string
+			if err := tx.QueryRowContext(ctx, "SELECT value FROM "+table+" WHERE id = $1", id).Scan(&got); err != nil {
+				return err
+			}
+			if got != want {
+				t.Error("transaction persisted an unexpected value")
+			}
+			return nil
+		})
+	}
+	t.Run("DML commits", func(t *testing.T) {
+		runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, "INSERT INTO "+table+" (value) VALUES ($1) RETURNING id", "inserted").Scan(&id)
+		})
+		readValue(t, "inserted")
+		runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+			_, err := tx.ExecContext(ctx, "UPDATE "+table+" SET value = $2 WHERE id = $1", id, "committed")
+			return err
+		})
+		readValue(t, "committed")
+	})
+	if t.Failed() {
+		t.Fatal("runtime DML prerequisite failed")
+	}
+	for _, panicPath := range []bool{false, true} {
+		name := "callback error rollback"
+		if panicPath {
+			name = "panic rollback"
+		}
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			marker := errors.New("callback marker")
+			func() {
+				if panicPath {
+					defer func() {
+						if recover() != marker {
+							t.Error("original panic was not preserved")
+						}
+					}()
+				}
+				err := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+					if _, err := tx.ExecContext(ctx, "UPDATE "+table+" SET value = $2 WHERE id = $1", id, "rolled back"); err != nil {
+						return err
+					}
+					if panicPath {
+						panic(marker)
+					}
+					return marker
+				})
+				if panicPath || err != marker {
+					t.Error("callback outcome was not preserved")
+				}
+			}()
+			readValue(t, "committed")
+		})
+	}
+
+	t.Run("canceled transaction rolls back", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			if _, err := tx.ExecContext(ctx, "UPDATE "+table+" SET value = $2 WHERE id = $1", id, "canceled"); err != nil {
+				return err
+			}
+			cancel()
+			return nil
+		})
+		if err != context.Canceled {
+			t.Fatal("canceled transaction did not preserve context error")
+		}
+		readValue(t, "committed")
+	})
+
+	for _, tc := range []struct{ name, query string }{
+		{"schema creation", `CREATE SCHEMA amos_runtime_denied_probe`},
+		{"table creation", "CREATE TABLE " + pgx.Identifier{strings.Split(fixture.DMLTable, ".")[0], "runtime_denied_probe"}.Sanitize() + " (id text)"},
+		{"alter table", "ALTER TABLE " + table + " ADD COLUMN runtime_denied_probe text"},
+		{"drop table", "DROP TABLE " + table},
+		{"temporary table", "CREATE TEMP TABLE runtime_denied_probe (id text)"},
+		{"ledger read", "SELECT * FROM " + ledger},
+		{"ledger mutation", "DELETE FROM " + ledger},
+		{"ledger DDL", "ALTER TABLE " + ledger + " ADD COLUMN runtime_denied_probe text"},
+		{"role creation", "CREATE ROLE amos_runtime_denied_probe"},
+		{"role alteration", "ALTER ROLE " + role + " NOLOGIN"},
+		{"role assumption", "SET ROLE " + role},
+		{"role grant", "GRANT " + role + " TO " + pgx.Identifier{fixture.User}.Sanitize()},
+		{"ownership", "ALTER TABLE " + table + " OWNER TO " + pgx.Identifier{fixture.User}.Sanitize()},
+	} {
+		t.Run("denied "+tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			rollback := errors.New("rollback authority probe")
+			var denied bool
+			err := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+				_, execErr := tx.ExecContext(ctx, tc.query)
+				var pgErr *pgconn.PgError
+				denied = errors.As(execErr, &pgErr) && pgErr.Code == "42501"
+				return rollback // Never commit even an unexpectedly permitted probe.
+			})
+			if err != rollback || !denied {
+				t.Fatal("expected PostgreSQL insufficient_privilege (42501) and successful rollback")
+			}
+		})
+	}
+
+	t.Run("wrong CA", func(t *testing.T) {
+		bad := fixture.RuntimeConfig
+		bad.RootCAPEM = testRootPEM(t)
+		runtimeServiceReject(t, bad)
+	})
+	t.Run("wrong hostname", func(t *testing.T) {
+		// First establish that the wrong name reaches the same TLS service and
+		// chains to the correct CA when verified under the correct DNS name.
+		// This prevents DNS or routing failure from masquerading as TLS denial.
+		roots, err := runtimeRoots(fixture.RootCAPEM)
+		if err != nil {
+			t.Fatal("fixture trust roots invalid")
+		}
+		config, err := runtimeConnConfig(fixture.RuntimeConfig, roots)
+		if err != nil {
+			t.Fatal("fixture connection configuration invalid")
+		}
+		config.Host = fixture.WrongHost
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		conn, err := pgx.ConnectConfig(ctx, config)
+		if err != nil {
+			t.Fatal("wrong-host prerequisite must reach the trusted fixture endpoint")
+		}
+		if err := conn.Close(ctx); err != nil {
+			t.Fatal("wrong-host prerequisite close failed")
+		}
+		bad := fixture.RuntimeConfig
+		bad.Host = fixture.WrongHost
+		runtimeServiceReject(t, bad)
+	})
+	t.Run("cancellation and lifecycle", func(t *testing.T) {
+		runtimeServiceLifecycle(t, fixture.RuntimeConfig)
+	})
+	t.Run("bounded startup", func(t *testing.T) {
+		runtimeServiceStartupTimeout(t, fixture.RuntimeConfig)
+	})
+	t.Run("delete commits", func(t *testing.T) {
+		runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+			if _, err := tx.ExecContext(ctx, "DELETE FROM "+table+" WHERE id = $1", id); err != nil {
+				return err
+			}
+			return nil
+		})
+		runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+			var count int
+			if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM "+table+" WHERE id = $1", id).Scan(&count); err != nil {
+				return err
+			}
+			if count != 0 {
+				t.Error("delete was not committed")
+			}
+			return nil
+		})
+	})
+}
+
+func runtimeServiceReject(t *testing.T, config RuntimeConfig) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	db, err := OpenRuntime(ctx, config)
+	if db != nil {
+		if closeErr := db.Close(); closeErr != nil {
+			t.Error("unexpected connection close failed")
+		}
+	}
+	if db != nil || err != ErrUnavailable {
+		t.Fatal("untrusted TLS endpoint was not rejected with the safe unavailable sentinel")
+	}
+}
+
+func runtimeServiceLifecycle(t *testing.T, config RuntimeConfig) {
+	t.Helper()
+	config.MaxOpenConns, config.MaxIdleConns = 1, 1
+	db := runtimeServiceOpen(t, config)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	called := false
+	if err := db.WithTx(ctx, nil, func(*sql.Tx) error { called = true; return nil }); err != context.Canceled || called {
+		t.Fatal("canceled begin admitted callback or lost context error")
+	}
+	if err := db.PingContext(ctx); err != context.Canceled {
+		t.Fatal("canceled ping lost context error")
+	}
+	if opened, err := OpenRuntime(ctx, config); err != context.Canceled || opened != nil {
+		if opened != nil {
+			_ = opened.Close()
+		}
+		t.Fatal("canceled startup lost context error")
+	}
+	commitCtx, cancelCommit := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelCommit()
+	if err := db.WithTx(commitCtx, nil, func(*sql.Tx) error { cancelCommit(); return nil }); err != context.Canceled {
+		t.Fatal("canceled commit lost context error")
+	}
+	// Hold the only connection. Both readiness and transaction admission must
+	// honor their deadlines while waiting for pool capacity.
+	runtimeServiceTx(t, db, func(_ context.Context, _ *sql.Tx) error {
+		waitCtx, stop := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer stop()
+		if err := db.PingContext(waitCtx); err != context.DeadlineExceeded {
+			t.Error("pool wait ping ignored deadline")
+		}
+		if err := db.WithTx(waitCtx, nil, func(*sql.Tx) error { t.Error("expired pool wait admitted callback"); return nil }); err != context.DeadlineExceeded {
+			t.Error("pool wait transaction ignored deadline")
+		}
+		return nil
+	})
+
+	queryCtx, stopQuery := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer stopQuery()
+	queryCanceled := false
+	err := db.WithTx(queryCtx, nil, func(tx *sql.Tx) error {
+		_, queryErr := tx.ExecContext(queryCtx, "SELECT pg_sleep(5)")
+		queryCanceled = queryErr != nil && queryCtx.Err() == context.DeadlineExceeded
+		return queryCtx.Err()
+	})
+	if !queryCanceled || !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatal("in-flight PostgreSQL query did not honor cancellation")
+	}
+	runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, "SELECT 1")
+		return err
+	})
+
+	// Closing while an admitted real transaction is active must not permit
+	// later operations; the admitted transaction may finish under its context.
+	runtimeServiceTx(t, db, func(ctx context.Context, tx *sql.Tx) error {
+		if err := db.Close(); err != nil {
+			return err
+		}
+		if err := db.PingContext(ctx); err != ErrClosed {
+			t.Error("post-close ping admitted")
+		}
+		if err := db.WithTx(ctx, nil, func(*sql.Tx) error { t.Error("post-close callback admitted"); return nil }); err != ErrClosed {
+			t.Error("post-close transaction lost closed sentinel")
+		}
+		_, err := tx.ExecContext(ctx, "SELECT 1")
+		return err
+	})
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := db.Close(); err != nil {
+				t.Error("concurrent repeated close failed")
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func runtimeServiceStartupTimeout(t *testing.T, config RuntimeConfig) {
+	t.Helper()
+	// A local TCP sink deliberately never answers the PostgreSQL handshake.
+	// This qualifies timeout behavior only, not TLS or provider availability.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal("cannot create bounded startup timeout probe")
+	}
+	defer listener.Close()
+	config.Host = "localhost"
+	config.Port = uint16(listener.Addr().(*net.TCPAddr).Port)
+	config.StartupTimeout = 50 * time.Millisecond
+	for _, callerFirst := range []bool{false, true} {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		want := ErrUnavailable
+		if callerFirst {
+			cancel()
+			ctx, cancel = context.WithTimeout(context.Background(), 50*time.Millisecond)
+			config.StartupTimeout = 2 * time.Second
+			want = context.DeadlineExceeded
+		}
+		started := time.Now()
+		db, err := OpenRuntime(ctx, config)
+		cancel()
+		if db != nil {
+			_ = db.Close()
+		}
+		if db != nil || err != want || time.Since(started) > time.Second {
+			t.Error("startup did not honor the smaller timeout with its safe error")
+		}
 	}
 }
