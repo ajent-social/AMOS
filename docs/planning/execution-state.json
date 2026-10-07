@@ -42,7 +42,7 @@
       "Transactional PostgreSQL storage and ordered checksum migration ledger reviewed and integrated.",
       "Real database tests passed for concurrent/repeated application, checksum mismatch, rollback, and durable ledger protection.",
       "Integrated Go suite and vet passed under the shared build lease.",
-      "Separate runtime-only storage follow-on INT-HOST-03 is source-reviewed at 79d3014c85c1a5884927bcff05f3e664b4f101a9 against 64ba2c8494fdef39da72a53df2bfcb495f79ec1d in draft PR26. Unit-only normal/race/vet/lint and independent negative/restored checks pass; actual required-service trial failed before startup. Follow-on verification, merge, landing and acceptance remain open; existing development storage acceptance is unchanged. See docs/evidence/runtime-storage-20261007.md."
+      "Runtime-only follow-on INT-HOST-03 completed through PR26: reviewed 67e4982486fdbf9839f7e1e625bbe58d4b3efca6, landed f60759556914df571a32193a6cc21af445913bd1. Independent actual TLS PostgreSQL normal/race checks and fresh landed 24-entry service check passed with zero skips/failures; both files match reviewed bytes. Production roles/providers/composition remain unqualified. Existing development storage acceptance is unchanged. See docs/evidence/runtime-storage-20261007.md."
     ]
   },
   "T1.5": {

@@ -66,7 +66,7 @@ checks alone do not qualify that provider behavior.
 ## INT-HOST-03: runtime-only PostgreSQL storage
 
 - Owner: integrator; source work is held until v1.15 is independently reviewed and merged and the exclusive source claim is confirmed.
-- Status: public contract adoption candidate; no source implementation or runtime acceptance is claimed by this assignment.
+- Status: completed at the source and actual local TLS PostgreSQL boundary through PR26; independent review and fresh landed checks passed. Production role and composition acceptance remain separate.
 - Frozen contract: [runtime-only PostgreSQL storage](../contracts/runtime-storage.md), ADR 026. Preserve development `storage.Open`, `*storage.DB`, and `storage.Migrate`; later production composition must receive only the distinct RuntimeDB runtime credential.
 - Initial owned paths: `storage/runtime.go` and `storage/runtime_test.go` only. Do not alter existing DB/migration code, services, module files, job-pool integration, production apphost, generator, reconcile command, executable wiring, or execution-state acceptance records.
 - Required behavior: one private runtime pool, no migration method or raw pool/config accessor, explicit copied PEM trust roots and bounded configuration, pinned pgx parser isolation, pre-network verified TLS/configuration, sanitized storage-generated errors, context-bounded startup ping and idempotent close. `TxRunner` exposes only `WithTx`; callback errors remain unchanged on successful/already-done rollback and otherwise join only the safe transaction sentinel; callers own public mapping. Begin/commit failures preserve caller context errors. Callback panics attempt rollback and rethrow unchanged even if rollback fails.
@@ -81,3 +81,8 @@ checks alone do not qualify that provider behavior.
 - Implement a private non-embedded adapter of one supplied `*sql.Tx` to the existing `operation.DBTX` interface. Reject nil transactions, preserve context/arguments/errors and return a genuinely nil Rows interface on query error. Expose no transaction lifecycle, pool, retry, invocation entry point or authority bypass.
 - Required real PostgreSQL checks cover transaction visibility, rollback, cancellation, post-completion behavior and exact transaction ownership. Missing fixture prerequisites fail visibly. Unit tests and source review alone do not accept this slice.
 - Independent source/fix review, affected checks, guarded merge and landed verification precede any component acceptance. Full executor authority, replay, audit/effects and transport gates remain unchanged.
+
+The private SQL result-type adapter is not the complete callback wrapper: v1.13
+transaction-control rejection and invalidation of retained DBTX/Row/Rows remain
+mandatory before anything is supplied as InvocationContext.DB. No exported
+construction or dispatch path is added by this prerequisite.

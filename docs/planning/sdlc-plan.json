@@ -26746,7 +26746,7 @@
       "owner": "Storage worker",
       "estimate": "revalidate at preflight",
       "acceptance": "Required real TLS PostgreSQL checks prove DML, rollback, denied DDL and migration-role authority, root and hostname failures, bounded startup, safe failures and compile-negative Migrate incompatibility; scoped race/vet/lint and genuine negative/restored evidence pass.",
-      "status": "BLOCKED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.3",
       "dependency_depth": 12
     },
@@ -26761,7 +26761,7 @@
       "owner": "Independent Astra low reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "A separate reviewer clears exact source head and base, isolation and compatibility; accepted findings receive explicit fix, affected verification and re-review stages before merge.",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.4",
       "dependency_depth": 13
     },
@@ -26771,14 +26771,14 @@
       "kind": "agent",
       "stage": "merge",
       "deps": [
-        "T-INT-HOST-03.4.R1"
+        "T-INT-HOST-03.4.R2"
       ],
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "The independently reviewed exact head lands through guarded GitHub rebase merge without bypassing branch policy; local verification is distinguished from hosted CI.",
-      "status": "BLOCKED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.5",
-      "dependency_depth": 15
+      "dependency_depth": 16
     },
     {
       "id": "T-INT-HOST-03.6",
@@ -26791,9 +26791,9 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Landed files equal reviewed bytes, affected checks pass and bounded source receipts are recorded; consumer migration, production grants, migration-secret absence and deployment remain open.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.6",
-      "dependency_depth": 16
+      "dependency_depth": 17
     },
     {
       "id": "T-INT-HOST-03.2.F1",
@@ -26821,7 +26821,7 @@
       "owner": "Astra runtime source author",
       "estimate": "revalidate at preflight",
       "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
-      "status": "BLOCKED",
+      "status": "COMPLETE",
       "dependency_depth": 13,
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.3.F1"
     },
@@ -26836,9 +26836,54 @@
       "owner": "Independent Astra low reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "dependency_depth": 14,
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.4.R1"
+    },
+    {
+      "id": "T-INT-HOST-03.2.F2",
+      "title": "Fix actual-service cancellation assertions",
+      "kind": "agent",
+      "stage": "implement",
+      "deps": [
+        "T-INT-HOST-03.2.F1"
+      ],
+      "owner": "Astra runtime source author",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
+      "status": "COMPLETE",
+      "dependency_depth": 13,
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.2.F2"
+    },
+    {
+      "id": "T-INT-HOST-03.3.F2",
+      "title": "Verify actual-service cancellation correction",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-INT-HOST-03.2.F2"
+      ],
+      "owner": "Astra runtime source author",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
+      "status": "COMPLETE",
+      "dependency_depth": 14,
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.3.F2"
+    },
+    {
+      "id": "T-INT-HOST-03.4.R2",
+      "title": "Independently review actual-service final source",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-INT-HOST-03.3.F2"
+      ],
+      "owner": "Independent Astra low reviewer",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Exact source correction, actual affected verification and distinct-author review are required before merge; no provider or production qualification.",
+      "status": "COMPLETE",
+      "dependency_depth": 15,
+      "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.4.R2"
     }
   ],
   "terminal_task": "T-PROD.13"

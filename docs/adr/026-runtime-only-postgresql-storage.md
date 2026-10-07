@@ -1,6 +1,6 @@
 # ADR 026: Runtime-only PostgreSQL storage boundary
 
-Status: proposed for acceptance after independent exact-head review and merge.
+Status: accepted through independently reviewed PR24; implementation locally verified and landed through PR26.
 Date: 2026-10-06.
 
 ## Problem
