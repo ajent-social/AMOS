@@ -59,16 +59,23 @@ func TestRuntimeBindingAdmission(t *testing.T) {
 	}
 	calls := 0
 	runner := bindingValueRunner{&calls}
-	if err := runtimeBindingReady(nil, runner, bindingRealm[0], bindingRealm[1], bindingRealm[2]); err != errRuntimeBindingConfiguration || calls != 0 {
-		t.Fatal("nil context reached runner")
-	}
+	invalidInputs := []struct {
+		ctx context.Context
+		ids [3]uuid.UUID
+	}{{ctx: nil, ids: bindingRealm}}
 	for i := range bindingRealm {
 		for _, invalid := range []uuid.UUID{uuid.Nil, uuid.MustParse("01900000-0000-4000-8000-000000000001"), uuid.MustParse("01900000-0000-7000-0000-000000000001")} {
 			ids := bindingRealm
 			ids[i] = invalid
-			if err := runtimeBindingReady(context.Background(), runner, ids[0], ids[1], ids[2]); err != errRuntimeBindingConfiguration || calls != 0 {
-				t.Fatal("invalid realm reached runner")
-			}
+			invalidInputs = append(invalidInputs, struct {
+				ctx context.Context
+				ids [3]uuid.UUID
+			}{ctx: context.Background(), ids: ids})
+		}
+	}
+	for _, input := range invalidInputs {
+		if err := runtimeBindingReady(input.ctx, runner, input.ids[0], input.ids[1], input.ids[2]); err != errRuntimeBindingConfiguration || calls != 0 {
+			t.Fatal("invalid input reached runner")
 		}
 	}
 	if err := runtimeBindingReady(context.Background(), runner, bindingRealm[0], bindingRealm[1], bindingRealm[2]); err != errRuntimeBindingUnavailable || calls != 1 {
