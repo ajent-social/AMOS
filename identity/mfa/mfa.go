@@ -11,6 +11,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -73,16 +74,56 @@ type Config struct {
 	Now      func() time.Time
 }
 
-type Service struct{ cfg Config }
+// TxRunner is the transaction capability consumed by MFA. The caller retains
+// ownership of the database lifecycle.
+type TxRunner interface {
+	WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error
+}
+
+// TxConfig configures MFA without retaining a database handle.
+type TxConfig struct {
+	Vault    SeedVault
+	Primary  PrimaryProofVerifier
+	Policy   Policy
+	Sessions SessionIssuer
+	Issuer   string
+	Now      func() time.Time
+}
+
+type Service struct {
+	db  TxRunner
+	cfg TxConfig
+}
 
 func New(cfg Config) (*Service, error) {
-	if cfg.DB == nil || cfg.Vault == nil || cfg.Primary == nil || cfg.Policy == nil || cfg.Sessions == nil || cfg.Issuer == "" || len(cfg.Issuer) > 64 || strings.TrimSpace(cfg.Issuer) != cfg.Issuer {
+	return NewWithTxRunner(cfg.DB, TxConfig{
+		Vault: cfg.Vault, Primary: cfg.Primary, Policy: cfg.Policy,
+		Sessions: cfg.Sessions, Issuer: cfg.Issuer, Now: cfg.Now,
+	})
+}
+
+// NewWithTxRunner validates configuration without calling dependencies or
+// probing database readiness. A non-nil runner need not be open or ready.
+func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Service, error) {
+	if nilTxRunner(db) || cfg.Vault == nil || cfg.Primary == nil || cfg.Policy == nil || cfg.Sessions == nil || cfg.Issuer == "" || len(cfg.Issuer) > 64 || strings.TrimSpace(cfg.Issuer) != cfg.Issuer {
 		return nil, ErrConfiguration
 	}
 	if cfg.Now == nil {
 		cfg.Now = time.Now
 	}
-	return &Service{cfg: cfg}, nil
+	return &Service{db: db, cfg: cfg}, nil
+}
+
+func nilTxRunner(db TxRunner) bool {
+	if db == nil {
+		return true
+	}
+	switch v := reflect.ValueOf(db); v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 type Enrollment struct {
@@ -109,7 +150,7 @@ type proofRequest struct {
 }
 
 func (s *Service) BeginEnrollment(ctx context.Context, principal identity.Principal, currentPassword string) (Enrollment, error) {
-	if s == nil || s.cfg.DB == nil || ctx == nil || currentPassword == "" || len(currentPassword) > 512 {
+	if s == nil || s.db == nil || ctx == nil || currentPassword == "" || len(currentPassword) > 512 {
 		return Enrollment{}, ErrUnavailable
 	}
 	scope := scopeFor(principal)
@@ -129,7 +170,7 @@ func (s *Service) BeginEnrollment(ctx context.Context, principal identity.Princi
 	defer wipe(seed)
 	var sealed []byte
 	var primary authproof.VerifiedCredential
-	err = s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		if err := s.cfg.Policy.Ready(ctx, tx); err != nil {
 			return ErrUnavailable
 		}
@@ -165,7 +206,7 @@ func (s *Service) BeginEnrollment(ctx context.Context, principal identity.Princi
 }
 
 func (s *Service) Status(ctx context.Context, principal identity.Principal) (FactorStatus, error) {
-	if s == nil || s.cfg.DB == nil || ctx == nil {
+	if s == nil || s.db == nil || ctx == nil {
 		return FactorStatus{}, ErrUnavailable
 	}
 	scope := scopeFor(principal)
@@ -173,7 +214,7 @@ func (s *Service) Status(ctx context.Context, principal identity.Principal) (Fac
 		return FactorStatus{}, ErrDenied
 	}
 	var result FactorStatus
-	err := s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err := s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		if err := s.cfg.Policy.Ready(ctx, tx); err != nil {
 			return ErrUnavailable
 		}
@@ -215,7 +256,7 @@ func (s *Service) Challenge(ctx context.Context, principal identity.Principal, r
 }
 
 func (s *Service) verifyAndStepUp(ctx context.Context, principal identity.Principal, r *http.Request, input proofRequest, pending bool) (session.Issued, error) {
-	if s == nil || s.cfg.DB == nil || ctx == nil || r == nil || input.CurrentPassword == "" || len(input.CurrentPassword) > 512 || !validTOTPCode(input.Code) || (pending && !validID(input.FactorID)) {
+	if s == nil || s.db == nil || ctx == nil || r == nil || input.CurrentPassword == "" || len(input.CurrentPassword) > 512 || !validTOTPCode(input.Code) || (pending && !validID(input.FactorID)) {
 		return session.Issued{}, ErrBadCode
 	}
 	scope := scopeFor(principal)
@@ -225,7 +266,7 @@ func (s *Service) verifyAndStepUp(ctx context.Context, principal identity.Princi
 	now := s.cfg.Now().UTC().Truncate(time.Microsecond)
 	var issued session.Issued
 	var result error
-	err := s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err := s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		if err := s.cfg.Policy.Ready(ctx, tx); err != nil {
 			return ErrUnavailable
 		}
