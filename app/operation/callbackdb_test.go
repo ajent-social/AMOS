@@ -654,6 +654,7 @@ func TestCallbackDBRequiredService(t *testing.T) {
 	})
 	t.Run("cancel and drain active PostgreSQL", func(t *testing.T) {
 		tx, db, stop := begin(t)
+		id := insert(t, db)
 		var pid int
 		if tx.QueryRowContext(ctx, "SELECT pg_backend_pid()").Scan(&pid) != nil {
 			t.Fatal("backend probe failed")
@@ -680,7 +681,25 @@ func TestCallbackDBRequiredService(t *testing.T) {
 			t.Fatal("cancelled query succeeded")
 		}
 		if err := tx.Rollback(); err != nil {
-			t.Fatal("cancelled transaction rollback failed")
+			// pgx may close the connection on request cancellation. An error
+			// alone (including ErrTxDone) proves no rollback: wait for the
+			// actual backend to exit before checking that its write is absent.
+			t.Logf("cancelled transaction rollback error type: %T", err)
+			ended, cancelEnded := context.WithTimeout(ctx, 5*time.Second)
+			defer cancelEnded()
+			for {
+				var exists bool
+				if pool.QueryRowContext(ended, "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE pid=$1)", pid).Scan(&exists) != nil {
+					t.Fatal("cancelled transaction backend termination not proven")
+				}
+				if !exists {
+					break
+				}
+			}
+		}
+		var count int
+		if pool.QueryRowContext(ctx, "SELECT count(*) FROM "+table+" WHERE id=$1", id).Scan(&count) != nil || count != 0 {
+			t.Fatal("cancelled transaction write survived rollback")
 		}
 	})
 	t.Run("actual deadlock SQLSTATE40P01", func(t *testing.T) {
