@@ -1504,11 +1504,27 @@
           "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
           "status": "LANDED_LOCAL_COMPONENT",
           "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        },
+        "supplemental_protection": {
+          "pr": 34,
+          "reviewed_head": "85cce23a99691e928ce152b2af7dd30ca030cac8",
+          "reviewed_base": "e42634c74630699904cb3374573eb2a3f4868f7a",
+          "live_base": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
+          "landed": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 3,
+              "output": 6,
+              "pass": 3
+            }
+          }
         }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
-        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
+        "Separate v1.16 protection leaf PR34 independently reviewed and landed, actual runtime-role normal/race and fresh landed three-entry service checks PASS; it does not widen the session/jobs stage scope."
       ],
       "independent_review_and_findings": {
         "status": "DESIGN_CLEAR_SOURCE_PENDING",
