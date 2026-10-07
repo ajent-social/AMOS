@@ -27,6 +27,8 @@ visibly rather than skipping.
 After immediate head/base/check readback and guarded rebase merge, the coordinator
 verified both files and repeated all five required-service entries at the landed
 revision: five pass, zero skip/fail. Local checks are not hosted CI success.
+The fixture operator subsequently verified exact-owned resource and temporary
+credential cleanup; no service is left running for this batch.
 Publication scanning matched an empty-password validation expression, manually
 inspected as source rather than a credential; scanner success is not asserted.
 
