@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"reflect"
 	"time"
 
 	"github.com/ajent-social/amos/identity"
@@ -46,14 +47,25 @@ type Config struct {
 	PersistAssurance bool
 }
 
+// TxRunner is the transaction capability required by a session service.
+// The caller owns its lifetime and binds it to the intended database.
+type TxRunner interface {
+	WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error
+}
+
 type Service struct {
-	db         *storage.DB
+	db         TxRunner
 	cfg        Config
 	cookieName string
 }
 
 func New(db *storage.DB, cfg Config) (*Service, error) {
-	if db == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || len(cfg.AllowedOrigins) == 0 {
+	return NewWithTxRunner(db, cfg)
+}
+
+// NewWithTxRunner constructs a service without probing or taking ownership of db.
+func NewWithTxRunner(db TxRunner, cfg Config) (*Service, error) {
+	if nilTxRunner(db) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || len(cfg.AllowedOrigins) == 0 {
 		return nil, ErrInvalidConfiguration
 	}
 	if cfg.DevelopmentLoopback {
@@ -76,6 +88,19 @@ func New(db *storage.DB, cfg Config) (*Service, error) {
 		}
 	}
 	return &Service{db: db, cfg: cfg, cookieName: productionCookie}, nil
+}
+
+func nilTxRunner(db TxRunner) bool {
+	if db == nil {
+		return true
+	}
+	v := reflect.ValueOf(db)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 type Issued struct {
