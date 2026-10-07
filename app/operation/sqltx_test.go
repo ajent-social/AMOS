@@ -2,12 +2,10 @@ package operation
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
 	"database/sql/driver"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"io"
@@ -189,12 +187,7 @@ func TestSQLTxAdapterRequiredService(t *testing.T) {
 	pool, table := invocationServicePool(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	var seed [8]byte
-	if _, err := rand.Read(seed[:]); err != nil {
-		t.Fatal("test identifier generation failed")
-	}
-	id := int64(binary.BigEndian.Uint64(seed[:]) & ((1 << 63) - 2))
-	// Delete only rows inserted by this test; collisions fail without cleanup ownership.
+	// Delete only database-assigned rows successfully inserted by this test.
 	owned := []int64{}
 	t.Cleanup(func() {
 		cleanupCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
@@ -205,9 +198,8 @@ func TestSQLTxAdapterRequiredService(t *testing.T) {
 			}
 		}
 	})
-	for i, finish := range []string{"commit", "rollback"} {
+	for _, finish := range []string{"commit", "rollback"} {
 		t.Run(finish, func(t *testing.T) {
-			key := id + int64(i)
 			tx, err := pool.BeginTx(ctx, nil)
 			if err != nil {
 				t.Fatal("begin failed")
@@ -221,14 +213,18 @@ func TestSQLTxAdapterRequiredService(t *testing.T) {
 			if err != nil {
 				t.Fatal("adapter construction failed")
 			}
-			result, err := db.ExecContext(ctx, "INSERT INTO "+table+" (id,value) VALUES ($1,$2)", key, "adapter")
-			if err != nil {
+			var key int64
+			if err := db.QueryRowContext(ctx, "INSERT INTO "+table+" (value) VALUES ($1) RETURNING id", "initial").Scan(&key); err != nil {
 				t.Fatal("adapter insert failed")
 			}
 			owned = append(owned, key)
+			result, err := db.ExecContext(ctx, "UPDATE "+table+" SET value=$2 WHERE id=$1", key, "adapter")
+			if err != nil {
+				t.Fatal("adapter update failed")
+			}
 			n, err := result.RowsAffected()
 			if err != nil || n != 1 {
-				t.Fatal("insert result incorrect")
+				t.Fatal("update result incorrect")
 			}
 			var value string
 			if err := tx.QueryRowContext(ctx, "SELECT value FROM "+table+" WHERE id=$1", key).Scan(&value); err != nil || value != "adapter" {
