@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/mail"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -37,8 +38,24 @@ type Config struct {
 	Keys              map[string][]byte
 	ApplicationOrigin string
 }
+
+// TxRunner is the transaction capability consumed by protected material storage.
+type TxRunner interface {
+	WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error
+}
+
+// TxConfig configures material storage without owning a database handle.
+type TxConfig struct {
+	DevelopmentLoopback                          bool
+	InstallationID, ApplicationID, EnvironmentID uuid.UUID
+	ActiveKeyID                                  string
+	// Keys come from explicit owner secret resolution. Keep prior keys during
+	// rotation until all retained material has expired; never persist key bytes.
+	Keys              map[string][]byte
+	ApplicationOrigin string
+}
 type Store struct {
-	db                                     *storage.DB
+	db                                     TxRunner
 	installation, application, environment uuid.UUID
 	active                                 string
 	keys                                   map[string]cipher.AEAD
@@ -46,14 +63,23 @@ type Store struct {
 }
 
 func New(cfg Config) (*Store, error) {
-	if cfg.DB == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || !keyPattern.MatchString(cfg.ActiveKeyID) || len(cfg.Keys) == 0 || len(cfg.Keys) > 8 {
+	return NewWithTxRunner(cfg.DB, TxConfig{
+		DevelopmentLoopback: cfg.DevelopmentLoopback,
+		InstallationID:      cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID,
+		ActiveKeyID: cfg.ActiveKeyID, Keys: cfg.Keys, ApplicationOrigin: cfg.ApplicationOrigin,
+	})
+}
+
+// NewWithTxRunner validates configuration without performing database I/O.
+func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Store, error) {
+	if nilRunner(db) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || !keyPattern.MatchString(cfg.ActiveKeyID) || len(cfg.Keys) == 0 || len(cfg.Keys) > 8 {
 		return nil, ErrConfiguration
 	}
 	origin, e := email.ParseApplicationOrigin(cfg.ApplicationOrigin, cfg.DevelopmentLoopback)
 	if e != nil {
 		return nil, ErrConfiguration
 	}
-	s := &Store{db: cfg.DB, installation: cfg.InstallationID, application: cfg.ApplicationID, environment: cfg.EnvironmentID, active: cfg.ActiveKeyID, keys: make(map[string]cipher.AEAD), origin: origin.String()}
+	s := &Store{db: db, installation: cfg.InstallationID, application: cfg.ApplicationID, environment: cfg.EnvironmentID, active: cfg.ActiveKeyID, keys: make(map[string]cipher.AEAD), origin: origin.String()}
 	for id, key := range cfg.Keys {
 		if !keyPattern.MatchString(id) || len(key) != 32 {
 			return nil, ErrConfiguration
@@ -73,6 +99,19 @@ func New(cfg Config) (*Store, error) {
 	}
 	return s, nil
 }
+func nilRunner(db TxRunner) bool {
+	if db == nil {
+		return true
+	}
+	v := reflect.ValueOf(db)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
+}
+
 func validID(id uuid.UUID) bool { return id.Version() == 7 && id.Variant() == uuid.RFC4122 }
 func parseRef(ref email.SecretReference) (uuid.UUID, error) {
 	raw := strings.TrimPrefix(string(ref), "material:")
