@@ -1,8 +1,8 @@
 # First-class SDLC and AWS production delivery
 
-Updated: 2026-10-06. Delivery is in progress through `/ship`; completed stages require the linked journal receipts and do not imply production acceptance.
+Updated: 2026-10-07. Delivery is in progress through `/ship`; completed stages require the linked journal receipts and do not imply production acceptance.
 
-The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, using maximum eligible parallel **GPT-6-Luna** agents. The graph contains 1,230 delivery nodes: the original 1,200 stages for 200 baseline-unaccepted source tasks, 15 shared/production gates, three explicit backup review-fix stages, six finite host routing stages and six runtime-only storage stages. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
+The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, with bounded parallel agents. The current source-delivery batch uses **GPT-6-Astra low** only; provider calls, spending and deployment are excluded from this batch. The graph contains 1,233 delivery nodes: the original 1,200 stages for 200 baseline-unaccepted source tasks, 15 shared/production gates, three explicit backup review-fix stages, six finite host routing stages and nine runtime-only storage stages including three explicit review-fix stages. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
 
 ## Graph and execution contract
 
@@ -16,7 +16,7 @@ For accepted findings append `T-SDLC-<epic>-<task>.2.F<n>` (stage: implement), `
 
 ## Parallel continuation policy
 
-Use one coordinator and maximum available eligible GPT-6-Luna workers, including independent reviewers. The original ceiling remains 16 ownership lanes; this session exposes four concurrent slots, so at most three workers plus the coordinator can run here. Recheck available capacity at execution; never claim inaccessible capacity or launch cloud coding fleets to manufacture slots. Fill freed slots from dependency-ready, claimed, disjoint work immediately; verification/review/handoff work also consumes slots. Schedule the critical path without starving other ready lanes. Workers have isolated external-SSD worktrees and explicit leaf-path ownership. The integrator exclusively owns shared contracts, manifests, migration ordering, executable wiring and acceptance state.
+Use one coordinator and the owner-selected model for eligible workers, including independent reviewers. The current bounded batch uses Astra low with at most six project processes including the coordinator and two heavy checks. The original planning ceiling remains 16 ownership lanes. Recheck available capacity at execution; never claim inaccessible capacity or launch cloud coding fleets to manufacture slots. Fill freed slots from dependency-ready, claimed, disjoint work immediately; verification/review/handoff work also consumes slots. Schedule the critical path without starving other ready lanes. Workers have isolated task worktrees, caches and explicit leaf-path ownership on the authorized execution host. The integrator exclusively owns shared contracts, manifests, migration ordering, executable wiring and acceptance state.
 
 Run a persistent eligibility loop during authorized `/ship` execution: reconcile -> claim -> dispatch -> collect -> verify -> independently review -> merge -> verify landed -> refresh successors. Continue across waves and context handoffs until `T-PROD.13` passes, not merely until coding or a release tag finishes. If a slot or build lease is unavailable, perform independent ready work. If every remaining item is blocked by an external prerequisite, persist exact blockers, owners, evidence and next runnable task; report that execution is incomplete. Never mark completion or clear policy holds to force progress. Resume from durable state when prerequisites return. Load team/crew and stage-specific skills just in time before actual multi-agent execution.
 
@@ -201,7 +201,7 @@ The following split index is the explicit `/ship` planning target for delivery s
 
 ### E-SDLC-7 -- E7 delivery stages -> sdlc/E7.md (0/60)
 
-### E-SDLC-8 -- E8 delivery stages -> sdlc/E8.md (0/156)
+### E-SDLC-8 -- E8 delivery stages -> sdlc/E8.md (6/156)
 
 ### E-SDLC-9 -- E9 delivery stages -> sdlc/E9.md (0/96)
 
@@ -223,6 +223,6 @@ The following split index is the explicit `/ship` planning target for delivery s
 
 ### E-SDLC-HOST -- Finite host routing -> sdlc/host-routing.md (6/6)
 
-### E-SDLC-RUNTIME -- Runtime-only PostgreSQL -> sdlc/runtime-storage.md (0/6)
+### E-SDLC-RUNTIME -- Runtime-only PostgreSQL -> sdlc/runtime-storage.md (3/9)
 
 Validation: [obtained planning checks](sdlc-validation.md).
