@@ -229,7 +229,7 @@ func TestUnknownOutcomeSelectsReconciliationNotExecution(t *testing.T) {
 }
 
 func TestAttemptBudgetsAndUnknownReviewAreBounded(t *testing.T) {
-	_, s := testStore(t)
+	db, s := testStore(t)
 	ctx := context.Background()
 	if _, err := s.Enqueue(ctx, intent(t, "retry-budget-1", false)); err != nil {
 		t.Fatal(err)
@@ -247,7 +247,7 @@ func TestAttemptBudgetsAndUnknownReviewAreBounded(t *testing.T) {
 		}
 	}
 	var id uuid.UUID
-	if err := s.db.QueryRowContext(ctx, `SELECT id FROM amos_jobs WHERE idempotency_key='retry-budget-1'`).Scan(&id); err != nil {
+	if err := db.QueryRowContext(ctx, `SELECT id FROM amos_jobs WHERE idempotency_key='retry-budget-1'`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	dead, err := s.Get(ctx, id)
@@ -406,12 +406,12 @@ func TestClaimScopesPreserveOtherEndpointsAndMaintenance(t *testing.T) {
 }
 
 func TestClaimScopeConfigurationIsBoundedAndCopied(t *testing.T) {
-	_, all := testStore(t)
+	db, all := testStore(t)
 	scope := newClaimScope(t)
 	cfg := all.config
 	cfg.ClaimKinds = []string{"billing.webhook.reconcile"}
 	cfg.ClaimScopes = []ClaimScope{scope}
-	store, err := New(all.db, cfg)
+	store, err := New(db, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -421,17 +421,17 @@ func TestClaimScopeConfigurationIsBoundedAndCopied(t *testing.T) {
 	}
 	invalid := cfg
 	invalid.ClaimScopes = []ClaimScope{scope, scope}
-	if _, err := New(all.db, invalid); !errors.Is(err, ErrInvalidConfig) {
+	if _, err := New(db, invalid); !errors.Is(err, ErrInvalidConfig) {
 		t.Fatalf("duplicate scope error=%v, want ErrInvalidConfig", err)
 	}
 	invalid = cfg
 	invalid.ClaimKinds = nil
-	if _, err := New(all.db, invalid); !errors.Is(err, ErrInvalidConfig) {
+	if _, err := New(db, invalid); !errors.Is(err, ErrInvalidConfig) {
 		t.Fatalf("scope without kind allowlist error=%v, want ErrInvalidConfig", err)
 	}
 	invalid = cfg
 	invalid.ClaimScopes = make([]ClaimScope, maxClaimScopes+1)
-	if _, err := New(all.db, invalid); !errors.Is(err, ErrInvalidConfig) {
+	if _, err := New(db, invalid); !errors.Is(err, ErrInvalidConfig) {
 		t.Fatalf("oversized scope error=%v, want ErrInvalidConfig", err)
 	}
 }
