@@ -229,3 +229,15 @@ production constructor authority. Existing foreign task claims are preserved.
 The separate current-authority audit reads session and writer paths and returns
 an exact-source proposal to the coordinator. It owns no tracked source or shared
 contract. The coordinator retains amendment adoption, plan state and wiring.
+
+### Proposed current-session freshness prerequisite
+
+The coordinator owns v1.21/ADR032 adoption after independent design review and
+landing. Only then may an explicitly assigned author change FindActiveSession
+in `identity/store/store.go`, ActiveSessionAssurance in
+`identity/store/assurance.go`, and add
+`identity/store/session_freshness_integration_test.go`. Preserve all other
+methods, foreign task claims, middleware/producer semantics and module/migration
+bytes. Actual demonstrated two-connection waits, old-boundary rejection,
+assurance downgrade, negative/restored and different exact-head review are
+required. Full writer compatibility/provenance/authority remains separately gated.

@@ -74,3 +74,25 @@ bounded two-connection tests must prove commit/rollback behavior, expiry while
 waiting, same-instance provenance, assurance downgrade and current-principal
 handoff. Callback invalidation before codec work remains separate. No writer
 repair, authority seam implementation or executor acceptance is claimed here.
+
+## Bounded freshness proposal
+
+The proposed [v1.21 prerequisite](../contracts/session-renewal-freshness.md)
+addresses only the pre-renewal time boundary and assurance downgrade, without
+claiming person/session writer compatibility. Independent design review and
+landing precede its narrowly assigned store source. Opaque same-instance
+provenance, refreshed-principal return, complete writer graphs and all producer
+freshness findings above remain open. A freshness-only component is not a current
+authority API or executor admission.
+
+
+The separate read-only audit at source
+`a69e364df57f196142ea61c0e2d5055e8090387f` also identifies email confirmation's
+inline challenge consumption and federation transaction-entry ordering as
+whole-writer gates. Preserve federation's existing final post-wait flow fence;
+its presence is not qualification of every producer. Include foreign-key,
+unique-index, deferred workspace-trigger and callback/predicate edges when
+freezing writer compatibility. Recovery's bulk session revocation needs a proved
+parent-gate rule or complete bounded-set semantics; never silently revoke a
+subset to fit an ordering helper. These are source observations, not reproduced
+runtime failures or accepted repairs.
