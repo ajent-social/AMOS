@@ -224,7 +224,8 @@
     "evidence": [
       "Email verification independently reviewed after requiring explicit installation/application realm binding.",
       "Real PostgreSQL tests passed for purpose/contact/realm binding, preview nonconsumption, single-use/expiry, account activation and protected-material/outbox rollback.",
-      "Integrated lint and SQL suite passed; live SES and protected material adapter activation remain separate gates."
+      "Integrated lint and SQL suite passed; live SES and protected material adapter activation remain separate gates.",
+      "Supplemental transaction-only email constructor landed through PR38 at 22275ac9a445ff11f6bd5d32fe565c29873591fe from reviewed fbfdcffc67d16eccbe27e1a539c4ae9165f1595f. Different review cleared separate actual commit-failure test correction; required runtime same-database normal/race each1PASS. Narrow independent completion-acknowledgement mutation RED/exact-source restored PASS; earlier broad cancellation-branch failure not counted. Three landed files equal and fresh landed1PASS. No mail/provider/production qualification. See docs/evidence/constructor-followons-20261007.md."
     ]
   },
   "T6.1": {
@@ -484,7 +485,8 @@
       "Headless batch review found a missing MFA admitted-context supporting file; the real guarded-cookie regression failed with unavailable primary work, the fix was restored, and fresh race tests passed. Final headless review cleared the correction.",
       "Session issuance database-clock regression fails under a transaction-start clock mutation and passes after restoration. Composed local HTTP tests also verify Origin/CSRF denial, exact persisted assurance expiry and replay rejection in a separately staged native application.",
       "Accepted as a service component. Production key management, organization policy, enterprise MFA, UI composition, live providers and complete SaaS release qualification remain separate.",
-      "Native local host composition independently reviewed at 0a71fba; fresh real PostgreSQL race checks across host, capture, reference UI and runtime pass, with scoped vet and zero-issue lint. Guarded composed MFA, replay denial, immutable binding and missing-schema startup rejection are obtained evidence. Local evaluation only; generator shipping, organizations, live providers and deployment remain separate."
+      "Native local host composition independently reviewed at 0a71fba; fresh real PostgreSQL race checks across host, capture, reference UI and runtime pass, with scoped vet and zero-issue lint. Guarded composed MFA, replay denial, immutable binding and missing-schema startup rejection are obtained evidence. Local evaluation only; generator shipping, organizations, live providers and deployment remain separate.",
+      "Supplemental transaction-only MFA constructor landed through PR39 at f599c0dedbe67fbb28e286c444d6c9564a433e73 from independently reviewed 435c78b8fa8af06a9543c78d5fd3055c824d1f48. Scoped normal/race22PASS, vet/build/lint PASS; actual required normal/race4PASS each, staged-credential leak RED/exact-restored4PASS. Three landed files equal and fresh landed4PASS. Synthetic policy/setup remain explicit; no full-auth writer/freshness or production qualification. See docs/evidence/constructor-followons-20261007.md."
     ]
   },
   "T6.3": {

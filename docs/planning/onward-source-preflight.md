@@ -19,8 +19,8 @@ The frozen [constructor contract](../contracts/transaction-services.md) defines
 additive transaction-only admission for session, email, login, recovery, MFA,
 protection and protected mail material services. Session and protection have
 landed with independent actual-service and fresh landed checks. Material has also landed with independent actual-service and fresh landed
-checks. Email and MFA source lanes are assigned; their actual service/review/merge
-gates remain open. Login and recovery remain unimplemented for this seam. Typed-nil handling and legacy compatibility remain mandatory.
+checks. Email and MFA have landed with independent actual-service and fresh landed
+checks. Login and recovery remain unimplemented for this seam. Typed-nil handling and legacy compatibility remain mandatory.
 The [job-store contract](../contracts/transaction-job-store.md) defines an additive
 transaction-only adapter without exposing the runtime pool or another DSN. Jobs source and its corrected post-lock regression have landed after different
 independent review, actual normal/race and fresh landed service checks.
