@@ -166,3 +166,30 @@ Callback correction: a separate author owns only the four guard files for the di
 Next frozen v1.16 MFA leaf: assigned author owns only `identity/mfa/mfa.go`, new `transaction_test.go` and `runtime_integration_test.go`, preserving legacy API/configuration and all authentication SQL/behavior. A dedicated precreated runtime profile and independent review are required; no existing fixture profile qualifies MFA. No writer-order, challenge freshness or executor authority repair is delegated. Coordinator owns shared progress and profile admission.
 
 Next frozen v1.16 email leaf: author owns only `identity/email/email.go`, new `transaction_test.go` and `runtime_integration_test.go`. Existing legacy API, SQL, purpose/origin/budget behavior and error mappings remain fixed. Runtime qualification requires identity, jobs and protected material in the same precreated database with explicit runtime DML grants; separate fixture databases cannot prove atomic composition. Missing prerequisites fail visibly; source and local doubles do not qualify the service or a provider.
+
+### Login and recovery v1.16 source leaves
+
+The delegated integrator assigns separate isolated authors to the remaining
+login and recovery constructors, based on reviewed main
+`4e7afabc28635be4e88e7f3e1cf0de6f4cf2e1f7`. Each owns only its package's
+primary implementation file and new `transaction_test.go` and
+`runtime_integration_test.go`. Existing Config/New shapes and operation SQL,
+policy, defaults and error mappings remain unchanged. No producer freshness,
+writer ordering, migration, module or executable changes are delegated.
+
+Each leaf requires a dedicated precreated same-database runtime profile with
+all actual identity, mail, job and applicable workspace/session dependencies.
+Required checks cover successful operations, callback rollback, cancellation
+and actual commit failure after callback writes, with no staged credentials or
+acknowledgement escaping a failed transaction. Missing profiles fail visibly.
+A different exact-head reviewer, guarded merge and fresh landed checks remain
+mandatory. These assignments add no acceptance or provider qualification.
+
+A separate private fixture author may prepare finite profiles and offline
+controls; independent exact-byte review precedes any bounded local launch.
+All model sessions, including reviews and successors, require admission by the
+existing shared dispatcher. Queued assignments are not running workers.
+
+The coordinator retains shared contracts and plan state. Paid-access task T5.9
+remains dependent on full T2.8 and current authority; transaction-only billing
+repositories already exist and do not require replacement constructors.
