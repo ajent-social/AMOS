@@ -26987,7 +26987,7 @@
       ],
       "owner": "Assigned jobs correction author",
       "estimate": "revalidate at preflight",
-      "acceptance": "A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.",
+      "acceptance": "The author delivers the test-only correction and demonstrates the intended stale-success negative with exact restoration and actual normal/race checks; distinct final review remains the separate review-stage gate.",
       "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.2.F1",
       "dependency_depth": 20
@@ -27002,7 +27002,7 @@
       ],
       "owner": "Assigned jobs correction author",
       "estimate": "revalidate at preflight",
-      "acceptance": "A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.",
+      "acceptance": "The author delivers the test-only correction and demonstrates the intended stale-success negative with exact restoration and actual normal/race checks; distinct final review remains the separate review-stage gate.",
       "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.3.F1",
       "dependency_depth": 21

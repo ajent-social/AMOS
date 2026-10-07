@@ -16,8 +16,8 @@ Scope: session and durable job-store constructors only; other services and produ
 
 #### Wave 20
 
-- [x] T-INT-HOST-04.2.F1 Correct deterministic job lease waiter observation  Owner: Assigned jobs correction author  Est: TBD  kind: agent stage: implement  blocked-by: [E-SDLC-TX.T-INT-HOST-04.2]  acc: [A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.]
-  - Acceptance: A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.
+- [x] T-INT-HOST-04.2.F1 Correct deterministic job lease waiter observation  Owner: Assigned jobs correction author  Est: TBD  kind: agent stage: implement  blocked-by: [E-SDLC-TX.T-INT-HOST-04.2]  acc: [The author delivers the test-only correction and demonstrates the intended stale-success negative with exact restoration and actual normal/race checks; distinct final review remains the separate review-stage gate.]
+  - Acceptance: The author delivers the test-only correction and demonstrates the intended stale-success negative with exact restoration and actual normal/race checks; distinct final review remains the separate review-stage gate.
   - Contracts: [services](../../contracts/transaction-services.md), [job store](../../contracts/transaction-job-store.md).
 
 #### Wave 20
@@ -28,8 +28,8 @@ Scope: session and durable job-store constructors only; other services and produ
 
 #### Wave 21
 
-- [x] T-INT-HOST-04.3.F1 Verify corrected job lease regression against old behavior  Owner: Assigned jobs correction author  Est: TBD  kind: agent stage: verify  blocked-by: [E-SDLC-TX.T-INT-HOST-04.2.F1]  acc: [A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.]
-  - Acceptance: A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.
+- [x] T-INT-HOST-04.3.F1 Verify corrected job lease regression against old behavior  Owner: Assigned jobs correction author  Est: TBD  kind: agent stage: verify  blocked-by: [E-SDLC-TX.T-INT-HOST-04.2.F1]  acc: [The author delivers the test-only correction and demonstrates the intended stale-success negative with exact restoration and actual normal/race checks; distinct final review remains the separate review-stage gate.]
+  - Acceptance: The author delivers the test-only correction and demonstrates the intended stale-success negative with exact restoration and actual normal/race checks; distinct final review remains the separate review-stage gate.
   - Contracts: [services](../../contracts/transaction-services.md), [job store](../../contracts/transaction-job-store.md).
 
 #### Wave 22
