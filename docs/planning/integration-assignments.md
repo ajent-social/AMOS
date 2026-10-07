@@ -101,3 +101,18 @@ work and full T2.8 status are preserved.
 - Callback guard lane: define exact SQL transaction-control rejection and retained DBTX/Row/Rows lifetime behavior against frozen operation semantics, including concurrency and actual PostgreSQL acceptance cases. No source edits.
 - Executor seam lane: audit current authority/session, replay/capacity, audit/effect and migration dependencies; identify the next compatible finite contract slice, without enabling dispatch. No source edits.
 - Local verification lane: revalidate previously reviewed fixture custody, cached image and resource controls; prepare service windows and exact-owned cleanup. Launch only when a concrete source verification window is assigned.
+
+### T2.8 private replay primitives
+
+Coordinator adopts two new files only: `app/operation/replay_primitives.go` and
+`replay_primitives_test.go`. Implement the frozen domain-separated request hash
+and bounded cached-result integrity validation using existing Definition/codecs.
+No exported API, persistence, authority, handler invocation or dispatch is added.
+Validate stored bytes against the registered replay-safe required-idempotency
+bound, finite result kind, SHA-256 and output codec; return defensive copies and
+safe private errors. Future replay integration must check current authority and
+stored descriptor/revision/schema identity before disclosure. The checksum is
+integrity evidence, not authentication. Independent known-answer and mutation/
+restoration tests, package normal/race/vet/lint, separate exact-head review and
+landed checks gate this pure component. Actual SQL/replay/transport acceptance
+remains required for the full task, which stays IN_PROGRESS.
