@@ -56,25 +56,17 @@ type ClaimScope struct {
 const maxClaimScopes = 64
 
 type Store struct {
-	db              *sql.DB
+	runner          TxRunner
+	runtimeOptions  bool
 	config          Config
 	claimScopesJSON string
 }
 
 func New(db *sql.DB, cfg Config) (*Store, error) {
-	if db == nil || !validConfig(cfg) {
+	if db == nil {
 		return nil, ErrInvalidConfig
 	}
-	cfg.ClaimKinds = append([]string(nil), cfg.ClaimKinds...)
-	cfg.ClaimScopes = append([]ClaimScope(nil), cfg.ClaimScopes...)
-	if cfg.ClaimScopes == nil {
-		cfg.ClaimScopes = []ClaimScope{}
-	}
-	scopesJSON, err := json.Marshal(cfg.ClaimScopes)
-	if err != nil {
-		return nil, ErrInvalidConfig
-	}
-	return &Store{db: db, config: cfg, claimScopesJSON: string(scopesJSON)}, nil
+	return newStore(poolRunner{db: db}, cfg, false)
 }
 
 func validConfig(cfg Config) bool {
@@ -144,26 +136,23 @@ func validScopeToken(value string, max int, allowUnderscore bool) bool {
 }
 
 func (s *Store) Enqueue(ctx context.Context, in jobs.Intent) (jobs.Job, error) {
-	if s == nil || s.db == nil || ctx == nil {
+	if s == nil || s.runner == nil || ctx == nil {
 		return jobs.Job{}, ErrInvalidConfig
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
+	var job jobs.Job
+	err := s.withTx(ctx, false, func(tx *sql.Tx) error {
+		var err error
+		job, err = s.EnqueueTx(ctx, tx, in)
+		return err
+	})
 	if err != nil {
-		return jobs.Job{}, ErrUnavailable
-	}
-	job, err := s.EnqueueTx(ctx, tx, in)
-	if err != nil {
-		_ = tx.Rollback()
 		return jobs.Job{}, err
-	}
-	if err := tx.Commit(); err != nil {
-		return jobs.Job{}, ErrUnavailable
 	}
 	return job, nil
 }
 
 // EnqueueTx adds durable intent to a caller-owned domain transaction.
-func (s *Store) EnqueueTx(ctx context.Context, tx *sql.Tx, in jobs.Intent) (jobs.Job, error) {
+func (s *Store) EnqueueTx(ctx context.Context, tx *sql.Tx, in jobs.Intent) (job jobs.Job, resultErr error) {
 	if s == nil || ctx == nil || tx == nil {
 		return jobs.Job{}, ErrInvalidConfig
 	}
@@ -173,6 +162,11 @@ func (s *Store) EnqueueTx(ctx context.Context, tx *sql.Tx, in jobs.Intent) (jobs
 	if !json.Valid(in.Payload) {
 		return jobs.Job{}, jobs.ErrInvalidIntent
 	}
+	defer func() {
+		if errors.Is(resultErr, ErrUnavailable) && ctx.Err() != nil {
+			resultErr = errors.Join(ErrUnavailable, ctx.Err())
+		}
+	}()
 	var databaseNow time.Time
 	if err := tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&databaseNow); err != nil {
 		return jobs.Job{}, ErrUnavailable
@@ -210,36 +204,42 @@ func (s *Store) EnqueueTx(ctx context.Context, tx *sql.Tx, in jobs.Intent) (jobs
 }
 
 func (s *Store) Get(ctx context.Context, id uuid.UUID) (jobs.Job, error) {
-	if s == nil || s.db == nil || ctx == nil {
+	if s == nil || s.runner == nil || ctx == nil {
 		return jobs.Job{}, ErrInvalidConfig
 	}
-	return scanJob(s.db.QueryRowContext(ctx, selectJob+` WHERE id=$1`, id))
+	var job jobs.Job
+	err := s.withTx(ctx, true, func(tx *sql.Tx) error {
+		var err error
+		job, err = s.getTx(ctx, tx, id)
+		return err
+	})
+	if err != nil {
+		return jobs.Job{}, err
+	}
+	return job, nil
 }
 
 func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (jobs.Job, bool, error) {
-	if s == nil || s.db == nil || ctx == nil || owner == "" || len(owner) > 128 || owner != strings.TrimSpace(owner) || lease <= 0 || lease > s.config.MaxLease {
+	if s == nil || s.runner == nil || ctx == nil || owner == "" || len(owner) > 128 || owner != strings.TrimSpace(owner) || lease <= 0 || lease > s.config.MaxLease {
 		return jobs.Job{}, false, ErrInvalidConfig
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return jobs.Job{}, false, ErrUnavailable
-	}
-	defer func() { _ = tx.Rollback() }() // Commit consumes the transaction; failures already return unavailable.
-	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs AS j SET status='dead', lease_owner=NULL, lease_action=NULL, lease_until=NULL, updated_at=clock_timestamp()
+	var result jobs.Job
+	var found bool
+	err := s.withTx(ctx, false, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `UPDATE amos_jobs AS j SET status='dead', lease_owner=NULL, lease_action=NULL, lease_until=NULL, updated_at=clock_timestamp()
 		WHERE status='queued' AND deadline_at <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[])) AND `+claimScopePredicate("$2", "j"), s.config.ClaimKinds, s.claimScopesJSON)
-	if err != nil {
-		return jobs.Job{}, false, ErrUnavailable
-	}
-	_, err = tx.ExecContext(ctx, `UPDATE amos_jobs AS j SET
+		if err != nil {
+			return ErrUnavailable
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE amos_jobs AS j SET
 		status=CASE WHEN external_effect THEN 'unknown' WHEN attempt_count >= max_attempts THEN 'dead' ELSE 'queued' END,
 		manual_review=CASE WHEN external_effect AND reconciliation_attempt_count >= max_reconciliation_attempts THEN true ELSE manual_review END,
 		lease_owner=NULL, lease_action=NULL, lease_until=NULL, next_reconciliation_at=clock_timestamp(), updated_at=clock_timestamp()
 		WHERE lease_owner IS NOT NULL AND lease_until <= clock_timestamp() AND (COALESCE(cardinality($1::text[]),0)=0 OR kind=ANY($1::text[])) AND `+claimScopePredicate("$2", "j"), s.config.ClaimKinds, s.claimScopesJSON)
-	if err != nil {
-		return jobs.Job{}, false, ErrUnavailable
-	}
-	var result jobs.Job
-	result, err = scanClaim(tx.QueryRowContext(ctx, `WITH candidate AS (
+		if err != nil {
+			return ErrUnavailable
+		}
+		result, err = scanClaim(tx.QueryRowContext(ctx, `WITH candidate AS (
 		SELECT id, status FROM amos_jobs
 		WHERE ((status='queued' AND available_at <= clock_timestamp() AND deadline_at > clock_timestamp())
 			 OR (status='unknown' AND manual_review=false AND lease_owner IS NULL AND next_reconciliation_at <= clock_timestamp() AND reconciliation_attempt_count < max_reconciliation_attempts))
@@ -257,19 +257,19 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (j
 		lease_until=clock_timestamp()+($2 * interval '1 microsecond'), updated_at=clock_timestamp()
 	FROM candidate c WHERE j.id=c.id
 	RETURNING `+jobReturningColumns, owner, lease.Microseconds(), s.config.ClaimKinds, s.claimScopesJSON))
-	if errors.Is(err, jobs.ErrNotFound) {
-		if err := tx.Commit(); err != nil {
-			return jobs.Job{}, false, ErrUnavailable
+		if errors.Is(err, jobs.ErrNotFound) {
+			return nil
 		}
-		return jobs.Job{}, false, nil
-	}
+		if err != nil {
+			return err
+		}
+		found = true
+		return nil
+	})
 	if err != nil {
-		return jobs.Job{}, false, ErrUnavailable
+		return jobs.Job{}, false, err
 	}
-	if err := tx.Commit(); err != nil {
-		return jobs.Job{}, false, ErrUnavailable
-	}
-	return result, true, nil
+	return result, found, nil
 }
 
 func claimScopePredicate(parameter, table string) string {
@@ -289,7 +289,7 @@ func claimScopePredicate(parameter, table string) string {
 }
 
 func (s *Store) Resolve(ctx context.Context, job jobs.Job, owner string, resolution jobs.Resolution) error {
-	if s == nil || s.db == nil || ctx == nil || job.ID == uuid.Nil || owner == "" || job.FenceToken <= 0 || jobs.ValidateResolution(resolution) != nil || resolution.RetryAfter > s.config.MaxRetryDelay || resolution.Kind == jobs.ResolutionUnknown && !job.ExternalEffect {
+	if s == nil || s.runner == nil || ctx == nil || job.ID == uuid.Nil || owner == "" || job.FenceToken <= 0 || jobs.ValidateResolution(resolution) != nil || resolution.RetryAfter > s.config.MaxRetryDelay || resolution.Kind == jobs.ResolutionUnknown && !job.ExternalEffect {
 		return jobs.ErrInvalidResolution
 	}
 	var status jobs.State
@@ -328,34 +328,34 @@ func (s *Store) Resolve(ctx context.Context, job jobs.Job, owner string, resolut
 		next = resolution.RetryAfter
 		manual = job.Action == jobs.ActionReconcile && job.ReconciliationAttempt >= job.MaxReconciliationAttempts
 	}
-	res, err := s.db.ExecContext(ctx, `UPDATE amos_jobs SET status=$1, available_at=clock_timestamp()+($2 * interval '1 microsecond'),
+	return s.withTx(ctx, false, func(tx *sql.Tx) error {
+		// Acquire the lock in a separate statement: a clock predicate evaluated
+		// before waiting for an unchanged row lock cannot fence an expired lease.
+		var lockedID uuid.UUID
+		if err := tx.QueryRowContext(ctx, `SELECT id FROM amos_jobs WHERE id=$1 FOR UPDATE`, job.ID).Scan(&lockedID); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return jobs.ErrNotFound
+			}
+			return ErrUnavailable
+		}
+		res, err := tx.ExecContext(ctx, `UPDATE amos_jobs SET status=$1, available_at=clock_timestamp()+($2 * interval '1 microsecond'),
 		next_reconciliation_at=clock_timestamp()+($2 * interval '1 microsecond'), manual_review=$3,
 		lease_owner=NULL, lease_action=NULL, lease_until=NULL, updated_at=clock_timestamp()
 		WHERE id=$4 AND fence_token=$5 AND lease_owner=$6 AND lease_action=$7 AND lease_until > clock_timestamp() AND
 		((lease_action='execute' AND status='leased') OR (lease_action='reconcile' AND status='unknown'))`,
-		status, next.Microseconds(), manual, job.ID, job.FenceToken, owner, job.Action)
-	if err != nil {
-		return ErrUnavailable
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return ErrUnavailable
-	}
-	if n == 0 {
-		return s.classifyLeaseFailure(ctx, job.ID)
-	}
-	return nil
-}
-
-func (s *Store) classifyLeaseFailure(ctx context.Context, id uuid.UUID) error {
-	var exists bool
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM amos_jobs WHERE id=$1)`, id).Scan(&exists); err != nil {
-		return ErrUnavailable
-	}
-	if !exists {
-		return jobs.ErrNotFound
-	}
-	return jobs.ErrLeaseLost
+			status, next.Microseconds(), manual, job.ID, job.FenceToken, owner, job.Action)
+		if err != nil {
+			return ErrUnavailable
+		}
+		n, err := res.RowsAffected()
+		if err != nil {
+			return ErrUnavailable
+		}
+		if n == 0 {
+			return jobs.ErrLeaseLost
+		}
+		return nil
+	})
 }
 
 const jobColumns = `id, installation_id, application_id, idempotency_key, request_hash, kind, payload::text,
