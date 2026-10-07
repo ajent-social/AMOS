@@ -1484,7 +1484,7 @@
     },
     "T-INT-HOST-04.2": {
       "task_id": "T-INT-HOST-04.2",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "owner": "Assigned component authors",
       "claim": {
         "resource": "R-amos-integrator",
@@ -1535,7 +1535,7 @@
     },
     "T-INT-HOST-04.3": {
       "task_id": "T-INT-HOST-04.3",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "owner": "Assigned component authors",
       "claim": {
         "resource": "R-amos-integrator",
@@ -1571,14 +1571,15 @@
     },
     "T-INT-HOST-04.4": {
       "task_id": "T-INT-HOST-04.4",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "owner": "Independent Astra low reviewer",
       "claim": {
         "resource": "R-amos-integrator",
         "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
       },
       "dependency_receipts": [
-        "T-INT-HOST-04.3"
+        "T-INT-HOST-04.3",
+        "T-INT-HOST-04.3.F1"
       ],
       "source_or_artifact_identity": {
         "contract_pr": 30,
@@ -1673,6 +1674,60 @@
       },
       "external_blockers": [],
       "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
+    },
+    "T-INT-HOST-04.2.F1": {
+      "task_id": "T-INT-HOST-04.2.F1",
+      "status": "COMPLETE",
+      "owner": "Assigned jobs correction author",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-04.2"
+      ],
+      "source_or_artifact_identity": {
+        "author_head": "322c2448d4bef01232dbff09e65855198529d8c9",
+        "candidate": "8340b0a",
+        "scope": "jobs/sqlstore/txrunner_test.go only"
+      },
+      "commands_and_results": [
+        "Exact resolver backend PID replaces all-backend activity enumeration; original stale-success and unchanged-row assertions retained.",
+        "Old pre-lock behavior failed intended stale-success assertion in four seconds; exact original production source restored and required normal/race each ten entries PASS. Scoped normal/race/vet/lint passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "DIFFERENT_FINAL_REVIEW_PENDING",
+        "prior_finding": "P2 negative failed lock observation rather than intended assertion; author correction demonstrated intended failure."
+      },
+      "external_blockers": [],
+      "next_action": "Different reviewer repeats complete actual service and intended negative/restored on focused candidate before merge."
+    },
+    "T-INT-HOST-04.3.F1": {
+      "task_id": "T-INT-HOST-04.3.F1",
+      "status": "COMPLETE",
+      "owner": "Assigned jobs correction author",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-04.2.F1"
+      ],
+      "source_or_artifact_identity": {
+        "author_head": "322c2448d4bef01232dbff09e65855198529d8c9",
+        "candidate": "8340b0a",
+        "scope": "jobs/sqlstore/txrunner_test.go only"
+      },
+      "commands_and_results": [
+        "Exact resolver backend PID replaces all-backend activity enumeration; original stale-success and unchanged-row assertions retained.",
+        "Old pre-lock behavior failed intended stale-success assertion in four seconds; exact original production source restored and required normal/race each ten entries PASS. Scoped normal/race/vet/lint passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "DIFFERENT_FINAL_REVIEW_PENDING",
+        "prior_finding": "P2 negative failed lock observation rather than intended assertion; author correction demonstrated intended failure."
+      },
+      "external_blockers": [],
+      "next_action": "Different reviewer repeats complete actual service and intended negative/restored on focused candidate before merge."
     }
   },
   "receipt_requirements": [

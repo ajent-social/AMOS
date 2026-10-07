@@ -26912,7 +26912,7 @@
       "owner": "Assigned component authors",
       "estimate": "revalidate at preflight",
       "acceptance": "Only assigned session and job-store files implement additive APIs, retain legacy public shapes and avoid pool/migration/lifecycle authority.",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.2",
       "dependency_depth": 19
     },
@@ -26927,7 +26927,7 @@
       "owner": "Assigned component authors",
       "estimate": "revalidate at preflight",
       "acceptance": "Actual precreated TLS PostgreSQL runtime-role tests prove session operations and job atomicity, cancellation and post-lock fencing; unit/race/vet/lint and negative/restored checks pass without skipped prerequisites.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.3",
       "dependency_depth": 20
     },
@@ -26937,14 +26937,15 @@
       "kind": "agent",
       "stage": "review",
       "deps": [
-        "T-INT-HOST-04.3"
+        "T-INT-HOST-04.3",
+        "T-INT-HOST-04.3.F1"
       ],
       "owner": "Independent Astra low reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "Different exact-head reviewers clear both complete source slices and actual service evidence; accepted findings receive correction and distinct review before merge.",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.4",
-      "dependency_depth": 21
+      "dependency_depth": 22
     },
     {
       "id": "T-INT-HOST-04.5",
@@ -26959,7 +26960,7 @@
       "acceptance": "Both reviewed source slices land through guarded PR rebase merges after immediate head/base/check readback, preserving protected policy.",
       "status": "PLANNED",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.5",
-      "dependency_depth": 22
+      "dependency_depth": 23
     },
     {
       "id": "T-INT-HOST-04.6",
@@ -26974,7 +26975,37 @@
       "acceptance": "Both landed source slices match reviewed bytes and fresh actual-service checks pass. Remaining service constructors, production host and provider/production-role qualification remain open.",
       "status": "PLANNED",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.6",
-      "dependency_depth": 23
+      "dependency_depth": 24
+    },
+    {
+      "id": "T-INT-HOST-04.2.F1",
+      "title": "Correct deterministic job lease waiter observation",
+      "kind": "agent",
+      "stage": "implement",
+      "deps": [
+        "T-INT-HOST-04.2"
+      ],
+      "owner": "Assigned jobs correction author",
+      "estimate": "revalidate at preflight",
+      "acceptance": "A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.",
+      "status": "COMPLETE",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.2.F1",
+      "dependency_depth": 20
+    },
+    {
+      "id": "T-INT-HOST-04.3.F1",
+      "title": "Verify corrected job lease regression against old behavior",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-INT-HOST-04.2.F1"
+      ],
+      "owner": "Assigned jobs correction author",
+      "estimate": "revalidate at preflight",
+      "acceptance": "A distinct final reviewer must confirm exact test correction and intended stale-success negative with exact restoration; infrastructure failure is not regression evidence.",
+      "status": "COMPLETE",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.3.F1",
+      "dependency_depth": 21
     }
   ],
   "terminal_task": "T-PROD.13"
