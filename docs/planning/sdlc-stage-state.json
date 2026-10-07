@@ -617,7 +617,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -639,7 +640,7 @@
         ]
       },
       "external_blockers": [],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-INT-HOST-03.2": {
       "task_id": "T-INT-HOST-03.2",
@@ -661,7 +662,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -683,7 +685,7 @@
         ]
       },
       "external_blockers": [],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-INT-HOST-03.3": {
       "task_id": "T-INT-HOST-03.3",
@@ -705,7 +707,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -729,7 +732,7 @@
       "external_blockers": [
         "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
       ],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-SDLC-8-4.1": {
       "task_id": "T-SDLC-8-4.1",
@@ -844,7 +847,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -868,7 +872,7 @@
       "external_blockers": [
         "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
       ],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-INT-HOST-03.2.F1": {
       "task_id": "T-INT-HOST-03.2.F1",
@@ -890,7 +894,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -912,7 +917,7 @@
         ]
       },
       "external_blockers": [],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-INT-HOST-03.3.F1": {
       "task_id": "T-INT-HOST-03.3.F1",
@@ -934,7 +939,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -958,7 +964,7 @@
       "external_blockers": [
         "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
       ],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-INT-HOST-03.4.R1": {
       "task_id": "T-INT-HOST-03.4.R1",
@@ -980,7 +986,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -1004,7 +1011,7 @@
       "external_blockers": [
         "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
       ],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-SDLC-8-4.4": {
       "task_id": "T-SDLC-8-4.4",
@@ -1116,7 +1123,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -1140,7 +1148,7 @@
       "external_blockers": [
         "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
       ],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     },
     "T-INT-HOST-03.6": {
       "task_id": "T-INT-HOST-03.6",
@@ -1162,7 +1170,8 @@
       "commands_and_results": [
         "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
         "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
-        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists.",
+        "Subsequent private fixture cleanup/diagnostic corrections independently cleared with 31 offline tests and negative/restored checks; no second trial or actual service evidence."
       ],
       "independent_review_and_findings": {
         "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
@@ -1186,7 +1195,7 @@
       "external_blockers": [
         "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
       ],
-      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+      "next_action": "Await explicit owner authorization for one concrete bounded retry of the independently reviewed repaired fixture. Keep PR26 draft; real-service evidence, full review admission, merge and landed verification remain required."
     }
   },
   "receipt_requirements": [

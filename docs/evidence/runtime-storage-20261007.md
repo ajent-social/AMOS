@@ -40,8 +40,12 @@ The independently reviewed local test-fixture trial failed before PostgreSQL
 startup. Its owned resources were removed and cleanup was checked. No qualified
 connection configuration or actual TLS/runtime-role evidence was produced. The
 single authorized trial was consumed; further trial authority is not inferred.
-Fixture error classification and retained startup diagnostics require correction
-and independent review before another concrete trial can be proposed.
+After the failed trial, cleanup absence classification and bounded private
+startup-diagnostic retention were corrected by a different author and independently
+reviewed. The corrected private fixture passed 31 offline tests and independent
+negative/restored checks; all prior owned resources remain absent and launch is
+disabled. A concrete single-retry proposal is prepared, but new owner authority
+is still required. The original startup failure cause remains unknown.
 
 INT-HOST-03 verification, full review admission, merge, landed verification and
 source acceptance remain open. Unit fixtures do not satisfy them. Existing
