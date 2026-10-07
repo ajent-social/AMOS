@@ -411,7 +411,8 @@
       },
       "commands_and_results": [
         "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
-        "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed."
+        "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed.",
+        "Coordinator adopted a bounded private caller-transaction DBTX adapter assignment in new app/operation/sqltx.go and sqltx_test.go only; source work and required real PostgreSQL checks remain in progress. No executor or authority entry point is enabled."
       ],
       "independent_review_and_findings": {
         "status": "CLEAR_COMPONENT_ONLY",
@@ -420,7 +421,7 @@
         "genuine_negative": "Digest comparison removal failed mismatch regression; exact restoration passed"
       },
       "external_blockers": [],
-      "next_action": "Implement separately assigned authority, SQL, replay, audit/effect and generator adapters; satisfy full task real-service acceptance before completing implementation/verification stages.",
+      "next_action": "Implement and independently review the private transaction adapter; require actual transaction service checks before component acceptance. Full executor shared-adapter and migration gates remain open.",
       "claim": {
         "resource": "T2.8",
         "tip": "df6030adf83a15dae812a688dfbf3f7b51e10124"
