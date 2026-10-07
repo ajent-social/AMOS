@@ -68,8 +68,18 @@ fabricated and normal merge protections remain enforced.
 
 The independently reviewed private handler completion design in PR41 landed
 `83023dc38b8a31714a2f5a656c1ceb9808d7bec0`, preserving all four design files.
-Its assigned three-file source leaf must invalidate/drain callback handles before
-codecs and obtain independent source review, actual service and landed evidence.
+Its three-file private implementation landed through PR44 at
+`c2cea8f4da80aa0ac1bb49ab096379083b910cf0`, from independently reviewed
+`1b86e3a38d58a3dfe6c22bad3f77ed7f770c0eab`, on live base
+`d5130d39e0e65358b2ccc7997889da3a801039e2`. All three files match.
+A different non-author reviewer repeated full-package actual TLS normal366/race366,
+vet/pinned lint and a faithful ordering mutation that moved completion before
+invalidation. The intended retained-database assertion failed; exact-restored
+full actual checks passed. Fresh landed required-service four entries passed.
+The helper closes/drains retained DBTX, Row and Rows before kind/codec work,
+preserves complete typed nil-interface results and handler/cleanup error and panic
+semantics, and leaves transaction ownership with its future executor. Missing
+service configuration fails visibly. This does not confer operation authority.
 Existing billing transaction runners need no replacement constructor. Paid-access
 work still depends on complete T2.8 authority; production host composition still
 needs explicit HTTPS/cookie/proxy, finite route, mail/key and schema-readiness
