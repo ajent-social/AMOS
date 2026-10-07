@@ -293,7 +293,8 @@
       "Real PostgreSQL tests passed for concurrent signup, actual email challenge confirmation, verified-only signin, generic credential failures, malformed email fallback denial, session rotation and server-generated request IDs.",
       "Independent review caught login CSRF; corrected configured-origin and strict JSON checks. Cross-origin gate mutation failed as predicted and restored regression passed.",
       "Session form CSRF is bounded and body-only; duplicate Origin/Referer denial covers protected mutation and signout. Scoped lint passed with zero issues. Full authentication suite and live email delivery remain unqualified.",
-      "Supplemental v1.16 login transaction-only constructor assigned at main4e7afabc and queued through the shared dispatcher; source, actual runtime-role verification, different review and landed gates remain pending. Original accepted component scope is unchanged."
+      "Supplemental v1.16 login transaction-only constructor assigned at main4e7afabc and queued through the shared dispatcher; source, actual runtime-role verification, different review and landed gates remain pending. Original accepted component scope is unchanged.",
+      "Supplemental login constructor source6f731a2d independently inspected: normal25/race25 zero skips, vet/lint and nil/default/options negative-restored checks passed. Actual required runtime profile, final service review, merge and landed checks remain pending; no new acceptance."
     ]
   },
   "T5.2": {
