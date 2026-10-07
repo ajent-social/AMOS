@@ -69,3 +69,38 @@ A concrete [session recheck proposal](session-recheck-preflight.md) records the
 missing opaque middleware provenance and post-lock database-time checks. It is
 not frozen or implemented. Rotation and other writer-order incompatibilities remain
 explicit dispatch blockers; transaction-only constructors do not resolve them.
+
+## Production host composition audit after constructor landing
+
+At the login/recovery/callback completion checkpoint, transaction-only identity,
+material and job-store constructors are present. Three concrete composition
+limitations still prevent treating `NewLocal` as a production constructor:
+
+- Workspace switching's `NewSQLService` still accepts `*storage.DB`. Its existing
+  task ownership must be respected; a separately adopted transaction-only seam
+  and real checks are required before full host source wiring.
+- `Host.bind` may insert deployment identity. Runtime composition must require a
+  preprovisioned immutable binding via the proposed
+  [read-only prerequisite](../contracts/runtime-host-readiness.md); it must not
+  call the development initializer or infer readiness from a database ping.
+- Local composition embeds evaluation password/MFA policy, local mail capture,
+  derived evaluation vault keys and a second raw SQL job pool. Production must
+  explicitly receive reviewed policy, mail and vault capabilities, use one
+  RuntimeDB and its transaction-only job store, and qualify those participants
+  together against one intended database.
+
+The initial production profile should use direct HTTPS with one canonical
+origin, secure host cookies and no trusted forwarding headers. Proxy support
+requires its own finite trusted-peer contract; forwarding headers must not
+silently select origin, client identity or authority. TLS certificate/key
+resolution remains owner-controlled and outside tracked configuration.
+
+Before full constructor source, freeze exact public config/API and failure
+cleanup, a read-only complete-schema check, preprovisioned realm binding,
+finite route manifests, provider/key ownership, bounded worker shutdown and
+same-pool service composition. Preserve the local constructor. Required composed
+TLS HTTP/PostgreSQL tests include secure cookies/origin/CSRF, dependency failure,
+atomic outbox behavior, denied foreign realms, cancellation and exact cleanup.
+Magic-link construction and full current authority remain separate; raw handler
+mounting cannot bypass the operation executor gates. No production/provider
+acceptance follows from these source-grounded design prerequisites.

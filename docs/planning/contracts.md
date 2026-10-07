@@ -347,3 +347,13 @@ This is not a SQL sandbox or an executor; future boundary wiring remains gated.
 execution from result completion so v1.18 invalidation happens before codecs.
 Independent design review and PR41 landing freeze this private source boundary.
 No exported executor, authority, migration or transport is added.
+
+## Proposed amendment v1.20: read-only runtime binding readiness
+
+[ADR 031](../adr/031-read-only-runtime-binding.md) and the
+[runtime binding proposal](../contracts/runtime-host-readiness.md) separate the
+production host's read-only deployment identity check from development binding
+initialization. One bounded private helper uses only TxRunner, explicit read-only
+READ COMMITTED, and the preprovisioned immutable binding table. Independent
+design review and landing precede the three-file source assignment. This does
+not freeze or enable a complete production constructor or operation authority.

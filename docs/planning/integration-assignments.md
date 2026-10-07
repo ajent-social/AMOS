@@ -214,3 +214,18 @@ admission during shared-dispatch infrastructure unavailability. The already-admi
 coordinator authored only the three assigned files in a separate worktree. A
 different exact-head source reviewer is mandatory; design review is not source
 review and no self-approval is permitted.
+
+### Proposed runtime host binding prerequisite
+
+The coordinator owns proposed v1.20/ADR031. After independent design review and
+landing, an explicitly assigned author may own only new
+`apphost/runtime_binding.go`, `apphost/runtime_binding_test.go` and
+`apphost/runtime_binding_integration_test.go` for the bounded read-only binding
+check. Source needs separately reviewed finite BOUND/EMPTY/MISSING local runtime
+profiles, actual TLS checks, independent source/fix review and landed checks.
+The source slice grants no schema creation, local-host modification or full
+production constructor authority. Existing foreign task claims are preserved.
+
+The separate current-authority audit reads session and writer paths and returns
+an exact-source proposal to the coordinator. It owns no tracked source or shared
+contract. The coordinator retains amendment adoption, plan state and wiring.
