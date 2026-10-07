@@ -136,7 +136,7 @@ func TestRuntimeEmptyAmbientValuesAreIgnored(t *testing.T) {
 }
 
 func TestRuntimeRejectsMalformedOrMixedPEM(t *testing.T) {
-	cases := [][]byte{nil, []byte("-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----\n"), append(testRootPEM(t), []byte("trailing")...), append(testRootPEM(t), []byte("-----BEGIN PRIVATE KEY-----\nAA==\n-----END PRIVATE KEY-----\n")...)}
+	cases := [][]byte{nil, []byte("-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----\n"), append([]byte("-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----\n"), testRootPEM(t)...), append([]byte("-----BEGIN CERTIFICATE-----\ninvalid\n"), testRootPEM(t)...), append(testRootPEM(t), []byte("trailing")...), append(testRootPEM(t), []byte("-----BEGIN PRIVATE KEY-----\nAA==\n-----END PRIVATE KEY-----\n")...)}
 	for i, data := range cases {
 		t.Run(string(rune('a'+i)), func(t *testing.T) {
 			roots := x509.NewCertPool()
@@ -148,6 +148,10 @@ func TestRuntimeRejectsMalformedOrMixedPEM(t *testing.T) {
 	roots := x509.NewCertPool()
 	if err := appendStrictCerts(roots, testRootPEM(t)); err != nil {
 		t.Fatalf("valid cert rejected: %v", err)
+	}
+	bundle := append(testRootPEM(t), testRootPEM(t)...)
+	if err := appendStrictCerts(x509.NewCertPool(), bundle); err != nil {
+		t.Fatalf("valid certificate bundle rejected: %v", err)
 	}
 }
 
@@ -790,7 +794,9 @@ func runtimeServiceLifecycle(t *testing.T, config RuntimeConfig) {
 		if err := db.PingContext(waitCtx); err != context.DeadlineExceeded {
 			t.Error("pool wait ping ignored deadline")
 		}
-		if err := db.WithTx(waitCtx, nil, func(*sql.Tx) error { t.Error("expired pool wait admitted callback"); return nil }); err != context.DeadlineExceeded {
+		txWaitCtx, stopTxWait := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer stopTxWait()
+		if err := db.WithTx(txWaitCtx, nil, func(*sql.Tx) error { t.Error("expired pool wait admitted callback"); return nil }); err != context.DeadlineExceeded {
 			t.Error("pool wait transaction ignored deadline")
 		}
 		return nil
