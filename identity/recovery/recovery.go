@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/mail"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 	"unicode"
@@ -68,8 +69,26 @@ type Config struct {
 	ChallengeLifetime                            time.Duration
 }
 
+// TxRunner is the transaction capability consumed by recovery.
+type TxRunner interface {
+	WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error
+}
+
+type TxConfig struct {
+	Passwords                                    *password.Hasher
+	Outbox                                       *sqlstore.Store
+	Renderer                                     *deliveryemail.Renderer
+	Materials                                    PasswordResetMaterialWriter
+	Policy                                       Policy
+	InstallationID, ApplicationID, EnvironmentID uuid.UUID
+	ApplicationOrigin                            string
+	DevelopmentLoopback                          bool
+	ChallengeLifetime                            time.Duration
+}
+
 type Service struct {
-	cfg    Config
+	db     TxRunner
+	cfg    TxConfig
 	origin *url.URL
 }
 
@@ -96,7 +115,18 @@ type response struct {
 }
 
 func New(cfg Config) (*Service, error) {
-	if cfg.DB == nil || cfg.Passwords == nil || cfg.Outbox == nil || cfg.Renderer == nil || cfg.Materials == nil || cfg.Policy == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
+	return NewWithTxRunner(cfg.DB, TxConfig{
+		Passwords: cfg.Passwords, Outbox: cfg.Outbox, Renderer: cfg.Renderer,
+		Materials: cfg.Materials, Policy: cfg.Policy, InstallationID: cfg.InstallationID,
+		ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID,
+		ApplicationOrigin: cfg.ApplicationOrigin, DevelopmentLoopback: cfg.DevelopmentLoopback,
+		ChallengeLifetime: cfg.ChallengeLifetime,
+	})
+}
+
+// NewWithTxRunner constructs recovery without probing or owning the runner.
+func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Service, error) {
+	if nilTxRunner(db) || cfg.Passwords == nil || cfg.Outbox == nil || cfg.Renderer == nil || cfg.Materials == nil || cfg.Policy == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
 		return nil, ErrConfiguration
 	}
 	if cfg.ChallengeLifetime == 0 {
@@ -109,7 +139,7 @@ func New(cfg Config) (*Service, error) {
 	if err != nil {
 		return nil, ErrConfiguration
 	}
-	s := &Service{cfg: cfg, origin: origin}
+	s := &Service{db: db, cfg: cfg, origin: origin}
 	probeID, err := store.NewID()
 	if err != nil {
 		return nil, ErrUnavailable
@@ -121,6 +151,19 @@ func New(cfg Config) (*Service, error) {
 		return nil, ErrConfiguration
 	}
 	return s, nil
+}
+
+func nilTxRunner(db TxRunner) bool {
+	if db == nil {
+		return true
+	}
+	v := reflect.ValueOf(db)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 // RequestHandler handles POST /forgot-password. It must be wrapped by the
@@ -157,11 +200,11 @@ func (s *Service) RequestHandler() http.Handler {
 }
 
 func (s *Service) ready(ctx context.Context) error {
-	if s == nil || s.cfg.DB == nil || ctx == nil {
+	if s == nil || s.db == nil || ctx == nil {
 		return ErrUnavailable
 	}
 	var ready bool
-	err := s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err := s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		var readOnly, defaultReadOnly, recovery bool
 		if err := tx.QueryRowContext(ctx, `SELECT current_setting('transaction_read_only')::boolean,
 			current_setting('default_transaction_read_only')::boolean, pg_is_in_recovery()`).Scan(&readOnly, &defaultReadOnly, &recovery); err != nil {
@@ -196,7 +239,7 @@ func (s *Service) ready(ctx context.Context) error {
 // consuming it; the state-changing POST is separately admitted and consumes it.
 func (s *Service) PreviewHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.cfg.DB == nil {
+		if s == nil || s.db == nil {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -267,7 +310,7 @@ func (s *Service) CompleteHandler() http.Handler {
 // validates CSRF/origin, and grants separate current/new password work budgets.
 func (s *Service) PasswordChangeHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.cfg.DB == nil {
+		if s == nil || s.db == nil {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -310,7 +353,7 @@ func (s *Service) PasswordChangeHandler() http.Handler {
 }
 
 func (s *Service) request(ctx context.Context, address string) error {
-	if s == nil || s.cfg.DB == nil || ctx == nil {
+	if s == nil || s.db == nil || ctx == nil {
 		return ErrUnavailable
 	}
 	challengeID, err1 := store.NewID()
@@ -322,7 +365,7 @@ func (s *Service) request(ctx context.Context, address string) error {
 	if err != nil {
 		return ErrUnavailable
 	}
-	err = s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		var personID, emailID uuid.UUID
 		var displayAddress string
 		err := tx.QueryRowContext(ctx, `SELECT p.id,e.id,e.display_address
@@ -378,7 +421,7 @@ func (s *Service) request(ctx context.Context, address string) error {
 
 func (s *Service) preview(ctx context.Context, challengeID uuid.UUID, digest []byte) (bool, error) {
 	var available bool
-	err := s.cfg.DB.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+	err := s.db.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
 		return tx.QueryRowContext(ctx, `SELECT EXISTS (
 			SELECT 1 FROM identity_challenges c
 			JOIN identity_persons p ON p.id=c.person_id
@@ -395,7 +438,7 @@ func (s *Service) preview(ctx context.Context, challengeID uuid.UUID, digest []b
 }
 
 func (s *Service) complete(ctx context.Context, challengeID uuid.UUID, digest []byte, newPassword string) error {
-	if s == nil || s.cfg.DB == nil || ctx == nil {
+	if s == nil || s.db == nil || ctx == nil {
 		return ErrUnavailable
 	}
 	personID, emailID, ok, err := s.resetPreflight(ctx, challengeID, digest)
@@ -412,7 +455,7 @@ func (s *Service) complete(ctx context.Context, challengeID uuid.UUID, digest []
 		}
 		return ErrUnavailable
 	}
-	err = s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		st, err := store.New(tx)
 		if err != nil {
 			return err
@@ -490,7 +533,7 @@ func (s *Service) complete(ctx context.Context, challengeID uuid.UUID, digest []
 
 func (s *Service) resetPreflight(ctx context.Context, challengeID uuid.UUID, digest []byte) (uuid.UUID, uuid.UUID, bool, error) {
 	var personID, emailID uuid.UUID
-	err := s.cfg.DB.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+	err := s.db.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
 		return tx.QueryRowContext(ctx, `SELECT p.id,e.id
 			FROM identity_challenges ch
 			JOIN identity_persons p ON p.id=ch.person_id
@@ -511,12 +554,12 @@ func (s *Service) resetPreflight(ctx context.Context, challengeID uuid.UUID, dig
 }
 
 func (s *Service) change(ctx context.Context, principal identity.Principal, currentPassword, newPassword string) error {
-	if s == nil || s.cfg.DB == nil || ctx == nil {
+	if s == nil || s.db == nil || ctx == nil {
 		return ErrUnavailable
 	}
 	personID := principal.PersonID()
 	var encoded string
-	err := s.cfg.DB.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+	err := s.db.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
 		return tx.QueryRowContext(ctx, `SELECT c.verifier_hash
 			FROM identity_persons p
 			JOIN identity_credentials c ON c.person_id=p.id AND c.method='email_password' AND c.revoked_at IS NULL
@@ -547,7 +590,7 @@ func (s *Service) change(ctx context.Context, principal identity.Principal, curr
 		}
 		return ErrUnavailable
 	}
-	err = s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		var currentHash string
 		var epoch int64
 		var state string
@@ -745,7 +788,7 @@ func writeResetPage(w http.ResponseWriter, method string, available bool, challe
 // Preview validates a reset proof without consuming it. Invalid or expired
 // proofs share the same result; callers must not render the supplied token.
 func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, token string) (bool, error) {
-	if s == nil || s.cfg.DB == nil || ctx == nil {
+	if s == nil || s.db == nil || ctx == nil {
 		return false, ErrUnavailable
 	}
 	id, ok := parseID(challengeID.String())
