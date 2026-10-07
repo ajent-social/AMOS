@@ -1645,7 +1645,7 @@
             "name": "MFA",
             "owner": "Assigned MFA source author",
             "base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
-            "status": "SOURCE_COMPLETE_INDEPENDENT_REVIEW_AND_SERVICE_PENDING",
+            "status": "INDEPENDENT_SOURCE_REVIEWED_ACTUAL_REQUIRED_PENDING",
             "paths": [
               "identity/mfa/mfa.go",
               "identity/mfa/transaction_test.go",
@@ -1658,13 +1658,17 @@
               "Merge and landed checks"
             ],
             "author_head": "9011aa7a9439dce4df7e7bf94090e334bdaaeab7",
-            "verification": "Scoped normal/race/vet/pinned lint and author negative/restored checks pass; dedicated required service visibly failed absent profile. No actual-service, independent source acceptance, merge or landed claim."
+            "verification": "Scoped normal/race/vet/pinned lint and author negative/restored checks pass; dedicated required service visibly failed absent profile. No actual-service, independent source acceptance, merge or landed claim.",
+            "evidence": "docs/evidence/constructor-followons-20261007.md",
+            "candidate": "435c78b8",
+            "pr": 39,
+            "review_finding": "No actionable source finding; actual required service pending."
           },
           {
             "name": "identity email",
             "owner": "Assigned email source author",
             "base": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
-            "status": "SOURCE_COMPLETE_INDEPENDENT_REVIEW_AND_SERVICE_PENDING",
+            "status": "INDEPENDENT_SOURCE_REVIEWED_ACTUAL_REQUIRED_PENDING",
             "paths": [
               "identity/email/email.go",
               "identity/email/transaction_test.go",
@@ -1677,7 +1681,11 @@
               "Merge and landed checks"
             ],
             "author_head": "67ebbdde98ff1b50f1c755c3a6d95277ac7f6d76",
-            "verification": "Scoped normal/race/vet/pinned lint and author negative/restored checks pass; dedicated required service visibly failed absent profile. No actual-service, independent source acceptance, merge or landed claim."
+            "verification": "Scoped normal/race/vet/pinned lint and author negative/restored checks pass; dedicated required service visibly failed absent profile. No actual-service, independent source acceptance, merge or landed claim.",
+            "evidence": "docs/evidence/constructor-followons-20261007.md",
+            "corrected_head": "fbfdcffc67d16eccbe27e1a539c4ae9165f1595f",
+            "pr": 38,
+            "review_finding": "R1 missing actual commit-error evidence; separate author added test-only correction, different final review pending."
           }
         ]
       },
