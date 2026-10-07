@@ -410,9 +410,9 @@
         "landed": "8181fc48bf12cce569ab50d68cd261cca0ebd071",
         "handler_completion_followon": {
           "contract_pr": 41,
-          "reviewed_head": "b891900de42da11a1191c8b5ec24e277fe9e4d2b",
+          "reviewed_head": "1b86e3a38d58a3dfe6c22bad3f77ed7f770c0eab",
           "landed": "83023dc38b8a31714a2f5a656c1ceb9808d7bec0",
-          "status": "SOURCE_VERIFIED_INDEPENDENT_REVIEW_PENDING",
+          "status": "LANDED_LOCAL_COMPONENT",
           "owner": "Coordinator source author; different dispatcher-admitted reviewer required",
           "paths": [
             "app/operation/operation.go",
@@ -420,14 +420,46 @@
             "app/operation/callback_invocation_test.go"
           ],
           "gates": [
-            "Source implementation and normal/race/vet/lint",
-            "Independent exact-head review including wrong-order negative/restored",
-            "Required actual PostgreSQL runtime-profile checks",
-            "Guarded merge and fresh landed service checks",
-            "Full executor authority, replay, audit/effects and transport remain separate"
+            "Full executor authority, refreshed-principal and writer-order contracts",
+            "Replay/capacity/audit/effects and transport composition",
+            "Production role/provider/budget/DNS qualification"
           ],
           "candidate": "1b86e3a38d58a3dfe6c22bad3f77ed7f770c0eab",
-          "verification": "Offline344 and actual full-package366 PASS, vet/pinnedlint PASS; actual boundary4 entries included. Independent review and landed gates remain."
+          "verification": "Different exact-head reviewer full-package actual normal366/race366 zeroSKIP, vet/pinnedlint0 and intended ordering-negative/restored PASS. Fresh landed actual4PASS; all three source files equal.",
+          "pr": 44,
+          "reviewed_base": "83023dc38b8a31714a2f5a656c1ceb9808d7bec0",
+          "live_base": "d5130d39e0e65358b2ccc7997889da3a801039e2",
+          "source_landed": "c2cea8f4da80aa0ac1bb49ab096379083b910cf0",
+          "independent_review": {
+            "status": "CLEAR",
+            "head": "1b86e3a38d58a3dfe6c22bad3f77ed7f770c0eab",
+            "findings": [],
+            "author": "Coordinator",
+            "reviewer": "Different read-only source reviewer"
+          },
+          "stages": [
+            {
+              "stage": "implement",
+              "status": "COMPLETE"
+            },
+            {
+              "stage": "verify",
+              "status": "COMPLETE"
+            },
+            {
+              "stage": "independent-review",
+              "status": "COMPLETE"
+            },
+            {
+              "stage": "merge",
+              "status": "COMPLETE"
+            },
+            {
+              "stage": "verify-landed",
+              "status": "COMPLETE"
+            }
+          ],
+          "evidence": "docs/evidence/login-recovery-constructors-20261007.md"
         }
       },
       "commands_and_results": [

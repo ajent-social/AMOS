@@ -61,7 +61,7 @@ The private adapter is not the frozen callback wrapper. The separate v1.18
 [callback contract](../contracts/callback-database.md) requires rejection of direct
 transaction-control statements and invalidation of retained DBTX, Row and Rows
 after callback return. Guard source has landed after a separate cancellation-test correction, different
-independent actual-service review and fresh landed checks. The v1.19 handler-before-codec contract has independent design review and PR41 landing; its assigned private implementation is a further explicit gate. Registry binding and these helpers confer no operation authority.
+independent actual-service review and fresh landed checks. The v1.19 handler-before-codec contract and private implementation have now landed through PR41 and PR44 with different source review, actual full-package366normal/race, intended ordering-negative/restored and fresh landed4PASS. Registry binding and these helpers confer no operation authority.
 
 ## Next current-session authority seam
 

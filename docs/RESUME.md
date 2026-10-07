@@ -264,7 +264,8 @@ Login's additive transaction-only constructor landed through PR42 with independe
 review, actual runtime-role normal/race checks, meaningful negative/restored
 evidence and a fresh landed service check. Recovery's four-file candidate
 also landed in PR43 after different exact-head review and local/actual-service
-checks; fresh landed13PASS and all four reviewed files match. The reviewed v1.19 handler completion contract landed in PR41;
-its private source leaf remains separately gated. These changes preserve the
+checks; fresh landed13PASS and all four reviewed files match. The reviewed v1.19 handler completion contract landed in PR41, and its private
+source leaf landed in PR44 after different exact-head review, actual366normal/race
+and ordering-negative/restored checks; fresh landed4PASS and three files match. These changes preserve the
 59 accepted-task registry and do not complete T2.8, production composition or
 provider qualification. See [component evidence](evidence/login-recovery-constructors-20261007.md).
