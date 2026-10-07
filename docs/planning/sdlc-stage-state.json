@@ -412,7 +412,7 @@
       "commands_and_results": [
         "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
         "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed.",
-        "Coordinator adopted a bounded private caller-transaction DBTX adapter assignment in new app/operation/sqltx.go and sqltx_test.go only; source work and required real PostgreSQL checks remain in progress. No executor or authority entry point is enabled."
+        "Private SQL result adapter component landed through PR28 at cafb6d638bca4f226db8a5e764788c6b7a516c79 from reviewed178ce7424a8dabe77636772ab184d308b5229117/basef60759556914df571a32193a6cc21af445913bd1. Different final reviewer actual PostgreSQL full-package normal/race each61PASS including5service entries, zero skips/failures; fresh landed service5PASS and both files equal. Full executor and callback guards remain open; T2.8 is not accepted. See docs/evidence/operation-sql-adapter-20261007.md."
       ],
       "independent_review_and_findings": {
         "status": "CLEAR_COMPONENT_ONLY",
@@ -421,13 +421,69 @@
         "genuine_negative": "Digest comparison removal failed mismatch regression; exact restoration passed"
       },
       "external_blockers": [],
-      "next_action": "Implement and independently review the private transaction adapter; require actual transaction service checks before component acceptance. Full executor shared-adapter and migration gates remain open.",
+      "next_action": "Define and independently review callback transaction-control/lifetime guards and remaining current-authority, replay/capacity, migration, audit/effect and transport contracts before executor admission.",
       "claim": {
         "resource": "T2.8",
         "tip": "df6030adf83a15dae812a688dfbf3f7b51e10124"
       },
       "dependency_receipts": [],
-      "dependency_scope": "Only the explicitly assigned registry slice was admitted against landed v1.13/v1.14 design; full task dependency/preflight completion is not inferred."
+      "dependency_scope": "Only the explicitly assigned registry slice was admitted against landed v1.13/v1.14 design; full task dependency/preflight completion is not inferred.",
+      "component_slices": [
+        {
+          "name": "private caller-transaction result adapter",
+          "status": "COMPLETE_COMPONENT_ONLY",
+          "source_or_artifact_identity": {
+            "reviewed_head": "178ce7424a8dabe77636772ab184d308b5229117",
+            "base": "f60759556914df571a32193a6cc21af445913bd1",
+            "landed": "cafb6d638bca4f226db8a5e764788c6b7a516c79",
+            "pr": 28,
+            "evidence": "docs/evidence/operation-sql-adapter-20261007.md"
+          },
+          "stages": [
+            {
+              "stage": "implement",
+              "status": "COMPLETE",
+              "head": "1611f670497a50fc366d0d650d80148146e62ea6"
+            },
+            {
+              "stage": "review",
+              "status": "CHANGES_REQUESTED",
+              "finding": "Actual service commit/rollback tests rejected explicit identity insertion."
+            },
+            {
+              "stage": "fix",
+              "status": "COMPLETE",
+              "head": "178ce7424a8dabe77636772ab184d308b5229117",
+              "different_author": true
+            },
+            {
+              "stage": "verify",
+              "status": "COMPLETE",
+              "result": "Scoped unit/vet/pinned lint pass; actual-service checks delegated to different final reviewer."
+            },
+            {
+              "stage": "re-review",
+              "status": "CLEAR",
+              "different_reviewer": true,
+              "result": "Actual full-package normal/race each61PASS including5required-service entries; zero skip/fail."
+            },
+            {
+              "stage": "merge",
+              "status": "COMPLETE",
+              "result": "Immediate head/base/check readback and guarded rebase; no policy bypass."
+            },
+            {
+              "stage": "verify-landed",
+              "status": "COMPLETE",
+              "result": "Both files equal reviewed bytes; fresh actual-service5PASS zero skip/fail."
+            }
+          ],
+          "limitations": [
+            "Not a callback wrapper: transaction-control rejection and retained-handle invalidation remain required.",
+            "No operation authority, executor, provider or production qualification."
+          ]
+        }
+      ]
     },
     "T-INT-HOST-02.1": {
       "task_id": "T-INT-HOST-02.1",

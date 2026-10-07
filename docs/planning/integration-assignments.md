@@ -86,3 +86,5 @@ The private SQL result-type adapter is not the complete callback wrapper: v1.13
 transaction-control rejection and invalidation of retained DBTX/Row/Rows remain
 mandatory before anything is supplied as InvocationContext.DB. No exported
 construction or dispatch path is added by this prerequisite.
+
+- Private adapter component outcome: independently reviewed PR28 landed with actual PostgreSQL normal/race and fresh landed checks. Full T2.8 and the callback guards above remain open; see [receipt](../evidence/operation-sql-adapter-20261007.md).

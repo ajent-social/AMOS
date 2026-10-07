@@ -1,6 +1,6 @@
 # Source-grounded follow-on readiness
 
-Source baseline: `f60759556914df571a32193a6cc21af445913bd1`, including
+Source baseline: `cafb6d638bca4f226db8a5e764788c6b7a516c79`, including
 independently reviewed and locally service-verified runtime storage from PR26.
 The bounded private transaction adapter is adopted; other shared API changes
 remain proposals. These findings grant no operation or production authority.
@@ -37,9 +37,10 @@ The adopted prerequisite is a private caller-transaction adapter in new
 A private non-embedded adapter could delegate exactly one existing transaction,
 return a nil Rows interface on query error, and expose no commit, rollback, pool,
 retry or invocation entry point. The coordinator has adopted this two-file private-helper assignment in the
-integration assignment record; implementation and acceptance are pending.
-Real PostgreSQL transaction visibility, rollback, cancellation and lifecycle
-checks are required before its acceptance; mocks are insufficient.
+integration assignment record. The private component now landed through PR28
+with independent actual PostgreSQL normal/race and landed checks; see
+[component receipt](../evidence/operation-sql-adapter-20261007.md). It does not
+complete the executor or qualify a provider.
 
 Full dispatch still requires reviewed current-session/authority and policy
 adapters, lock ordering compatible with writers, replay/capacity storage and
