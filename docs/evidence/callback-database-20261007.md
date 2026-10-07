@@ -26,7 +26,8 @@ the transaction; the surviving-write assertion failed as intended, then exact
 restoration passed. This mutation proves write-survival detection, not a separate
 negative for the backend-disappearance check. No cleanup errors were emitted.
 
-Fresh landed required-service verification remains pending its serial fixture
-window. Handler-return invalidation before codec work, current authority,
+Fresh landed required-service verification passed all 13 entries, with no skips
+or failures. The final combined landed tree equals the independently built and
+unit-checked aggregate. Handler-return invalidation before codec work, current authority,
 replay/capacity persistence, audit/effects and full executor integration remain
 open. T2.8 is not accepted. No provider, production or hosted CI success is claimed.

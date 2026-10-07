@@ -225,6 +225,6 @@ The following split index is the explicit `/ship` planning target for delivery s
 
 ### E-SDLC-RUNTIME -- Runtime-only PostgreSQL -> sdlc/runtime-storage.md (12/12)
 
-### E-SDLC-TX -- Initial transaction-only composition -> sdlc/transaction-composition.md (5/8)
+### E-SDLC-TX -- Initial transaction-only composition -> sdlc/transaction-composition.md (8/8)
 
 Validation: [obtained planning checks](sdlc-validation.md).

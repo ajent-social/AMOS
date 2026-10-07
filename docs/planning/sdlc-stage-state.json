@@ -503,7 +503,7 @@
         },
         {
           "name": "private callback SQL and lifetime guard",
-          "status": "MERGED_LANDED_CHECK_PENDING",
+          "status": "COMPLETE_COMPONENT_ONLY",
           "source_or_artifact_identity": {
             "original_author": "be7844cac6a2b2ce9a0a5af9310fb62b4a7882fd",
             "test_correction": "8c22bc1cb6b9013683b6d26fc84325c5df3b19bc",
@@ -544,8 +544,8 @@
             },
             {
               "stage": "verify-landed",
-              "status": "PENDING",
-              "result": "Fresh actual-service serial window pending."
+              "status": "COMPLETE",
+              "result": "Fresh landed required service13PASS, zero skips/fails, four files equal. Final aggregate tree also matches independently built tree."
             }
           ],
           "limitations": [
@@ -1521,18 +1521,40 @@
       "source_or_artifact_identity": {
         "contract_pr": 30,
         "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
-        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab",
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
+        }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
-        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "status": "DESIGN_CLEAR_SOURCE_PENDING",
-        "scope": "v1.16/v1.17 design only"
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     },
     "T-INT-HOST-04.2": {
       "task_id": "T-INT-HOST-04.2",
@@ -1578,7 +1600,7 @@
           "legacy_test_fix": "748ace9a8f92d463beef80221395713ca149bd74",
           "runtime_format_fix": "4a2273dd5c4f2f1b880891a65eda8a444e19948c",
           "base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
-          "status": "SOURCE_REVIEW_CLEAR_ACTUAL_SERVICE_PENDING",
+          "status": "LANDED_LOCAL_COMPONENT",
           "ownership": "Original author owns store.go and two new tests; separate compatibility author owns legacy store_test.go; coordinator owns strict runtime-format correction; different final reviewer owns verification.",
           "review_findings": [
             {
@@ -1592,21 +1614,81 @@
               "independent_review": "Different exact-head compatibility review at 4a2273d; old-six assertion RED and exact-restored GREEN."
             }
           ],
-          "verification": "Scoped normal/race17 entries each, vet/lint pass; missing required service failed visibly. Dedicated material actual normal/race, merge and landed remain pending.",
-          "scope": "Supplemental local leaf; does not widen the initial session/jobs stage acceptance."
-        }
+          "verification": "Different exact-head source/correction review clear, actual required normal/race PASS, fresh landed required test PASS, four files equal.",
+          "scope": "Supplemental local leaf; does not widen the initial session/jobs stage acceptance.",
+          "landed": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "evidence": "docs/evidence/material-transaction-runner-20261007.md"
+        },
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
+        },
+        "followon_leaves": [
+          {
+            "name": "MFA",
+            "owner": "Assigned MFA source author",
+            "base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+            "status": "SOURCE_IN_PROGRESS",
+            "paths": [
+              "identity/mfa/mfa.go",
+              "identity/mfa/transaction_test.go",
+              "identity/mfa/runtime_integration_test.go"
+            ],
+            "gates": [
+              "Dedicated runtime profile",
+              "Actual required service",
+              "Different exact-head review",
+              "Merge and landed checks"
+            ]
+          },
+          {
+            "name": "identity email",
+            "owner": "Assigned email source author",
+            "base": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+            "status": "SOURCE_IN_PROGRESS",
+            "paths": [
+              "identity/email/email.go",
+              "identity/email/transaction_test.go",
+              "identity/email/runtime_integration_test.go"
+            ],
+            "gates": [
+              "Same-database identity/jobs/material profile",
+              "Actual atomic service verification",
+              "Different exact-head review",
+              "Merge and landed checks"
+            ]
+          }
+        ]
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
         "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
-        "Separate v1.16 protection leaf PR34 independently reviewed and landed, actual runtime-role normal/race and fresh landed three-entry service checks PASS; it does not widen the session/jobs stage scope."
+        "Separate v1.16 protection leaf PR34 independently reviewed and landed, actual runtime-role normal/race and fresh landed three-entry service checks PASS; it does not widen the session/jobs stage scope.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "status": "DESIGN_CLEAR_SOURCE_PENDING",
-        "scope": "v1.16/v1.17 design only"
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     },
     "T-INT-HOST-04.3": {
       "task_id": "T-INT-HOST-04.3",
@@ -1630,23 +1712,45 @@
           "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
           "status": "LANDED_LOCAL_COMPONENT",
           "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        },
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
         }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
         "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
-        "Session actual runtime-role normal/race each six entries PASS, no skips/failures; fresh landed service six PASS. Jobs normal/race each ten PASS, but old-behavior negative failed infrastructure observation instead of intended assertion; verification remains open."
+        "Session actual runtime-role normal/race each six entries PASS, no skips/failures; fresh landed service six PASS. Jobs normal/race each ten PASS, but old-behavior negative failed infrastructure observation instead of intended assertion; verification remains open.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "status": "DESIGN_CLEAR_SOURCE_PENDING",
-        "scope": "v1.16/v1.17 design only"
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     },
     "T-INT-HOST-04.4": {
       "task_id": "T-INT-HOST-04.4",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "owner": "Independent Astra low reviewer",
       "claim": {
         "resource": "R-amos-integrator",
@@ -1667,22 +1771,44 @@
           "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
           "status": "LANDED_LOCAL_COMPONENT",
           "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        },
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
         }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
-        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "session": "CLEAR exact candidate; landed verified",
-        "jobs": "P2 verification finding: isolated old-behavior negative did not reach intended assertion. Different correction author and final reviewer assigned."
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     },
     "T-INT-HOST-04.5": {
       "task_id": "T-INT-HOST-04.5",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "owner": "Coordinator",
       "claim": {
         "resource": "R-amos-integrator",
@@ -1702,22 +1828,44 @@
           "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
           "status": "LANDED_LOCAL_COMPONENT",
           "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        },
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
         }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
-        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "status": "DESIGN_CLEAR_SOURCE_PENDING",
-        "scope": "v1.16/v1.17 design only"
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     },
     "T-INT-HOST-04.6": {
       "task_id": "T-INT-HOST-04.6",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "owner": "Coordinator",
       "claim": {
         "resource": "R-amos-integrator",
@@ -1737,18 +1885,40 @@
           "landed": "92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f",
           "status": "LANDED_LOCAL_COMPONENT",
           "evidence": "docs/evidence/session-transaction-runner-20261007.md"
+        },
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
         }
       },
       "commands_and_results": [
         "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
-        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "status": "DESIGN_CLEAR_SOURCE_PENDING",
-        "scope": "v1.16/v1.17 design only"
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Correct the jobs post-lock regression observer, obtain different independent review with intended negative/restored actual-service evidence, then merge and verify landed jobs. Session component is landed."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     },
     "T-INT-HOST-04.2.F1": {
       "task_id": "T-INT-HOST-04.2.F1",
@@ -1764,18 +1934,40 @@
       "source_or_artifact_identity": {
         "author_head": "322c2448d4bef01232dbff09e65855198529d8c9",
         "candidate": "8340b0a",
-        "scope": "jobs/sqlstore/txrunner_test.go only"
+        "scope": "jobs/sqlstore/txrunner_test.go only",
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
+        }
       },
       "commands_and_results": [
         "Exact resolver backend PID replaces all-backend activity enumeration; original stale-success and unchanged-row assertions retained.",
-        "Old pre-lock behavior failed intended stale-success assertion in four seconds; exact original production source restored and required normal/race each ten entries PASS. Scoped normal/race/vet/lint passed."
+        "Old pre-lock behavior failed intended stale-success assertion in four seconds; exact original production source restored and required normal/race each ten entries PASS. Scoped normal/race/vet/lint passed.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "status": "DIFFERENT_FINAL_REVIEW_PENDING",
-        "prior_finding": "P2 negative failed lock observation rather than intended assertion; author correction demonstrated intended failure."
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Different reviewer repeats complete actual service and intended negative/restored on focused candidate before merge."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     },
     "T-INT-HOST-04.3.F1": {
       "task_id": "T-INT-HOST-04.3.F1",
@@ -1791,18 +1983,40 @@
       "source_or_artifact_identity": {
         "author_head": "322c2448d4bef01232dbff09e65855198529d8c9",
         "candidate": "8340b0a",
-        "scope": "jobs/sqlstore/txrunner_test.go only"
+        "scope": "jobs/sqlstore/txrunner_test.go only",
+        "jobs": {
+          "pr": 33,
+          "reviewed_head": "8340b0a1ab72399241a099389ba5761ef0358d82",
+          "reviewed_base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "live_base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
+          "landed": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
+          "files_equal": [
+            "jobs/sqlstore/store.go",
+            "jobs/sqlstore/txrunner.go",
+            "jobs/sqlstore/store_test.go",
+            "jobs/sqlstore/txrunner_test.go"
+          ],
+          "landed_service": {
+            "exit": 0,
+            "actions": {
+              "run": 10,
+              "output": 20,
+              "pass": 10
+            }
+          }
+        }
       },
       "commands_and_results": [
         "Exact resolver backend PID replaces all-backend activity enumeration; original stale-success and unchanged-row assertions retained.",
-        "Old pre-lock behavior failed intended stale-success assertion in four seconds; exact original production source restored and required normal/race each ten entries PASS. Scoped normal/race/vet/lint passed."
+        "Old pre-lock behavior failed intended stale-success assertion in four seconds; exact original production source restored and required normal/race each ten entries PASS. Scoped normal/race/vet/lint passed.",
+        "Jobs PR33 landed c3caa036 with four reviewed files equal and fresh actual10PASS. Whole landed tree equals independently built aggregate; 60 selected combined units PASS. Session fresh landed6PASS previously recorded."
       ],
       "independent_review_and_findings": {
-        "status": "DIFFERENT_FINAL_REVIEW_PENDING",
-        "prior_finding": "P2 negative failed lock observation rather than intended assertion; author correction demonstrated intended failure."
+        "status": "CLEAR_COMPONENTS",
+        "result": "Session exact-head review and actual normal/race clear; different jobs final review confirms corrected intended negative/restored and actual normal/race. No open finding for these component gates."
       },
       "external_blockers": [],
-      "next_action": "Different reviewer repeats complete actual service and intended negative/restored on focused candidate before merge."
+      "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
     }
   },
   "receipt_requirements": [

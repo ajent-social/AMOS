@@ -34,18 +34,18 @@ Scope: session and durable job-store constructors only; other services and produ
 
 #### Wave 22
 
-- [ ] T-INT-HOST-04.4 Independently review initial transaction-only components  Owner: Independent Astra low reviewer  Est: TBD  kind: agent stage: review  blocked-by: [E-SDLC-TX.T-INT-HOST-04.3, E-SDLC-TX.T-INT-HOST-04.3.F1]  acc: [Different exact-head reviewers clear both complete source slices and actual service evidence; accepted findings receive correction and distinct review before merge.]
+- [x] T-INT-HOST-04.4 Independently review initial transaction-only components  Owner: Independent Astra low reviewer  Est: TBD  kind: agent stage: review  blocked-by: [E-SDLC-TX.T-INT-HOST-04.3, E-SDLC-TX.T-INT-HOST-04.3.F1]  acc: [Different exact-head reviewers clear both complete source slices and actual service evidence; accepted findings receive correction and distinct review before merge.]
   - Acceptance: Different exact-head reviewers clear both complete source slices and actual service evidence; accepted findings receive correction and distinct review before merge.
   - Contracts: [services](../../contracts/transaction-services.md), [job store](../../contracts/transaction-job-store.md).
 
 #### Wave 23
 
-- [ ] T-INT-HOST-04.5 Merge initial transaction-only components  Owner: Coordinator  Est: TBD  kind: agent stage: merge  blocked-by: [E-SDLC-TX.T-INT-HOST-04.4]  acc: [Both reviewed source slices land through guarded PR rebase merges after immediate head/base/check readback, preserving protected policy.]
+- [x] T-INT-HOST-04.5 Merge initial transaction-only components  Owner: Coordinator  Est: TBD  kind: agent stage: merge  blocked-by: [E-SDLC-TX.T-INT-HOST-04.4]  acc: [Both reviewed source slices land through guarded PR rebase merges after immediate head/base/check readback, preserving protected policy.]
   - Acceptance: Both reviewed source slices land through guarded PR rebase merges after immediate head/base/check readback, preserving protected policy.
   - Contracts: [services](../../contracts/transaction-services.md), [job store](../../contracts/transaction-job-store.md).
 
 #### Wave 24
 
-- [ ] T-INT-HOST-04.6 Verify landed session and job-store components  Owner: Coordinator  Est: TBD  kind: agent stage: verify-landed  blocked-by: [E-SDLC-TX.T-INT-HOST-04.5]  acc: [Both landed source slices match reviewed bytes and fresh actual-service checks pass. Remaining service constructors, production host and provider/production-role qualification remain open.]
+- [x] T-INT-HOST-04.6 Verify landed session and job-store components  Owner: Coordinator  Est: TBD  kind: agent stage: verify-landed  blocked-by: [E-SDLC-TX.T-INT-HOST-04.5]  acc: [Both landed source slices match reviewed bytes and fresh actual-service checks pass. Remaining service constructors, production host and provider/production-role qualification remain open.]
   - Acceptance: Both landed source slices match reviewed bytes and fresh actual-service checks pass. Remaining service constructors, production host and provider/production-role qualification remain open.
   - Contracts: [services](../../contracts/transaction-services.md), [job store](../../contracts/transaction-job-store.md).

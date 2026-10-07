@@ -26943,7 +26943,7 @@
       "owner": "Independent Astra low reviewer",
       "estimate": "revalidate at preflight",
       "acceptance": "Different exact-head reviewers clear both complete source slices and actual service evidence; accepted findings receive correction and distinct review before merge.",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.4",
       "dependency_depth": 22
     },
@@ -26958,7 +26958,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Both reviewed source slices land through guarded PR rebase merges after immediate head/base/check readback, preserving protected policy.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.5",
       "dependency_depth": 23
     },
@@ -26973,7 +26973,7 @@
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
       "acceptance": "Both landed source slices match reviewed bytes and fresh actual-service checks pass. Remaining service constructors, production host and provider/production-role qualification remain open.",
-      "status": "PLANNED",
+      "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.6",
       "dependency_depth": 24
     },

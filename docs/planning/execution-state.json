@@ -105,7 +105,8 @@
     "evidence": [
       "Durable job/outbox implementation reviewed; PostgreSQL claim and empty-queue bugs corrected.",
       "Real SQL tests passed for concurrent claims, fencing, unknown outcomes and bounded attempts.",
-      "Integrated formatting, lint and tagged tests passed; no remote exactly-once guarantee claimed."
+      "Integrated formatting, lint and tagged tests passed; no remote exactly-once guarantee claimed.",
+      "Additive transaction-only job store landed through PR33 at c3caa036f89101cd336535a9ae2dc92f32fb6bd1 from reviewed8340b0a1ab72399241a099389ba5761ef0358d82. A distinct final reviewer reproduced intended old-behavior stale-success RED after separate test-observer correction; exact restoration and actual required normal/race each10PASS. Fresh landed10PASS, four reviewed files equal; combined exact-tree root build/selected60units PASS. Supplemental local source only. See docs/evidence/job-store-transaction-runner-20261007.md."
     ]
   },
   "T2.1": {
@@ -132,7 +133,8 @@
     "evidence": [
       "Protected material references constrained to canonical UUIDv7 registry identifiers after independent security review.",
       "SES boundary unit tests and real PostgreSQL outbox tests passed; integrated lint and database suite passed.",
-      "Live SES, owner protected-material resolver and retention workflow remain unqualified release dependencies."
+      "Live SES, owner protected-material resolver and retention workflow remain unqualified release dependencies.",
+      "Supplemental transaction-only protected material constructor landed through PR36 at bff204f8bdad5fe29e6dceeb73f06649521f9487 from independently reviewed4a2273dd5c4f2f1b880891a65eda8a444e19948c. Different review cleared coordinator strict fixture-format correction with old-six RED/exact-restored GREEN; actual dedicated runtime required normal/race and fresh landed test PASS. Four files equal reviewed bytes, no mail/provider/production qualification. See docs/evidence/material-transaction-runner-20261007.md."
     ]
   },
   "T4.1": {
@@ -623,7 +625,8 @@
       "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed.",
       "Registry/type binding only. Evaluator, current authority/session, SQL/replay/capacity/audit/effects, trusted generator metadata bridge, real PostgreSQL and transport dispatch remain unqualified. See docs/evidence/operation-registry-20261006.md.",
       "Private SQL result adapter component landed through PR28 at cafb6d638bca4f226db8a5e764788c6b7a516c79 from reviewed178ce7424a8dabe77636772ab184d308b5229117/basef60759556914df571a32193a6cc21af445913bd1. Different final reviewer actual PostgreSQL full-package normal/race each61PASS including5service entries, zero skips/failures; fresh landed service5PASS and both files equal. Full executor and callback guards remain open; T2.8 is not accepted. See docs/evidence/operation-sql-adapter-20261007.md.",
-      "Private replay hash/result integrity helpers landed through PR31 at e42634c74630699904cb3374573eb2a3f4868f7a, reviewed ac7e229efdf433b179133ae66e36b2d24ce3bed5/base de3461086262d2c68a7f7bb770c8858f92a30bab. Independent selected unit normal/race/vet/lint and three negative/restored pairs passed; exact rebase/landed bytes and fresh helper tests passed. Pure component only, required SQL tests explicitly excluded; full T2.8 remains open. See docs/evidence/replay-primitives-20261007.md."
+      "Private replay hash/result integrity helpers landed through PR31 at e42634c74630699904cb3374573eb2a3f4868f7a, reviewed ac7e229efdf433b179133ae66e36b2d24ce3bed5/base de3461086262d2c68a7f7bb770c8858f92a30bab. Independent selected unit normal/race/vet/lint and three negative/restored pairs passed; exact rebase/landed bytes and fresh helper tests passed. Pure component only, required SQL tests explicitly excluded; full T2.8 remains open. See docs/evidence/replay-primitives-20261007.md.",
+      "Private callback SQL/lifetime guard landed through PR35 at6cbc513cba11e08f3fb84d34c87a5d09f21ef3a7 from independently reviewedacf0fd1ff6bc337d7e6f74bfaa459ddd992d22c1. Separate cancellation-test correction requires backend termination and no surviving write; different final reviewer actual normal/race each13PASS and escaped-write assertion RED/exact-restored GREEN. Fresh landed13PASS and four files equal. Handler-before-codec wiring and full executor remain open; T2.8 not accepted. See docs/evidence/callback-database-20261007.md."
     ]
   },
   "T8.4": {
