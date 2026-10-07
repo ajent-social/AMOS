@@ -156,3 +156,5 @@ preserving encryption, key copying/rotation, scope/purpose/expiry and caller-own
 write transactions. Actual RuntimeDB verification requires its own reviewed
 precreated email-material schema and DML role; the session/jobs profiles cannot
 substitute. No mail delivery, production secret or host qualification is claimed.
+
+Material-store lane ownership amendment: its legacy `store_test.go` may retain the setup configuration and close `cfg.DB` instead of the private transaction capability. This preserves existing test lifecycle without adding pool authority to the service. Independent review covers this fourth file.
