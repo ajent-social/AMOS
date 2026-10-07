@@ -2,7 +2,7 @@
 
 Updated: 2026-10-07. Delivery is in progress through `/ship`; completed stages require the linked journal receipts and do not imply production acceptance.
 
-The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, with bounded parallel agents. The current source-delivery batch uses **GPT-6-Astra low** only; provider calls, spending and deployment are excluded from this batch. The graph contains 1,236 delivery nodes: the original 1,200 stages for 200 baseline-unaccepted source tasks, 15 shared/production gates, three explicit backup review-fix stages, six finite host routing stages and 12 runtime-only storage stages including six explicit review-fix stages. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
+The owner requests the entire existing product scope to run in production at **https://amos.sire.run on AWS**, with bounded parallel agents. The current source-delivery batch uses **GPT-6-Astra low** only; provider calls, spending and deployment are excluded from this batch. The graph contains 1,242 delivery nodes: the original 1,200 stages for 200 baseline-unaccepted source tasks, 15 shared/production gates, three explicit backup review-fix stages, six finite host routing stages and 12 runtime-only storage stages including six explicit review-fix stages, and six initial transaction-composition stages. It supplements the 257-task product inventory without replacing product IDs or reopening accepted work. The original inventory, contracts and acceptance registry retain authority over product behavior and completed work. This is ordinary, unenrolled repository delivery; no lifecycle enrollment or external scheduler is established.
 
 ## Graph and execution contract
 
@@ -224,5 +224,7 @@ The following split index is the explicit `/ship` planning target for delivery s
 ### E-SDLC-HOST -- Finite host routing -> sdlc/host-routing.md (6/6)
 
 ### E-SDLC-RUNTIME -- Runtime-only PostgreSQL -> sdlc/runtime-storage.md (12/12)
+
+### E-SDLC-TX -- Initial transaction-only composition -> sdlc/transaction-composition.md (1/6)
 
 Validation: [obtained planning checks](sdlc-validation.md).

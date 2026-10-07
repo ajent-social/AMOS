@@ -127,3 +127,14 @@ txrunner.go and package tests; four new callback guard files named by its contra
 No lane owns migrations, modules, apphost or executable wiring. Coordinator will
 record each actual dispatch and its exact frozen revision. Full product acceptance
 and production-role/provider/budget/DNS decisions remain separate gates.
+
+### Frozen first source dispatch
+
+PR30 landed v1.16–v1.18 at de3461086262d2c68a7f7bb770c8858f92a30bab after
+independent design review and Scanner-panic correction. Assigned authors now own
+session/session.go plus its new transaction/runtime tests; jobs/sqlstore/store.go,
+txrunner.go and assigned package tests; and the four new callback guard files.
+The coordinator retains all shared contracts, modules, migrations and wiring.
+INT-HOST-04 tracks session/jobs through six explicit delivery stages; private
+callback and replay components remain nested under in-progress T2.8. No full
+production composition or executor acceptance is inferred.

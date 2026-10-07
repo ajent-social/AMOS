@@ -413,7 +413,8 @@
         "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
         "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed.",
         "Private SQL result adapter component landed through PR28 at cafb6d638bca4f226db8a5e764788c6b7a516c79 from reviewed178ce7424a8dabe77636772ab184d308b5229117/basef60759556914df571a32193a6cc21af445913bd1. Different final reviewer actual PostgreSQL full-package normal/race each61PASS including5service entries, zero skips/failures; fresh landed service5PASS and both files equal. Full executor and callback guards remain open; T2.8 is not accepted. See docs/evidence/operation-sql-adapter-20261007.md.",
-        "Next bounded batch adopts private replay hash/result integrity helper source in two new operation files; source verification and independent review pending, no dispatch."
+        "Next bounded batch adopts private replay hash/result integrity helper source in two new operation files; source verification and independent review pending, no dispatch.",
+        "v1.18 callback guard design landed in PR30 after custom Scanner panic shielding correction and different final review. Four-file private factory author dispatched; handler-boundary wiring and executor remain gated."
       ],
       "independent_review_and_findings": {
         "status": "CLEAR_COMPONENT_ONLY",
@@ -1437,6 +1438,168 @@
       },
       "external_blockers": [],
       "next_action": "Production grants, composition, providers and deployment remain separate gates."
+    },
+    "T-INT-HOST-04.1": {
+      "task_id": "T-INT-HOST-04.1",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.6"
+      ],
+      "source_or_artifact_identity": {
+        "contract_pr": 30,
+        "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+      },
+      "commands_and_results": [
+        "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+      ],
+      "independent_review_and_findings": {
+        "status": "DESIGN_CLEAR_SOURCE_PENDING",
+        "scope": "v1.16/v1.17 design only"
+      },
+      "external_blockers": [],
+      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+    },
+    "T-INT-HOST-04.2": {
+      "task_id": "T-INT-HOST-04.2",
+      "status": "IN_PROGRESS",
+      "owner": "Assigned component authors",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-04.1"
+      ],
+      "source_or_artifact_identity": {
+        "contract_pr": 30,
+        "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+      },
+      "commands_and_results": [
+        "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+      ],
+      "independent_review_and_findings": {
+        "status": "DESIGN_CLEAR_SOURCE_PENDING",
+        "scope": "v1.16/v1.17 design only"
+      },
+      "external_blockers": [],
+      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+    },
+    "T-INT-HOST-04.3": {
+      "task_id": "T-INT-HOST-04.3",
+      "status": "PLANNED",
+      "owner": "Assigned component authors",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-04.2"
+      ],
+      "source_or_artifact_identity": {
+        "contract_pr": 30,
+        "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+      },
+      "commands_and_results": [
+        "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+      ],
+      "independent_review_and_findings": {
+        "status": "DESIGN_CLEAR_SOURCE_PENDING",
+        "scope": "v1.16/v1.17 design only"
+      },
+      "external_blockers": [],
+      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+    },
+    "T-INT-HOST-04.4": {
+      "task_id": "T-INT-HOST-04.4",
+      "status": "PLANNED",
+      "owner": "Independent Astra low reviewer",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-04.3"
+      ],
+      "source_or_artifact_identity": {
+        "contract_pr": 30,
+        "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+      },
+      "commands_and_results": [
+        "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+      ],
+      "independent_review_and_findings": {
+        "status": "DESIGN_CLEAR_SOURCE_PENDING",
+        "scope": "v1.16/v1.17 design only"
+      },
+      "external_blockers": [],
+      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+    },
+    "T-INT-HOST-04.5": {
+      "task_id": "T-INT-HOST-04.5",
+      "status": "PLANNED",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-04.4"
+      ],
+      "source_or_artifact_identity": {
+        "contract_pr": 30,
+        "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+      },
+      "commands_and_results": [
+        "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+      ],
+      "independent_review_and_findings": {
+        "status": "DESIGN_CLEAR_SOURCE_PENDING",
+        "scope": "v1.16/v1.17 design only"
+      },
+      "external_blockers": [],
+      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
+    },
+    "T-INT-HOST-04.6": {
+      "task_id": "T-INT-HOST-04.6",
+      "status": "PLANNED",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "R-amos-integrator",
+        "tip": "929e75f2cd395665eb42d93ead58296e5a7e6b89"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-04.5"
+      ],
+      "source_or_artifact_identity": {
+        "contract_pr": 30,
+        "reviewed_head": "672d45b709de06e7e72816501fb20844bc0ec5cd",
+        "contract_landed": "de3461086262d2c68a7f7bb770c8858f92a30bab"
+      },
+      "commands_and_results": [
+        "Design plan/public/whitespace checks and independent corrected-head review passed; all 11 landed contract/assignment files equal reviewed bytes.",
+        "Session and job-store source authors dispatched against the frozen landed revision; no source/service acceptance yet."
+      ],
+      "independent_review_and_findings": {
+        "status": "DESIGN_CLEAR_SOURCE_PENDING",
+        "scope": "v1.16/v1.17 design only"
+      },
+      "external_blockers": [],
+      "next_action": "Complete source, actual service checks, independent source review, guarded merge and landed verification."
     }
   },
   "receipt_requirements": [

@@ -26361,7 +26361,8 @@
         "T-SDLC-16-11.6",
         "T-SDLC-16-12.6",
         "T-INT-HOST-02.6",
-        "T-INT-HOST-03.6"
+        "T-INT-HOST-03.6",
+        "T-INT-HOST-04.6"
       ],
       "owner": "Coordinator",
       "estimate": "revalidate at preflight",
@@ -26884,6 +26885,96 @@
       "status": "COMPLETE",
       "dependency_depth": 15,
       "projection_id": "E-SDLC-RUNTIME.T-INT-HOST-03.4.R2"
+    },
+    {
+      "id": "T-INT-HOST-04.1",
+      "title": "Freeze initial transaction-only composition seams",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-INT-HOST-03.6"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Frozen v1.16/v1.17 contracts are independently reviewed and landed; session and jobs file ownership, compatibility and actual-service gates are recorded.",
+      "status": "COMPLETE",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.1",
+      "dependency_depth": 18
+    },
+    {
+      "id": "T-INT-HOST-04.2",
+      "title": "Implement transaction-only session and jobs constructors",
+      "kind": "agent",
+      "stage": "implement",
+      "deps": [
+        "T-INT-HOST-04.1"
+      ],
+      "owner": "Assigned component authors",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Only assigned session and job-store files implement additive APIs, retain legacy public shapes and avoid pool/migration/lifecycle authority.",
+      "status": "IN_PROGRESS",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.2",
+      "dependency_depth": 19
+    },
+    {
+      "id": "T-INT-HOST-04.3",
+      "title": "Verify actual session and job-store runtime composition",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-INT-HOST-04.2"
+      ],
+      "owner": "Assigned component authors",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Actual precreated TLS PostgreSQL runtime-role tests prove session operations and job atomicity, cancellation and post-lock fencing; unit/race/vet/lint and negative/restored checks pass without skipped prerequisites.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.3",
+      "dependency_depth": 20
+    },
+    {
+      "id": "T-INT-HOST-04.4",
+      "title": "Independently review initial transaction-only components",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-INT-HOST-04.3"
+      ],
+      "owner": "Independent Astra low reviewer",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Different exact-head reviewers clear both complete source slices and actual service evidence; accepted findings receive correction and distinct review before merge.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.4",
+      "dependency_depth": 21
+    },
+    {
+      "id": "T-INT-HOST-04.5",
+      "title": "Merge initial transaction-only components",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-INT-HOST-04.4"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Both reviewed source slices land through guarded PR rebase merges after immediate head/base/check readback, preserving protected policy.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.5",
+      "dependency_depth": 22
+    },
+    {
+      "id": "T-INT-HOST-04.6",
+      "title": "Verify landed session and job-store components",
+      "kind": "agent",
+      "stage": "verify-landed",
+      "deps": [
+        "T-INT-HOST-04.5"
+      ],
+      "owner": "Coordinator",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Both landed source slices match reviewed bytes and fresh actual-service checks pass. Remaining service constructors, production host and provider/production-role qualification remain open.",
+      "status": "PLANNED",
+      "projection_id": "E-SDLC-TX.T-INT-HOST-04.6",
+      "dependency_depth": 23
     }
   ],
   "terminal_task": "T-PROD.13"
