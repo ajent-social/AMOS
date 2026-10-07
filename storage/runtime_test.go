@@ -381,3 +381,41 @@ func TestRuntimePingPreservesCallerContext(t *testing.T) {
 		t.Fatalf("nil ping context: %v", err)
 	}
 }
+
+func TestRuntimeParserDoesNotReadAmbientFiles(t *testing.T) {
+	const helper = "AMOS_RUNTIME_FILE_DISCOVERY_HELPER"
+	if os.Getenv(helper) == "1" {
+		input := validRuntimeConfig(t)
+		roots, err := runtimeRoots(input.RootCAPEM)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := runtimeConnConfig(input, roots); err != nil {
+			t.Fatalf("config parser consulted ambient file contents: %v", err)
+		}
+		return
+	}
+	root := t.TempDir()
+	paths := map[string]string{
+		"PGPASSFILE":    filepath.Join(root, "passfile"),
+		"PGSERVICEFILE": filepath.Join(root, "servicefile"),
+		"PGSSLROOTCERT": filepath.Join(root, "root-ca"),
+		"PGSSLCERT":     filepath.Join(root, "client-cert"),
+		"PGSSLKEY":      filepath.Join(root, "client-key"),
+	}
+	for _, path := range paths {
+		if err := os.Mkdir(path, 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestRuntimeParserDoesNotReadAmbientFiles$")
+	cmd.Env = []string{"HOME=" + root, helper + "=1"}
+	for key, value := range paths {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("isolated parser check failed: %v: %s", err, output)
+	}
+}
