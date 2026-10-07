@@ -604,7 +604,10 @@
         "resource": "INT-HOST-03",
         "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
       },
-      "dependency_receipts": [],
+      "dependency_receipts": [
+        "T-PROD.15",
+        "T-INT-HOST-02.6"
+      ],
       "source_or_artifact_identity": {
         "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
         "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
@@ -641,7 +644,7 @@
     "T-INT-HOST-03.2": {
       "task_id": "T-INT-HOST-03.2",
       "status": "COMPLETE",
-      "owner": "Astra runtime source and test author",
+      "owner": "Astra runtime source author",
       "claim": {
         "resource": "INT-HOST-03",
         "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
@@ -685,7 +688,7 @@
     "T-INT-HOST-03.3": {
       "task_id": "T-INT-HOST-03.3",
       "status": "BLOCKED",
-      "owner": "Astra runtime source and test author",
+      "owner": "Astra runtime source author",
       "claim": {
         "resource": "INT-HOST-03",
         "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
@@ -737,6 +740,7 @@
         "tip": "a8c0bb19e177d57ec11a1e08f655873c9e6c9fa3"
       },
       "dependency_receipts": [
+        "T-PROD.1",
         "T8.1",
         "T8.2",
         "T-PROD.15"
@@ -959,7 +963,7 @@
     "T-INT-HOST-03.4.R1": {
       "task_id": "T-INT-HOST-03.4.R1",
       "status": "IN_PROGRESS",
-      "owner": "Independent Astra low reviewer",
+      "owner": "Different final Astra low reviewer",
       "claim": {
         "resource": "INT-HOST-03",
         "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
@@ -1095,7 +1099,7 @@
     "T-INT-HOST-03.5": {
       "task_id": "T-INT-HOST-03.5",
       "status": "BLOCKED",
-      "owner": "Astra runtime source and test author",
+      "owner": "Coordinator",
       "claim": {
         "resource": "INT-HOST-03",
         "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
@@ -1141,7 +1145,7 @@
     "T-INT-HOST-03.6": {
       "task_id": "T-INT-HOST-03.6",
       "status": "PLANNED",
-      "owner": "Astra runtime source and test author",
+      "owner": "Coordinator",
       "claim": {
         "resource": "INT-HOST-03",
         "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
