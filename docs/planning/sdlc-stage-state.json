@@ -423,7 +423,7 @@
         "genuine_negative": "Digest comparison removal failed mismatch regression; exact restoration passed"
       },
       "external_blockers": [],
-      "next_action": "Define and independently review callback transaction-control/lifetime guards and remaining current-authority, replay/capacity, migration, audit/effect and transport contracts before executor admission.",
+      "next_action": "Complete corrected callback actual-service review, guarded merge and landed checks; current-session provenance and writer lock order, durable replay/capacity, audit/effects and transport remain explicit executor gates.",
       "claim": {
         "resource": "T2.8",
         "tip": "df6030adf83a15dae812a688dfbf3f7b51e10124"
@@ -499,6 +499,44 @@
           "limitations": [
             "No persistence, current authority, executor or transport implementation.",
             "Full T2.8 remains IN_PROGRESS."
+          ]
+        },
+        {
+          "name": "private callback SQL and lifetime guard",
+          "status": "CORRECTED_SOURCE_ACTUAL_REVIEW_PENDING",
+          "source_or_artifact_identity": {
+            "original_author": "be7844cac6a2b2ce9a0a5af9310fb62b4a7882fd",
+            "test_correction": "8c22bc1cb6b9013683b6d26fc84325c5df3b19bc",
+            "candidate": "acf0fd1",
+            "pr": 35
+          },
+          "stages": [
+            {
+              "stage": "implement",
+              "status": "COMPLETE",
+              "result": "Four new private guard files; production handler/executor wiring unchanged."
+            },
+            {
+              "stage": "review",
+              "status": "CHANGES_REQUESTED",
+              "result": "Independent source units normal/race each325 entries PASS, vet/lint/fuzz and negative/restored PASS; actual service cancellation rollback assertion failed, eleven other subtests passed."
+            },
+            {
+              "stage": "fix",
+              "status": "COMPLETE",
+              "different_author": true,
+              "result": "Test now requires backend termination after rollback error and zero surviving writes; production guard unchanged. Scoped unit/race/vet/lint passed."
+            },
+            {
+              "stage": "re-review",
+              "status": "IN_PROGRESS",
+              "different_reviewer": true,
+              "result": "Actual required normal/race and correction verification pending a reviewed fixture window."
+            }
+          ],
+          "limitations": [
+            "No handler-before-codec integration or operation authority.",
+            "Full T2.8, production and provider qualification remain open."
           ]
         }
       ]
