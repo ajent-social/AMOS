@@ -127,7 +127,7 @@ func NewNetwork(ctx *pulumi.Context, name string, args NetworkArgs, opts ...pulu
 	}
 
 	routeTable, err := awsec2.NewRouteTable(ctx, name+"-public-routes", &awsec2.RouteTableArgs{
-		VpcId: vpc.ID().ToStringPtrOutput(),
+		VpcId: vpc.ID(),
 		Routes: awsec2.RouteTableRouteArray{&awsec2.RouteTableRouteArgs{
 			CidrBlock: pulumi.StringPtr("0.0.0.0/0"), GatewayId: igw.ID().ToStringPtrOutput(),
 		}},
