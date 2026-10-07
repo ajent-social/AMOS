@@ -96,7 +96,7 @@ func TestRuntimeFinalizesAllowListedPGXConfig(t *testing.T) {
 	if config.Host != input.Host || config.Port != uint16(input.Port) || config.Database != input.Database || config.User != input.User || config.Password != input.Password {
 		t.Fatal("typed connection fields changed")
 	}
-	if config.TLSConfig == nil || config.TLSConfig.InsecureSkipVerify || config.TLSConfig.ServerName != input.Host || config.TLSConfig.MinVersion != tls.VersionTLS12 || config.TLSConfig.RootCAs == nil || len(config.TLSConfig.RootCAs.Subjects()) != 1 {
+	if config.TLSConfig == nil || config.TLSConfig.InsecureSkipVerify || config.TLSConfig.ServerName != input.Host || config.TLSConfig.MinVersion != tls.VersionTLS12 || config.TLSConfig.RootCAs == nil || !config.TLSConfig.RootCAs.Equal(roots) {
 		t.Fatalf("TLS verification not finalized: %#v", config.TLSConfig)
 	}
 	if config.Fallbacks != nil || len(config.RuntimeParams) != 0 {
@@ -157,9 +157,13 @@ func TestRuntimeConfigCopiesTrustInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	expected := x509.NewCertPool()
+	if !expected.AppendCertsFromPEM(input) {
+		t.Fatal("test trust root invalid")
+	}
 	input[0] ^= 0xff
-	if len(roots.Subjects()) != 1 {
-		t.Fatalf("copied trust root missing: %d", len(roots.Subjects()))
+	if !roots.Equal(expected) {
+		t.Fatal("copied trust root changed")
 	}
 }
 
@@ -320,7 +324,11 @@ func TestRuntimeDBCannotBePassedToMigrate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
+	t.Cleanup(func() {
+		if err := os.RemoveAll(dir); err != nil {
+			t.Error("compile-negative directory cleanup failed")
+		}
+	})
 	source := `package compilecheck
 import (
  "context"
@@ -383,7 +391,8 @@ func TestRuntimePingPreservesCallerContext(t *testing.T) {
 	if err := db.PingContext(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatalf("ping cancellation: %v", err)
 	}
-	if err := db.PingContext(nil); !errors.Is(err, ErrInvalidConfig) {
+	var nilContext context.Context
+	if err := db.PingContext(nilContext); !errors.Is(err, ErrInvalidConfig) {
 		t.Fatalf("nil ping context: %v", err)
 	}
 }
@@ -447,7 +456,11 @@ func runtimeRequiredFixture(t *testing.T) runtimeServiceFixture {
 	if err != nil {
 		t.Fatal("required TLS PostgreSQL fixture config cannot be opened")
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Error("fixture config close failed")
+		}
+	}()
 	var input struct {
 		Host           string `json:"host"`
 		Port           uint16 `json:"port"`
@@ -835,7 +848,11 @@ func runtimeServiceStartupTimeout(t *testing.T, config RuntimeConfig) {
 	if err != nil {
 		t.Fatal("cannot create bounded startup timeout probe")
 	}
-	defer listener.Close()
+	defer func() {
+		if err := listener.Close(); err != nil {
+			t.Error("startup probe close failed")
+		}
+	}()
 	config.Host = "localhost"
 	config.Port = uint16(listener.Addr().(*net.TCPAddr).Port)
 	config.StartupTimeout = 50 * time.Millisecond
