@@ -2,8 +2,9 @@
 
 Inspected source: `64ba2c8494fdef39da72a53df2bfcb495f79ec1d`, with separately
 reviewed runtime-storage candidate `79d3014c85c1a5884927bcff05f3e664b4f101a9`.
-These are preparation findings, not adopted APIs, source acceptance or dispatch
-permission. Current storage service gates take priority.
+These are preparation findings, not source acceptance or production authority.
+The bounded private transaction-adapter assignment below is now adopted; other
+shared APIs remain proposals. Current storage service gates take priority.
 
 ## Production host
 
@@ -36,7 +37,8 @@ The smallest proposed prerequisite is a private caller-transaction adapter in ne
 `operation.DBTX`: its row result types differ from the interface return types.
 A private non-embedded adapter could delegate exactly one existing transaction,
 return a nil Rows interface on query error, and expose no commit, rollback, pool,
-retry or invocation entry point. This proposal is not yet adopted or implemented.
+retry or invocation entry point. The coordinator has adopted this two-file private-helper assignment in the
+integration assignment record; implementation and acceptance are pending.
 Real PostgreSQL transaction visibility, rollback, cancellation and lifecycle
 checks are required before its acceptance; mocks are insufficient.
 
