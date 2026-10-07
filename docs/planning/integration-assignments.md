@@ -138,3 +138,12 @@ The coordinator retains all shared contracts, modules, migrations and wiring.
 INT-HOST-04 tracks session/jobs through six explicit delivery stages; private
 callback and replay components remain nested under in-progress T2.8. No full
 production composition or executor acceptance is inferred.
+
+### Additional v1.16 protection leaf
+
+A separate author owns identity/protection/limits.go, protection_test.go and new
+transaction_test.go/runtime_integration_test.go only. Preserve legacy Config and
+New, copied keys, admission/prune/error semantics; add the frozen transaction-only
+constructor. Real runtime-role replica/admission/prune tests and independent review
+are mandatory. This leaf does not expand the session/jobs INT-HOST-04 acceptance
+scope or qualify complete authentication or production composition.
