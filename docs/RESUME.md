@@ -224,3 +224,11 @@ T8.4 is accepted at the source/Pulumi mock boundary after independent exact-head
 review, local test/race/vet/lint, negative/restored checks and verified PR25
 landing. See [evidence](evidence/aws-network-20261007.md). No provider calls,
 preview, production role, host deployment or backup operation was qualified.
+
+## Private operation transaction adapter
+
+PR28 landed the private SQL result adapter after a real-service test correction,
+independent exact-head review, normal/race PostgreSQL checks and a fresh landed
+service check. See [receipt](evidence/operation-sql-adapter-20261007.md). T2.8
+remains IN_PROGRESS: callback guards, authority, replay/capacity, audit/effect and
+transport composition remain required before any executor admission.

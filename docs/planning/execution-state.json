@@ -620,7 +620,7 @@
       "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
       "Scoped normal/race/vet/lint checks passed; independent reviewer repeated package verification and genuine digest-guard mutation/restoration. Root landed package test and changed-path public/whitespace checks passed.",
       "Registry/type binding only. Evaluator, current authority/session, SQL/replay/capacity/audit/effects, trusted generator metadata bridge, real PostgreSQL and transport dispatch remain unqualified. See docs/evidence/operation-registry-20261006.md.",
-      "Source-grounded onward preflight identifies a private transaction adapter proposal and explicit current-authority, replay/capacity, migration, audit/effect and generator/transport gates. No executor or adapter source was dispatched or accepted. See docs/planning/onward-source-preflight.md."
+      "Private SQL result adapter component landed through PR28 at cafb6d638bca4f226db8a5e764788c6b7a516c79 from reviewed178ce7424a8dabe77636772ab184d308b5229117/basef60759556914df571a32193a6cc21af445913bd1. Different final reviewer actual PostgreSQL full-package normal/race each61PASS including5service entries, zero skips/failures; fresh landed service5PASS and both files equal. Full executor and callback guards remain open; T2.8 is not accepted. See docs/evidence/operation-sql-adapter-20261007.md."
     ]
   },
   "T8.4": {
