@@ -325,6 +325,45 @@ func TestEmailRuntimeRequiredService(t *testing.T) {
 	if e != ErrUnavailable || a.Received || !callbackCompleted || canceledCtx.Err() != context.Canceled || counts() != before {
 		t.Fatal("cancellation left partial issue rows")
 	}
+	// Complete all three SQL writes, then end the actual transaction before
+	// returning nil. RuntimeDB must attempt Commit and map sql.ErrTxDone to
+	// storage.ErrTransaction; this is not the callback-error rollback path.
+	completionReached := false
+	var completionErr error
+	completionRunner := emailRunnerFunc(func(c context.Context, o *sql.TxOptions, fn func(*sql.Tx) error) error {
+		completionErr = db.WithTx(c, o, func(tx *sql.Tx) error {
+			if e := fn(tx); e != nil {
+				return e
+			}
+			var written [3]int
+			if e := tx.QueryRowContext(c, `SELECT (SELECT count(*) FROM identity_challenges c JOIN identity_persons p ON p.id=c.person_id WHERE p.installation_id=$1 AND p.application_id=$2),(SELECT count(*) FROM amos_jobs WHERE installation_id=$1 AND application_id=$2),(SELECT count(*) FROM email_delivery_material WHERE installation_id=$1 AND application_id=$2)`, cfg.InstallationID, cfg.ApplicationID).Scan(&written[0], &written[1], &written[2]); e != nil {
+				return e
+			}
+			if written != ([3]int{before[0] + 1, before[1] + 1, before[2] + 1}) {
+				return errors.New("completion failure requires all three SQL writes")
+			}
+			if e := tx.Rollback(); e != nil {
+				return e
+			}
+			completionReached = true
+			return nil
+		})
+		return completionErr
+	})
+	completionService, e := NewWithTxRunner(completionRunner, outbox, renderer, materials, cfg)
+	if e != nil {
+		t.Fatal(e)
+	}
+	a, e = completionService.IssueVerification(ctx, p, c, emailID(t))
+	if !completionReached || ctx.Err() != nil || completionErr != storage.ErrTransaction {
+		t.Fatal("runtime commit-error branch was not reached after successful SQL writes")
+	}
+	if e != ErrUnavailable || a.Received {
+		t.Fatal("transaction completion failure acknowledged issue")
+	}
+	if counts() != before {
+		t.Fatal("transaction completion failure left partial issue rows")
+	}
 	// Caller-owned registration transaction must include challenge and delivery.
 	challenge = emailID(t)
 	token, digest, e := newToken()
