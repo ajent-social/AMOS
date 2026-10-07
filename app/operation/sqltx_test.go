@@ -225,6 +225,7 @@ func TestSQLTxAdapterRequiredService(t *testing.T) {
 			if err != nil {
 				t.Fatal("adapter insert failed")
 			}
+			owned = append(owned, key)
 			n, err := result.RowsAffected()
 			if err != nil || n != 1 {
 				t.Fatal("insert result incorrect")
@@ -270,7 +271,6 @@ func TestSQLTxAdapterRequiredService(t *testing.T) {
 				if err := tx.Commit(); err != nil {
 					t.Fatal("commit failed")
 				}
-				owned = append(owned, key)
 			} else if err := tx.Rollback(); err != nil {
 				t.Fatal("rollback failed")
 			}
