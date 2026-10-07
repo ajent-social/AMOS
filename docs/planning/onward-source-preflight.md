@@ -1,10 +1,9 @@
 # Source-grounded follow-on readiness
 
-Inspected source: `64ba2c8494fdef39da72a53df2bfcb495f79ec1d`, with separately
-reviewed runtime-storage candidate `79d3014c85c1a5884927bcff05f3e664b4f101a9`.
-These are preparation findings, not source acceptance or production authority.
-The bounded private transaction-adapter assignment below is now adopted; other
-shared APIs remain proposals. Current storage service gates take priority.
+Source baseline: `f60759556914df571a32193a6cc21af445913bd1`, including
+independently reviewed and locally service-verified runtime storage from PR26.
+The bounded private transaction adapter is adopted; other shared API changes
+remain proposals. These findings grant no operation or production authority.
 
 ## Production host
 
@@ -32,7 +31,7 @@ role grants, network, provider, budget and DNS decisions remain external gates.
 The immutable registry is landed, but raw handlers and registry binding confer no
 operation authority. No authority-granting executor is dependency-ready.
 
-The smallest proposed prerequisite is a private caller-transaction adapter in new
+The adopted prerequisite is a private caller-transaction adapter in new
 `app/operation/sqltx.go` and `sqltx_test.go`. `*sql.Tx` does not implement existing
 `operation.DBTX`: its row result types differ from the interface return types.
 A private non-embedded adapter could delegate exactly one existing transaction,
@@ -50,3 +49,8 @@ positives or financial-boundary crossings must preserve the operation contract's
 Unavailable semantics rather than inherit a catalog denial without reconciliation.
 Exact replay must recheck current authority before disclosing cached results.
 These shared contracts and database gates precede executable dispatch.
+
+The private adapter is not the frozen callback wrapper. Before any callback
+exposure, a separate wrapper must reject direct transaction-control statements and
+invalidate retained DBTX, Row and Rows values after callback return. Registry
+binding and this helper cannot bypass those guards or confer operation authority.

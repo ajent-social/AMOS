@@ -1,54 +1,46 @@
-# Runtime-only storage source checkpoint
+# Runtime-only PostgreSQL storage delivery
 
-[PR26](https://github.com/ajent-social/AMOS/pull/26) remains a draft at
-`79d3014c85c1a5884927bcff05f3e664b4f101a9`, based on
-`64ba2c8494fdef39da72a53df2bfcb495f79ec1d`. The candidate changes only
-`storage/runtime.go` and `storage/runtime_test.go`. It is not merged or accepted.
+[PR26](https://github.com/ajent-social/AMOS/pull/26) merged reviewed head
+`67e4982486fdbf9839f7e1e625bbe58d4b3efca6`, based on
+`ae644026c8fbc55eeb396bf9be9fca22953be509`, as
+`f60759556914df571a32193a6cc21af445913bd1`. Both owned files,
+`storage/runtime.go` and `storage/runtime_test.go`, equal reviewed bytes on main.
+INT-HOST-03 is complete at its source and actual local PostgreSQL boundary.
 
-A separate final Astra reviewer cleared the complete v1.15 source after fixes.
-Independent normal and race runtime tests explicitly excluded the required-service
-case; scoped vet and pinned golangci-lint v2.13.2 passed with zero issues. The
-required-service invocation without configuration failed visibly. Those results
-are not real PostgreSQL evidence.
+## Verification and independent review
+
+The author passed 85 runtime test entries in normal and race runs, including 24
+required-service entries, with zero skips or failures. Scoped vet and pinned
+lint passed. A different reviewer cleared the exact final head and independently
+ran the 24 required-service entries normally and with race detection, all passing.
+These checks used actual isolated TLS PostgreSQL and a synthetic least-privilege
+role: positive DML, rollback, panic, cancellation, close, wrong hostname/root,
+and 13 SQLSTATE 42501 denials covering schema, temporary-table, migration-ledger
+and role operations. They qualify the local storage boundary, not a production role.
+
+The coordinator repeated the actual required-service suite at the landed revision:
+24 run, 24 pass, zero skip/fail. Missing configuration fails visibly. Guarded rebase
+merge followed immediate head/base/check readback; no hosted CI success or branch
+policy bypass is claimed.
 
 ## Findings and corrections
 
-The initial review required real TLS/runtime-role coverage. The author added
-required-service tests for DML, rollback, panic, cancellation, close, wrong CA and
-hostname, and denied schema, temporary-table, migration-ledger and role operations.
+Review required actual-service coverage, strict first-block PEM rejection and a
+fresh BeginTx pool-wait deadline. Independent substitution of the old parser made
+malformed-prefix and nested-BEGIN regressions fail; exact restored source passed.
+Real service execution then found two cancellation assertions using equality where
+the frozen contract permits errors.Join with the safe transaction sentinel. The
+author changed those assertions to errors.Is without changing production code.
+A different reviewer independently reproduced both old failures and cleared the
+corrected exact source with actual normal/race service runs.
 
-Follow-up review reproduced malformed-first/valid-second PEM acceptance: the
-standard parser could skip an invalid block before finding a valid one. Strict
-first-block parsing now rejects that input and nested BEGIN markers; a valid
-multi-certificate bundle remains accepted. The final reviewer temporarily
-substituted the old parser, observed both regressions fail, restored exact source
-bytes, and observed the unit suite pass. A pool-wait test now uses a fresh deadline
-for BeginTx instead of a context already expired by PingContext.
+Earlier fixture attempts failed before startup and their exact-owned resources
+were removed. A separately reviewed bounded mount correction allowed the final
+local fixture trial to pass actual TLS and role checks. Offline fixture tests
+were never substituted for service evidence. Cleanup custody remains with the
+fixture operator until its exact-resource cleanup receipt is recorded.
 
-Reviewed source SHA-256:
-
-- `storage/runtime.go`: `90f0d4b9cff4a36b66482dae53f1b00ea99e3ab548b0dcd80b0114ace450dac5`
-- `storage/runtime_test.go`: `62cb378ead1f70fc7c40d62c1f290178919fb784afa8ab20633dffc3d315e812`
-
-Publication scanning produced five matches in synthetic test literals, an invalid
-PEM marker, and source assignments. Manual inspection found no real credentials or
-key material; automated scanner success is not claimed.
-
-## Blocking service gate
-
-The independently reviewed local test-fixture trial failed before PostgreSQL
-startup. Its owned resources were removed and cleanup was checked. No qualified
-connection configuration or actual TLS/runtime-role evidence was produced. The
-single authorized trial was consumed; further trial authority is not inferred.
-After the failed trial, cleanup absence classification and bounded private
-startup-diagnostic retention were corrected by a different author and independently
-reviewed. The corrected private fixture passed 31 offline tests and independent
-negative/restored checks; all prior owned resources remain absent and launch is
-disabled. A concrete single-retry proposal is prepared, but new owner authority
-is still required. The original startup failure cause remains unknown.
-
-INT-HOST-03 verification, full review admission, merge, landed verification and
-source acceptance remain open. Unit fixtures do not satisfy them. Existing
-accepted development storage work is unchanged. Production grants, TLS endpoints,
-service adapters, host composition, provider behavior and deployment remain
-separate gates.
+Publication scanner matches in synthetic literals and source expressions were
+manually inspected; automated scanner success is not claimed. Existing development
+storage acceptance is unchanged. Production grants, endpoints, service adapters,
+host composition, provider behavior and deployment remain separate gates.

@@ -205,18 +205,17 @@ fixed protocol slots, a finite business manifest and permanent startup freeze.
 Scoped normal/race/vet/lint and actual local HTTP checks pass, including independent
 negative/restored evidence and a fresh landed app test. See
 [evidence](evidence/host-routing-20261006.md). The six routing delivery receipts
-are complete; runtime-only storage, production composition, protocol authentication
+are complete; production composition, protocol authentication
 and deployment remain separate unqualified stages.
 
 ## Runtime-only PostgreSQL storage source checkpoint
 
-The v1.15 contract landed through PR24. Two-file implementation in draft PR26 is
-independently source-reviewed after strict PEM and test corrections. Unit-only
-normal/race/vet/lint pass, but the isolated service trial failed before startup.
-Actual TLS/runtime-role evidence, merge, landed verification and acceptance remain
-open. See [checkpoint](evidence/runtime-storage-20261007.md). Production role,
-TLS, adapter and deployment gates remain separate. Concrete follow-on interfaces
-are recorded in [source preflight](planning/onward-source-preflight.md).
+The v1.15 contract landed through PR24 and its implementation through PR26.
+Independent exact-head review, actual local TLS PostgreSQL normal/race checks,
+and a fresh landed 24-entry required-service check all passed with zero skips.
+All 12 integration stages are complete. See [receipt](evidence/runtime-storage-20261007.md).
+Production roles, endpoints, adapters, composition and deployment remain separate.
+Concrete follow-on interfaces are recorded in [source preflight](planning/onward-source-preflight.md).
 
 
 ## AWS VM network and host identity source

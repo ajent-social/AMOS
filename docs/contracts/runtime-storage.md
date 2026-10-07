@@ -1,6 +1,6 @@
 # Runtime-only PostgreSQL storage contract (v1.15)
 
-Status: proposed adoption with amendment v1.15; freeze for implementation follows independent exact-head review and merge. This design does not qualify a production database, role, TLS endpoint, deployment, or runtime.
+Status: frozen v1.15 after independent review and PR24 merge; source and actual local storage verification landed through PR26. This design does not qualify a production database, role, TLS endpoint, deployment, or runtime.
 
 ## Purpose and compatibility
 
