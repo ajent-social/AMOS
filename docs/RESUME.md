@@ -232,3 +232,21 @@ independent exact-head review, normal/race PostgreSQL checks and a fresh landed
 service check. See [receipt](evidence/operation-sql-adapter-20261007.md). T2.8
 remains IN_PROGRESS: callback guards, authority, replay/capacity, audit/effect and
 transport composition remain required before any executor admission.
+
+## Transaction-only source delivery checkpoint
+
+Contracts v1.16–v1.18 were independently reviewed and landed through PR30.
+Private replay primitives (PR31), the session transaction-only constructor
+(PR32), and the protection constructor (PR34) have independent component review
+and landed checks. Session and protection also have actual TLS PostgreSQL
+runtime-role normal/race and fresh landed service evidence. See the component
+receipts under `docs/evidence/`; these changes do not raise the accepted-task
+count or qualify a production host.
+
+Jobs, callback guards and protected material construction are staged through
+source correction and independent actual-service review. Their pending gates
+are recorded in the stage journal; a draft PR is not acceptance. The original
+product registry remains authoritative. The session authority preflight has
+independent open findings for post-lock renewal time, refreshed-principal
+handoff, writer lock order and challenge freshness. No executor dispatch,
+production role, provider spending, DNS or deployment gate is cleared.
