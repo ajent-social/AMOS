@@ -1731,6 +1731,44 @@
                 "status": "COMPLETE"
               }
             ]
+          },
+          {
+            "name": "Login",
+            "owner": "Assigned login constructor author",
+            "base": "4e7afabc28635be4e88e7f3e1cf0de6f4cf2e1f7",
+            "status": "QUEUED_SHARED_DISPATCHER",
+            "paths": [
+              "identity/login/login.go",
+              "identity/login/transaction_test.go",
+              "identity/login/runtime_integration_test.go"
+            ],
+            "gates": [
+              "Dispatcher admission",
+              "Source and scoped local verification",
+              "Independent exact-head review",
+              "Required actual same-database runtime profile verification",
+              "Guarded merge and fresh landed service checks",
+              "Production host and role qualification remain separate"
+            ]
+          },
+          {
+            "name": "Recovery",
+            "owner": "Assigned recovery constructor author",
+            "base": "4e7afabc28635be4e88e7f3e1cf0de6f4cf2e1f7",
+            "status": "QUEUED_SHARED_DISPATCHER",
+            "paths": [
+              "identity/recovery/recovery.go",
+              "identity/recovery/transaction_test.go",
+              "identity/recovery/runtime_integration_test.go"
+            ],
+            "gates": [
+              "Dispatcher admission",
+              "Source and scoped local verification",
+              "Independent exact-head review",
+              "Required actual same-database runtime profile verification",
+              "Guarded merge and fresh landed service checks",
+              "Production host and role qualification remain separate"
+            ]
           }
         ]
       },

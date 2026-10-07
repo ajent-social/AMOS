@@ -292,7 +292,8 @@
       "Signup atomically creates pending identity, personal workspace, verification challenge and opaque email outbox intent; concurrent scoped-email retries remain generic and issue no session.",
       "Real PostgreSQL tests passed for concurrent signup, actual email challenge confirmation, verified-only signin, generic credential failures, malformed email fallback denial, session rotation and server-generated request IDs.",
       "Independent review caught login CSRF; corrected configured-origin and strict JSON checks. Cross-origin gate mutation failed as predicted and restored regression passed.",
-      "Session form CSRF is bounded and body-only; duplicate Origin/Referer denial covers protected mutation and signout. Scoped lint passed with zero issues. Full authentication suite and live email delivery remain unqualified."
+      "Session form CSRF is bounded and body-only; duplicate Origin/Referer denial covers protected mutation and signout. Scoped lint passed with zero issues. Full authentication suite and live email delivery remain unqualified.",
+      "Supplemental v1.16 login transaction-only constructor assigned at main4e7afabc and queued through the shared dispatcher; source, actual runtime-role verification, different review and landed gates remain pending. Original accepted component scope is unchanged."
     ]
   },
   "T5.2": {
@@ -442,7 +443,8 @@
       "Luna recovery/password-change implementation independently reviewed, corrected and integrated.",
       "Real PostgreSQL tests passed for protected reset material/outbox durability, generic eligible/unknown/disabled/unverified request results, read-only-backend equal 503 before lookup, non-consuming preview, one-time concurrent reset, expiry/replay/scope/disablement and current-password verification.",
       "Password replacement, security epoch and all-person session revocation commit atomically; genuine revocation-disabled mutation failed persisted-state regression then restored. Scoped vet/lint passed; root integration suite passed.",
-      "Required injected policy must fail closed and preserve other factors; routes issue no session and do not implement an MFA or organization-policy evaluator. Required-service failures after preflight remain visibly 503; no full timing privacy or live email qualification claim."
+      "Required injected policy must fail closed and preserve other factors; routes issue no session and do not implement an MFA or organization-policy evaluator. Required-service failures after preflight remain visibly 503; no full timing privacy or live email qualification claim.",
+      "Supplemental v1.16 recovery transaction-only constructor assigned at main4e7afabc and queued through the shared dispatcher; source, actual runtime-role verification, different review and landed gates remain pending. Original accepted component scope is unchanged."
     ]
   },
   "T5.6": {
