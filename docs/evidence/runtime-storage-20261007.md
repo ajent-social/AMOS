@@ -37,8 +37,9 @@ corrected exact source with actual normal/race service runs.
 Earlier fixture attempts failed before startup and their exact-owned resources
 were removed. A separately reviewed bounded mount correction allowed the final
 local fixture trial to pass actual TLS and role checks. Offline fixture tests
-were never substituted for service evidence. Cleanup custody remains with the
-fixture operator until its exact-resource cleanup receipt is recorded.
+were never substituted for service evidence. After all service users released, the operator removed the exact recorded
+container, network and three secrets, verified each absent, removed the private
+run credentials/keys and confirmed the watchdog exited. Launch remains disabled.
 
 Publication scanner matches in synthetic literals and source expressions were
 manually inspected; automated scanner success is not claimed. Existing development
