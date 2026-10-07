@@ -652,7 +652,8 @@ func TestRuntimeRequiredService(t *testing.T) {
 			cancel()
 			return nil
 		})
-		if err != context.Canceled {
+		// Rollback failure may join the context error with ErrTransaction.
+		if !errors.Is(err, context.Canceled) {
 			t.Fatal("canceled transaction did not preserve context error")
 		}
 		readValue(t, "committed")
@@ -783,7 +784,7 @@ func runtimeServiceLifecycle(t *testing.T, config RuntimeConfig) {
 	}
 	commitCtx, cancelCommit := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelCommit()
-	if err := db.WithTx(commitCtx, nil, func(*sql.Tx) error { cancelCommit(); return nil }); err != context.Canceled {
+	if err := db.WithTx(commitCtx, nil, func(*sql.Tx) error { cancelCommit(); return nil }); !errors.Is(err, context.Canceled) {
 		t.Fatal("canceled commit lost context error")
 	}
 	// Hold the only connection. Both readiness and transaction admission must
