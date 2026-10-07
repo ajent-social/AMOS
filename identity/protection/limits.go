@@ -9,6 +9,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -47,18 +48,54 @@ type Config struct {
 	Window                time.Duration
 	IPLimit, AccountLimit int
 }
-type Limiter struct{ cfg Config }
+
+// TxRunner is the transaction capability consumed by authentication protection.
+type TxRunner interface {
+	WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error
+}
+
+// TxConfig configures protection without owning a database handle.
+type TxConfig struct {
+	InstallationID, ApplicationID, EnvironmentID uuid.UUID
+	// Key is stable across replicas and obtained through owner-controlled secret resolution.
+	Key                   []byte
+	Window                time.Duration
+	IPLimit, AccountLimit int
+}
+
+type Limiter struct {
+	db  TxRunner
+	cfg TxConfig
+}
 type Admission struct {
 	Allowed    bool
 	RetryAfter time.Duration
 }
 
 func New(cfg Config) (*Limiter, error) {
-	if cfg.DB == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || len(cfg.Key) < 32 || len(cfg.Key) > 128 || cfg.Window < time.Second || cfg.Window > time.Hour || cfg.Window%time.Second != 0 || cfg.IPLimit < 1 || cfg.IPLimit > 10000 || cfg.AccountLimit < 1 || cfg.AccountLimit > 10000 {
+	return NewWithTxRunner(cfg.DB, TxConfig{
+		InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID,
+		Key: cfg.Key, Window: cfg.Window, IPLimit: cfg.IPLimit, AccountLimit: cfg.AccountLimit,
+	})
+}
+
+// NewWithTxRunner validates configuration without performing database I/O.
+// The caller retains ownership of the runner and its lifecycle.
+func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Limiter, error) {
+	if db == nil {
+		return nil, ErrConfiguration
+	}
+	switch v := reflect.ValueOf(db); v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		if v.IsNil() {
+			return nil, ErrConfiguration
+		}
+	}
+	if !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || len(cfg.Key) < 32 || len(cfg.Key) > 128 || cfg.Window < time.Second || cfg.Window > time.Hour || cfg.Window%time.Second != 0 || cfg.IPLimit < 1 || cfg.IPLimit > 10000 || cfg.AccountLimit < 1 || cfg.AccountLimit > 10000 {
 		return nil, ErrConfiguration
 	}
 	cfg.Key = append([]byte(nil), cfg.Key...)
-	return &Limiter{cfg: cfg}, nil
+	return &Limiter{db: db, cfg: cfg}, nil
 }
 func validID(id uuid.UUID) bool { return id.Version() == 7 && id.Variant() == uuid.RFC4122 }
 
@@ -99,7 +136,7 @@ func (l *Limiter) Allow(ctx context.Context, op Operation, ip, account string) (
 		account = "invalid-input"
 	}
 	result := Admission{Allowed: true}
-	err := l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err := l.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		for _, dim := range []struct {
 			name, key string
 			limit     int
@@ -138,7 +175,7 @@ func (l *Limiter) PruneExpired(ctx context.Context, limit int) (int64, error) {
 		return 0, ErrConfiguration
 	}
 	var removed int64
-	err := l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err := l.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		result, err := tx.ExecContext(ctx, `WITH expired AS (
 SELECT ctid FROM identity_auth_limits
 WHERE installation_id=$1 AND application_id=$2 AND environment_id=$3

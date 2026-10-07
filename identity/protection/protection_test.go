@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func fixture(t *testing.T, limit int) (*Limiter, *session.Service) {
+func fixture(t *testing.T, limit int) (*Limiter, *session.Service, *storage.DB) {
 	t.Helper()
 	_, schema := testkit.NewPostgres(t)
 	dsn, err := testkit.DatabaseURL()
@@ -79,10 +79,10 @@ func fixture(t *testing.T, limit int) (*Limiter, *session.Service) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return limiter, sessions
+	return limiter, sessions, db
 }
 func TestT3_7_DurableConcurrentExhaustion(t *testing.T) {
-	l, _ := fixture(t, 7)
+	l, _, db := fixture(t, 7)
 	var accepted atomic.Int32
 	var wg sync.WaitGroup
 	for range 40 {
@@ -112,7 +112,7 @@ func TestT3_7_DurableConcurrentExhaustion(t *testing.T) {
 		t.Fatalf("replica bypass %v %v", v, e)
 	}
 	var accounts int
-	err := l.cfg.DB.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+	err := l.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
 		return tx.QueryRow(`SELECT count(*) FROM identity_auth_limits WHERE dimension='account'`).Scan(&accounts)
 	})
 	if err != nil || accounts != 1 {
@@ -129,7 +129,7 @@ func TestT3_7_DurableConcurrentExhaustion(t *testing.T) {
 	if e != nil || v.Allowed {
 		t.Fatal("account budget bypass", v, e)
 	}
-	if err = l.cfg.DB.Close(); err != nil {
+	if err = db.Close(); err != nil {
 		t.Fatal(err)
 	}
 	if _, e = l.Allow(context.Background(), Signup, "192.0.2.5", "x@example.test"); e != ErrUnavailable {
@@ -137,7 +137,7 @@ func TestT3_7_DurableConcurrentExhaustion(t *testing.T) {
 	}
 }
 func TestT3_7_PublicBoundaryBeforeExpensiveWork(t *testing.T) {
-	l, s := fixture(t, 2)
+	l, s, _ := fixture(t, 2)
 	called := 0
 	h, e := (Guard{l, s}).PublicJSON(Signup, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { called++; w.WriteHeader(202) }))
 	if e != nil {
@@ -167,11 +167,11 @@ func TestT3_7_PublicBoundaryBeforeExpensiveWork(t *testing.T) {
 	}
 }
 func TestT3_7_CrossOriginPasswordChangeLeavesCredentialUnchanged(t *testing.T) {
-	l, s := fixture(t, 20)
+	l, s, _ := fixture(t, 20)
 	person, _ := uuid.NewV7()
 	credential, _ := uuid.NewV7()
 	verifier := fmt.Sprintf("$argon2id$v=19$m=65536,t=3,p=1$%s$%s", base64.RawStdEncoding.EncodeToString(make([]byte, 16)), base64.RawStdEncoding.EncodeToString(make([]byte, 32)))
-	err := l.cfg.DB.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+	err := l.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
 		_, e := tx.Exec(`INSERT INTO identity_persons(id,installation_id,application_id,state) VALUES($1,$2,$3,'active')`, person, l.cfg.InstallationID, l.cfg.ApplicationID)
 		if e != nil {
 			return e
@@ -191,7 +191,7 @@ func TestT3_7_CrossOriginPasswordChangeLeavesCredentialUnchanged(t *testing.T) {
 		t.Fatal(err)
 	}
 	mutate := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		e := l.cfg.DB.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
+		e := l.db.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
 			_, e := tx.Exec(`UPDATE identity_credentials SET verifier_hash=$1 WHERE id=$2`, strings.Replace(verifier, "p=1", "p=2", 1), credential)
 			return e
 		})
@@ -224,7 +224,7 @@ func TestT3_7_CrossOriginPasswordChangeLeavesCredentialUnchanged(t *testing.T) {
 			t.Fatalf("mutation=%d want=%d", w.Code, tc.want)
 		}
 		var actual string
-		e := l.cfg.DB.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+		e := l.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
 			return tx.QueryRow(`SELECT verifier_hash FROM identity_credentials WHERE id=$1`, credential).Scan(&actual)
 		})
 		if e != nil {
@@ -258,7 +258,7 @@ func TestT3_7_RedirectAndPeerInputs(t *testing.T) {
 }
 
 func TestT3_7_ExpiryScopeAndConfiguration(t *testing.T) {
-	l, _ := fixture(t, 1)
+	l, _, db := fixture(t, 1)
 	ctx := context.Background()
 	first, e := l.Allow(ctx, Signin, "192.0.2.9", "x@example.test")
 	if e != nil || !first.Allowed {
@@ -269,7 +269,7 @@ func TestT3_7_ExpiryScopeAndConfiguration(t *testing.T) {
 		t.Fatal(denied, e)
 	}
 	// Expiry is driven by database state, not a wall-clock sleep.
-	e = l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	e = l.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		_, e := tx.Exec(`UPDATE identity_auth_limits SET window_start=transaction_timestamp()-interval '2 hour',window_end=transaction_timestamp()-interval '1 hour'`)
 		return e
 	})
@@ -280,7 +280,7 @@ func TestT3_7_ExpiryScopeAndConfiguration(t *testing.T) {
 	if e != nil || !renewed.Allowed {
 		t.Fatal(renewed, e)
 	}
-	cfg := l.cfg
+	cfg := Config{db, l.cfg.InstallationID, l.cfg.ApplicationID, l.cfg.EnvironmentID, l.cfg.Key, l.cfg.Window, l.cfg.IPLimit, l.cfg.AccountLimit}
 	cfg.EnvironmentID, _ = uuid.NewV7()
 	other, e := New(cfg)
 	if e != nil {
@@ -291,7 +291,7 @@ func TestT3_7_ExpiryScopeAndConfiguration(t *testing.T) {
 		t.Fatal("environment collision", admitted, e)
 	}
 	for _, change := range []func(*Config){func(c *Config) { c.Key = []byte("short") }, func(c *Config) { c.Window = time.Millisecond }, func(c *Config) { c.Window = time.Minute + 1 }, func(c *Config) { c.IPLimit = 0 }, func(c *Config) { c.EnvironmentID = uuid.Nil }} {
-		bad := l.cfg
+		bad := cfg
 		change(&bad)
 		if _, e := New(bad); e != ErrConfiguration {
 			t.Fatal("invalid configuration accepted")
@@ -303,14 +303,14 @@ func TestT3_7_ExpiryScopeAndConfiguration(t *testing.T) {
 }
 
 func TestT3_7_PruneIsBoundedScopedAndPreservesLiveBudgets(t *testing.T) {
-	l, _ := fixture(t, 2)
+	l, _, db := fixture(t, 2)
 	ctx := context.Background()
 	for i := 0; i < 3; i++ {
 		if _, e := l.Allow(ctx, Signin, fmt.Sprintf("192.0.2.%d", 100+i), fmt.Sprintf("prune%d@example.test", i)); e != nil {
 			t.Fatal(e)
 		}
 	}
-	cfg := l.cfg
+	cfg := Config{db, l.cfg.InstallationID, l.cfg.ApplicationID, l.cfg.EnvironmentID, l.cfg.Key, l.cfg.Window, l.cfg.IPLimit, l.cfg.AccountLimit}
 	cfg.EnvironmentID, _ = uuid.NewV7()
 	other, e := New(cfg)
 	if e != nil {
@@ -319,7 +319,7 @@ func TestT3_7_PruneIsBoundedScopedAndPreservesLiveBudgets(t *testing.T) {
 	if _, e = other.Allow(ctx, Signin, "192.0.2.200", "other@example.test"); e != nil {
 		t.Fatal(e)
 	}
-	e = l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	e = l.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		_, e := tx.Exec(`UPDATE identity_auth_limits SET window_start=transaction_timestamp()-interval '2 hour',window_end=transaction_timestamp()-interval '1 hour' WHERE dimension='account'`)
 		return e
 	})
@@ -343,7 +343,7 @@ func TestT3_7_PruneIsBoundedScopedAndPreservesLiveBudgets(t *testing.T) {
 		t.Fatal("cross-scope prune", n, e)
 	}
 	var count int
-	e = l.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	e = l.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		return tx.QueryRow(`SELECT count(*) FROM identity_auth_limits WHERE dimension='ip'`).Scan(&count)
 	})
 	if e != nil || count != 4 {
@@ -355,7 +355,7 @@ func TestT3_7_PruneIsBoundedScopedAndPreservesLiveBudgets(t *testing.T) {
 }
 
 func TestT3_7_PasswordWorkNeedsOneMatchingDurableAdmission(t *testing.T) {
-	l, s := fixture(t, 2)
+	l, s, _ := fixture(t, 2)
 	budget := l.PasswordBudget()
 	if e := budget.Allow(context.Background(), "signin:x@example.test"); e != ErrUnavailable {
 		t.Fatal("unadmitted expensive work accepted")
@@ -452,12 +452,12 @@ func TestMFAAdmissionIsBoundToCurrentPersonAndUsedOnce(t *testing.T) {
 }
 
 func TestMFACookieMutationPassesFinitePrimaryVerificationBudget(t *testing.T) {
-	limiter, sessions := fixture(t, 10)
+	limiter, sessions, _ := fixture(t, 10)
 	person, err := uuid.NewV7()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := limiter.cfg.DB.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
+	if err := limiter.db.WithTx(context.Background(), nil, func(tx *sql.Tx) error {
 		_, e := tx.Exec(`INSERT INTO identity_persons(id,installation_id,application_id,state) VALUES($1,$2,$3,'active')`, person, limiter.cfg.InstallationID, limiter.cfg.ApplicationID)
 		return e
 	}); err != nil {
