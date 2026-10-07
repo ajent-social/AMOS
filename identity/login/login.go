@@ -13,6 +13,7 @@ import (
 	"mime"
 	"net/http"
 	"net/mail"
+	"reflect"
 	"strings"
 	"time"
 
@@ -42,10 +43,40 @@ type Config struct {
 	ChallengeLifetime                            time.Duration
 }
 
-type Service struct{ cfg Config }
+// TxRunner is the transaction capability required by a login service.
+// The caller owns its lifetime and binds all participants to the same database.
+type TxRunner interface {
+	WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error
+}
+
+type TxConfig struct {
+	Passwords                                    *password.Hasher
+	Email                                        *email.Service
+	Sessions                                     *session.Service
+	InstallationID, ApplicationID, EnvironmentID uuid.UUID
+	ChallengeLifetime                            time.Duration
+}
+
+type Service struct {
+	db  TxRunner
+	cfg TxConfig
+}
 
 func New(cfg Config) (*Service, error) {
-	if cfg.DB == nil || cfg.Passwords == nil || cfg.Email == nil || cfg.Sessions == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
+	return NewWithTxRunner(cfg.DB, TxConfig{
+		Passwords:         cfg.Passwords,
+		Email:             cfg.Email,
+		Sessions:          cfg.Sessions,
+		InstallationID:    cfg.InstallationID,
+		ApplicationID:     cfg.ApplicationID,
+		EnvironmentID:     cfg.EnvironmentID,
+		ChallengeLifetime: cfg.ChallengeLifetime,
+	})
+}
+
+// NewWithTxRunner constructs a service without probing or taking ownership of db.
+func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Service, error) {
+	if nilTxRunner(db) || cfg.Passwords == nil || cfg.Email == nil || cfg.Sessions == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
 		return nil, ErrConfiguration
 	}
 	if cfg.ChallengeLifetime == 0 {
@@ -54,7 +85,20 @@ func New(cfg Config) (*Service, error) {
 	if cfg.ChallengeLifetime != email.DefaultChallengeLifetime {
 		return nil, ErrConfiguration
 	}
-	return &Service{cfg: cfg}, nil
+	return &Service{db: db, cfg: cfg}, nil
+}
+
+func nilTxRunner(db TxRunner) bool {
+	if db == nil {
+		return true
+	}
+	v := reflect.ValueOf(db)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 // Handler serves POST /signup and POST /auth. Mount these routes explicitly.
@@ -134,7 +178,7 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 	token := base64.RawURLEncoding.EncodeToString(raw)
 	digest := sha256.Sum256([]byte(token))
 	var expiry time.Time
-	err = s.cfg.DB.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
+	err = s.db.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
 		if err := tx.QueryRowContext(r.Context(), `SELECT transaction_timestamp() + make_interval(secs => $1)`, s.cfg.ChallengeLifetime.Seconds()).Scan(&expiry); err != nil {
 			return err
 		}
@@ -180,7 +224,7 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 	var state string
 	var verified sql.NullTime
 	var encoded string
-	err := s.cfg.DB.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
+	err := s.db.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
 		return tx.QueryRowContext(r.Context(), `SELECT p.id,p.installation_id,p.application_id,p.security_epoch,p.state,e.verified_at,c.verifier_hash
 			FROM identity_emails e JOIN identity_persons p ON p.id=e.person_id AND p.installation_id=e.installation_id AND p.application_id=e.application_id
 			JOIN identity_credentials c ON c.person_id=p.id AND c.method='email_password' AND c.revoked_at IS NULL
@@ -195,7 +239,7 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 	var persist password.PersistRehash
 	if known {
 		persist = func(ctx context.Context, oldHash, newHash string) error {
-			return s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			return s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 				result, err := tx.ExecContext(ctx, `UPDATE identity_credentials SET verifier_hash=$1
 					WHERE person_id=$2 AND method='email_password' AND verifier_hash=$3 AND revoked_at IS NULL
 					AND EXISTS (SELECT 1 FROM identity_persons p WHERE p.id=$2 AND p.installation_id=$4 AND p.application_id=$5)`, newHash, personID, oldHash, s.cfg.InstallationID, s.cfg.ApplicationID)
