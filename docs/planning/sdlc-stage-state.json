@@ -595,6 +595,594 @@
       },
       "external_blockers": [],
       "next_action": "Continue separately assigned runtime-only storage and production composition; protocol and deployment qualification remain open."
+    },
+    "T-INT-HOST-03.1": {
+      "task_id": "T-INT-HOST-03.1",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-INT-HOST-03.2": {
+      "task_id": "T-INT-HOST-03.2",
+      "status": "COMPLETE",
+      "owner": "Astra runtime source and test author",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.1"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-INT-HOST-03.3": {
+      "task_id": "T-INT-HOST-03.3",
+      "status": "BLOCKED",
+      "owner": "Astra runtime source and test author",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.2"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [
+        "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
+      ],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-SDLC-8-4.1": {
+      "task_id": "T-SDLC-8-4.1",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T8.4",
+        "tip": "a8c0bb19e177d57ec11a1e08f655873c9e6c9fa3"
+      },
+      "dependency_receipts": [
+        "T8.1",
+        "T8.2",
+        "T-PROD.15"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "9336ab38b63b48784c2e639b937a44dafe1c3991",
+        "reviewed_base": "ba3565c416f912525743edd6c86c2d85dccb91ff",
+        "landed": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/25",
+        "evidence": "docs/evidence/aws-network-20261007.md"
+      },
+      "commands_and_results": [
+        "Scoped test/race/vet/pinned lint passed; independent PostgreSQL ingress negative failed and exact restoration passed.",
+        "All six files equal original and landed bytes; all 36 prior module versions preserved. Immediate head/base/check readback preceded guarded rebase merge; no hosted check entries or policy bypass. Fresh landed package test passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "Separate Astra low AWS reviewer",
+        "scope": "Complete four-file source/test and two-file module delta; source/mock boundary only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source-dependent work; actual provider, host, backup and production qualification remain separate."
+    },
+    "T-SDLC-8-4.2": {
+      "task_id": "T-SDLC-8-4.2",
+      "status": "COMPLETE",
+      "owner": "Astra AWS source author",
+      "claim": {
+        "resource": "T8.4",
+        "tip": "a8c0bb19e177d57ec11a1e08f655873c9e6c9fa3"
+      },
+      "dependency_receipts": [
+        "T-SDLC-8-4.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "9336ab38b63b48784c2e639b937a44dafe1c3991",
+        "reviewed_base": "ba3565c416f912525743edd6c86c2d85dccb91ff",
+        "landed": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/25",
+        "evidence": "docs/evidence/aws-network-20261007.md"
+      },
+      "commands_and_results": [
+        "Scoped test/race/vet/pinned lint passed; independent PostgreSQL ingress negative failed and exact restoration passed.",
+        "All six files equal original and landed bytes; all 36 prior module versions preserved. Immediate head/base/check readback preceded guarded rebase merge; no hosted check entries or policy bypass. Fresh landed package test passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "Separate Astra low AWS reviewer",
+        "scope": "Complete four-file source/test and two-file module delta; source/mock boundary only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source-dependent work; actual provider, host, backup and production qualification remain separate."
+    },
+    "T-SDLC-8-4.3": {
+      "task_id": "T-SDLC-8-4.3",
+      "status": "COMPLETE",
+      "owner": "Astra AWS source author",
+      "claim": {
+        "resource": "T8.4",
+        "tip": "a8c0bb19e177d57ec11a1e08f655873c9e6c9fa3"
+      },
+      "dependency_receipts": [
+        "T-SDLC-8-4.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "9336ab38b63b48784c2e639b937a44dafe1c3991",
+        "reviewed_base": "ba3565c416f912525743edd6c86c2d85dccb91ff",
+        "landed": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/25",
+        "evidence": "docs/evidence/aws-network-20261007.md"
+      },
+      "commands_and_results": [
+        "Scoped test/race/vet/pinned lint passed; independent PostgreSQL ingress negative failed and exact restoration passed.",
+        "All six files equal original and landed bytes; all 36 prior module versions preserved. Immediate head/base/check readback preceded guarded rebase merge; no hosted check entries or policy bypass. Fresh landed package test passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "Separate Astra low AWS reviewer",
+        "scope": "Complete four-file source/test and two-file module delta; source/mock boundary only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source-dependent work; actual provider, host, backup and production qualification remain separate."
+    },
+    "T-INT-HOST-03.4": {
+      "task_id": "T-INT-HOST-03.4",
+      "status": "IN_PROGRESS",
+      "owner": "Independent Astra low reviewer",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.3"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [
+        "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
+      ],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-INT-HOST-03.2.F1": {
+      "task_id": "T-INT-HOST-03.2.F1",
+      "status": "COMPLETE",
+      "owner": "Astra runtime source author",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.2"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-INT-HOST-03.3.F1": {
+      "task_id": "T-INT-HOST-03.3.F1",
+      "status": "BLOCKED",
+      "owner": "Astra runtime source author",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.2.F1"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [
+        "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
+      ],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-INT-HOST-03.4.R1": {
+      "task_id": "T-INT-HOST-03.4.R1",
+      "status": "IN_PROGRESS",
+      "owner": "Independent Astra low reviewer",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.3.F1"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [
+        "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
+      ],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-SDLC-8-4.4": {
+      "task_id": "T-SDLC-8-4.4",
+      "status": "COMPLETE",
+      "owner": "Independent Astra low reviewer",
+      "claim": {
+        "resource": "T8.4",
+        "tip": "a8c0bb19e177d57ec11a1e08f655873c9e6c9fa3"
+      },
+      "dependency_receipts": [
+        "T-SDLC-8-4.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "9336ab38b63b48784c2e639b937a44dafe1c3991",
+        "reviewed_base": "ba3565c416f912525743edd6c86c2d85dccb91ff",
+        "landed": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/25",
+        "evidence": "docs/evidence/aws-network-20261007.md"
+      },
+      "commands_and_results": [
+        "Scoped test/race/vet/pinned lint passed; independent PostgreSQL ingress negative failed and exact restoration passed.",
+        "All six files equal original and landed bytes; all 36 prior module versions preserved. Immediate head/base/check readback preceded guarded rebase merge; no hosted check entries or policy bypass. Fresh landed package test passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "Separate Astra low AWS reviewer",
+        "scope": "Complete four-file source/test and two-file module delta; source/mock boundary only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source-dependent work; actual provider, host, backup and production qualification remain separate."
+    },
+    "T-SDLC-8-4.5": {
+      "task_id": "T-SDLC-8-4.5",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T8.4",
+        "tip": "a8c0bb19e177d57ec11a1e08f655873c9e6c9fa3"
+      },
+      "dependency_receipts": [
+        "T-SDLC-8-4.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "9336ab38b63b48784c2e639b937a44dafe1c3991",
+        "reviewed_base": "ba3565c416f912525743edd6c86c2d85dccb91ff",
+        "landed": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/25",
+        "evidence": "docs/evidence/aws-network-20261007.md"
+      },
+      "commands_and_results": [
+        "Scoped test/race/vet/pinned lint passed; independent PostgreSQL ingress negative failed and exact restoration passed.",
+        "All six files equal original and landed bytes; all 36 prior module versions preserved. Immediate head/base/check readback preceded guarded rebase merge; no hosted check entries or policy bypass. Fresh landed package test passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "Separate Astra low AWS reviewer",
+        "scope": "Complete four-file source/test and two-file module delta; source/mock boundary only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source-dependent work; actual provider, host, backup and production qualification remain separate."
+    },
+    "T-SDLC-8-4.6": {
+      "task_id": "T-SDLC-8-4.6",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T8.4",
+        "tip": "a8c0bb19e177d57ec11a1e08f655873c9e6c9fa3"
+      },
+      "dependency_receipts": [
+        "T-SDLC-8-4.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "9336ab38b63b48784c2e639b937a44dafe1c3991",
+        "reviewed_base": "ba3565c416f912525743edd6c86c2d85dccb91ff",
+        "landed": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/25",
+        "evidence": "docs/evidence/aws-network-20261007.md"
+      },
+      "commands_and_results": [
+        "Scoped test/race/vet/pinned lint passed; independent PostgreSQL ingress negative failed and exact restoration passed.",
+        "All six files equal original and landed bytes; all 36 prior module versions preserved. Immediate head/base/check readback preceded guarded rebase merge; no hosted check entries or policy bypass. Fresh landed package test passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "Separate Astra low AWS reviewer",
+        "scope": "Complete four-file source/test and two-file module delta; source/mock boundary only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source-dependent work; actual provider, host, backup and production qualification remain separate."
+    },
+    "T-INT-HOST-03.5": {
+      "task_id": "T-INT-HOST-03.5",
+      "status": "BLOCKED",
+      "owner": "Astra runtime source and test author",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.4.R1"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [
+        "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
+      ],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
+    },
+    "T-INT-HOST-03.6": {
+      "task_id": "T-INT-HOST-03.6",
+      "status": "PLANNED",
+      "owner": "Astra runtime source and test author",
+      "claim": {
+        "resource": "INT-HOST-03",
+        "tip": "af5f0312db77a6829c394c85da0f8e34da0ebf23"
+      },
+      "dependency_receipts": [
+        "T-INT-HOST-03.5"
+      ],
+      "source_or_artifact_identity": {
+        "candidate": "79d3014c85c1a5884927bcff05f3e664b4f101a9",
+        "base": "64ba2c8494fdef39da72a53df2bfcb495f79ec1d",
+        "pr": "https://github.com/ajent-social/AMOS/pull/26",
+        "evidence": "docs/evidence/runtime-storage-20261007.md"
+      },
+      "commands_and_results": [
+        "Author and separate final reviewer normal/race runtime checks explicitly exclude required service; scoped vet and pinned zero-issue lint pass.",
+        "Independent pre-fix parser substitution fails malformed-prefix and nested-BEGIN regressions; exact restored source passes. Missing-service invocation fails visibly.",
+        "One isolated test-fixture trial failed before service startup and its owned resources were verified removed. No actual TLS/runtime-role configuration or service evidence exists."
+      ],
+      "independent_review_and_findings": {
+        "status": "SOURCE_CLEAR_SERVICE_BLOCKED",
+        "reviewer": "Different final Astra low runtime reviewer",
+        "scope": "Full two-file v1.15 source including strict PEM and fresh BeginTx wait fixes; actual service gate remains open",
+        "findings": [
+          {
+            "id": "RUNTIME-SERVICE",
+            "disposition": "partially addressed; tests added, actual evidence blocked"
+          },
+          {
+            "id": "RUNTIME-PEM",
+            "disposition": "fixed and independently negative/restored verified"
+          },
+          {
+            "id": "RUNTIME-WAIT",
+            "disposition": "source fixed; actual service execution pending"
+          }
+        ]
+      },
+      "external_blockers": [
+        "Required actual TLS/runtime-role verification absent; failed fixture trial consumed its authorization."
+      ],
+      "next_action": "Preserve source and draft PR; correct and independently review fixture diagnostics/cleanup, then obtain explicit authority for another bounded trial. No merge or acceptance before real-service evidence."
     }
   },
   "receipt_requirements": [

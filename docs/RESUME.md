@@ -4,7 +4,7 @@ Owner direction recorded 2026-10-03: qualify AMOS as the owner-hosted replacemen
 
 Updated: 2026-10-02. Reviewed foundations and application components are integrated; implementation remains underway. Original AMOS code uses Apache 2.0. Application code and all Pulumi programs use Go. Existing task permission grants remain in effect; routine authorized work does not require repeated confirmation.
 
-Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At this checkpoint, 57 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Parallel takeover completed federation coordination, bounded reconciliation scheduling, current workspace selection, exact-owned local cleanup and the person-extension contract. Complete authentication and organization policy, live subscriptions and deployment remain planned. Do not assume that a task worktree is merged or accepted merely because it exists.
+Read `docs/planning/execution-state.json` before dispatch. It is the authoritative accepted-task registry. At the current checkpoint, 59 tasks are accepted out of 257 planned. Reviewed components include initializer transactions, credential authentication and recovery, billing persistence/catalog/Stripe adapter/checkout controllers, reference UI, local database runner and cloud configuration/profile designs. Parallel takeover completed federation coordination, bounded reconciliation scheduling, current workspace selection, exact-owned local cleanup and the person-extension contract. Complete authentication and organization policy, live subscriptions and deployment remain planned. Do not assume that a task worktree is merged or accepted merely because it exists.
 
 Integrated foundations cover PostgreSQL/migrations, policy/configuration, jobs/outbox/email/audit, identity storage/sessions/passwords/email verification, workspace persistence/bootstrap/context, OpenAPI/Go generation, tenant-scoped reference todos and the default UI renderer. The fragment swap regression failed before the renderer fix and passes afterward in a real browser.
 
@@ -208,12 +208,20 @@ negative/restored evidence and a fresh landed app test. See
 are complete; runtime-only storage, production composition, protocol authentication
 and deployment remain separate unqualified stages.
 
-## Runtime-only PostgreSQL storage design
+## Runtime-only PostgreSQL storage source checkpoint
 
-The v1.15 runtime-storage contract and six-stage source assignment are proposed
-for independent exact-head review. The initial code scope is only
-`storage/runtime.go` and `storage/runtime_test.go`, preserving existing
-development and migration APIs. No implementation, database-role, production
-TLS, deployment, or acceptance evidence is claimed yet. Source dispatch remains
-held until the public amendment is reviewed and merged and its exact claim is
-confirmed.
+The v1.15 contract landed through PR24. Two-file implementation in draft PR26 is
+independently source-reviewed after strict PEM and test corrections. Unit-only
+normal/race/vet/lint pass, but the isolated service trial failed before startup.
+Actual TLS/runtime-role evidence, merge, landed verification and acceptance remain
+open. See [checkpoint](evidence/runtime-storage-20261007.md). Production role,
+TLS, adapter and deployment gates remain separate. Concrete follow-on interfaces
+are recorded in [source preflight](planning/onward-source-preflight.md).
+
+
+## AWS VM network and host identity source
+
+T8.4 is accepted at the source/Pulumi mock boundary after independent exact-head
+review, local test/race/vet/lint, negative/restored checks and verified PR25
+landing. See [evidence](evidence/aws-network-20261007.md). No provider calls,
+preview, production role, host deployment or backup operation was qualified.
