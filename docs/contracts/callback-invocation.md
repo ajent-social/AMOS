@@ -10,10 +10,12 @@ The existing private `Definition.invoke` calls the handler and then output codec
 Invalidating around that entire call leaves retained database handles usable by
 codec code. Split the internal typed binding into handler and result completion
 stages, without changing `Bind`, any exported type shape or registry metadata.
-A private handler result carries the finite result kind and the typed value as
-`any`. The handler closure validates its input type and receives the existing
-cloned invocation context. The completion closure checks result kind, verifies
-the output type, encodes, validates and copies canonical output as before.
+The private handler stage returns the complete `Result[O]` wrapped as `any`,
+not its bare output value. This preserves valid nil-interface output values
+without losing their generic type. The handler closure validates its input type
+and receives the existing cloned invocation context. The completion closure
+asserts the complete `Result[O]`, checks result kind, encodes its Value, validates
+and copies canonical output as before.
 
 Preserve the existing private invoke behavior by composing the two stages, so
 existing registry tests retain their meaning. The future guarded invocation path
@@ -64,7 +66,7 @@ After this proposal is independently reviewed and landed, a source author may ow
 module files, policy and transport wiring remain outside that leaf.
 
 Normal and race tests must exercise handler success, error, exact-value panic,
-invalid input/output types, invalid result kind, output encode/validate errors and
+invalid input/result types, valid nil-interface outputs, invalid result kind, output encode/validate errors and
 panics. Codec probes must observe closed retained DBTX/Row/Rows, unchanged Scan
 destinations and no driver access. No codec may run after handler or cleanup
 failure. Exercise unfinished rows, cleanup failure, joined error identity and
