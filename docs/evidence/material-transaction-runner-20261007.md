@@ -25,6 +25,6 @@ and exact UUID cleanup. Fresh landed verification passed that required test.
 
 The combined landed source tree equals the independently built and unit-checked
 aggregate. The changed-path scanner reports one source-expression match
-(`Password: cfg.Password`), not a credential literal; no automated full-scan pass
+(the decoded password field assignment), not a credential literal; no automated full-scan pass
 is claimed. Legacy privileged suites, mail delivery, production key/role policy,
 providers, deployment and hosted CI success remain unqualified.
