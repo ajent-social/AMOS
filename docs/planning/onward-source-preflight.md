@@ -1,9 +1,10 @@
 # Source-grounded follow-on readiness
 
-Source baseline: `f00fdff60cd94b9fd181e54ff890e63ae6e02dcc`, including
+Source baseline: `c3caa036f89101cd336535a9ae2dc92f32fb6bd1`, including
 independently reviewed and locally service-verified runtime storage from PR26,
 private SQL adapter PR28, replay primitives PR31, session constructor PR32 and
-protection constructor PR34. Additive constructor and callback guard contracts
+protection constructor PR34, callback guard PR35, material constructor PR36
+and transaction-only job store PR33. Additive constructor and callback guard contracts
 v1.16–v1.18 landed through PR30. These components grant no operation or
 production authority.
 
@@ -17,13 +18,12 @@ flag or reusing its migration-capable credential shape.
 The frozen [constructor contract](../contracts/transaction-services.md) defines
 additive transaction-only admission for session, email, login, recovery, MFA,
 protection and protected mail material services. Session and protection have
-landed with independent actual-service and fresh landed checks. Material source
-is under correction/review; email, login, recovery and MFA remain unimplemented
-for this seam. Typed-nil handling and legacy compatibility remain mandatory.
+landed with independent actual-service and fresh landed checks. Material has also landed with independent actual-service and fresh landed
+checks. Email and MFA source lanes are assigned; their actual service/review/merge
+gates remain open. Login and recovery remain unimplemented for this seam. Typed-nil handling and legacy compatibility remain mandatory.
 The [job-store contract](../contracts/transaction-job-store.md) defines an additive
-transaction-only adapter without exposing the runtime pool or another DSN. Jobs
-source is staged; its post-lock regression observer requires correction and
-different independent review before merge.
+transaction-only adapter without exposing the runtime pool or another DSN. Jobs source and its corrected post-lock regression have landed after different
+independent review, actual normal/race and fresh landed service checks.
 
 Production composition needs an explicit canonical HTTPS origin, secure cookie
 and trusted proxy policy, finite route/protocol manifest, runtime-only credential,
@@ -60,8 +60,8 @@ These shared contracts and database gates precede executable dispatch.
 The private adapter is not the frozen callback wrapper. The separate v1.18
 [callback contract](../contracts/callback-database.md) requires rejection of direct
 transaction-control statements and invalidation of retained DBTX, Row and Rows
-after callback return. Guard source is in independent review; actual service,
-merge and landed gates remain open. Handler-before-codec integration is a further
+after callback return. Guard source has landed after a separate cancellation-test correction, different
+independent actual-service review and fresh landed checks. Handler-before-codec integration is a further
 explicit gate. Registry binding and these helpers confer no operation authority.
 
 ## Next current-session authority seam

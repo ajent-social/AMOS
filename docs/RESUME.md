@@ -243,9 +243,14 @@ runtime-role normal/race and fresh landed service evidence. See the component
 receipts under `docs/evidence/`; these changes do not raise the accepted-task
 count or qualify a production host.
 
-Jobs, callback guards and protected material construction are staged through
-source correction and independent actual-service review. Their pending gates
-are recorded in the stage journal; a draft PR is not acceptance. The original
+Jobs (PR33), callback guards (PR35) and protected material construction (PR36)
+have now landed after source corrections, different independent actual-service
+review and fresh landed checks. Their combined landed tree matches the
+independently built aggregate; manifests, lockfiles and migrations are unchanged.
+The initial session/jobs composition stages are complete as local components.
+Next email and MFA constructor source lanes and their dedicated runtime-profile
+gates are recorded separately in the journal; a draft or source checkpoint is
+not acceptance. The original
 product registry remains authoritative. The session authority preflight has
 independent open findings for post-lock renewal time, refreshed-principal
 handoff, writer lock order and challenge freshness. No executor dispatch,
