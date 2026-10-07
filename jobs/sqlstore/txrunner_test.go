@@ -517,7 +517,22 @@ func TestJobStoreRuntimeRequiredService(t *testing.T) {
 	t.Run("post-lock-expiry", func(t *testing.T) {
 		enqueue("lock-expiry", false)
 		j := claim()
-		locked := make(chan int, 1)
+		locked := make(chan struct{})
+		waiter := make(chan int, 1)
+		observedRunner := runnerFunc(func(c context.Context, options *sql.TxOptions, fn func(*sql.Tx) error) error {
+			return db.WithTx(c, options, func(tx *sql.Tx) error {
+				var pid int
+				if err := tx.QueryRowContext(c, `SELECT pg_backend_pid()`).Scan(&pid); err != nil {
+					return err
+				}
+				waiter <- pid
+				return fn(tx)
+			})
+		})
+		resolver, err := NewWithTx(observedRunner, cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
 		release := make(chan struct{})
 		blockDone := make(chan error, 1)
 		go func() {
@@ -530,17 +545,29 @@ func TestJobStoreRuntimeRequiredService(t *testing.T) {
 				if e := tx.QueryRowContext(ctx, `SELECT pg_backend_pid()`).Scan(&pid); e != nil {
 					return e
 				}
-				locked <- pid
-				// Observe an actual waiter while retaining the unchanged row lock, then
-				// observe database time pass the lease before releasing it.
+				close(locked)
+				var waiterPID int
+				select {
+				case waiterPID = <-waiter:
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-release:
+					return errors.New("resolver did not publish its backend")
+				}
+				// Observe this exact resolver, including a newly opened backend, without
+				// a pg_stat_activity snapshot. Retain the unchanged row lock until
+				// database time passes the lease after observing it wait while valid.
 				ticker := time.NewTicker(10 * time.Millisecond)
 				defer ticker.Stop()
 				waiting := false
 				for {
 					var now time.Time
 					var blocked bool
-					if e := tx.QueryRowContext(ctx, `SELECT clock_timestamp(), EXISTS(SELECT 1 FROM pg_stat_activity WHERE $1=ANY(pg_blocking_pids(pid)))`, pid).Scan(&now, &blocked); e != nil {
+					if e := tx.QueryRowContext(ctx, `SELECT clock_timestamp(), $1=ANY(pg_blocking_pids($2))`, pid, waiterPID).Scan(&now, &blocked); e != nil {
 						return e
+					}
+					if !waiting && !now.Before(j.LeaseUntil) {
+						return errors.New("resolver was not observed waiting before lease expiry")
 					}
 					waiting = waiting || blocked
 					if waiting && now.After(j.LeaseUntil) {
@@ -561,7 +588,7 @@ func TestJobStoreRuntimeRequiredService(t *testing.T) {
 		case <-ctx.Done():
 			t.Fatal("blocker not ready")
 		}
-		e := s.Resolve(ctx, j, "runtime-worker", jobs.Resolution{Kind: jobs.ResolutionSucceeded})
+		e := resolver.Resolve(ctx, j, "runtime-worker", jobs.Resolution{Kind: jobs.ResolutionSucceeded})
 		close(release)
 		if blockerErr := <-blockDone; blockerErr != nil {
 			t.Fatal("lock observation failed")
