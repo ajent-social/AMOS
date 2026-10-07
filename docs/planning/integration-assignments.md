@@ -158,3 +158,7 @@ precreated email-material schema and DML role; the session/jobs profiles cannot
 substitute. No mail delivery, production secret or host qualification is claimed.
 
 Material-store lane ownership amendment: its legacy `store_test.go` may retain the setup configuration and close `cfg.DB` instead of the private transaction capability. This preserves existing test lifecycle without adding pool authority to the service. Independent review covers this fourth file.
+
+Material runtime test correction: coordinator owns only `delivery/email/materialstore/runtime_integration_test.go` to accept the standard eleven-field runtime fixture configuration while preserving strict unknown/trailing rejection and adding an offline format regression. A different reviewer must clear this correction and actual required-service evidence. The fixture format and service implementation remain unchanged.
+
+Callback correction: a separate author owns only the four guard files for the diagnosed cancellation assertion; the delivered correction changes the test alone to prove backend termination and rollback effects. A different final reviewer owns actual-service repetition. No handler/executor wiring is delegated.
