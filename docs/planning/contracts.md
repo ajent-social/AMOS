@@ -340,10 +340,10 @@ serializes one outstanding result lease, and invalidates/cancels/drains retained
 handles at handler return before codec work. Unfinished work requires rollback.
 This is not a SQL sandbox or an executor; future boundary wiring remains gated.
 
-## Proposed amendment v1.19: private handler completion boundary
+## Amendment v1.19: private handler completion boundary
 
 [ADR 030](../adr/030-handler-completion-boundary.md) and the
-[private boundary proposal](../contracts/callback-invocation.md) separate handler
+[private boundary contract](../contracts/callback-invocation.md) separate handler
 execution from result completion so v1.18 invalidation happens before codecs.
-This proposal is not frozen: independent review and landing precede source work.
+Independent design review and PR41 landing freeze this private source boundary.
 No exported executor, authority, migration or transport is added.

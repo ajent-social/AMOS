@@ -20,7 +20,7 @@ additive transaction-only admission for session, email, login, recovery, MFA,
 protection and protected mail material services. Session and protection have
 landed with independent actual-service and fresh landed checks. Material has also landed with independent actual-service and fresh landed
 checks. Email and MFA have landed with independent actual-service and fresh landed
-checks. Login and recovery remain unimplemented for this seam. Typed-nil handling and legacy compatibility remain mandatory.
+checks. Login has landed with independent actual-service and fresh landed checks. Recovery has also landed after separate exact-head review, actual normal/race and fresh landed verification. Typed-nil handling and legacy compatibility remain mandatory.
 The [job-store contract](../contracts/transaction-job-store.md) defines an additive
 transaction-only adapter without exposing the runtime pool or another DSN. Jobs source and its corrected post-lock regression have landed after different
 independent review, actual normal/race and fresh landed service checks.
@@ -61,8 +61,7 @@ The private adapter is not the frozen callback wrapper. The separate v1.18
 [callback contract](../contracts/callback-database.md) requires rejection of direct
 transaction-control statements and invalidation of retained DBTX, Row and Rows
 after callback return. Guard source has landed after a separate cancellation-test correction, different
-independent actual-service review and fresh landed checks. Handler-before-codec integration is a further
-explicit gate. Registry binding and these helpers confer no operation authority.
+independent actual-service review and fresh landed checks. The v1.19 handler-before-codec contract has independent design review and PR41 landing; its assigned private implementation is a further explicit gate. Registry binding and these helpers confer no operation authority.
 
 ## Next current-session authority seam
 

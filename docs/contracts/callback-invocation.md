@@ -1,6 +1,6 @@
-# Private handler completion boundary (proposed v1.19)
+# Private handler completion boundary (v1.19)
 
-Status: proposed; independent exact-head review and landing precede source work.
+Status: adopted after independent exact-head design review and PR41 landing.
 This is a private prerequisite under T2.8, not an executor or authorization API.
 It preserves v1.18 SQL admission, lifetime and drain behavior.
 
@@ -60,7 +60,7 @@ transaction; the eventual executor must suppress results on commit failure.
 
 ## Verification and ownership
 
-After this proposal is independently reviewed and landed, a source author may own
+Following independent design review and landing, the assigned source author owns
 `app/operation/operation.go`, new `callback_invocation.go` and
 `callback_invocation_test.go`. Existing SQL guard files, public APIs, schema,
 module files, policy and transport wiring remain outside that leaf.

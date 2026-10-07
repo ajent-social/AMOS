@@ -193,3 +193,24 @@ existing shared dispatcher. Queued assignments are not running workers.
 The coordinator retains shared contracts and plan state. Paid-access task T5.9
 remains dependent on full T2.8 and current authority; transaction-only billing
 repositories already exist and do not require replacement constructors.
+
+Recovery compatibility amendment: the coordinator owns the single legacy
+`identity/recovery/recovery_test.go` assignment from `service.cfg.DB` to
+`service.db`. A different reviewer must clear the complete four-file candidate.
+
+### Adopted v1.19 private boundary leaf
+
+PR41 landed the independently reviewed design at
+`83023dc38b8a31714a2f5a656c1ceb9808d7bec0`. The assigned source author owns only
+`app/operation/operation.go`, new `callback_invocation.go` and
+`callback_invocation_test.go`; existing guard files and all shared files remain
+outside the leaf. Complete result boxing preserves nil-interface output, and
+invalidation/drain must finish before codecs. No exported executor or authority
+is delegated. Different exact-head review, actual runtime-role tests, a genuine
+wrong-order negative/restored check and fresh landed evidence remain required.
+
+Boundary source ownership update: the queued author request was withdrawn before
+admission during shared-dispatch infrastructure unavailability. The already-admitted
+coordinator authored only the three assigned files in a separate worktree. A
+different exact-head source reviewer is mandatory; design review is not source
+review and no self-approval is permitted.
