@@ -407,7 +407,28 @@
         "pr": 20,
         "reviewed_head": "0a098c60210252bb3829cdda8753f88d9644d280",
         "reviewed_base": "229885fa50ee52237ebe9c3d3228b1c3b30879e3",
-        "landed": "8181fc48bf12cce569ab50d68cd261cca0ebd071"
+        "landed": "8181fc48bf12cce569ab50d68cd261cca0ebd071",
+        "handler_completion_followon": {
+          "contract_pr": 41,
+          "reviewed_head": "b891900de42da11a1191c8b5ec24e277fe9e4d2b",
+          "landed": "83023dc38b8a31714a2f5a656c1ceb9808d7bec0",
+          "status": "SOURCE_VERIFIED_INDEPENDENT_REVIEW_PENDING",
+          "owner": "Coordinator source author; different dispatcher-admitted reviewer required",
+          "paths": [
+            "app/operation/operation.go",
+            "app/operation/callback_invocation.go",
+            "app/operation/callback_invocation_test.go"
+          ],
+          "gates": [
+            "Source implementation and normal/race/vet/lint",
+            "Independent exact-head review including wrong-order negative/restored",
+            "Required actual PostgreSQL runtime-profile checks",
+            "Guarded merge and fresh landed service checks",
+            "Full executor authority, replay, audit/effects and transport remain separate"
+          ],
+          "candidate": "1b86e3a38d58a3dfe6c22bad3f77ed7f770c0eab",
+          "verification": "Offline344 and actual full-package366 PASS, vet/pinnedlint PASS; actual boundary4 entries included. Independent review and landed gates remain."
+        }
       },
       "commands_and_results": [
         "Immutable operation registry and frozen policy types landed through PR20 at 8181fc48bf12cce569ab50d68cd261cca0ebd071; all three source files match independently reviewed head 0a098c60210252bb3829cdda8753f88d9644d280.",
@@ -1736,49 +1757,123 @@
             "name": "Login",
             "owner": "Assigned login constructor author",
             "base": "4e7afabc28635be4e88e7f3e1cf0de6f4cf2e1f7",
-            "status": "SOURCE_VERIFIED_REQUIRED_SERVICE_PENDING",
+            "status": "LANDED_LOCAL_COMPONENT",
             "paths": [
               "identity/login/login.go",
               "identity/login/transaction_test.go",
               "identity/login/runtime_integration_test.go"
             ],
             "gates": [
-              "Fresh reviewed same-database runtime profile",
-              "Actual required normal/race and transaction-completion negative/restored",
-              "Final exact-head review with service evidence",
-              "Guarded merge and fresh landed service checks",
-              "Production host and role qualification remain separate"
+              "Production host and role qualification",
+              "Current authority and remaining provider gates"
             ],
             "author_head": "6f731a2d8b97b2c04380f3c1d87d45786bfee20f",
             "independent_review": {
               "head": "6f731a2d8b97b2c04380f3c1d87d45786bfee20f",
-              "status": "CLEAR_SOURCE_REQUIRED_SERVICE_PENDING",
+              "status": "CLEAR_SOURCE_AND_ACTUAL_LOCAL_COMPONENT",
               "normal_pass": 25,
               "race_pass": 25,
               "skips": 0,
               "vet": "PASS",
               "lint": "PASS",
-              "negative_restored": "nil/default/options intended RED; exact-restored25PASS"
+              "negative_restored": "nil/default/options and completion-only real commit-error assertion RED; exact-restored PASS"
             },
-            "actual_service": "NOT_RUN; missing profile visibly fails"
+            "actual_service": {
+              "normal_pass": 7,
+              "race_pass": 7,
+              "landed_pass": 7,
+              "skips": 0
+            },
+            "pr": 42,
+            "candidate": "6f731a2d8b97b2c04380f3c1d87d45786bfee20f",
+            "live_base": "4e7afabc28635be4e88e7f3e1cf0de6f4cf2e1f7",
+            "landed": "3e701dfcb31cbf881c2a4ac2ff9f858ea8b87312",
+            "evidence": "docs/evidence/login-recovery-constructors-20261007.md",
+            "stages": [
+              {
+                "stage": "implement",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "verify",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "independent-review",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "merge",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "verify-landed",
+                "status": "COMPLETE"
+              }
+            ]
           },
           {
             "name": "Recovery",
             "owner": "Assigned recovery constructor author",
             "base": "4e7afabc28635be4e88e7f3e1cf0de6f4cf2e1f7",
-            "status": "QUEUED_SHARED_DISPATCHER",
+            "status": "LANDED_LOCAL_COMPONENT",
             "paths": [
               "identity/recovery/recovery.go",
               "identity/recovery/transaction_test.go",
-              "identity/recovery/runtime_integration_test.go"
+              "identity/recovery/runtime_integration_test.go",
+              "identity/recovery/recovery_test.go"
             ],
             "gates": [
-              "Dispatcher admission",
-              "Source and scoped local verification",
-              "Independent exact-head review",
-              "Required actual same-database runtime profile verification",
-              "Guarded merge and fresh landed service checks",
-              "Production host and role qualification remain separate"
+              "Production host/current authority/provider qualification"
+            ],
+            "pr": 43,
+            "author_head": "2383acab4e3d77021850b33622b060ac11dfa960",
+            "candidate": "d24364a1787c59bd24b6f9879aab95c9a2ba291c",
+            "reviewed_base": "3e701dfcb31cbf881c2a4ac2ff9f858ea8b87312",
+            "ownership": "Original author owns three source/new test files; coordinator owns one-line legacy recovery_test.go adapter; different final reviewer required.",
+            "verification": "Unadapted final four-file candidate normal32/race32/vet/lint PASS, actual normal13/race13 zero skips. Earlier unadapted legacy-field compile failure preserved and corrected.",
+            "independent_review": {
+              "head": "d24364a1787c59bd24b6f9879aab95c9a2ba291c",
+              "status": "CLEAR_SOURCE_AND_ACTUAL_LOCAL_COMPONENT",
+              "normal_pass": 32,
+              "race_pass": 32,
+              "actual_normal_pass": 13,
+              "actual_race_pass": 13,
+              "actual_restored_pass": 13,
+              "skips": 0,
+              "findings": [],
+              "negative_restored": "nil/default/options assertions RED; old-line compile RED; completion-only successful writes/real Commit ErrTransaction/live context then intended success-suppression assertion RED; exact-restored PASS"
+            },
+            "landed": "d5130d39e0e65358b2ccc7997889da3a801039e2",
+            "live_base": "83023dc38b8a31714a2f5a656c1ceb9808d7bec0",
+            "evidence": "docs/evidence/login-recovery-constructors-20261007.md",
+            "actual_service": {
+              "normal_pass": 13,
+              "race_pass": 13,
+              "landed_pass": 13,
+              "skips": 0
+            },
+            "stages": [
+              {
+                "stage": "implement",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "verify",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "independent-review",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "merge",
+                "status": "COMPLETE"
+              },
+              {
+                "stage": "verify-landed",
+                "status": "COMPLETE"
+              }
             ]
           }
         ]
