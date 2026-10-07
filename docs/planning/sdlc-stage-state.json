@@ -423,7 +423,7 @@
         "genuine_negative": "Digest comparison removal failed mismatch regression; exact restoration passed"
       },
       "external_blockers": [],
-      "next_action": "Complete corrected callback actual-service review, guarded merge and landed checks; current-session provenance and writer lock order, durable replay/capacity, audit/effects and transport remain explicit executor gates.",
+      "next_action": "Private callback source/service/merge/landed component gates are complete. Define and review handler-return invalidation before codec work, current-session renewal/provenance and refreshed-principal handoff, compatible writer ordering, durable replay/capacity and migrations, audit/effects and transport before executor admission.",
       "claim": {
         "resource": "T2.8",
         "tip": "df6030adf83a15dae812a688dfbf3f7b51e10124"
@@ -1645,7 +1645,7 @@
             "name": "MFA",
             "owner": "Assigned MFA source author",
             "base": "bff204f8bdad5fe29e6dceeb73f06649521f9487",
-            "status": "SOURCE_IN_PROGRESS",
+            "status": "SOURCE_COMPLETE_INDEPENDENT_REVIEW_AND_SERVICE_PENDING",
             "paths": [
               "identity/mfa/mfa.go",
               "identity/mfa/transaction_test.go",
@@ -1656,13 +1656,15 @@
               "Actual required service",
               "Different exact-head review",
               "Merge and landed checks"
-            ]
+            ],
+            "author_head": "9011aa7a9439dce4df7e7bf94090e334bdaaeab7",
+            "verification": "Scoped normal/race/vet/pinned lint and author negative/restored checks pass; dedicated required service visibly failed absent profile. No actual-service, independent source acceptance, merge or landed claim."
           },
           {
             "name": "identity email",
             "owner": "Assigned email source author",
             "base": "c3caa036f89101cd336535a9ae2dc92f32fb6bd1",
-            "status": "SOURCE_IN_PROGRESS",
+            "status": "SOURCE_COMPLETE_INDEPENDENT_REVIEW_AND_SERVICE_PENDING",
             "paths": [
               "identity/email/email.go",
               "identity/email/transaction_test.go",
@@ -1673,7 +1675,9 @@
               "Actual atomic service verification",
               "Different exact-head review",
               "Merge and landed checks"
-            ]
+            ],
+            "author_head": "67ebbdde98ff1b50f1c755c3a6d95277ac7f6d76",
+            "verification": "Scoped normal/race/vet/pinned lint and author negative/restored checks pass; dedicated required service visibly failed absent profile. No actual-service, independent source acceptance, merge or landed claim."
           }
         ]
       },
