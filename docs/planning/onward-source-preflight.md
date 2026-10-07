@@ -55,3 +55,10 @@ The private adapter is not the frozen callback wrapper. Before any callback
 exposure, a separate wrapper must reject direct transaction-control statements and
 invalidate retained DBTX, Row and Rows values after callback return. Registry
 binding and this helper cannot bypass those guards or confer operation authority.
+
+## Next current-session authority seam
+
+A concrete [session recheck proposal](session-recheck-preflight.md) records the
+missing opaque middleware provenance and post-lock database-time checks. It is
+not frozen or implemented. Rotation and other writer-order incompatibilities remain
+explicit dispatch blockers; transaction-only constructors do not resolve them.
