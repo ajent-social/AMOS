@@ -13,6 +13,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 
@@ -55,8 +56,14 @@ type ProtectedMaterialWriter interface {
 	PutVerificationMaterial(context.Context, *sql.Tx, deliveryemail.SecretReference, deliveryemail.PrivateMaterial, time.Time) error
 }
 
+// TxRunner is the transaction capability consumed by email verification.
+// Implementations own transaction completion and database lifetime.
+type TxRunner interface {
+	WithTx(context.Context, *sql.TxOptions, func(*sql.Tx) error) error
+}
+
 type Service struct {
-	db             *storage.DB
+	db             TxRunner
 	outbox         *sqlstore.Store
 	renderer       *deliveryemail.Renderer
 	materials      ProtectedMaterialWriter
@@ -75,7 +82,13 @@ type Page struct {
 }
 
 func New(db *storage.DB, outbox *sqlstore.Store, renderer *deliveryemail.Renderer, materials ProtectedMaterialWriter, cfg Config) (*Service, error) {
-	if db == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || cfg.ChallengeLifetime < MinChallengeLifetime || cfg.ChallengeLifetime > MaxChallengeLifetime || cfg.ChallengeLifetime%time.Second != 0 {
+	return NewWithTxRunner(db, outbox, renderer, materials, cfg)
+}
+
+// NewWithTxRunner constructs a service without probing or taking ownership of db.
+// Trusted composition must bind identity, outbox and materials to one database.
+func NewWithTxRunner(db TxRunner, outbox *sqlstore.Store, renderer *deliveryemail.Renderer, materials ProtectedMaterialWriter, cfg Config) (*Service, error) {
+	if nilTxRunner(db) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || cfg.ChallengeLifetime < MinChallengeLifetime || cfg.ChallengeLifetime > MaxChallengeLifetime || cfg.ChallengeLifetime%time.Second != 0 {
 		return nil, ErrInvalidRequest
 	}
 	origin, err := parseOrigin(cfg.ApplicationOrigin, cfg.DevelopmentLoopback)
@@ -108,6 +121,19 @@ func New(db *storage.DB, outbox *sqlstore.Store, renderer *deliveryemail.Rendere
 		}
 	}
 	return &Service{db: db, outbox: outbox, renderer: renderer, materials: materials, origin: origin, installationID: cfg.InstallationID, applicationID: cfg.ApplicationID, ttl: cfg.ChallengeLifetime}, nil
+}
+
+func nilTxRunner(db TxRunner) bool {
+	if db == nil {
+		return true
+	}
+	v := reflect.ValueOf(db)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 // IssueVerification creates a new challenge for a pending, unverified contact.
