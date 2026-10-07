@@ -147,3 +147,12 @@ New, copied keys, admission/prune/error semantics; add the frozen transaction-on
 constructor. Real runtime-role replica/admission/prune tests and independent review
 are mandatory. This leaf does not expand the session/jobs INT-HOST-04 acceptance
 scope or qualify complete authentication or production composition.
+
+### Additional v1.16 protected-material leaf
+
+A separate author owns delivery/email/materialstore/store.go and new transaction/
+runtime integration tests only. Add the frozen transaction constructor while
+preserving encryption, key copying/rotation, scope/purpose/expiry and caller-owned
+write transactions. Actual RuntimeDB verification requires its own reviewed
+precreated email-material schema and DML role; the session/jobs profiles cannot
+substitute. No mail delivery, production secret or host qualification is claimed.
