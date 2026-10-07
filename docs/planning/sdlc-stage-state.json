@@ -1557,6 +1557,29 @@
               "pass": 3
             }
           }
+        },
+        "supplemental_material": {
+          "pr": 36,
+          "original_author": "456398f66096fdb79252996a45dc74e760cd235c",
+          "legacy_test_fix": "748ace9a8f92d463beef80221395713ca149bd74",
+          "runtime_format_fix": "4a2273dd5c4f2f1b880891a65eda8a444e19948c",
+          "base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+          "status": "SOURCE_REVIEW_CLEAR_ACTUAL_SERVICE_PENDING",
+          "ownership": "Original author owns store.go and two new tests; separate compatibility author owns legacy store_test.go; coordinator owns strict runtime-format correction; different final reviewer owns verification.",
+          "review_findings": [
+            {
+              "finding": "Legacy test closes narrowed private transaction interface",
+              "correction": "Close retained Config.DB; exact no-overlay checks pass.",
+              "independent_review": "Four-file source review clear at ac6f7a7."
+            },
+            {
+              "finding": "Strict six-field consumer rejects standard eleven-field fixture configuration",
+              "correction": "Explicit test-only eleven-field shape retains unknown/trailing rejection.",
+              "independent_review": "Different exact-head compatibility review at 4a2273d; old-six assertion RED and exact-restored GREEN."
+            }
+          ],
+          "verification": "Scoped normal/race17 entries each, vet/lint pass; missing required service failed visibly. Dedicated material actual normal/race, merge and landed remain pending.",
+          "scope": "Supplemental local leaf; does not widen the initial session/jobs stage acceptance."
         }
       },
       "commands_and_results": [
