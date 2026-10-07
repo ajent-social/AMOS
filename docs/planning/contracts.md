@@ -357,3 +357,12 @@ initialization. One bounded private helper uses only TxRunner, explicit read-onl
 READ COMMITTED, and the preprovisioned immutable binding table. Independent
 design review and landing precede the three-file source assignment. This does
 not freeze or enable a complete production constructor or operation authority.
+
+## Proposed amendment v1.21: post-lock session renewal freshness
+
+[ADR 032](../adr/032-session-renewal-freshness.md) and the
+[session freshness proposal](../contracts/session-renewal-freshness.md) preserve
+existing method shapes while requiring explicit READ COMMITTED, a scoped row
+lock before database-time validation/renewal, and current assurance downgrade.
+Independent design review and landing precede source. This prerequisite does
+not mint provenance or qualify writer ordering, transaction authority or dispatch.
