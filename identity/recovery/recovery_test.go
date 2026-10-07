@@ -259,7 +259,7 @@ func TestT3_8_ReadOnlyDatabaseFailsBeforeEligibilityLookup(t *testing.T) {
 		t.Fatalf("open read-only PostgreSQL connection: %v", err)
 	}
 	defer func() { _ = readOnlyDB.Close() }()
-	service.cfg.DB = readOnlyDB
+	service.db = readOnlyDB
 	call := func(address string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/forgot-password", strings.NewReader(`{"email":"`+address+`"}`))
 		req.Header.Set("Content-Type", "application/json")
