@@ -88,3 +88,16 @@ mandatory before anything is supplied as InvocationContext.DB. No exported
 construction or dispatch path is added by this prerequisite.
 
 - Private adapter component outcome: independently reviewed PR28 landed with actual PostgreSQL normal/race and fresh landed checks. Full T2.8 and the callback guards above remain open; see [receipt](../evidence/operation-sql-adapter-20261007.md).
+
+## Next bounded integration batch
+
+Coordinator retains shared contracts, module/migration ordering, wiring and plan state.
+Preflight assignments below produce concrete proposals only; semantic amendments
+require independent review and merge before source dispatch. Existing accepted
+work and full T2.8 status are preserved.
+
+- Service constructor lane: inspect session/email/login/recovery/MFA/protection/mail material transaction consumers; propose minimal transaction-only constructor admission, typed-nil rejection and legacy compatibility matrix. No source edits.
+- Job store lane: inspect jobs/sqlstore raw-pool operations; propose a transaction-only store boundary preserving leases, row locking, database time and worker compatibility. No source edits.
+- Callback guard lane: define exact SQL transaction-control rejection and retained DBTX/Row/Rows lifetime behavior against frozen operation semantics, including concurrency and actual PostgreSQL acceptance cases. No source edits.
+- Executor seam lane: audit current authority/session, replay/capacity, audit/effect and migration dependencies; identify the next compatible finite contract slice, without enabling dispatch. No source edits.
+- Local verification lane: revalidate previously reviewed fixture custody, cached image and resource controls; prepare service windows and exact-owned cleanup. Launch only when a concrete source verification window is assigned.
