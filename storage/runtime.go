@@ -139,8 +139,20 @@ func appendStrictCerts(roots *x509.CertPool, data []byte) error {
 		if !strings.HasPrefix(string(data), "-----BEGIN CERTIFICATE-----") {
 			return ErrInvalidConfig
 		}
-		block, rest := pem.Decode(data)
-		if block == nil || block.Type != "CERTIFICATE" || len(block.Headers) != 0 {
+		// pem.Decode searches past malformed blocks. Bound it to the first
+		// complete block so later valid certificates cannot hide bad input.
+		const endMarker = "-----END CERTIFICATE-----"
+		end := strings.Index(string(data), endMarker)
+		if end < 0 {
+			return ErrInvalidConfig
+		}
+		end += len(endMarker)
+		first := data[:end]
+		if strings.Count(string(first), "-----BEGIN ") != 1 {
+			return ErrInvalidConfig
+		}
+		block, rest := pem.Decode(first)
+		if block == nil || len(rest) != 0 || block.Type != "CERTIFICATE" || len(block.Headers) != 0 {
 			return ErrInvalidConfig
 		}
 		if _, err := x509.ParseCertificate(block.Bytes); err != nil {
@@ -150,7 +162,7 @@ func appendStrictCerts(roots *x509.CertPool, data []byte) error {
 			return ErrInvalidConfig
 		}
 		count++
-		data = rest
+		data = data[end:]
 	}
 	if count == 0 {
 		return ErrInvalidConfig
