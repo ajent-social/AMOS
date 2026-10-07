@@ -503,12 +503,16 @@
         },
         {
           "name": "private callback SQL and lifetime guard",
-          "status": "CORRECTED_SOURCE_ACTUAL_REVIEW_PENDING",
+          "status": "MERGED_LANDED_CHECK_PENDING",
           "source_or_artifact_identity": {
             "original_author": "be7844cac6a2b2ce9a0a5af9310fb62b4a7882fd",
             "test_correction": "8c22bc1cb6b9013683b6d26fc84325c5df3b19bc",
             "candidate": "acf0fd1",
-            "pr": 35
+            "pr": 35,
+            "reviewed_head": "acf0fd1ff6bc337d7e6f74bfaa459ddd992d22c1",
+            "base": "f00fdff60cd94b9fd181e54ff890e63ae6e02dcc",
+            "landed": "6cbc513cba11e08f3fb84d34c87a5d09f21ef3a7",
+            "evidence": "docs/evidence/callback-database-20261007.md"
           },
           "stages": [
             {
@@ -529,9 +533,19 @@
             },
             {
               "stage": "re-review",
-              "status": "IN_PROGRESS",
+              "status": "CLEAR",
               "different_reviewer": true,
-              "result": "Actual required normal/race and correction verification pending a reviewed fixture window."
+              "result": "Different exact-head reviewer required normal/race each13PASS, actual escaped-write assertion RED/exact-restored GREEN; full source and scoped checks clear."
+            },
+            {
+              "stage": "merge",
+              "status": "COMPLETE",
+              "result": "Immediate exact-head/live-base/check readback, guarded rebase PR35, four landed files equal."
+            },
+            {
+              "stage": "verify-landed",
+              "status": "PENDING",
+              "result": "Fresh actual-service serial window pending."
             }
           ],
           "limitations": [
