@@ -41631,10 +41631,27 @@
         "docs/planning/replacement-baseline.md"
       ],
       "projection_id": "E-REPLACEMENT.T-OPTIONAL-CONTEXT.6"
+    },
+    {
+      "id": "T-REPLACEMENT-ACCEPT",
+      "title": "Accept complete original and additive replacement delivery",
+      "kind": "agent",
+      "stage": "accept",
+      "deps": [
+        "T-PROD.13",
+        "T-RPL-REHEARSAL.6",
+        "T-FEATURE-EVOLUTION.6",
+        "T-OPTIONAL-CONTEXT.6"
+      ],
+      "owner": "Integration coordinator and independent acceptance reviewer",
+      "estimate": "revalidate at preflight",
+      "acceptance": "Original full product and production terminal plus every added replacement, feature-evolution and optional-context branch have independently reviewed, landed and qualified evidence at their explicit boundaries. No narrative labels or baseline rehearsal replace full release qualification; consumer cutover still requires separate authorization.",
+      "status": "PLANNED",
+      "projection_id": "E-REPLACEMENT.T-REPLACEMENT-ACCEPT"
     }
   ],
   "scope": "Complete original product plus AWS production at https://amos.sire.run",
-  "terminal_task": "T-PROD.13",
+  "terminal_task": "T-REPLACEMENT-ACCEPT",
   "migration_inputs": {
     "docs/planning/plan-data.json": "sha256:48cae9bc2634641a57891576b81f6d375e798dbc5d6cca38d96f20abe064ceee",
     "docs/planning/sdlc-plan.json": "sha256:ca07c7b7608bf424a9fc9a416acc1162ea8f011a604e98661efdc6c1abbfe313"
@@ -46477,15 +46494,17 @@
     "T-OPTIONAL-CONTEXT.3",
     "T-OPTIONAL-CONTEXT.4",
     "T-OPTIONAL-CONTEXT.5",
-    "T-OPTIONAL-CONTEXT.6"
+    "T-OPTIONAL-CONTEXT.6",
+    "T-REPLACEMENT-ACCEPT"
   ],
   "replacement_context": {
     "status": "PROPOSED_PENDING_REVIEW",
     "baseline_terminal": "T-RPL-REHEARSAL.6",
-    "full_scope_terminal": "T-PROD.13",
     "mapping": "docs/planning/replacement-baseline.md",
     "original_task_count": 1501,
-    "added_task_count": 78,
-    "qualification": "Existing evidence registries remain authoritative. Baseline terminal supplements and does not replace complete product/production terminal. Generic feature contracts remain unadopted until reviewed."
+    "added_task_count": 79,
+    "qualification": "Existing evidence registries remain authoritative. Baseline terminal supplements and does not replace complete product/production terminal. Generic feature contracts remain unadopted until reviewed.",
+    "original_full_scope_terminal": "T-PROD.13",
+    "full_scope_terminal": "T-REPLACEMENT-ACCEPT"
   }
 }
