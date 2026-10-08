@@ -794,3 +794,29 @@ is necessary; closure cannot recover or refresh a snapshot. These sensitive
 identity-internal facts never enter an HTTP response, logs or business callback.
 It neither attests caller-supplied checks nor enables a new evidence factory.
 Independent early review precedes implementation.
+
+### Exact sample from the existing current-session reader
+
+Proposed finite additive seam, requiring different-author exact-head review before
+implementation:
+
+```go
+func (s *Service) RecheckCurrentSampleTx(ctx context.Context, tx *sql.Tx) (identity.Principal, time.Time, error)
+```
+
+This executes the same private-admission, transaction-mode, ordered P/S read,
+current-row comparison, original-bound and conservative-assurance checks as
+`RecheckCurrentTx`. It returns the exact database sample already used by those
+checks along with the refreshed principal. On every error, both values are zero.
+The old method delegates and discards the sample, preserving its public behavior.
+No second clock query, caller-supplied clock, new proof constructor or relaxed
+transaction custody is introduced. Both methods still require the private
+composition's same-database transaction and original request context.
+
+The native MFA Status path drains deferred work and completes its policy/row reads
+before the final sampled recheck. After it returns, Status only compares the
+refreshed principal to the policy input and computes pending expiry against this
+same returned instant; no SQL, policy callback or clock sample follows. Its
+provisional bytes remain unavailable until commit. This resolves the concrete
+mismatch between a hidden session sample and a subsequent separate pending clock;
+it does not qualify blocked runtime coverage or the full native graph.
