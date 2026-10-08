@@ -173,8 +173,20 @@ func (r *Root) Run(ctx context.Context, body func(context.Context, *Attempt) Out
 		if err := tx.QueryRowContext(ctx, `SELECT id FROM public.identity_writer_gate WHERE id = 1 FOR UPDATE`).Scan(&gate); err != nil || gate != 1 {
 			return ErrUnavailable
 		}
+		var started time.Time
+		if err := tx.QueryRowContext(ctx, `SELECT pg_catalog.clock_timestamp()`).Scan(&started); err != nil || started.IsZero() {
+			return ErrUnavailable
+		}
+		// Freeze the remaining original budget immediately after B returns.
+		// Neither phase entry nor later DB samples can refresh this bound.
+		remaining := time.Until(deadline)
+		if remaining <= 0 || remaining > rootBudget {
+			return ErrUnavailable
+		}
 		a.state.mu.Lock()
 		a.state.tx = tx
+		a.state.startedAt = started.UTC()
+		a.state.databaseDeadline = started.Add(remaining).UTC()
 		a.state.mu.Unlock()
 		outcome := body(ctx, a)
 		a.state.mu.Lock()

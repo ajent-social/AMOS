@@ -146,6 +146,29 @@ func TestRootBudgetPreservesEarlierDeadlineAndCancellation(t *testing.T) {
 	}
 }
 
+func TestDatabaseTimeFenceDoesNotRefreshOrAcceptEquality(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	s := &attemptState{startedAt: start, databaseDeadline: start.Add(time.Second)}
+	for _, tc := range []struct {
+		name  string
+		at    time.Time
+		valid bool
+	}{
+		{"zero", time.Time{}, false},
+		{"backward", start.Add(-time.Microsecond), false},
+		{"start", start, true},
+		{"before deadline", s.databaseDeadline.Add(-time.Microsecond), true},
+		{"equal deadline", s.databaseDeadline, false},
+		{"after deadline", s.databaseDeadline.Add(time.Microsecond), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if s.validFinalTime(tc.at) != tc.valid {
+				t.Fatal("root database chronology/deadline fence mismatch")
+			}
+		})
+	}
+}
+
 func TestProfilesAreImmutableInSeparateProcesses(t *testing.T) {
 	for _, mode := range []string{"legacy", "writer"} {
 		t.Run(mode, func(t *testing.T) {
