@@ -195,32 +195,43 @@ func freshPrincipal(v currentRow, level string, expiry time.Time) (identity.Prin
 // RecheckCurrentTx reads current authority under P SHARE then S SHARE. The
 // private composition, not this raw transaction argument, attests DB custody.
 func (s *Service) RecheckCurrentTx(ctx context.Context, tx *sql.Tx) (identity.Principal, error) {
+	p, _, err := s.RecheckCurrentSampleTx(ctx, tx)
+	return p, err
+}
+
+// RecheckCurrentSampleTx returns the exact database instant used by the current
+// reader. It adds neither a clock query nor authority to the existing contract.
+func (s *Service) RecheckCurrentSampleTx(ctx context.Context, tx *sql.Tx) (identity.Principal, time.Time, error) {
 	if tx == nil {
-		return identity.Principal{}, ErrUnavailable
+		return identity.Principal{}, time.Time{}, ErrUnavailable
 	}
 	admit, err := s.current(ctx)
 	if err != nil {
-		return identity.Principal{}, err
+		return identity.Principal{}, time.Time{}, err
 	}
 	var isolation, readOnly string
 	if err = tx.QueryRowContext(ctx, `SELECT pg_catalog.current_setting('transaction_isolation'),pg_catalog.current_setting('transaction_read_only')`).Scan(&isolation, &readOnly); err != nil || isolation != "read committed" || readOnly != "off" {
-		return identity.Principal{}, ErrUnavailable
+		return identity.Principal{}, time.Time{}, ErrUnavailable
 	}
 	v, now, err := s.readCurrent(ctx, tx, admit.principal.PersonID(), admit.session, true)
 	if err != nil {
-		return identity.Principal{}, err
+		return identity.Principal{}, time.Time{}, err
 	}
 	if !matchesCurrent(admit.principal, v) || !bytes.Equal(v.digest, admit.digest[:]) {
-		return identity.Principal{}, ErrUnauthenticated
+		return identity.Principal{}, time.Time{}, ErrUnauthenticated
 	}
 	level, expiry, err := currentAssurance(admit.principal, v, now)
 	if err != nil {
-		return identity.Principal{}, err
+		return identity.Principal{}, time.Time{}, err
 	}
 	if _, err = s.current(ctx); err != nil {
-		return identity.Principal{}, err
+		return identity.Principal{}, time.Time{}, err
 	}
-	return freshPrincipal(v, level, expiry)
+	principal, err := freshPrincipal(v, level, expiry)
+	if err != nil {
+		return identity.Principal{}, time.Time{}, err
+	}
+	return principal, now, nil
 }
 func (s *Service) ActorForWriter(ctx context.Context, a *aw.Attempt, request WriterRequest) (wp.ActorCheck, error) {
 	d, err := s.writerRequest(ctx, request)
