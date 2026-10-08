@@ -1,5 +1,33 @@
 # AMOS implementation plan
 
+## Wazi-compatible authored plan migration
+
+The complete authored task graph now lives in
+[wazi-source.json](planning/wazi-source.json): all 257 original product tasks and
+1,244 delivery-stage tasks, with stable IDs, acceptance wording, original product
+records, lifecycle records and historical narrative status preserved. This
+section supersedes earlier source-location instructions below; the remaining
+document retains the original scope and history.
+
+Produce the Wazi 0.0.1 interchange with: go run ./cmd/portableplan --sdlc
+The result contains one source-bound definition with 1,501 tasks. It is a
+read-only view, not a second scheduling authority. Product prerequisites retain
+domain-acceptance semantics; existing untyped lifecycle ordering remains
+execution-complete. Stage labels alone do not establish review or deployment
+approval. No execution snapshot, qualified evidence or satisfied evaluation is
+manufactured from narrative completion.
+
+After this migration is adopted, edit the combined authored source. The older
+plan-data.json and sdlc-plan.json are retained migration baselines and must
+not be independently advanced as competing plan masters. Existing render/check
+commands for those files validate historical views only; the Wazi owning
+validator checks the complete graph. Execution evidence remains in its existing
+registries and receipts, separately from authored intent. Before new dispatch,
+reconcile those live records and claims; this migration grants no admission.
+
+See [mapping and validation](planning/wazi-migration.md) and
+[recovery disposition](planning/worktree-recovery.md).
+
 ## 2026-10-04 SDLC and production refinement
 
 The current accepted registry preserves **59 accepted product tasks of 257**. The dated initial inventory description below is historical. This refinement adds **1,200 first-class delivery-stage tasks for the 200 unaccepted product tasks**, plus **15 shared/production gates**, without changing original IDs, task contracts or obtained acceptance evidence.
