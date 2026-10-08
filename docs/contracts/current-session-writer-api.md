@@ -378,6 +378,8 @@ func NewWithWriter(root *aw.Root, cfg Config) (*Service, error)
 type WriterRequest struct { data *writerRequestData }
 type Staged struct { data *stagedData }
 func (s *Service) AdmitWriterRequest(r *http.Request) (WriterRequest, error)
+func (s *Service) AdmitWriterContext(ctx context.Context,
+    action wp.Action) (WriterRequest, error)
 func (s *Service) DiscoverPrior(ctx context.Context, a *aw.Attempt,
     request WriterRequest, action wp.Action) ([]aw.Row, error)
 func (s *Service) ActorForWriter(ctx context.Context, a *aw.Attempt,
@@ -420,6 +422,31 @@ matching Success Completion, final Permit and Staged value once. The permit's
 finalized state remains inspectable for publication but cannot authorize SQL
 once its attempt is closed. Counter completion has no Staged value or cookie.
 
+For context-only non-issuing actions, AdmitWriterContext accepts only MFABegin
+or PasswordChange and extracts the exact service's private middleware proof from
+the original context. It checks the full admitted principal, cancellation and
+original request lifetime, and copies the admitted session identity internally.
+No public principal alone, context setter or synthetic HTTP request is accepted.
+The resulting WriterRequest has a distinct context-only mode bound to that action;
+DiscoverPrior accepts only the matching action and discovers the original session
+and complete owner/person rows under G, before sealing P/S. It reserves no new
+session and does not parse an old cookie. ActorForWriter reads the exact admitted
+session under the acquired plan and validates its current state against the
+original private admission. StageWriter rejects context-only mode before SQL.
+
+MFA BeginEnrollment and recovery.change call AdmitWriterContext on their original
+ctx, compare their explicit principal argument to the admitted immutable principal
+inside session-owned ActorForWriter validation, union all action rows with
+DiscoverPrior, seal/acquire, then consume ActorForWriter. To make that comparison
+constructible without exposing admission, add
+`func (s *Service) WriterPrincipalMatches(request WriterRequest, p identity.Principal) bool`;
+it performs full immutable equality and exact service/request binding, never
+creates proof. A false result aborts before domain SQL. Their final action fences
+recheck the original actor bounds; password change permits only its intentional
+post-transition epoch/revocation differences. Prescribed negatives cover missing,
+fabricated, cross-service, stale/canceled and mismatching-principal admission,
+wrong action, and an attempted context-only session issuance.
+
 Exact native constructor/caller declarations supplement the session/store ones
 above (names live in each specified package; existing Config/TxConfig types keep
 their legacy shapes):
@@ -428,18 +455,22 @@ their legacy shapes):
 // identity/login
 func NewWithWriter(root *aw.Root, cfg TxConfig) (*Service, error)
 // identity/email
-func NewWithWriter(root *aw.Root, outbox *sqlstore.Store,
-    renderer *deliveryemail.Renderer, materials ProtectedMaterialWriter,
+func NewWithWriter(root *aw.Root, outbox *sqlstore.TxWriter,
+    renderer *deliveryemail.Renderer, materials *materialstore.Writer,
     cfg Config) (*Service, error)
 func (s *Service) QueueExistingChallengeWriter(ctx context.Context,
     a *aw.Attempt, personID, emailID, challengeID, requestID uuid.UUID,
     rawToken string) error
 // identity/recovery: session service is needed for original actor provenance.
 func NewWithWriter(root *aw.Root, sessions *session.Service,
+    outbox *sqlstore.TxWriter, materials *materialstore.Writer,
     cfg TxConfig) (*Service, error)
 // identity/mfa
 func NewWithWriter(root *aw.Root, cfg TxConfig) (*Service, error)
-// identity/magiclink and identity/federation, each in its own package
+// identity/magiclink
+func NewWithWriter(root *aw.Root, outbox *sqlstore.TxWriter,
+    materials *materialstore.Writer, cfg Config) (*Service, error)
+// identity/federation
 func NewWithWriter(root *aw.Root, cfg Config) (*Service, error)
 // identity/primaryproof: the existing New(hasher) remains usable; this method
 // replaces VerifyCurrentPassword(ctx, tx, principal, supplied) in W1.
@@ -466,7 +497,7 @@ Status's old NewStore call rather than making a hidden legacy exception.
 
 The runtime composition, not lower packages, binds concrete native dependencies:
 `*password.Hasher`, `*primaryproof.Verifier`, `*session.Service`,
-`*vault.Vault`, `*materialstore.Store`, `*sqlstore.Store`,
+`*vault.Vault`, `*materialstore.Writer`, `*sqlstore.TxWriter`,
 `*deliveryemail.Renderer`. In particular MFA must not import its child vault
 package (vault already imports MFA types); runtime constructs it and passes the
 existing SeedVault interface. MFA's W1 primary/session calls use the exact concrete
@@ -537,3 +568,74 @@ context-responsive pure-computation worker. It explicitly distinguishes caller
 cancellation from Argon2 CPU termination and grants no authority to late results.
 This additive proposal requires independent review before source; the complete
 writer, caller ownership and real W28 integration gates remain open.
+
+
+## B1-R2: pool-free native delivery participants
+
+The W1 email, recovery and magic constructors use the exact pool-free types above.
+Recovery TxConfig.Outbox/Materials and magic Config.DB/Outbox/Materials must be nil;
+the separate typed arguments replace those legacy slots. Duplicate sources fail
+construction. Other copied scalar, renderer and policy fields keep their declared
+meaning; magic Sessions is the exact private concrete session service. Login
+continues to receive the privately constructed native email service. No arbitrary
+runner is synthesized to satisfy an old constructor.
+
+```go
+// jobs/sqlstore: reuse existing NewTxWriter(Config) and TxWriter.
+func (w *TxWriter) EnqueueWriter(ctx context.Context, a *aw.Attempt,
+    delivery aw.Delivery, intent jobs.Intent) (jobs.Job, error)
+// delivery/email/materialstore: config is existing DB-free TxConfig.
+type Writer struct { data *writerData }
+func NewWriter(cfg TxConfig) (*Writer, error)
+func (w *Writer) PutVerificationWriter(ctx context.Context, a *aw.Attempt,
+    delivery aw.Delivery, ref email.SecretReference,
+    material email.PrivateMaterial, expiry time.Time) error
+func (w *Writer) PutSignInWriter(ctx context.Context, a *aw.Attempt,
+    delivery aw.Delivery, ref email.SecretReference,
+    material email.PrivateMaterial, expiry time.Time) error
+func (w *Writer) PutPasswordResetWriter(ctx context.Context, a *aw.Attempt,
+    delivery aw.Delivery, ref email.SecretReference,
+    material email.PrivateMaterial, expiry time.Time) error
+// delivery/email: constructs the same validated Request/Intent as EnqueueTx.
+func EnqueueWriter(ctx context.Context, a *aw.Attempt, delivery aw.Delivery,
+    store *sqlstore.TxWriter, renderer *Renderer,
+    installationID, applicationID uuid.UUID, key string,
+    req Request, deadline time.Time) (jobs.Job, error)
+```
+
+NewWriter performs the existing material-key/origin/config copying and validation
+through a shared private helper, retaining only crypto/config state. It accepts no
+DB or TxRunner and exposes no Store, Resolve, Prune, background worker or transaction
+method. NewTxWriter already constructs a config-only job participant. Its existing
+raw-Tx Enqueue method remains a job-only legacy API; W1 native producers use only
+EnqueueWriter. Neither constructor selects a legacy authority-writer profile.
+
+Each material method validates its purpose, scoped configuration, exact
+material-reference ID and sealed Delivery, then obtains the sole MaterialInsert
+permission from Attempt.DeliveryTx. It reuses the existing purpose-bound encryption
+and insertion internals and records DeliveryWrite. The job method requires exact
+intent key/installation/application and the matching sealed Delivery, obtains the
+JobEnqueue permission only after material insertion, reuses the existing enqueue
+validation/idempotency/persistence logic, and records its separate DeliveryWrite.
+The native action checks material/job original deadlines and intended rows at F.
+To validate realm without accepting an external assertion, add
+`func (a *Attempt) Realm() (Realm, error)` returning the copied sealed plan realm
+only while live; it grants no credential or SQL authority. Material additionally
+checks its configured environment against that realm. Unknown/cross-attempt,
+wrong-key, wrong-purpose, closed and duplicate D steps poison the attempt before
+participant SQL; a failure never leaves a usable later permission.
+
+No standalone mail dispatcher, material resolver/pruner or job scheduler is
+constructed by this finite producer graph. Their future composition is separate;
+no fake runner, disabled-success implementation or second runtime is supplied.
+At most one effect dispatcher remains an independent operational gate, and zero
+during quarantine. The supplied fixtures may inspect durable intent but cannot
+claim actual delivery. Source ownership for these new delivery/job adapters must
+be delegated before edits; this design correction itself grants none.
+
+Required construction checks instantiate every declared exact type from config
+plus the one root and trace native arguments. Actual D schedules include both
+material and job unique waits, wrong scope/key/purpose, raw/unrooted/retained attempt,
+duplicate step, premature JobEnqueue, failed material, rollback, failed commit and
+original-deadline expiry at F. A callback cannot replace a typed participant with
+an arbitrary TxRunner. These are prescribed checks, not obtained qualification.

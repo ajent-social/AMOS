@@ -235,3 +235,25 @@ attempt's completion; a CounterOnlyDenied completion cannot publish success.
 The old-replica negative must demonstrate that an old binary *can bypass* G if
 left with access, then demonstrate that the reviewed cutover removes that access.
 Do not mislabel an application marker as prevention of privileged SQL.
+
+
+## B1 construction corrections
+
+The [pool-free delivery declarations](current-session-writer-api.md#b1-r2-pool-free-native-delivery-participants)
+construct materialstore.Writer and sqlstore.TxWriter without RuntimeDB/TxRunner.
+They join only the caller-owned D phase through Attempt.DeliveryTx; the one
+RuntimeDB is still passed only to authoritywriter.New. Standalone delivery and
+cleanup consumers are not part of this producer graph. No dummy runner or
+second pool satisfies construction. Each native constructor rejects its legacy
+pool/material/outbox slots when using the new explicit typed participants.
+
+MFA enrollment and password change use session.AdmitWriterContext for their
+existing context-only API, consuming the exact same-service private middleware
+proof. They cannot synthesize a request or promote a public principal to proof.
+The non-issuing admission reserves no new session and cannot publish one.
+
+Registration preserves the existing persisted shape: person pending_verification,
+personal workspace active with its immutable person owner. Pending registration
+is a bootstrap capability, not a workspace state or authenticated access. Email
+confirmation activates the person and verifies the contact; it does not migrate
+a pending workspace to active. No workspace enum/schema change is proposed.
