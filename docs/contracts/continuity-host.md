@@ -119,12 +119,18 @@ type Property struct {
     InspectionDate string // empty or YYYY-MM-DD, validated calendar date
 }
 type Source struct { ID, Kind, Title, Body, SHA256 string }
+type SourceSummary struct { ID, Kind, Title, SHA256 string }
 type Activity struct {
     ID, ActorID, Action, ResourceID string
     Revision int64
     At time.Time
 }
 func (*Repository) Properties(ctx context.Context, after, query string, limit int) ([]Property, error)
+func (*Repository) Property(ctx context.Context, id string) (Property, error)
+func (*Repository) Cases(ctx context.Context, after string, limit int) ([]domain.Case, error)
+func (*Repository) Applications(ctx context.Context, after string, limit int) ([]domain.Application, error)
+func (*Repository) Procedures(ctx context.Context, after string, limit int) ([]domain.Procedure, error)
+func (*Repository) Sources(ctx context.Context, after, query, kind string, limit int) ([]SourceSummary, error)
 func (*Repository) Source(ctx context.Context, id string) (Source, error)
 func (*Repository) Case(ctx context.Context, id string) (domain.Case, error)
 func (*Repository) ChangeCase(ctx context.Context, id string, expected int64, next domain.CaseStatus, actorID string) (domain.Case, error)
@@ -215,3 +221,14 @@ Actors and resource selectors use canonical lowercase UUIDv7 strings. Reference
 locks are acquired in ascending UUID order to keep multi-source access order
 deterministic. The owning transaction uses READ COMMITTED; other isolation
 levels are outside this source qualification. Tests use explicit isolation.
+
+Cases, applications and procedures have the same ascending-ID bounded keyset
+pagination as properties. Each listed value receives the same persisted-value
+and same-scope reference validation as its detail method. Property returns one
+validated scoped register record or ErrNotFound. Sources accepts an empty kind
+for both finite kinds or one exact kind, and an empty query or bounded literal
+case-insensitive containment search across title and body. It returns summaries
+without bodies; full text is disclosed only through Source. Source hash validation
+still occurs before listing a summary, so a corrupt body cannot gain a trusted
+digest by using the list path. No list silently substitutes an empty result for
+database failure, and no list reports an unbounded inventory count.
