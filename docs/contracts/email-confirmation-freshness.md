@@ -64,7 +64,11 @@ an unqualified deferred trigger. Whole-writer and host adoption remain blocked.
 After independent design adoption, the separately claimed email lane may change
 only Confirm's body/comment in `identity/email/email.go` and add
 `identity/email/confirmation_freshness_integration_test.go`. Existing runtime
-helpers may be reused without editing their files. Do not change shared store,
+helpers remain unchanged. The integrator separately corrects only the existing
+`TestEmailTxRunnerOptionsAndErrors` Confirm options expectation to require
+non-nil, non-read-only READ COMMITTED, matching this adopted compatibility change.
+The combined source and expectation correction require independent exact-head
+review. Do not change shared store,
 session/producer siblings, modules, migrations, plan, preview or HTTP handlers.
 This is a bounded T3.6 follow-on; its historical component acceptance and the
 accepted-product count are not new evidence for this correction.
