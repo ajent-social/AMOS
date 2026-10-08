@@ -144,7 +144,7 @@ func freshnessDenied(t *testing.T, w *httptest.ResponseRecorder, status int) {
 	if status == 503 {
 		code = "dependency.unavailable"
 	}
-	if w.Code != status || body.Code != code || w.Header().Get("Set-Cookie") != "" || strings.Contains(w.Body.String(), "csrf_token") || strings.Contains(w.Body.String(), "authenticated") {
+	if w.Code != status || body.Code != code || w.Header().Get("Set-Cookie") != "" || strings.Contains(w.Body.String(), "csrf_token") || strings.Contains(w.Body.String(), `"authenticated"`) {
 		t.Fatalf("freshness response status=%d code=%s; want %d %s without provisional output", w.Code, body.Code, status, code)
 	}
 }
@@ -530,10 +530,10 @@ func TestSigninFreshnessRequiredServiceCompletion(t *testing.T) {
 func (f *signinFixture) assertCookieState(t *testing.T, cookie *http.Cookie, revoked bool) {
 	t.Helper()
 	raw, err := base64.RawURLEncoding.DecodeString(cookie.Value)
-	if err != nil {
+	if err != nil || len(raw) != 32 {
 		t.Fatal("invalid issued cookie")
 	}
-	digest := sha256.Sum256(raw)
+	digest := sha256.Sum256([]byte(cookie.Value))
 	var got bool
 	if e := f.db.WithTx(f.ctx, nil, func(tx *sql.Tx) error {
 		return tx.QueryRowContext(f.ctx, `SELECT revoked_at IS NOT NULL FROM identity_sessions WHERE token_digest=$1`, digest[:]).Scan(&got)
