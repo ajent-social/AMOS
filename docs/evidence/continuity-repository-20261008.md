@@ -27,7 +27,9 @@ A separately reviewed bounded setup applied it to a new isolated local database.
 The actual runtime role had finite application-table DML privileges; tests used
 no schema creation or administrator credentials. No existing installation changed.
 
-The author and a different reviewer each ran:
+The author ran the following full normal/race commands with `-timeout=90s`;
+a different reviewer ran them with `-timeout=60s` as shown below. Both ran vet
+and the pinned linter:
 
 - `go test -count=1 -json -timeout=60s ./examples/continuity/repository`
 - `go test -race -count=1 -json -timeout=60s ./examples/continuity/repository`
