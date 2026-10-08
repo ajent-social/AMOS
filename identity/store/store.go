@@ -402,20 +402,39 @@ type ConsumedChallenge struct {
 	EmailID  uuid.UUID
 }
 
-// ConsumeChallenge atomically consumes a matching, unexpired, purpose-bound
-// digest exactly once. The database clock is authoritative for expiry.
+// ConsumeChallenge consumes a matching, unexpired, purpose-bound digest in a
+// caller-owned READ COMMITTED transaction. It locks the exact challenge before
+// sampling database time for both expiry and consumed_at. Results are provisional
+// until caller commit; this does not establish other person or session authority.
 func (s *Store) ConsumeChallenge(ctx context.Context, id uuid.UUID, purpose string, digest []byte) (ConsumedChallenge, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validID(id) ||
 		!validChallengePurpose(purpose) || len(digest) != 32 {
 		return ConsumedChallenge{}, ErrInvalidInput
 	}
+	var isolation string
+	if err := s.tx.QueryRowContext(ctx, `SHOW transaction_isolation`).Scan(&isolation); err != nil || isolation != "read committed" {
+		return ConsumedChallenge{}, ErrPersistence
+	}
+	var lockedID uuid.UUID
+	err := s.tx.QueryRowContext(ctx, `SELECT id FROM identity_challenges
+		WHERE id=$1 AND purpose=$2 AND token_digest=$3 FOR UPDATE`, id, purpose, digest).Scan(&lockedID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ConsumedChallenge{}, ErrChallengeUnavailable
+	}
+	if err != nil {
+		return ConsumedChallenge{}, ErrPersistence
+	}
+	var now time.Time
+	if err := s.tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
+		return ConsumedChallenge{}, ErrPersistence
+	}
 	var consumed ConsumedChallenge
-	err := s.tx.QueryRowContext(ctx, `
+	err = s.tx.QueryRowContext(ctx, `
 		UPDATE identity_challenges
-		SET consumed_at = transaction_timestamp()
+		SET consumed_at = $4::timestamptz
 		WHERE id = $1 AND purpose = $2 AND token_digest = $3
-		  AND consumed_at IS NULL AND expires_at > transaction_timestamp()
-		RETURNING person_id, email_id`, id, purpose, digest).Scan(&consumed.PersonID, &consumed.EmailID)
+		  AND consumed_at IS NULL AND expires_at > $4::timestamptz
+		RETURNING person_id, email_id`, id, purpose, digest, now).Scan(&consumed.PersonID, &consumed.EmailID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ConsumedChallenge{}, ErrChallengeUnavailable
 	}
