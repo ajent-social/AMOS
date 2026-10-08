@@ -6,6 +6,7 @@ import (
 	"github.com/ajent-social/amos/identity"
 	"github.com/ajent-social/amos/identity/recovery"
 	"github.com/google/uuid"
+	"math"
 )
 
 // localPasswordPolicy enables only independent personal email/password recovery
@@ -14,6 +15,10 @@ import (
 type localPasswordPolicy struct{ installation, application uuid.UUID }
 
 func (p localPasswordPolicy) AuthorizePasswordReset(ctx context.Context, tx *sql.Tx, person uuid.UUID) error {
+	return p.personalPasswordAllowed(ctx, tx, person)
+}
+
+func (p localPasswordPolicy) personalPasswordAllowed(ctx context.Context, tx *sql.Tx, person uuid.UUID) error {
 	if ctx == nil || tx == nil {
 		return recovery.ErrUnavailable
 	}
@@ -45,7 +50,7 @@ func (p localPasswordPolicy) AuthorizePasswordChange(ctx context.Context, tx *sq
 	if !current {
 		return recovery.ErrPolicyDenied
 	}
-	return p.AuthorizePasswordReset(ctx, tx, principal.PersonID())
+	return p.personalPasswordAllowed(ctx, tx, principal.PersonID())
 }
 
 // localMFAPolicy admits only independent personal accounts in this evaluation
@@ -66,4 +71,24 @@ func (p localMFAPolicy) AuthorizeMFA(ctx context.Context, tx *sql.Tx, principal 
 		return recovery.ErrPolicyDenied
 	}
 	return p.AuthorizePasswordChange(ctx, tx, principal)
+}
+
+// AuthorizePasswordChangeCompletion checks the intentional epoch transition,
+// retaining the original actor as policy input without inventing a new session.
+func (p localPasswordPolicy) AuthorizePasswordChangeCompletion(ctx context.Context, tx *sql.Tx, principal identity.Principal, epoch int64) error {
+	if ctx == nil || tx == nil {
+		return recovery.ErrUnavailable
+	}
+	old := principal.SecurityEpoch()
+	if old < 0 || old == math.MaxInt64 || epoch != old+1 || principal.InstallationID() != p.installation || principal.ApplicationID() != p.application {
+		return recovery.ErrPolicyDenied
+	}
+	var current bool
+	if e := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM identity_persons WHERE id=$1 AND installation_id=$2 AND application_id=$3 AND state='active' AND security_epoch=$4)`, principal.PersonID(), p.installation, p.application, epoch).Scan(&current); e != nil {
+		return recovery.ErrUnavailable
+	}
+	if !current {
+		return recovery.ErrPolicyDenied
+	}
+	return p.personalPasswordAllowed(ctx, tx, principal.PersonID())
 }
