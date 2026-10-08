@@ -2572,6 +2572,331 @@
       },
       "external_blockers": [],
       "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-REPOSITORY-CONTRACT.1": {
+      "task_id": "T-RPL-REPOSITORY-CONTRACT.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive contract integration; no separate source-leaf claim asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c7a12c3140c5376f5d308a4a781bdddaeca02caa",
+        "landed": "dfc4e458a98c622b45b2e6dc83a1e80a8e7bc8a4",
+        "pr": 53
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Repository design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-REPOSITORY-CONTRACT.2": {
+      "task_id": "T-RPL-REPOSITORY-CONTRACT.2",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive contract integration; no separate source-leaf claim asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-REPOSITORY-CONTRACT.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c7a12c3140c5376f5d308a4a781bdddaeca02caa",
+        "landed": "dfc4e458a98c622b45b2e6dc83a1e80a8e7bc8a4",
+        "pr": 53
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Repository design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-REPOSITORY-CONTRACT.3": {
+      "task_id": "T-RPL-REPOSITORY-CONTRACT.3",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive contract integration; no separate source-leaf claim asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-REPOSITORY-CONTRACT.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c7a12c3140c5376f5d308a4a781bdddaeca02caa",
+        "landed": "dfc4e458a98c622b45b2e6dc83a1e80a8e7bc8a4",
+        "pr": 53
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Repository design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-REPOSITORY-CONTRACT.4": {
+      "task_id": "T-RPL-REPOSITORY-CONTRACT.4",
+      "status": "COMPLETE",
+      "owner": "Independent exact-head reviewer",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive contract integration; no separate source-leaf claim asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-REPOSITORY-CONTRACT.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c7a12c3140c5376f5d308a4a781bdddaeca02caa",
+        "landed": "dfc4e458a98c622b45b2e6dc83a1e80a8e7bc8a4",
+        "pr": 53
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Repository design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-REPOSITORY-CONTRACT.5": {
+      "task_id": "T-RPL-REPOSITORY-CONTRACT.5",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive contract integration; no separate source-leaf claim asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-REPOSITORY-CONTRACT.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c7a12c3140c5376f5d308a4a781bdddaeca02caa",
+        "landed": "dfc4e458a98c622b45b2e6dc83a1e80a8e7bc8a4",
+        "pr": 53
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Repository design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-REPOSITORY-CONTRACT.6": {
+      "task_id": "T-RPL-REPOSITORY-CONTRACT.6",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive contract integration; no separate source-leaf claim asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-REPOSITORY-CONTRACT.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c7a12c3140c5376f5d308a4a781bdddaeca02caa",
+        "landed": "dfc4e458a98c622b45b2e6dc83a1e80a8e7bc8a4",
+        "pr": 53
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Repository design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-DATA.1": {
+      "task_id": "T-RPL-DATA.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-DATA.2",
+        "tip": "0262fbdb7c155c19e6d5a1605c284df490b64028",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-DOMAIN.6",
+        "T-RPL-REPOSITORY-CONTRACT.6"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c61be8554b57026ba3cab97df0cfa58c3cf5568b",
+        "landed": "09e932849993ece6e0f3d3a1eba4ddc99dd1bf2a",
+        "pr": 57
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Transaction-only application repository and isolated PostgreSQL checks"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-DATA.2": {
+      "task_id": "T-RPL-DATA.2",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "T-RPL-DATA.2",
+        "tip": "0262fbdb7c155c19e6d5a1605c284df490b64028",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-DATA.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c61be8554b57026ba3cab97df0cfa58c3cf5568b",
+        "landed": "09e932849993ece6e0f3d3a1eba4ddc99dd1bf2a",
+        "pr": 57
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Transaction-only application repository and isolated PostgreSQL checks"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-DATA.3": {
+      "task_id": "T-RPL-DATA.3",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "T-RPL-DATA.2",
+        "tip": "0262fbdb7c155c19e6d5a1605c284df490b64028",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-DATA.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c61be8554b57026ba3cab97df0cfa58c3cf5568b",
+        "landed": "09e932849993ece6e0f3d3a1eba4ddc99dd1bf2a",
+        "pr": 57
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Transaction-only application repository and isolated PostgreSQL checks"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-DATA.4": {
+      "task_id": "T-RPL-DATA.4",
+      "status": "COMPLETE",
+      "owner": "Independent exact-head reviewer",
+      "claim": {
+        "resource": "T-RPL-DATA.2",
+        "tip": "0262fbdb7c155c19e6d5a1605c284df490b64028",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-DATA.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c61be8554b57026ba3cab97df0cfa58c3cf5568b",
+        "landed": "09e932849993ece6e0f3d3a1eba4ddc99dd1bf2a",
+        "pr": 57
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Transaction-only application repository and isolated PostgreSQL checks"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-DATA.5": {
+      "task_id": "T-RPL-DATA.5",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-DATA.2",
+        "tip": "0262fbdb7c155c19e6d5a1605c284df490b64028",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-DATA.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c61be8554b57026ba3cab97df0cfa58c3cf5568b",
+        "landed": "09e932849993ece6e0f3d3a1eba4ddc99dd1bf2a",
+        "pr": 57
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Transaction-only application repository and isolated PostgreSQL checks"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-DATA.6": {
+      "task_id": "T-RPL-DATA.6",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-DATA.2",
+        "tip": "0262fbdb7c155c19e6d5a1605c284df490b64028",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-DATA.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "c61be8554b57026ba3cab97df0cfa58c3cf5568b",
+        "landed": "09e932849993ece6e0f3d3a1eba4ddc99dd1bf2a",
+        "pr": 57
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-repository-20261008.md for actual checks, immutable reviewed/landed identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Transaction-only application repository and isolated PostgreSQL checks"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
     }
   },
   "receipt_requirements": [
