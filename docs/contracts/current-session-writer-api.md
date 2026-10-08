@@ -687,3 +687,30 @@ alongside their exact row/phase checks. It rejects finalized/F/closed evidence,
 another attempt and zero values. Terminal Permit matching continues to use its
 separate captured immutable snapshot and never calls Check after commit.
 This additive construction detail requires independent review before source.
+
+## B1 existing store lookup construction
+
+Additive proposal for independent review:
+
+```go
+func (a *Attempt) PlannedRows(table Table) ([]Row, error)
+```
+
+Existing store entry points such as FindActiveSession and RevokeSessionScoped
+accept a digest rather than a row ID. A writer store cannot reconstruct the
+sealed row inventory from those arguments or fabricate an attempt context.
+PlannedRows returns a copied, sorted inventory for one supported table from the
+live sealed attempt, including reserved access modes. It exposes no transaction,
+credential or context marker, acquires nothing, and does not append to the plan.
+Original cancellation/deadline/closure and invalid-table failures still apply.
+
+The native store first obtains ParticipantTx using the complete applicable
+existing-row inventory and acquired phase. Any digest/owner lookup is a plain,
+scoped non-authorizing read; it must compare the returned immutable IDs to that
+inventory and call ParticipantTx again for the exact affected rows before any
+locking or mutation. Missing expected authority denies; an unplanned returned
+row fails the attempt. No joined or unplanned row lock is permitted during the
+lookup. Empty inventories cannot obtain SQL and use the action's existing
+no-target denial/no-op behavior. Known-ID methods continue using their exact
+arguments directly. This preserves existing public entry-point shapes without
+an arbitrary SQL getter or a second discovery phase after P.
