@@ -34,8 +34,8 @@ func mfaFinish(a *aw.Attempt, outcome aw.Outcome) aw.Outcome {
 	}
 	return outcome
 }
-func mfaProofFailure(a *aw.Attempt, err error) aw.Outcome {
-	if errors.Is(err, wp.ErrDenied) {
+func mfaRootFailure(a *aw.Attempt, err error) aw.Outcome {
+	if errors.Is(err, wp.ErrDenied) || errors.Is(err, aw.ErrDenied) {
 		return mfaFinish(a, aw.DeniedRollback)
 	}
 	return mfaFinish(a, aw.UnavailableRollback)

@@ -42,8 +42,8 @@ func loginFinish(a *aw.Attempt, outcome aw.Outcome) aw.Outcome {
 	}
 	return outcome
 }
-func loginProofFailure(a *aw.Attempt, err error) aw.Outcome {
-	if errors.Is(err, wp.ErrDenied) {
+func loginRootFailure(a *aw.Attempt, err error) aw.Outcome {
+	if errors.Is(err, wp.ErrDenied) || errors.Is(err, aw.ErrDenied) {
 		return loginFinish(a, aw.DeniedRollback)
 	}
 	return loginFinish(a, aw.UnavailableRollback)
@@ -156,7 +156,7 @@ func (s *Service) registerWriter(w http.ResponseWriter, r *http.Request) {
 			return loginStoreFailure(e)
 		}
 		if e = acquire(ctx, a, aw.S, aw.W); e != nil {
-			return loginFinish(a, aw.UnavailableRollback)
+			return loginRootFailure(a, e)
 		}
 		bootstrap, e := personal.NewWriter(a)
 		if e != nil {
@@ -182,7 +182,7 @@ func (s *Service) registerWriter(w http.ResponseWriter, r *http.Request) {
 		}
 		evidence, e := wp.Challenge(a, wp.Register, wp.ChallengeCheck{Subject: wp.Subject{Person: personID, Realm: s.realm(), Epoch: 0}, Contact: wp.Contact{ID: emailID, ComparisonKey: address}, ID: challengeID, TokenDigest: digest, CreatedAt: b, ExpiresAt: expiry, VerifiedAt: b})
 		if e != nil {
-			return loginProofFailure(a, e)
+			return loginRootFailure(a, e)
 		}
 		binding, e = a.Binding()
 		if e != nil {
@@ -202,7 +202,7 @@ func (s *Service) registerWriter(w http.ResponseWriter, r *http.Request) {
 		}
 		permit, e = wp.Finalize(a, evidence, f)
 		if e != nil {
-			return loginProofFailure(a, e)
+			return loginRootFailure(a, e)
 		}
 		return loginFinish(a, aw.Success)
 	})
