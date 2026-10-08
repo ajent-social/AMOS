@@ -9,6 +9,7 @@ import (
 	"errors"
 
 	"github.com/ajent-social/amos/identity"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	workspacestore "github.com/ajent-social/amos/workspace/store"
 	"github.com/google/uuid"
 )
@@ -37,10 +38,14 @@ type Result struct {
 	Existing  bool
 }
 
-type Participant struct{ tx *sql.Tx }
+type Participant struct {
+	tx       *sql.Tx
+	writer   *aw.Attempt
+	finished bool
+}
 
 func New(tx *sql.Tx) (*Participant, error) {
-	if tx == nil {
+	if tx == nil || aw.SelectLegacy() != nil {
 		return nil, ErrInvalidInput
 	}
 	return &Participant{tx: tx}, nil
@@ -49,7 +54,13 @@ func New(tx *sql.Tx) (*Participant, error) {
 // Bootstrap creates exactly one personal workspace for principal. Its caller
 // owns transaction commit/rollback, so the workspace and account transition
 // either both commit or both roll back.
-func (p *Participant) Bootstrap(ctx context.Context, principal identity.Principal, in Input) (Result, error) {
+func (p *Participant) Bootstrap(ctx context.Context, principal identity.Principal, in Input) (result Result, err error) {
+	if p != nil && p.writer != nil {
+		defer p.finishFailure(&err)
+		if err = p.prepare(ctx, in.Scope, in.OwnerID); err != nil {
+			return Result{}, err
+		}
+	}
 	if p == nil || p.tx == nil || ctx == nil || in.WorkspaceID == uuid.Nil ||
 		in.WorkspaceID.Version() != 7 || in.WorkspaceID.Variant() != uuid.RFC4122 ||
 		in.OwnerID == uuid.Nil || in.Scope.InstallationID == uuid.Nil || in.Scope.ApplicationID == uuid.Nil {
@@ -93,12 +104,22 @@ func (p *Participant) bootstrapActivePerson(ctx context.Context, in Input, perso
 		if existing.State != workspacestore.WorkspaceActive || existing.PersonalOwnerID != personID {
 			return Result{}, ErrWorkspaceRepairRequired
 		}
+		if p.writer != nil {
+			if err := p.checkWorkspace(ctx, existing.ID, false); err != nil {
+				return Result{}, err
+			}
+		}
 		return Result{Workspace: existing, Existing: true}, nil
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
 		return Result{}, ErrPersistence
 	}
-	store, err := workspacestore.New(p.tx)
+	var store *workspacestore.Store
+	if p.writer != nil {
+		store, err = workspacestore.NewWriter(p.writer)
+	} else {
+		store, err = workspacestore.New(p.tx)
+	}
 	if err != nil {
 		return Result{}, ErrPersistence
 	}
@@ -106,6 +127,10 @@ func (p *Participant) bootstrapActivePerson(ctx context.Context, in Input, perso
 		ID: in.WorkspaceID, Scope: in.Scope, OwnerPersonID: personID,
 	})
 	if err != nil {
+		// The mutating store participant has already marked its terminal outcome.
+		if p.writer != nil {
+			p.finished = true
+		}
 		return Result{}, err
 	}
 	return Result{Workspace: created}, nil
