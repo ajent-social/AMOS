@@ -62,6 +62,10 @@ func export(planBytes, stateBytes []byte) (any, error) {
 	if state == nil {
 		state = map[string]narrative{}
 	}
+	return exportNative(plan, state, planBytes, stateBytes, sourceRef, stateRef, "amos:plan", adapterVersion)
+}
+
+func exportNative(plan nativePlan, state map[string]narrative, planBytes, stateBytes []byte, sourceRef, stateRef, planID, version string) (any, error) {
 	planDigest := digest(planBytes)
 	revision := planDigest
 	known := map[string]bool{}
@@ -143,8 +147,8 @@ func export(planBytes, stateBytes []byte) (any, error) {
 		return requirements[i].(map[string]any)["id"].(string) < requirements[j].(map[string]any)["id"].(string)
 	})
 	definition := map[string]any{
-		"id": "amos:plan", "revision": revision, "digest": planDigest, "title": "AMOS authored delivery plan",
-		"source": map[string]any{"authority": "native", "authorityId": "amos:repository", "ref": sourceRef, "revision": revision, "digest": planDigest, "adapterVersion": adapterVersion},
+		"id": planID, "revision": revision, "digest": planDigest, "title": "AMOS authored delivery plan",
+		"source": map[string]any{"authority": "native", "authorityId": "amos:repository", "ref": sourceRef, "revision": revision, "digest": planDigest, "adapterVersion": version},
 		"tasks":  tasks, "requirements": requirements, "executionUnits": []any{},
 		"metadata": map[string]any{"nativeSchemaVersion": plan.SchemaVersion, "narrativeStateRef": stateRef, "narrativeStateDigest": digest(stateBytes), "narrativeStatusIsQualifiedEvidence": false},
 	}
@@ -152,21 +156,31 @@ func export(planBytes, stateBytes []byte) (any, error) {
 }
 
 func main() {
-	if len(os.Args) != 1 {
+	sdlc := len(os.Args) == 2 && os.Args[1] == "--sdlc"
+	if len(os.Args) != 1 && !sdlc {
 		fmt.Fprintln(os.Stderr, "unexpected positional arguments")
 		os.Exit(2)
 	}
-	plan, err := os.ReadFile(sourceRef)
+	planPath, statePath := sourceRef, stateRef
+	if sdlc {
+		planPath, statePath = sdlcSourceRef, sdlcStateRef
+	}
+	plan, err := os.ReadFile(planPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	state, err := os.ReadFile(stateRef)
+	state, err := os.ReadFile(statePath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	out, err := export(plan, state)
+	var out any
+	if sdlc {
+		out, err = exportSDLC(plan, state)
+	} else {
+		out, err = export(plan, state)
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
