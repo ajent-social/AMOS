@@ -94,7 +94,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 			return mfaFinish(a, aw.UnavailableRollback)
 		}
 		if e = mfaAcquire(ctx, a); e != nil {
-			return mfaFinish(a, aw.UnavailableRollback)
+			return mfaRootFailure(a, e)
 		}
 		tx, e = a.ParticipantTx(ctx, aw.W, rows)
 		if e != nil {
@@ -197,7 +197,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 			}
 			evidence, e = wp.Counter(a, actor, primary, check, transition)
 			if e != nil {
-				return mfaProofFailure(a, e)
+				return mfaRootFailure(a, e)
 			}
 			if e = st.RecordFailure(ctx, scope, factor.ID, t); e != nil {
 				return mfaParticipantFailure(e)
@@ -211,7 +211,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 		} else {
 			evidence, e = wp.TOTP(a, action, actor, primary, check)
 			if e != nil {
-				return mfaProofFailure(a, e)
+				return mfaRootFailure(a, e)
 			}
 			if pending {
 				if e = st.ActivatePendingAndConsumeStep(ctx, scope, factor.ID, actor.Subject.Epoch, step, activeCiphertext, t); e != nil {
@@ -236,7 +236,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 			expected.LockedUntil = nil
 			issuance, e := wp.ForIssue(a, evidence)
 			if e != nil {
-				return mfaProofFailure(a, e)
+				return mfaRootFailure(a, e)
 			}
 			staged, e = s.writerSessions.StageWriter(ctx, a, issuance, request)
 			if e != nil {
@@ -270,7 +270,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 		}
 		permit, e = wp.Finalize(a, evidence, f)
 		if e != nil {
-			return mfaProofFailure(a, e)
+			return mfaRootFailure(a, e)
 		}
 		if counter {
 			return mfaFinish(a, aw.CounterOnlyDenied)

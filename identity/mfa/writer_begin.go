@@ -102,7 +102,7 @@ func (s *Service) beginWriter(ctx context.Context, principal identity.Principal,
 			return mfaFinish(a, aw.UnavailableRollback)
 		}
 		if e = mfaAcquire(ctx, a); e != nil {
-			return mfaFinish(a, aw.UnavailableRollback)
+			return mfaRootFailure(a, e)
 		}
 		tx, e = a.ParticipantTx(ctx, aw.W, rows)
 		if e != nil {
@@ -152,7 +152,7 @@ func (s *Service) beginWriter(ctx context.Context, principal identity.Principal,
 		factor := wp.FactorCheck{ID: id, State: string(FactorPending), Epoch: actor.Subject.Epoch, LastStep: -1, AcceptedStep: -1, CiphertextDigest: sha256.Sum256(sealed), PendingUntil: expires}
 		evidence, e := wp.Enrollment(a, actor, primary, factor)
 		if e != nil {
-			return mfaProofFailure(a, e)
+			return mfaRootFailure(a, e)
 		}
 		output, e = a.Binding()
 		if e != nil {
@@ -184,7 +184,7 @@ func (s *Service) beginWriter(ctx context.Context, principal identity.Principal,
 		}
 		permit, e = wp.Finalize(a, evidence, f)
 		if e != nil {
-			return mfaProofFailure(a, e)
+			return mfaRootFailure(a, e)
 		}
 		result = Enrollment{FactorID: id, Seed: key.Secret(), OTPAuthURI: key.URL(), ExpiresAt: expires}
 		return mfaFinish(a, aw.Success)

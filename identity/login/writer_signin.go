@@ -80,7 +80,7 @@ func (s *Service) signInWriter(w http.ResponseWriter, r *http.Request) {
 			return loginFinish(a, aw.UnavailableRollback)
 		}
 		if e = acquire(ctx, a, aw.P, aw.C); e != nil {
-			return loginFinish(a, aw.UnavailableRollback)
+			return loginRootFailure(a, e)
 		}
 		held := passwordRow{}
 		if known {
@@ -132,14 +132,14 @@ func (s *Service) signInWriter(w http.ResponseWriter, r *http.Request) {
 		}
 		evidence, e := wp.Password(a, wp.PasswordSignIn, check)
 		if e != nil {
-			return loginProofFailure(a, e)
+			return loginRootFailure(a, e)
 		}
 		if e = acquire(ctx, a, aw.H, aw.S, aw.W); e != nil {
-			return loginFinish(a, aw.UnavailableRollback)
+			return loginRootFailure(a, e)
 		}
 		issuance, e := wp.ForIssue(a, evidence)
 		if e != nil {
-			return loginProofFailure(a, e)
+			return loginRootFailure(a, e)
 		}
 		staged, e = s.cfg.Sessions.StageWriter(ctx, a, issuance, request)
 		if e != nil {
@@ -170,7 +170,7 @@ func (s *Service) signInWriter(w http.ResponseWriter, r *http.Request) {
 		}
 		permit, e = wp.Finalize(a, evidence, f)
 		if e != nil {
-			return loginProofFailure(a, e)
+			return loginRootFailure(a, e)
 		}
 		return loginFinish(a, aw.Success)
 	})

@@ -568,6 +568,73 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		if len(w.Result().Cookies()) != 0 {
 			t.Fatal("missing browser consent issued")
 		}
+		var created, expires time.Time
+		if e = db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `SELECT created_at,expires_at FROM public.identity_challenges WHERE id=$1`, id).Scan(&created, &expires)
+		}); e != nil {
+			t.Fatal("original magic bounds unavailable")
+		}
+		assertUnconsumed := func(t *testing.T, before int) {
+			t.Helper()
+			var unused bool
+			if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+				return tx.QueryRowContext(ctx, `SELECT consumed_at IS NULL FROM public.identity_challenges WHERE id=$1`, id).Scan(&unused)
+			}); e != nil || !unused || count(t, "identity_sessions") != before {
+				t.Fatal("failed magic confirmation changed challenge or session")
+			}
+		}
+		for _, tc := range []struct {
+			name             string
+			created, expires time.Time
+			status           int
+		}{
+			{"future creation", created.Add(time.Hour), expires.Add(time.Hour), http.StatusServiceUnavailable},
+			{"expired original bound", created.Add(-time.Hour), expires.Add(-time.Hour), http.StatusUnauthorized},
+			{"short persisted lifetime", created, created.Add(59 * time.Second), http.StatusServiceUnavailable},
+			{"oversized persisted lifetime", created, created.Add(30*time.Minute + time.Second), http.StatusServiceUnavailable},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				before := count(t, "identity_sessions")
+				setBounds := func(start, end time.Time) error {
+					return db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+						_, err := tx.ExecContext(ctx, `UPDATE public.identity_challenges SET created_at=$2,expires_at=$3 WHERE id=$1`, id, start, end)
+						return err
+					})
+				}
+				if e := setBounds(tc.created, tc.expires); e != nil {
+					t.Fatal("synthetic challenge bounds unavailable")
+				}
+				defer func() {
+					if e := setBounds(created, expires); e != nil {
+						t.Error("original challenge bounds restoration failed")
+					}
+				}()
+				response := post(t, magicConfirm, "/magic-link/confirm", payload, []*http.Cookie{flow}, "")
+				expect(t, response, tc.status)
+				if len(response.Result().Cookies()) != 0 {
+					t.Fatal("invalid challenge published cookie")
+				}
+				assertUnconsumed(t, before)
+			})
+		}
+		t.Run("final policy denial rolls consumption and issuance back", func(t *testing.T) {
+			before := count(t, "identity_sessions")
+			denial := &nativeWriterMagicFinalDenial{base: policy}
+			failing, e := magiclink.NewWithWriter(root, outbox, materials, magiclink.Config{Renderer: renderer, Sessions: sessions, Policy: denial, InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, ApplicationOrigin: origin})
+			if e != nil {
+				t.Fatal(e)
+			}
+			handler, e := guard.PublicJSON(protection.MagicLink, failing.ConfirmHandler())
+			if e != nil {
+				t.Fatal(e)
+			}
+			response := post(t, handler, "/magic-link/confirm", payload, []*http.Cookie{flow}, "")
+			expect(t, response, http.StatusForbidden)
+			if denial.calls != 2 || len(response.Result().Cookies()) != 0 {
+				t.Fatal("final magic policy denial was not exercised")
+			}
+			assertUnconsumed(t, before)
+		})
 		w = post(t, magicConfirm, "/magic-link/confirm", payload, []*http.Cookie{flow}, "")
 		expect(t, w, http.StatusOK)
 		w = post(t, magicConfirm, "/magic-link/confirm", payload, []*http.Cookie{flow}, "")
@@ -668,4 +735,21 @@ func (p *nativeWriterAssurancePolicy) AuthorizeMFA(ctx context.Context, tx *sql.
 		return mfa.ErrDenied
 	}
 	return p.base.AuthorizeMFA(ctx, tx, principal, action)
+}
+
+// A final-only denial exercises rollback after real H consumption and S staging.
+type nativeWriterMagicFinalDenial struct {
+	base  nativeWriterPolicy
+	calls int
+}
+
+func (p *nativeWriterMagicFinalDenial) Ready(ctx context.Context, tx *sql.Tx) error {
+	return p.base.Ready(ctx, tx)
+}
+func (p *nativeWriterMagicFinalDenial) AuthorizeMagicLink(ctx context.Context, tx *sql.Tx, person uuid.UUID) error {
+	p.calls++
+	if p.calls == 2 {
+		return magiclink.ErrPolicyDenied
+	}
+	return p.base.AuthorizeMagicLink(ctx, tx, person)
 }

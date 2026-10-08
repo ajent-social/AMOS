@@ -56,8 +56,8 @@ func magicFinish(a *aw.Attempt, outcome aw.Outcome) aw.Outcome {
 	}
 	return outcome
 }
-func magicProofFailure(a *aw.Attempt, err error) aw.Outcome {
-	if errors.Is(err, wp.ErrDenied) {
+func magicRootFailure(a *aw.Attempt, err error) aw.Outcome {
+	if errors.Is(err, wp.ErrDenied) || errors.Is(err, aw.ErrDenied) {
 		return magicFinish(a, aw.DeniedRollback)
 	}
 	return magicFinish(a, aw.UnavailableRollback)
@@ -168,7 +168,7 @@ func (s *Service) requestWriter(ctx context.Context, address string, challengeID
 			return magicFinish(a, aw.UnavailableRollback)
 		}
 		if e = magicAcquire(ctx, a); e != nil {
-			return magicFinish(a, aw.UnavailableRollback)
+			return magicRootFailure(a, e)
 		}
 		tx, e = a.ParticipantTx(ctx, aw.W, rows)
 		if e != nil {
@@ -223,7 +223,7 @@ func (s *Service) requestWriter(ctx context.Context, address string, challengeID
 		}
 		evidence, e := wp.Challenge(a, wp.MagicRequest, wp.ChallengeCheck{Subject: wp.Subject{Person: c.person, Realm: s.realm(), Epoch: c.epoch}, Contact: wp.Contact{ID: c.email, ComparisonKey: c.key, VerifiedAt: c.verified.Time}, ID: challengeID, TokenDigest: digest, BrowserDigest: browser, CreatedAt: b, ExpiresAt: expiry, VerifiedAt: b})
 		if e != nil {
-			return magicProofFailure(a, e)
+			return magicRootFailure(a, e)
 		}
 		output, e = a.Binding()
 		if e != nil {
@@ -248,14 +248,14 @@ func (s *Service) requestWriter(ctx context.Context, address string, challengeID
 			return magicFinish(a, aw.UnavailableRollback)
 		}
 		if e = checkMagicRow(ctx, tx, challengeID, c, digest, browser, b, expiry, time.Time{}); e != nil {
-			return magicProofFailure(a, e)
+			return magicRootFailure(a, e)
 		}
 		if !f.Before(job.Deadline) {
 			return magicFinish(a, aw.DeniedRollback)
 		}
 		permit, e = wp.Finalize(a, evidence, f)
 		if e != nil {
-			return magicProofFailure(a, e)
+			return magicRootFailure(a, e)
 		}
 		return magicFinish(a, aw.Success)
 	})

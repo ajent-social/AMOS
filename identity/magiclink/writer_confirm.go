@@ -71,7 +71,7 @@ func (s *Service) confirmWriter(ctx context.Context, id uuid.UUID, digest []byte
 			return magicFinish(a, aw.UnavailableRollback)
 		}
 		if e = magicAcquire(ctx, a); e != nil {
-			return magicFinish(a, aw.UnavailableRollback)
+			return magicRootFailure(a, e)
 		}
 		tx, e = a.ParticipantTx(ctx, aw.W, rows)
 		if e != nil {
@@ -124,7 +124,7 @@ func (s *Service) confirmWriter(ctx context.Context, id uuid.UUID, digest []byte
 		}
 		evidence, e := wp.Challenge(a, wp.MagicConfirm, wp.ChallengeCheck{Subject: wp.Subject{Person: c.person, Realm: s.realm(), Epoch: c.epoch}, Contact: wp.Contact{ID: c.email, ComparisonKey: c.key, VerifiedAt: c.verified.Time}, ID: id, TokenDigest: [32]byte(held.digest), BrowserDigest: [32]byte(held.browser), CreatedAt: held.created, ExpiresAt: held.expires, VerifiedAt: verified, DifferentDeviceConfirmed: !sameBrowser && consent})
 		if e != nil {
-			return magicProofFailure(a, e)
+			return magicRootFailure(a, e)
 		}
 		st, e := store.NewWriter(a)
 		if e != nil {
@@ -147,7 +147,7 @@ func (s *Service) confirmWriter(ctx context.Context, id uuid.UUID, digest []byte
 
 		issuance, e := wp.ForIssue(a, evidence)
 		if e != nil {
-			return magicProofFailure(a, e)
+			return magicRootFailure(a, e)
 		}
 		staged, e = s.writerSessions.StageWriter(ctx, a, issuance, request)
 		if e != nil {
@@ -168,7 +168,7 @@ func (s *Service) confirmWriter(ctx context.Context, id uuid.UUID, digest []byte
 			return magicFinish(a, aw.DeniedRollback)
 		}
 		if e = checkMagicRow(ctx, tx, id, c, [32]byte(held.digest), [32]byte(held.browser), held.created, held.expires, consumedAt); e != nil {
-			return magicProofFailure(a, e)
+			return magicRootFailure(a, e)
 		}
 		if e = s.cfg.Policy.AuthorizeMagicLink(ctx, tx, c.person); e != nil {
 			if errors.Is(e, ErrPolicyDenied) || errors.Is(e, ErrStepUpRequired) {
@@ -188,7 +188,7 @@ func (s *Service) confirmWriter(ctx context.Context, id uuid.UUID, digest []byte
 		}
 		permit, e = wp.Finalize(a, evidence, f)
 		if e != nil {
-			return magicProofFailure(a, e)
+			return magicRootFailure(a, e)
 		}
 		return magicFinish(a, aw.Success)
 	})
