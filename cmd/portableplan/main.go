@@ -156,8 +156,9 @@ func exportNative(plan nativePlan, state map[string]narrative, planBytes, stateB
 }
 
 func main() {
-	sdlc := len(os.Args) == 2 && os.Args[1] == "--sdlc"
-	if len(os.Args) != 1 && !sdlc {
+	historical := len(os.Args) == 2 && os.Args[1] == "--historical-product"
+	sdlc := len(os.Args) == 1 || (len(os.Args) == 2 && os.Args[1] == "--sdlc")
+	if !historical && !sdlc {
 		fmt.Fprintln(os.Stderr, "unexpected positional arguments")
 		os.Exit(2)
 	}
@@ -180,6 +181,12 @@ func main() {
 		out, err = exportSDLC(plan, state)
 	} else {
 		out, err = export(plan, state)
+		if err == nil {
+			def := out.(map[string]any)["definition"].(map[string]any)
+			def["id"] = "amos:historical-product-plan"
+			def["metadata"].(map[string]any)["historicalBaseline"] = true
+			def["title"] = "AMOS retired product-only baseline"
+		}
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

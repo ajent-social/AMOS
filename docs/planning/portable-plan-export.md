@@ -1,35 +1,24 @@
-# Experimental portable plan export
+# Wazi plan export
 
-`go run ./cmd/portableplan` writes a read-only JSON interchange for the frozen
-portable plan contract `0.0.1` (`sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d`).
-Run it from the repository root; the two canonical input paths are fixed so
-the exported source references identify the exact files read. The adapter version is
-`amos-portable-plan/0.0.1`; consumers must pin that version and the source
-digest rather than assuming later exports have identical meaning.
+The current authored authority is docs/planning/wazi-source.json. Run
+go run ./cmd/portableplan (or the equivalent --sdlc mode) from the repository root
+to export the complete product and delivery graph as amos:plan. The source's
+exact bytes bind definition revision/digest. Preserve native task IDs and stages;
+product-target dependencies use domain-accepted requirements, while untyped
+lifecycle-to-lifecycle dependencies use execution-complete. Stage names supply
+no approval, landing or deployment authority.
 
-The authored authority is `docs/planning/plan-data.json`. Each task receives a
-stable `amos:task:<native ID>` identity, keeps its native stage and full native
-task object, and retains acceptance criteria in source order. Native
-dependencies become `domain-accepted` dependencies on an
-`amos:acceptance:<native ID>` requirement. The domain is
-`amos:task-acceptance`. The source revision is the SHA-256 digest of the exact
-plan file bytes, so any authored change yields a different revision.
-Each acceptance requirement names its logical AMOS task ID in the portable
-subject's artifact field. That ID is an acceptance subject, not a claim that a
-built or deployed artifact exists.
+The frozen Wazi 0.0.1 digest is
+sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d.
+Validate with its owning offline validator, not a copied schema.
 
-`docs/planning/execution-state.json` contributes only narrative status and
-certification metadata, with its own digest. Its `ACCEPTED` and `REVIEWED`
-labels do **not** create portable execution, check, review, landing, deployment,
-or domain-acceptance evidence. Every exported task has portable authored status
-`pending`; `evidence` and `evaluations` are empty, and there is no execution
-snapshot. A consumer must leave requirements unresolved until a separate,
-trusted adapter supplies current, subject-bound receipts and evaluations under
-an explicit policy revision. This command performs no admission, execution,
-provider call, merge, or deployment.
+--historical-product is the explicit retired 257-task baseline export. Its plan
+identity is amos:historical-product-plan and metadata historicalBaseline is true.
+It is not the current plan. Old native inputs remain preserved historical data.
 
-The output is an interchange view, not a new writable plan master. A source
-checkout may be dirty; this export makes no clean-source claim. Run the native
-plan checker and the pinned portable semantic validator before relying on a
-particular generated file. Structural conformance alone cannot qualify
-receipts or a live journey.
+No snapshot, execution evidence or satisfied evaluation is emitted. Narrative
+acceptance remains unqualified. The SDLC journal is separately digested.
+The retired renderer, plan-check and release-evidence commands refuse current
+invocation until their replacements are qualified; do not bypass that guard to
+rewrite live projections from stale baseline files. See wazi-migration.md for
+actual checks and remaining delivery/tooling gates.

@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 )
 
@@ -64,5 +67,96 @@ func TestSDLCDeterministic(t *testing.T) {
 	bb, _ := json.Marshal(b)
 	if string(ab) != string(bb) {
 		t.Fatal("nondeterministic")
+	}
+}
+
+func TestDeliveryToProductRetainsDomainAcceptance(t *testing.T) {
+	source := []byte(`{"schema":"amos-local-sdlc-plan-v1","contract":"x","tasks":[{"id":"T1.2","native_product_task":{"id":"T1.2","title":"Contract","stage":"S0","deps":[],"acceptance":["Reviewed contract"]}},{"id":"T-SDLC-2-8.1","title":"Preflight","stage":"preflight","acceptance":"Current reviewed dependencies","deps":["T1.2"]},{"id":"NEXT","title":"Review","stage":"review","acceptance":"Review","deps":["T-SDLC-2-8.1"]}]}`)
+	out, err := exportSDLC(source, []byte(`{"tasks":{}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	def := out.(map[string]any)["definition"].(map[string]any)
+	for _, row := range def["tasks"].([]any) {
+		task := row.(map[string]any)
+		if task["id"] == "amos:task:T-SDLC-2-8.1" {
+			dep := task["dependencies"].([]any)[0].(map[string]any)
+			if dep["predicate"] != "domain-accepted" || dep["requirementId"] != "amos:acceptance:T1.2" {
+				t.Fatal("delivery prerequisite weakened", dep)
+			}
+		}
+		if task["id"] == "amos:task:NEXT" {
+			dep := task["dependencies"].([]any)[0].(map[string]any)
+			if dep["predicate"] != "execution-complete" {
+				t.Fatal("lifecycle approval invented", dep)
+			}
+		}
+	}
+}
+func TestRejectMissingRetainedTaskAndDuplicateProductFields(t *testing.T) {
+	for _, raw := range []string{
+		`{"schema":"amos-local-sdlc-plan-v1","contract":"amos-wazi-authored-plan/1","required_task_ids":["X","MISSING"],"tasks":[{"id":"X","title":"x","stage":"author","deps":[],"acceptance":"a"}]}`,
+		`{"schema":"amos-local-sdlc-plan-v1","contract":"x","tasks":[{"id":"X","title":"conflicting","native_product_task":{"id":"X","title":"canonical","stage":"S0","deps":[],"acceptance":["a"]}}]}`,
+	} {
+		if _, err := exportSDLC([]byte(raw), []byte(`{"tasks":{}}`)); err == nil {
+			t.Fatal("invalid preservation accepted")
+		}
+	}
+}
+
+func TestCLIHelper(t *testing.T) {
+	if os.Getenv("AMOS_PLAN_CLI_TEST") != "1" {
+		return
+	}
+	args := []string{"portableplan"}
+	if mode := os.Getenv("AMOS_PLAN_CLI_MODE"); mode != "" {
+		args = append(args, mode)
+	}
+	os.Args = args
+	main()
+	os.Exit(0)
+}
+func TestCurrentAndHistoricalCLIIdentities(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "docs", "planning")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"wazi-source.json":      `{"schema":"amos-local-sdlc-plan-v1","contract":"x","tasks":[{"id":"A","title":"Current","stage":"author","deps":[],"acceptance":"a"},{"id":"B","title":"Review","stage":"review","deps":["A"],"acceptance":"b"}]}`,
+		"sdlc-stage-state.json": `{"tasks":{}}`,
+		"plan-data.json":        `{"schema_version":1,"contract":"legacy","epics":[{"tasks":[{"id":"OLD","title":"Old","stage":"S0","deps":[],"acceptance":["old"]}]}]}`,
+		"execution-state.json":  `{}`,
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, tc := range []struct {
+		mode, id string
+		count    int
+	}{
+		{"", "amos:plan", 2}, {"--sdlc", "amos:plan", 2}, {"--historical-product", "amos:historical-product-plan", 1},
+	} {
+		cmd := exec.Command(os.Args[0], "-test.run=^TestCLIHelper$")
+		cmd.Dir = root
+		cmd.Env = append(os.Environ(), "AMOS_PLAN_CLI_TEST=1", "AMOS_PLAN_CLI_MODE="+tc.mode)
+		b, err := cmd.Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out struct {
+			Definition struct {
+				ID    string
+				Tasks []json.RawMessage
+			}
+		}
+		if err = json.Unmarshal(b, &out); err != nil {
+			t.Fatal(err)
+		}
+		if out.Definition.ID != tc.id || len(out.Definition.Tasks) != tc.count {
+			t.Fatalf("mode %s: got %s/%d", tc.mode, out.Definition.ID, len(out.Definition.Tasks))
+		}
 	}
 }

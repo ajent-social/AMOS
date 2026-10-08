@@ -8,8 +8,9 @@ Portable acceptance is their original ordered text joined by newlines.
 Stages and IDs are retained, including stages unknown to a consumer.
 
 The --sdlc exporter emits amos:plan with stable amos:task:<original ID> identifiers.
-Legacy no-argument export remains available for historical product-only
-compatibility, not as the current plan master. The SDLC journal contributes
+The default and --sdlc entrypoints both select the complete current plan.
+--historical-product explicitly exports amos:historical-product-plan with
+historicalBaseline=true. It cannot silently replace amos:plan. The SDLC journal contributes
 unqualified narrative metadata only. Product narrative acceptance is retained
 in the source with original records. All portable authored statuses remain
 pending; consumers cannot infer readiness.
@@ -45,3 +46,18 @@ These entries track this migration; they do not fabricate completed product task
 or replace existing task/claim ownership.
 
 The whole-repository public scan reports 44 findings in existing source outside this change; it is not recorded as passing. The focused migration-artifact scan is recorded separately. Local original worktree metadata records 118 registrations, 87 present and 31 missing directories; original references and migrated source remain preserved.
+
+
+## Independent review corrections
+Review of a6d20e3 requested changes; it did not approve merge.
+- R1: lifecycle-to-product prerequisites retain domain acceptance. Only true
+  lifecycle-to-lifecycle ordering becomes execution-complete.
+- R2: default export uses the complete current plan; retired export requires an
+  explicit flag and distinct plan identity.
+- R3: retired renderer/check/release tools refuse invocation when the adopted
+  master exists. No stale current views may be rewritten or qualified. Migration
+  of their full current projection/release functionality remains explicitly open.
+  Each product has one authored representation in native_product_task; its outer
+  row supplies identity/epic/narrative metadata only. Duplicate authored fields,
+  missing retained task IDs and dangling/cyclic dependencies are rejected.
+Current semantic conformance does not imply replacement release tooling exists.
