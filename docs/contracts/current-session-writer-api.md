@@ -728,3 +728,18 @@ credential or SQL and never consumes or resets the credential bit. StageWriter
 must call it with the action bound by DiscoverPrior before obtaining any session
 SQL or consuming Credential. A wrong action fails unavailable even when the
 attempt and subject match. Independent review precedes implementation.
+
+The native session store may add `AssuranceLevel string` and
+`AssuranceExpires time.Time` to its Session insertion input. Both zero preserves
+the existing legacy insertion behavior. A partial pair or unknown level fails
+before SQL. W1 StageWriter sets both from the same once-consumed issuance
+credential after CheckAction; it must not accept assurance from request input.
+The insertion uses one SQL INSERT carrying base session and assurance columns
+and one SessionWrite journal entry for the reserved session row. Elevated
+staging must not call SetSessionAssurance after insertion. The original
+duplicate-journal rejection remains unchanged. W1 insertion rejects a missing
+pair; native staging must compare the subject, realm, method, authentication
+time and assurance bounds to that same issuance credential when constructing
+the input. Legacy callers with both fields zero retain existing behavior;
+nonzero fields require validated closed levels and finite bounds. Independent
+early review precedes implementation.
