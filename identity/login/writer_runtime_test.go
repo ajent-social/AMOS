@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -220,6 +221,15 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 			t.Fatal("registration was not atomic pending composition")
 		}
 	})
+	t.Run("duplicate registration stays generic without new rows", func(t *testing.T) {
+		people, workspaces, jobsBefore, materialsBefore := count(t, "identity_persons"), count(t, "workspaces"), count(t, "amos_jobs"), count(t, "email_delivery_material")
+		w := post(t, signup, "/signup", registrationRequest{address, phrase}, nil, "")
+		expect(t, w, http.StatusAccepted)
+		if count(t, "identity_persons") != people || count(t, "workspaces") != workspaces || count(t, "amos_jobs") != jobsBefore || count(t, "email_delivery_material") != materialsBefore || len(w.Result().Cookies()) != 0 {
+			t.Fatal("duplicate registration changed pending graph")
+		}
+	})
+
 	t.Run("pending and missing budget cannot issue", func(t *testing.T) {
 		w := post(t, signin, "/auth", signInRequest{address, phrase}, nil, "")
 		expect(t, w, http.StatusUnauthorized)
@@ -317,6 +327,56 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		sessions.Middleware(factors.Handler()).ServeHTTP(rec, r)
 		expect(t, rec, http.StatusOK)
 	})
+	t.Run("factor malformed participant is terminal before SQL", func(t *testing.T) {
+		if enrollment.FactorID == uuid.Nil {
+			t.Fatal("enrollment prerequisite failed")
+		}
+		var person uuid.UUID
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `SELECT person_id FROM public.identity_totp_factors WHERE id=$1`, enrollment.FactorID).Scan(&person)
+		}); e != nil {
+			t.Fatal("factor owner unavailable")
+		}
+		scope := mfa.Scope{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, PersonID: person}
+		for _, invalidContext := range []bool{true, false} {
+			retained := false
+			_, e := root.Run(ctx, func(c context.Context, a *aw.Attempt) aw.Outcome {
+				plan, e := aw.NewPlan(aw.Realm{Installation: cfg.InstallationID, Application: cfg.ApplicationID, Environment: cfg.EnvironmentID}, []aw.Row{{Table: aw.Persons, ID: person, Access: aw.ExistingUpdate}, {Table: aw.Factors, ID: enrollment.FactorID, Access: aw.ExistingUpdate}}, nil)
+				if e != nil {
+					return loginFinish(a, aw.UnavailableRollback)
+				}
+				if e = a.SealPlan(plan); e != nil {
+					return loginFinish(a, aw.UnavailableRollback)
+				}
+				if e = acquire(c, a, aw.P, aw.C, aw.H, aw.S, aw.W); e != nil {
+					return loginFinish(a, aw.UnavailableRollback)
+				}
+				factorStore, e := mfa.NewWriter(a)
+				if e != nil {
+					return loginFinish(a, aw.UnavailableRollback)
+				}
+				badContext, badScope := c, scope
+				if invalidContext {
+					badContext = nil
+				} else {
+					badScope.PersonID = uuid.Nil
+				}
+				if e = factorStore.RecordFailure(badContext, badScope, enrollment.FactorID, time.Now()); e == nil {
+					retained = true
+					return loginFinish(a, aw.UnavailableRollback)
+				}
+				if _, e = a.Binding(); e == nil {
+					retained = true
+					return loginFinish(a, aw.DeniedRollback)
+				}
+				return aw.UnavailableRollback // failed participant already finished
+			})
+			if retained || !errors.Is(e, aw.ErrUnavailable) {
+				t.Fatal("ignored malformed participant left a usable attempt")
+			}
+		}
+	})
+
 	t.Run("MFA final policy denial rolls counter back", func(t *testing.T) {
 		if enrollment.Seed == "" {
 			t.Fatal("enrollment prerequisite failed")
@@ -380,6 +440,13 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		w = post(t, mfaHTTP, "/account/mfa/totp/confirm", map[string]any{"factor_id": enrollment.FactorID, "current_password": phrase, "code": code}, []*http.Cookie{cookie}, csrf)
 		expect(t, w, http.StatusOK)
 		capture(t, w)
+		var method string
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `SELECT authentication_method FROM public.identity_sessions WHERE installation_id=$1 AND application_id=$2 AND revoked_at IS NULL AND assurance_level='aal2'`, cfg.InstallationID, cfg.ApplicationID).Scan(&method)
+		}); e != nil || method != "password+totp" {
+			t.Fatal("native TOTP issuance lost its closed authentication method")
+		}
+
 	})
 	t.Run("MFA replay retains only denial counter", func(t *testing.T) {
 		var step int64
@@ -399,6 +466,60 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 			t.Fatal("replayed factor issued session")
 		}
 	})
+	t.Run("MFA policy receives assurance downgraded after admission", func(t *testing.T) {
+		if cookie == nil {
+			t.Fatal("native elevated session prerequisite absent")
+		}
+		var expiry time.Time
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `UPDATE public.identity_sessions SET assurance_expires_at=pg_catalog.clock_timestamp()+interval '500 milliseconds' WHERE installation_id=$1 AND application_id=$2 AND revoked_at IS NULL AND assurance_level='aal2' RETURNING assurance_expires_at`, cfg.InstallationID, cfg.ApplicationID).Scan(&expiry)
+		}); e != nil {
+			t.Fatal("synthetic bounded elevation unavailable")
+		}
+		assurancePolicy := &nativeWriterAssurancePolicy{base: policy}
+		currentService, e := mfa.NewWithWriter(root, mfa.TxConfig{Vault: vault, Primary: primary, Sessions: sessions, Policy: assurancePolicy, Issuer: "Native test"})
+		if e != nil {
+			t.Fatal(e)
+		}
+		currentGuard, e := guard.CookieMutation(protection.MFA, currentService.Handler())
+		if e != nil {
+			t.Fatal(e)
+		}
+		admittedLevel := ""
+		crossed := false
+		afterAdmission := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			p, ok := identity.PrincipalFromContext(r.Context())
+			if !ok {
+				t.Error("middleware private admission absent")
+				return
+			}
+			admittedLevel = string(p.Assurance().Level())
+			// Observe the actual database bound between committed middleware admission
+			// and writer entry. No sleep or production clock override synchronizes it.
+			for polls := 0; polls < 2000; polls++ {
+				if e := db.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
+					return tx.QueryRowContext(r.Context(), `SELECT pg_catalog.clock_timestamp()>=$1`, expiry).Scan(&crossed)
+				}); e != nil {
+					t.Error("database expiry observation unavailable")
+					return
+				}
+				if crossed {
+					break
+				}
+			}
+			if !crossed {
+				t.Error("database expiry boundary was not observed")
+				return
+			}
+			currentGuard.ServeHTTP(w, r)
+		})
+		w := post(t, sessions.Middleware(afterAdmission), "/account/mfa/totp/challenge", map[string]string{"current_password": phrase, "code": "000000"}, []*http.Cookie{cookie}, csrf)
+		expect(t, w, http.StatusForbidden)
+		if admittedLevel != "aal2" || !crossed || assurancePolicy.observed != "aal1" || len(w.Result().Cookies()) != 0 {
+			t.Fatal("policy consumed stale admitted assurance")
+		}
+	})
+
 	magic, err := magiclink.NewWithWriter(root, outbox, materials, magiclink.Config{Renderer: renderer, Sessions: sessions, Policy: policy, InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, ApplicationOrigin: origin})
 	if err != nil {
 		t.Fatal(err)
@@ -531,4 +652,20 @@ func nativeUnusedCode(t *testing.T, ctx context.Context, db *storage.RuntimeDB, 
 	}
 	t.Fatal("no unused synthetic TOTP code")
 	return ""
+}
+
+type nativeWriterAssurancePolicy struct {
+	base     nativeWriterPolicy
+	observed string
+}
+
+func (p *nativeWriterAssurancePolicy) Ready(ctx context.Context, tx *sql.Tx) error {
+	return p.base.Ready(ctx, tx)
+}
+func (p *nativeWriterAssurancePolicy) AuthorizeMFA(ctx context.Context, tx *sql.Tx, principal identity.Principal, action string) error {
+	p.observed = string(principal.Assurance().Level())
+	if p.observed != "aal2" {
+		return mfa.ErrDenied
+	}
+	return p.base.AuthorizeMFA(ctx, tx, principal, action)
 }

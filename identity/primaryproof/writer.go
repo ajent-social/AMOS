@@ -43,6 +43,8 @@ func (v *Verifier) VerifyCurrentPasswordWriter(ctx context.Context, a *aw.Attemp
 	}
 	scope := store.SessionScope{InstallationID: actor.Subject.Realm.Installation, ApplicationID: actor.Subject.Realm.Application, EnvironmentID: actor.Subject.Realm.Environment}
 	encoded, err := st.FindCurrentPassword(ctx, scope, actor.Subject.Person, actor.Subject.Epoch)
+	// Semantic read misses do not call Store.failed or finish the attempt.
+	// Keep the deferred denial; persistence/admission failures below are terminal.
 	if errors.Is(err, store.ErrSessionUnavailable) {
 		return wp.Evidence{}, ErrUnauthenticated
 	}

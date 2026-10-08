@@ -46,7 +46,7 @@ func TestNativeWriterPureConstruction(t *testing.T) {
 	cases := []struct {
 		name   string
 		mutate func(*TxConfig)
-	}{{"clock", func(c *TxConfig) { c.Now = time.Now }}, {"nil primary", func(c *TxConfig) { c.Primary = (*primaryproof.Verifier)(nil) }}, {"nil sessions", func(c *TxConfig) { c.Sessions = (*session.Service)(nil) }}, {"no vault", func(c *TxConfig) { c.Vault = nil }}, {"no policy", func(c *TxConfig) { c.Policy = nil }}, {"issuer whitespace", func(c *TxConfig) { c.Issuer = " bad " }}}
+	}{{"clock", func(c *TxConfig) { c.Now = time.Now }}, {"nil primary", func(c *TxConfig) { c.Primary = (*primaryproof.Verifier)(nil) }}, {"nil sessions", func(c *TxConfig) { c.Sessions = (*session.Service)(nil) }}, {"no vault", func(c *TxConfig) { c.Vault = nil }}, {"typed nil vault", func(c *TxConfig) { c.Vault = (*writerTestVault)(nil) }}, {"typed nil policy", func(c *TxConfig) { c.Policy = (*writerTestPolicy)(nil) }}, {"no policy", func(c *TxConfig) { c.Policy = nil }}, {"issuer whitespace", func(c *TxConfig) { c.Issuer = " bad " }}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			c := writerTestConfig()

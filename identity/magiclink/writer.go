@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"reflect"
 	"time"
 
 	deliveryemail "github.com/ajent-social/amos/delivery/email"
@@ -21,7 +22,7 @@ import (
 // Run/Read check active-root ownership before SQL, not during construction.
 func NewWithWriter(root *aw.Root, outbox *sqlstore.TxWriter, materials *materialstore.Writer, cfg Config) (*Service, error) {
 	sessions, ok := cfg.Sessions.(*session.Service)
-	if root == nil || outbox == nil || materials == nil || !ok || sessions == nil || cfg.DB != nil || cfg.Outbox != nil || cfg.Materials != nil || cfg.Renderer == nil || cfg.Policy == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
+	if root == nil || outbox == nil || materials == nil || !ok || sessions == nil || cfg.DB != nil || cfg.Outbox != nil || cfg.Materials != nil || cfg.Renderer == nil || nilWriterPolicy(cfg.Policy) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
 		return nil, ErrConfiguration
 	}
 	s, err := configured(cfg)
@@ -310,4 +311,17 @@ func (v magicChallenge) shape() bool {
 }
 func (v magicChallenge) same(other magicChallenge) bool {
 	return v.contact.same(other.contact) && v.id == other.id && bytes.Equal(v.digest, other.digest) && bytes.Equal(v.browser, other.browser) && v.created.Equal(other.created) && v.expires.Equal(other.expires) && v.consumed.Valid == other.consumed.Valid && v.consumed.Time.Equal(other.consumed.Time)
+}
+
+func nilWriterPolicy(policy Policy) bool {
+	if policy == nil {
+		return true
+	}
+	v := reflect.ValueOf(policy)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
