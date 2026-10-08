@@ -167,6 +167,21 @@ func TestEvidenceRuntimeRequiredService(t *testing.T) {
 					t.Error("evidence construction failed", e)
 					return aw.UnavailableRollback
 				}
+				snapshot, e := evidence.PasswordSnapshot(a, action)
+				if e != nil || snapshot.VerifiedHash != "synthetic-stored-verifier" || !snapshot.VerifiedAt.Equal(v) {
+					t.Error("original password facts unavailable", e)
+					return aw.UnavailableRollback
+				}
+				snapshot.VerifiedHash = "caller changed copy"
+				again, e := evidence.PasswordSnapshot(a, action)
+				if e != nil || again.VerifiedHash != "synthetic-stored-verifier" {
+					t.Error("snapshot mutation changed evidence")
+					return aw.UnavailableRollback
+				}
+				if _, e = evidence.PasswordSnapshot(a, MagicConfirm); e == nil {
+					t.Error("wrong action snapshot admitted")
+					return aw.UnavailableRollback
+				}
 				issuance, e = ForIssue(a, evidence)
 				if mode == "nonissuing primary" {
 					if e == nil {
