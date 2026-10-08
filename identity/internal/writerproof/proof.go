@@ -166,7 +166,7 @@ func validSubject(s Subject) bool {
 }
 func method(m string) bool {
 	switch m {
-	case "email_password", "email_magic_link", "google", "github", "apple", "passkey", "enterprise_oidc":
+	case "email_password", "password+totp", "email_magic_link", "google", "github", "apple", "passkey", "enterprise_oidc":
 		return true
 	default:
 		return false
@@ -322,4 +322,26 @@ func Actor(a *aw.Attempt, action Action, check ActorCheck) (Evidence, error) {
 	}
 	d.actor = check
 	return Evidence{data: d}, nil
+}
+
+// PasswordSnapshot returns copied native facts, never identity authority. The
+// native consumer must retain this original snapshot before the final phase.
+func (e Evidence) PasswordSnapshot(a *aw.Attempt, action Action) (PasswordCheck, error) {
+	d := e.data
+	if d == nil {
+		return PasswordCheck{}, ErrUnavailable
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.kind != passwordKind || d.action != action || d.finalized || !d.binding.Matches(a) {
+		return PasswordCheck{}, ErrUnavailable
+	}
+	if _, _, err := realm(a, d.subject.Realm); err != nil {
+		return PasswordCheck{}, ErrUnavailable
+	}
+	c := d.passwordCheck
+	if err := checkRows(a, aw.C, personRow(d.subject), aw.Row{Table: aw.Emails, ID: c.Contact.ID, Access: aw.ExistingUpdate}, aw.Row{Table: aw.Credentials, ID: c.CredentialID, Access: aw.ExistingUpdate}); err != nil {
+		return PasswordCheck{}, ErrUnavailable
+	}
+	return c, nil
 }
