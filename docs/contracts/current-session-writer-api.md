@@ -1,8 +1,7 @@
 # W1 package and capability API proposal
 
-Status: proposed alongside [W1](current-session-writers.md), not adopted or
-implemented. These are declarations for a finite source assignment, not changes
-to the frozen API. Module prefix below is `github.com/ajent-social/amos`.
+Status: interfaces independently reviewed for isolated B1 implementation; source and component verification are in progress in the integrated candidate. This does not adopt complete current-authority composition or admit a host. The [integration checkpoint](../evidence/authenticated-replacement-components-20261008.md) distinguishes reviewed components from open source, runtime and product gates.
+
 
 ## R1: acyclic ownership and construction
 

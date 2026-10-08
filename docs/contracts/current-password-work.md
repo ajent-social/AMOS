@@ -1,8 +1,7 @@
 # Bounded native password computation for W1
 
-Status: proposed B1 dependency closure, not adopted or implemented. This refines
-R6 in the [writer proposal](current-session-writers.md) without changing the
-landed standalone sign-in v1.25 boundary. Independent review precedes source.
+Status: interfaces independently reviewed for isolated B1 implementation; source and component verification are in progress in the integrated candidate. This does not adopt complete current-authority composition or admit a host. The [integration checkpoint](../evidence/authenticated-replacement-components-20261008.md) distinguishes reviewed components from open source, runtime and product gates.
+
 
 ## Exact consumer and package boundary
 

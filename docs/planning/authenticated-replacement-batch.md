@@ -1,6 +1,6 @@
 # Authenticated replacement feature batch
 
-Status: planned integrated candidate; no new source, contract adoption, task acceptance or runtime qualification is asserted by this record. Use the current source and execution registries. The original 1,501 task inventory, current 1,598 tasks and 59 accepted product tasks remain unchanged.
+Status: integrated source candidate in progress, not a completed batch or host admission. Independently reviewed interfaces authorize isolated implementation; complete native composition and final integrated review remain open. Use the current source and execution registries. The original 1,501 task inventory, current 1,598 tasks and 59 accepted product tasks remain unchanged. Component evidence and remaining gates are recorded in [the current integration checkpoint](../evidence/authenticated-replacement-components-20261008.md).
 
 ## Outcome and coverage
 

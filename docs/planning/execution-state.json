@@ -124,7 +124,8 @@
     "evidence": [
       "Identity persistence and migration fragment reviewed against installation/application scope.",
       "Real PostgreSQL race suite passed after collision fixtures were corrected to share the intended scope.",
-      "Integrated lint and tagged suite passed; authentication HTTP methods and provider qualification remain future tasks."
+      "Integrated lint and tagged suite passed; authentication HTTP methods and provider qualification remain future tasks.",
+      "B1 integrated source candidate and finite independent component checks are in progress; no new acceptance or complete host/current-authority qualification. Exact source boundaries, outstanding native review fixes and full gates are recorded in docs/evidence/authenticated-replacement-components-20261008.md; original accepted component boundaries and product count remain unchanged."
     ]
   },
   "T1.11": {
@@ -161,7 +162,8 @@
       "Immutable scoped principal and opaque session lifecycle independently reviewed.",
       "Real PostgreSQL race tests passed for rotation, CSRF, signout, expiry, security epoch, account disablement and database outage.",
       "Integrated lint and current database suite passed; elevated assurance persistence remains staged and middleware supplies AAL1 only.",
-      "Additive transaction-only session constructor landed through PR32 at 92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f from independently reviewed cda605902bb1bea4415a9a4f87e717d160c9dc31/base e42634c74630699904cb3374573eb2a3f4868f7a. Actual runtime-role normal/race each six entries PASS, typed-nil and actual commit-failure leak negatives RED/exact-restored PASS; fresh landed service six PASS and all three files equal. Supplemental local component only; production host and roles remain open. See docs/evidence/session-transaction-runner-20261007.md."
+      "Additive transaction-only session constructor landed through PR32 at 92bf892e68e58a6f4e16fabedf1b7c1e1d3f545f from independently reviewed cda605902bb1bea4415a9a4f87e717d160c9dc31/base e42634c74630699904cb3374573eb2a3f4868f7a. Actual runtime-role normal/race each six entries PASS, typed-nil and actual commit-failure leak negatives RED/exact-restored PASS; fresh landed service six PASS and all three files equal. Supplemental local component only; production host and roles remain open. See docs/evidence/session-transaction-runner-20261007.md.",
+      "B1 integrated source candidate and finite independent component checks are in progress; no new acceptance or complete host/current-authority qualification. Exact source boundaries, outstanding native review fixes and full gates are recorded in docs/evidence/authenticated-replacement-components-20261008.md; original accepted component boundaries and product count remain unchanged."
     ]
   },
   "T4.2": {
@@ -170,7 +172,8 @@
     "evidence": [
       "Scoped SQL persistence independently reviewed and corrected for concurrent identity disable/admission.",
       "Real PostgreSQL race suite passed including personal uniqueness, cross-tenant lookup, rollback, last-owner demotion/disable and person-row lock exclusion.",
-      "Current person state overrides retained memberships; stable lock ordering is required and deadlock aborts preserve transactions."
+      "Current person state overrides retained memberships; stable lock ordering is required and deadlock aborts preserve transactions.",
+      "B1 integrated source candidate and finite independent component checks are in progress; no new acceptance or complete host/current-authority qualification. Exact source boundaries, outstanding native review fixes and full gates are recorded in docs/evidence/authenticated-replacement-components-20261008.md; original accepted component boundaries and product count remain unchanged."
     ]
   },
   "T1.12": {
@@ -253,7 +256,8 @@
     "evidence": [
       "Integrator reviewed principal-bound bootstrap and current person/security-epoch transaction checks.",
       "Real PostgreSQL race tests passed for concurrent idempotency, owner/scope mismatch, rollback and repair-needed workspace state.",
-      "Disposable owner-mismatch mutation failed the negative test and was restored; scoped vet/lint passed."
+      "Disposable owner-mismatch mutation failed the negative test and was restored; scoped vet/lint passed.",
+      "B1 integrated source candidate and finite independent component checks are in progress; no new acceptance or complete host/current-authority qualification. Exact source boundaries, outstanding native review fixes and full gates are recorded in docs/evidence/authenticated-replacement-components-20261008.md; original accepted component boundaries and product count remain unchanged."
     ]
   },
   "T4.4": {
@@ -263,7 +267,8 @@
       "Integrator reviewed current principal-only selector boundary with immutable resolved workspace permission context.",
       "Real HTTP/PostgreSQL race tests passed for selection, current account/membership revocation, cross-scope denial, forged headers and outage.",
       "Removing active-membership predicate was detected by stale-membership regression test and restored.",
-      "Machine actors fail unavailable until a qualified current-owner grant adapter is wired."
+      "Machine actors fail unavailable until a qualified current-owner grant adapter is wired.",
+      "B1 integrated source candidate and finite independent component checks are in progress; no new acceptance or complete host/current-authority qualification. Exact source boundaries, outstanding native review fixes and full gates are recorded in docs/evidence/authenticated-replacement-components-20261008.md; original accepted component boundaries and product count remain unchanged."
     ]
   },
   "T6.2": {
@@ -642,7 +647,8 @@
       "Coordinator-authored private handler completion candidate1b86e3a38d58a3dfe6c22bad3f77ed7f770c0eab implements the reviewed v1.19 three-file boundary. Offline344normal/344race and actual full-package366normal, vet/pinnedlint PASS. Different exact-head source review, actual race, ordering-negative/restored and landed gates remain; no selfapproval or full executor acceptance.",
       "Private handler completion boundary PR44 independently reviewed1b86e3a38d58a3dfe6c22bad3f77ed7f770c0eab/base83023dc38b8a31714a2f5a656c1ceb9808d7bec0, landedc2cea8f4da80aa0ac1bb49ab096379083b910cf0 on livebased5130d39e0e65358b2ccc7997889da3a801039e2. Different reviewer actual full-package normal366/race366, vet/pinnedlint and faithful ordering assertionRED/exact-restoredPASS; fresh landed actual4PASS and three files equal. Full executor/current authority/replay/audit/effects/transport remain open; T2.8 not accepted. See docs/evidence/login-recovery-constructors-20261007.md.",
       "Post-lock session freshness prerequisite PR54 landed at 4dec7f7efbdfad73a7b6d5276c3301d910813f45 from independently reviewed 6c2bb6e508496b3420ade1ca74937df358dfade3. Fresh real TLS runtime-role normal/race each passed 27 subtests, three parents and package (31 pass events), zero skips; vet/pinned lint passed. Independent old-renewal, old-assurance and equality mutations failed intended assertions, exact restoration passed; all three landed blobs match and fresh landed required-service suite passed. Full writer serialization, provenance/current-authority and executor remain open; T2.8 is not accepted. See docs/evidence/session-freshness-20261008.md.",
-      "Shared post-lock ConsumeChallenge prerequisite PR65 landed6700c605f65a85c8af4c9b2cea9d2ecdf5255d65 from independently reviewedc4d0986db59a2ac6c73b7d92fca00f77272b96f1; exact two source blobs match. Independent real TLS runtime normal/race/restored and fresh landed checks each31 pass events, zero skips; original transaction-clock and prelock-clock mutants failed intended expiry assertion. Evidence PR66 independently reviewed6262883b5b4a559ab55c6f2e95d80f964aad934f landed1149112f406500e2a80c194ee7290cbd45ab2c1c exact document blob. Parser retry and test-only forwarding boundaries are disclosed in docs/evidence/challenge-freshness-20261008.md. Email inline consumption, full writer/provenance/refreshed-principal/resource authority remain separate; T2.8 is not accepted."
+      "Shared post-lock ConsumeChallenge prerequisite PR65 landed6700c605f65a85c8af4c9b2cea9d2ecdf5255d65 from independently reviewedc4d0986db59a2ac6c73b7d92fca00f77272b96f1; exact two source blobs match. Independent real TLS runtime normal/race/restored and fresh landed checks each31 pass events, zero skips; original transaction-clock and prelock-clock mutants failed intended expiry assertion. Evidence PR66 independently reviewed6262883b5b4a559ab55c6f2e95d80f964aad934f landed1149112f406500e2a80c194ee7290cbd45ab2c1c exact document blob. Parser retry and test-only forwarding boundaries are disclosed in docs/evidence/challenge-freshness-20261008.md. Email inline consumption, full writer/provenance/refreshed-principal/resource authority remain separate; T2.8 is not accepted.",
+      "B1 integrated source candidate and finite independent component checks are in progress; no new acceptance or complete host/current-authority qualification. Exact source boundaries, outstanding native review fixes and full gates are recorded in docs/evidence/authenticated-replacement-components-20261008.md; original accepted component boundaries and product count remain unchanged."
     ]
   },
   "T8.4": {
