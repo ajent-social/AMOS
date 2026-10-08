@@ -375,3 +375,10 @@ remain separate. Primitive fixtures and pure-renderer checks cannot satisfy
 those gates. T-RPL-SEARCH.6 still gates T-RPL-WEB.1; T-RPL-WEB.6 and
 T-RPL-HOST-CONTRACT.6 still gate T-RPL-HOST.1. Unresolved authority blocks
 composition; no task acceptance or replacement readiness follows from this audit.
+
+
+The [concrete integration path](../planning/replacement-integration-path.md)
+orders the remaining shared authority, retrieval, HTTP completion, baseline
+business host and rehearsal work over the existing task inventory. Its next
+artifact is an exact authority contract, not another source audit. This link
+adds no API adoption, task acceptance or source permission.
