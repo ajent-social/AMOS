@@ -107,10 +107,19 @@ func (r *Root) Read(ctx context.Context, body func(context.Context, *sql.Tx) err
 		}
 		return nil
 	})
+	return readCompletion(ctx, err)
+}
+
+// A successful driver Commit may race request cancellation. This terminal
+// publication check cannot claim that an already successful commit rolled back.
+func readCompletion(ctx context.Context, err error) error {
 	if err != nil {
 		if errors.Is(err, ErrDenied) {
 			return ErrDenied
 		}
+		return ErrUnavailable
+	}
+	if ctx.Err() != nil {
 		return ErrUnavailable
 	}
 	return nil
