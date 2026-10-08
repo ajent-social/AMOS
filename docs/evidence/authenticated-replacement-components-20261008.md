@@ -32,25 +32,52 @@ timed-out runs remain not passing.
 
 ## Current source and review work
 
-Native store/session source at `166d033` is integrated. Independent review found
-an initial idle-deadline refresh, repeated terminal completion and cancellation
-classification defects. Author fixes at `defbb10` passed the reviewer's original
-regressions; subsequent staged-row finalization and bounded final-context changes
-at `9410dd8` and `01d23b2` still require exact final review. No blanket native
-session clearance is claimed here.
+Native store/session source at `166d033`, corrected through `01d23b2`, received
+independent finite clearance: source selections 15/15/15 and the final-row guard
+selection 9/9/9 normal/race/restored, plus independent bounds, denial, insertion,
+commit-loss and durable-refresh checks with meaningful restored negatives.
+Initial idle-refresh, terminal-completion, cancellation and final-context failures
+remain recorded as failures before correction. This does not cover every later
+store branch: the magic INSERT timestamp fix `6b0a540` and reserved-row admission
+mapping `54511c3` require their own review.
 
-Workspace participants/bootstrap at `0e009de` are integrated. Required-test
-corrections at `b28f335` and `e434bab` remove an unconstructible plan case and
-repair exact-owned fixture cleanup. The failed personal-bootstrap setup remains
-not passing until the corrected selection is independently rerun. Source alone
-does not establish complete workspace mutation, owner-predicate or policy gates.
+Workspace source `0e009de`, with test corrections through `e434bab`, received
+independent normal/race/restored store 8/8/8 and personal-bootstrap 5/5/5 clearance.
+Earlier cleanup failures and two invocations selecting no tests remain non-evidence.
+Current session provenance and complete operation policy remain caller obligations.
 
-The native primary snapshot and closed TOTP actor-method change at `8fada8f`,
-native email writer at `2ba08c7`, and coupled native login/magic/MFA work are in
-source/review progress. Email's selected pure normal/race runs passed 20 events
-each, with vet/lint and changed-path public scan passing; its required-service
-source was not executed by its author. Configuration gains the explicitly
-reviewed environment field; native consumers must use the full copied realm.
+The copied primary snapshot and closed actor-method vocabulary at `8fada8f`
+received additive independent 4/4/4 checks and a genuine wrong-action negative.
+The separate TOTP issuance-method correction `f1f16c8` is outside that earlier
+boundary and still requires its own exact review.
+
+Email source `2ba08c7` with test correction `67621ce` was independently reported
+as normal/race/restored 8/8/8, plus 3/3/3 atomicity/personal-workspace checks and an
+intended personal-guard negative. The first test digest failed to reach the
+intended confirmation branch and remains failed evidence. The review session
+exited before its final consolidated receipt, so exact log/receipt reconciliation
+is still required before the batch evidence gate.
+
+Native login/magic/MFA/primary source through `37e31f9`, with selected-test
+propagation at `039f17b`, remains under independent review. The earlier `e57b001`
+selection of ordinary registration, sign-in and magic-link flows passed seven
+independent runtime events without failed or skipped tests. This is a selected
+functional result, not whole-suite or whole-producer clearance. Original magic
+SQL failures are retained, and the corrected queries were reached by that selection.
+
+A platform review blocked an assurance-policy regression during the prior
+independent session. That operation remains unverified and is not being retried
+or replaced. Separate permitted functional checks explicitly exclude it. The full
+native suite must not be described as passing, and this coverage gap remains a
+batch gate.
+
+Recovery source `e5cee25` adds native request, preview, reset completion and password
+change with the separately reviewed completion-policy design at `ad0a00c`.
+Author pure/race selections passed 38/38 events, with vet and pinned lint passing.
+Required-service source covers guarded reset request/completion with a real hasher;
+its author did not execute it. Independent source/runtime review, the password-change
+journey and the complete failure/wait schedules remain required. The delivery
+wrapper terminal-error correction `2406043` likewise requires additive review.
 
 ## Preserved limits and next gates
 
@@ -71,4 +98,6 @@ restart/backup/restore gates remain in scope.
 Public scanning is scoped evidence: the full scan retains 44 previously
 disclosed findings and forwarding heuristics. The native store/session package
 scan also reported three existing test credential-assignment heuristics; this
-record does not claim a fully green package or repository scan.
+record does not claim a fully green package or repository scan. Recovery source
+adds three credential-assignment heuristic matches on ordinary field equality
+expressions; these are disclosed separately and are not a green scan result.
