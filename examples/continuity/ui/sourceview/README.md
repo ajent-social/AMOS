@@ -35,3 +35,9 @@ presentation with that stylesheet, not deployed asset routing, authenticated
 retrieval, HTTP status/headers, HTMX transport, service behavior or product
 acceptance. Source links and search forms are inspected but not submitted because
 no server or authenticated caller exists in this check.
+
+The digest negative harness in `testdata/digest-negative.py` uses a Go overlay
+that disables the real comparison and requires `TestInvalidDetail/wrong_digest`
+to fail its nil-output/exact-error assertion. It then runs the full package without
+the overlay and records the original, mutated and restored hashes. It never
+modifies production source on disk.
