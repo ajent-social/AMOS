@@ -2250,6 +2250,328 @@
       },
       "external_blockers": [],
       "next_action": "Initial session/jobs component stages complete. Continue remaining frozen service constructors and separately gated production composition; provider and production acceptance remain open."
+    },
+    "T-RPL-CONTRACT.1": {
+      "task_id": "T-RPL-CONTRACT.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [],
+      "source_or_artifact_identity": {
+        "reviewed_head": "b89819d6b410214d1bb7435429a18c9621445120",
+        "landed": "3630b761725d84476a222dd7cbd4c077e6984220",
+        "pr": 50
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-CONTRACT.2": {
+      "task_id": "T-RPL-CONTRACT.2",
+      "status": "COMPLETE",
+      "owner": "Assigned isolated author",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "b89819d6b410214d1bb7435429a18c9621445120",
+        "landed": "3630b761725d84476a222dd7cbd4c077e6984220",
+        "pr": 50
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-CONTRACT.3": {
+      "task_id": "T-RPL-CONTRACT.3",
+      "status": "COMPLETE",
+      "owner": "Assigned isolated author",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "b89819d6b410214d1bb7435429a18c9621445120",
+        "landed": "3630b761725d84476a222dd7cbd4c077e6984220",
+        "pr": 50
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-CONTRACT.4": {
+      "task_id": "T-RPL-CONTRACT.4",
+      "status": "COMPLETE",
+      "owner": "Independent exact-head reviewer",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "b89819d6b410214d1bb7435429a18c9621445120",
+        "landed": "3630b761725d84476a222dd7cbd4c077e6984220",
+        "pr": 50
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-CONTRACT.5": {
+      "task_id": "T-RPL-CONTRACT.5",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "b89819d6b410214d1bb7435429a18c9621445120",
+        "landed": "3630b761725d84476a222dd7cbd4c077e6984220",
+        "pr": 50
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-CONTRACT.6": {
+      "task_id": "T-RPL-CONTRACT.6",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "b89819d6b410214d1bb7435429a18c9621445120",
+        "landed": "3630b761725d84476a222dd7cbd4c077e6984220",
+        "pr": 50
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Design only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-DOMAIN.1": {
+      "task_id": "T-RPL-DOMAIN.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "d626542754646bb8929dfcd652aa24adf52fc86f",
+        "landed": "9f872731dc027075bcba82811ac2d5e7f30b0058",
+        "pr": 51
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure domain source only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-DOMAIN.2": {
+      "task_id": "T-RPL-DOMAIN.2",
+      "status": "COMPLETE",
+      "owner": "Assigned isolated author",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-DOMAIN.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "d626542754646bb8929dfcd652aa24adf52fc86f",
+        "landed": "9f872731dc027075bcba82811ac2d5e7f30b0058",
+        "pr": 51
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure domain source only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-DOMAIN.3": {
+      "task_id": "T-RPL-DOMAIN.3",
+      "status": "COMPLETE",
+      "owner": "Assigned isolated author",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-DOMAIN.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "d626542754646bb8929dfcd652aa24adf52fc86f",
+        "landed": "9f872731dc027075bcba82811ac2d5e7f30b0058",
+        "pr": 51
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure domain source only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-DOMAIN.4": {
+      "task_id": "T-RPL-DOMAIN.4",
+      "status": "COMPLETE",
+      "owner": "Independent exact-head reviewer",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-DOMAIN.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "d626542754646bb8929dfcd652aa24adf52fc86f",
+        "landed": "9f872731dc027075bcba82811ac2d5e7f30b0058",
+        "pr": 51
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure domain source only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-DOMAIN.5": {
+      "task_id": "T-RPL-DOMAIN.5",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-DOMAIN.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "d626542754646bb8929dfcd652aa24adf52fc86f",
+        "landed": "9f872731dc027075bcba82811ac2d5e7f30b0058",
+        "pr": 51
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure domain source only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
+    },
+    "T-RPL-DOMAIN.6": {
+      "task_id": "T-RPL-DOMAIN.6",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "R-plan-md",
+        "tip": "c8f6c4e995a040df7cdaf001b0923349fbf34188",
+        "scope": "Coordinator exclusive integration assignment; no separate source-leaf claim receipt asserted"
+      },
+      "dependency_receipts": [
+        "T-RPL-DOMAIN.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "d626542754646bb8929dfcd652aa24adf52fc86f",
+        "landed": "9f872731dc027075bcba82811ac2d5e7f30b0058",
+        "pr": 51
+      },
+      "commands_and_results": [
+        "See docs/evidence/replacement-components-20261008.md for obtained checks and bounded qualification."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure domain source only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue separately gated persistence, host composition and replacement rehearsal; no whole application acceptance."
     }
   },
   "receipt_requirements": [
