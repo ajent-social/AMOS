@@ -136,7 +136,7 @@ func TestWriterPendingBootstrapRequiredService(t *testing.T) {
 					t.Error(e)
 					return aw.UnavailableRollback
 				}
-				digest := sha256.Sum256([]byte("synthetic bootstrap challenge"))
+				digest := sha256.Sum256([]byte("synthetic bootstrap challenge:" + challenge.String()))
 				verifier := "$argon2id$v=19$m=65536,t=3,p=1$" + base64.RawStdEncoding.EncodeToString([]byte(strings.Repeat("s", 16))) + "$" + base64.RawStdEncoding.EncodeToString([]byte(strings.Repeat("h", 32)))
 				registration, e := store.CreatePendingRegistration(request, identitystore.PendingAccount{PersonID: person, EmailID: email, CredentialID: credential, ChallengeID: challenge, InstallationID: realm.Installation, ApplicationID: realm.Application, EmailAddress: "pending@example.test", PasswordHash: verifier, ChallengeDigest: digest[:], ChallengeExpiry: b.Add(30 * time.Minute)})
 				if e != nil {
@@ -214,8 +214,20 @@ func TestWriterPendingBootstrapRequiredService(t *testing.T) {
 				if _, e := tx.ExecContext(ctx, `DELETE FROM workspaces WHERE id=$1`, workspace); e != nil {
 					return e
 				}
-				_, e := tx.ExecContext(ctx, `DELETE FROM identity_persons WHERE id=$1`, person)
-				return e
+				for _, owned := range []struct {
+					query string
+					id    any
+				}{
+					{`DELETE FROM identity_challenges WHERE id=$1`, challenge},
+					{`DELETE FROM identity_credentials WHERE id=$1`, credential},
+					{`DELETE FROM identity_emails WHERE id=$1`, email},
+					{`DELETE FROM identity_persons WHERE id=$1`, person},
+				} {
+					if _, e := tx.ExecContext(ctx, owned.query, owned.id); e != nil {
+						return e
+					}
+				}
+				return nil
 			})
 			if e != nil {
 				t.Fatal("owned rows verification/cleanup failed")
