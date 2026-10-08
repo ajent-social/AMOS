@@ -776,3 +776,22 @@ marker as well as the existing wp Permit and committed Completion. Rollback or
 closure cannot create that marker. This extends the concrete native finalizer,
 not the core ordering root or a new credential producer. Independent early
 review precedes source implementation.
+
+The native primary verifier returns opaque password evidence; MFA also needs
+its original V for pending expiry and its exact held facts for final comparison.
+Add an identity-internal, non-authorizing snapshot accessor:
+
+```go
+func (e Evidence) PasswordSnapshot(a *aw.Attempt, action Action) (PasswordCheck, error)
+```
+
+It accepts only password-kind evidence for the identical live attempt, realm
+and closed action, with original P/C rows acquired and before F/finalization.
+It copies the concrete PasswordCheck value (including immutable strings),
+consumes nothing and obtains no SQL or credential. Native MFA copies it
+immediately after VerifyCurrentPasswordWriter, derives P from that original V,
+and retains the same facts for plain final comparisons. No getter at or after F
+is necessary; closure cannot recover or refresh a snapshot. These sensitive
+identity-internal facts never enter an HTTP response, logs or business callback.
+It neither attests caller-supplied checks nor enables a new evidence factory.
+Independent early review precedes implementation.
