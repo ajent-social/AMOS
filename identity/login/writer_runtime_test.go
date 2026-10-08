@@ -201,7 +201,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		for i, table := range tables {
 			before[i] = count(t, table)
 		}
-		w := post(t, t, badHandler, "/signup", registrationRequest{"rollback-" + address, phrase}, nil, "")
+		w := post(t, badHandler, "/signup", registrationRequest{"rollback-" + address, phrase}, nil, "")
 		expect(t, w, http.StatusServiceUnavailable)
 		for i, table := range tables {
 			if count(t, table) != before[i] {
@@ -214,14 +214,14 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 	})
 
 	t.Run("registration composes account workspace delivery without session", func(t *testing.T) {
-		w := post(t, t, signup, "/signup", registrationRequest{address, phrase}, nil, "")
+		w := post(t, signup, "/signup", registrationRequest{address, phrase}, nil, "")
 		expect(t, w, http.StatusAccepted)
 		if len(w.Result().Cookies()) != 0 || count(t, "identity_persons") != 1 || count(t, "workspaces") != 1 || count(t, "amos_jobs") != 1 || count(t, "email_delivery_material") != 1 || count(t, "identity_sessions") != 0 {
 			t.Fatal("registration was not atomic pending composition")
 		}
 	})
 	t.Run("pending and missing budget cannot issue", func(t *testing.T) {
-		w := post(t, t, signin, "/auth", signInRequest{address, phrase}, nil, "")
+		w := post(t, signin, "/auth", signInRequest{address, phrase}, nil, "")
 		expect(t, w, http.StatusUnauthorized)
 		w = post(t, service.Handler(), "/auth", signInRequest{address, phrase}, nil, "")
 		expect(t, w, http.StatusServiceUnavailable)
@@ -267,7 +267,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		csrf = body.CSRF
 	}
 	t.Run("signin wrong password and original bounds", func(t *testing.T) {
-		w := post(t, t, signin, "/auth", signInRequest{address, "incorrect password"}, nil, "")
+		w := post(t, signin, "/auth", signInRequest{address, "incorrect password"}, nil, "")
 		expect(t, w, http.StatusUnauthorized)
 		if len(w.Result().Cookies()) != 0 {
 			t.Fatal("wrong password disclosed cookie")
@@ -306,7 +306,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 	var enrollment mfa.Enrollment
 	t.Run("MFA begin and read-only status", func(t *testing.T) {
 		before := count(t, "identity_sessions")
-		w := post(t, t, mfaHTTP, "/account/mfa/totp/enroll", map[string]string{"current_password": phrase}, []*http.Cookie{cookie}, csrf)
+		w := post(t, mfaHTTP, "/account/mfa/totp/enroll", map[string]string{"current_password": phrase}, []*http.Cookie{cookie}, csrf)
 		expect(t, w, http.StatusCreated)
 		if json.Unmarshal(w.Body.Bytes(), &enrollment) != nil || enrollment.Seed == "" || count(t, "identity_sessions") != before {
 			t.Fatal("enrollment missing or issued a session")
@@ -342,7 +342,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		}
 		snapshot(&before)
 		sessionsBefore := count(t, "identity_sessions")
-		w := post(t, t, sessions.Middleware(deniedGuard), "/account/mfa/totp/confirm", map[string]any{"factor_id": enrollment.FactorID, "current_password": phrase, "code": bad}, []*http.Cookie{cookie}, csrf)
+		w := post(t, sessions.Middleware(deniedGuard), "/account/mfa/totp/confirm", map[string]any{"factor_id": enrollment.FactorID, "current_password": phrase, "code": bad}, []*http.Cookie{cookie}, csrf)
 		expect(t, w, http.StatusForbidden)
 		snapshot(&after)
 		if denial.calls != 2 || before != after || count(t, "identity_sessions") != sessionsBefore || len(w.Result().Cookies()) != 0 {
@@ -366,7 +366,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		}
 		bad := nativeUnusedCode(t, ctx, db, enrollment.Seed)
 		before := count(t, "identity_sessions")
-		w := post(t, t, mfaHTTP, "/account/mfa/totp/confirm", map[string]any{"factor_id": enrollment.FactorID, "current_password": phrase, "code": bad}, []*http.Cookie{cookie}, csrf)
+		w := post(t, mfaHTTP, "/account/mfa/totp/confirm", map[string]any{"factor_id": enrollment.FactorID, "current_password": phrase, "code": bad}, []*http.Cookie{cookie}, csrf)
 		expect(t, w, http.StatusUnauthorized)
 		if count(t, "identity_sessions") != before || len(w.Result().Cookies()) != 0 {
 			t.Fatal("counter denial issued session")
@@ -393,7 +393,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 			t.Fatal(e)
 		}
 		before := count(t, "identity_sessions")
-		w := post(t, t, mfaHTTP, "/account/mfa/totp/challenge", map[string]string{"current_password": phrase, "code": code}, []*http.Cookie{cookie}, csrf)
+		w := post(t, mfaHTTP, "/account/mfa/totp/challenge", map[string]string{"current_password": phrase, "code": code}, []*http.Cookie{cookie}, csrf)
 		expect(t, w, http.StatusUnauthorized)
 		if count(t, "identity_sessions") != before || len(w.Result().Cookies()) != 0 {
 			t.Fatal("replayed factor issued session")
@@ -416,7 +416,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Run("magic request browser binding confirmation and replay", func(t *testing.T) {
-		w := post(t, t, magicRequest, "/api/v1/identity/magic-links", map[string]string{"email": address}, nil, "")
+		w := post(t, magicRequest, "/api/v1/identity/magic-links", map[string]string{"email": address}, nil, "")
 		expect(t, w, http.StatusAccepted)
 		var flow *http.Cookie
 		for _, c := range w.Result().Cookies() {
