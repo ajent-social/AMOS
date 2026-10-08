@@ -25,7 +25,7 @@ in login, or add a configurable credential-verification callback.
 
 No exported signature or schema changes. Only `Service.signIn` changes in the
 existing source file; new focused tests and the narrowly affected existing
-transaction-options assertions are separately named in the source grant.
+issuance-failure injection adapter are separately named in the source grant.
 `register`, constructors, password implementation, session implementation and
 existing migration bytes remain outside this repair.
 
@@ -54,7 +54,8 @@ existing migration bytes remain outside this repair.
 4. In separate statements lock the recorded scoped person `FOR SHARE`, then the
    exact email `FOR SHARE`, then the exact credential `FOR SHARE`. Every lookup
    binds its expected IDs and person/realm relationship. The email must still
-   have the exact recorded comparison key and verified timestamp; the credential
+   have the exact recorded comparison key and verified timestamp instant
+   (compare instants, not Go time.Time structural representation); the credential
    must still be `email_password`, unrevoked and have `expectedHash`. The person
    must still be active with the originally observed security epoch. Compare
    values read after each lock wait. Any missing/changed binding is stale proof.
@@ -133,3 +134,20 @@ bytes are restored and the service suite rerun. Fresh landed checks and truthful
 public evidence follow guarded merge. Missing prerequisites are failures, not
 skips. Existing59 accepted tasks retain their original boundaries; a new
 supplemental lifecycle records this repair independently.
+
+
+### Exact existing-test adaptation
+
+`TestLoginRuntimeRequiredService` currently injects `/auth` completion failures
+through the session runner (`makeService(db, runner)`), because detached issuance
+owns that transaction. After this change, those three existing `/auth`
+rollback/cancellation/commit subtests must attach the forwarding runner to login,
+pass the initial nil-options read through unchanged, and inject only after the
+new READ COMMITTED writable issuance callback has staged the expected session
+row. Assert the inherited cancellation and bounded derived deadline instead of
+request-context pointer equality for that issuance call. Preserve all reached,
+exact-row-count, actual storage.ErrTransaction, no-output and final rollback
+assertions. Signup injection stays unchanged. This is a narrowly delegated
+adapter/wiring correction, not permission to weaken or replace the existing
+service checks. `TestLoginTxRunnerOptionsAndFailClosed` fails the initial lookup
+and therefore retains its existing nil-options/context assertions unchanged.

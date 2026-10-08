@@ -41925,13 +41925,12 @@
       ],
       "owner": "Integration coordinator",
       "estimate": "bounded slice; revalidate at preflight",
-      "acceptance": "Reconcile exact adopted v1.25 design and supplemental source ownership while preserving original T3.5 claim; fresh reviewed runtime fixture prerequisites and existing options-test scope must be explicit.",
+      "acceptance": "Reconcile exact adopted v1.25 design and supplemental source ownership while preserving original T3.5 claim; fresh reviewed runtime fixture prerequisites and existing failure-injection adapter scope must be explicit.",
       "status": "PLANNED",
       "owned_paths": [
         "identity/login/login.go: Service.signIn only",
         "identity/login/signin_freshness_integration_test.go",
-        "identity/login/transaction_test.go: affected sign-in options assertions only",
-        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+        "identity/login/runtime_integration_test.go: TestLoginRuntimeRequiredService /auth rollback/cancellation/commit forwarding adapter and wiring only"
       ],
       "contract_refs": [
         "docs/contracts/password-signin-freshness.md",
@@ -41949,13 +41948,12 @@
       ],
       "owner": "Isolated supplemental source lane",
       "estimate": "bounded slice; revalidate at preflight",
-      "acceptance": "Implement only Service.signIn exact credential/contact/person revalidation and caller-owned issuance, new focused tests, and narrowly affected options assertions; no other identity source or writer protocol changes.",
+      "acceptance": "Implement only Service.signIn exact credential/contact/person revalidation and caller-owned issuance, new focused tests, and narrowly affected existing /auth failure-injection forwarding adapter; no other identity source or writer protocol changes.",
       "status": "PLANNED",
       "owned_paths": [
         "identity/login/login.go: Service.signIn only",
         "identity/login/signin_freshness_integration_test.go",
-        "identity/login/transaction_test.go: affected sign-in options assertions only",
-        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+        "identity/login/runtime_integration_test.go: TestLoginRuntimeRequiredService /auth rollback/cancellation/commit forwarding adapter and wiring only"
       ],
       "contract_refs": [
         "docs/contracts/password-signin-freshness.md",
@@ -41978,8 +41976,7 @@
       "owned_paths": [
         "identity/login/login.go: Service.signIn only",
         "identity/login/signin_freshness_integration_test.go",
-        "identity/login/transaction_test.go: affected sign-in options assertions only",
-        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+        "identity/login/runtime_integration_test.go: TestLoginRuntimeRequiredService /auth rollback/cancellation/commit forwarding adapter and wiring only"
       ],
       "contract_refs": [
         "docs/contracts/password-signin-freshness.md",
@@ -42002,8 +41999,7 @@
       "owned_paths": [
         "identity/login/login.go: Service.signIn only",
         "identity/login/signin_freshness_integration_test.go",
-        "identity/login/transaction_test.go: affected sign-in options assertions only",
-        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+        "identity/login/runtime_integration_test.go: TestLoginRuntimeRequiredService /auth rollback/cancellation/commit forwarding adapter and wiring only"
       ],
       "contract_refs": [
         "docs/contracts/password-signin-freshness.md",
@@ -42026,8 +42022,7 @@
       "owned_paths": [
         "identity/login/login.go: Service.signIn only",
         "identity/login/signin_freshness_integration_test.go",
-        "identity/login/transaction_test.go: affected sign-in options assertions only",
-        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+        "identity/login/runtime_integration_test.go: TestLoginRuntimeRequiredService /auth rollback/cancellation/commit forwarding adapter and wiring only"
       ],
       "contract_refs": [
         "docs/contracts/password-signin-freshness.md",
@@ -42050,8 +42045,7 @@
       "owned_paths": [
         "identity/login/login.go: Service.signIn only",
         "identity/login/signin_freshness_integration_test.go",
-        "identity/login/transaction_test.go: affected sign-in options assertions only",
-        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+        "identity/login/runtime_integration_test.go: TestLoginRuntimeRequiredService /auth rollback/cancellation/commit forwarding adapter and wiring only"
       ],
       "contract_refs": [
         "docs/contracts/password-signin-freshness.md",
