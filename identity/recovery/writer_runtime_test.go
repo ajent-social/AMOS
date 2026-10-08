@@ -169,6 +169,32 @@ func TestRecoveryWriterRuntimeRequiredService(t *testing.T) {
 		t.Fatal(e)
 	}
 	token := action.Query().Get("token")
+	t.Run("ordinary typed and HTTP preview do not consume", func(t *testing.T) {
+		for i := 0; i < 2; i++ {
+			available, e := svc.Preview(ctx, challenge, token)
+			if e != nil || !available {
+				t.Fatal("typed native preview unavailable")
+			}
+		}
+		target := cfg.ApplicationOrigin + "/reset-password?" + url.Values{"challenge": {challenge.String()}, "token": {token}}.Encode()
+		for _, method := range []string{http.MethodGet, http.MethodHead} {
+			r := httptest.NewRequest(method, target, nil).WithContext(ctx)
+			w := httptest.NewRecorder()
+			svc.PreviewHandler().ServeHTTP(w, r)
+			if w.Code != http.StatusOK {
+				t.Fatalf("native preview status=%d", w.Code)
+			}
+			if method == http.MethodHead && w.Body.Len() != 0 {
+				t.Fatal("HEAD preview emitted body")
+			}
+		}
+		var consumed bool
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `SELECT consumed_at IS NOT NULL FROM identity_challenges WHERE id=$1 AND person_id=$2`, challenge, account.personID).Scan(&consumed)
+		}); e != nil || consumed {
+			t.Fatal("preview changed reset challenge")
+		}
+	})
 	completed := false
 	t.Run("guarded completion advances epoch and revokes all environments", func(t *testing.T) {
 		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
