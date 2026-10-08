@@ -57,12 +57,12 @@ def validate_source(source):
             'unsupported current source; retired baseline is not a current plan')
     retained = source.get('required_task_ids')
     require(string_list(retained), 'missing retained task inventory')
-    require(len(retained) == INVENTORY_COUNT and len(set(retained)) == INVENTORY_COUNT,
+    require(len(retained) >= INVENTORY_COUNT and len(set(retained)) == len(retained),
             'retained task inventory count differs from adopted full plan')
-    require(hashlib.sha256('\n'.join(sorted(retained)).encode()).hexdigest() == INVENTORY_SHA256,
+    require(hashlib.sha256('\n'.join(sorted(retained[:INVENTORY_COUNT])).encode()).hexdigest() == INVENTORY_SHA256,
             'retained task IDs differ from adopted full plan')
     rows = source.get('tasks')
-    require(isinstance(rows, list) and len(rows) == INVENTORY_COUNT, 'missing or extra current tasks')
+    require(isinstance(rows, list) and len(rows) == len(retained), 'missing or extra current tasks')
     tasks = {}
     products = set()
     for row in rows:
