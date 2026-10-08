@@ -30,10 +30,18 @@ func (s *Service) CheckStagedWriter(ctx context.Context, a *aw.Attempt, staged S
 	if wasChecked || s == nil || d.service != s || d.attempt != a || d.tx == nil || !a.IsFinalSample(f) {
 		return writerFailure(a, ErrUnavailable)
 	}
+	if ctx == nil || d.rootContext == nil || ctx.Err() != nil || d.rootContext.Err() != nil || ctx.Done() != d.rootContext.Done() {
+		return writerFailure(a, ErrUnavailable)
+	}
+	end, ok := ctx.Deadline()
+	original, bounded := d.rootContext.Deadline()
+	if !ok || !bounded || end.After(original) || !time.Now().Before(end) {
+		return writerFailure(a, ErrUnavailable)
+	}
 	if _, err := s.writerRequest(ctx, d.request); err != nil {
 		return writerFailure(a, err)
 	}
-	now, _, err := s.readCurrentAt(ctx, d.tx, d.inserted.person, d.newID, false, f)
+	now, _, err := s.readCurrentAt(d.rootContext, d.tx, d.inserted.person, d.newID, false, f)
 	if err != nil {
 		return writerFailure(a, err)
 	}
@@ -44,7 +52,7 @@ func (s *Service) CheckStagedWriter(ctx context.Context, a *aw.Attempt, staged S
 		return writerFailure(a, ErrUnauthenticated)
 	}
 	if d.priorID != uuid.Nil {
-		old, _, err := s.readCurrentAt(ctx, d.tx, d.rotated.person, d.priorID, false, f)
+		old, _, err := s.readCurrentAt(d.rootContext, d.tx, d.rotated.person, d.priorID, false, f)
 		if !errors.Is(err, ErrUnauthenticated) || !old.revoked.Valid || !sameSession(d.rotated, old) {
 			return writerFailure(a, ErrUnavailable)
 		}

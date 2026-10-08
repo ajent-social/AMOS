@@ -224,7 +224,7 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 		}
 	})
 	var issued Issued
-	for _, mode := range []string{"success", "cancel after finish", "staging replay", "action mismatch", "disabled person", "staged fence replay", "wrong staged time"} {
+	for _, mode := range []string{"success", "cancel after finish", "staging replay", "action mismatch", "disabled person", "staged fence replay", "wrong staged time", "original context at final"} {
 		t.Run("staging "+mode, func(t *testing.T) {
 			caseCtx, stop := context.WithCancel(ctx)
 			defer stop()
@@ -326,6 +326,12 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				f, e := a.DrainAndSample(ctx)
 				if e != nil {
 					return fail(e)
+				}
+				if mode == "original context at final" {
+					if e = service.CheckStagedWriter(requestHTTP.Context(), a, staged, f); !errors.Is(e, ErrUnavailable) {
+						t.Error("unbounded original request admitted at final", e)
+					}
+					return aw.UnavailableRollback
 				}
 				if mode == "wrong staged time" {
 					if e = service.CheckStagedWriter(ctx, a, staged, f.Add(time.Nanosecond)); e == nil {

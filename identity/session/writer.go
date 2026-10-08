@@ -52,6 +52,7 @@ type writerRequestData struct {
 }
 type Staged struct{ data *stagedData }
 type stagedData struct {
+	rootContext       context.Context
 	mu                sync.Mutex
 	checked, finalOK  bool
 	tx                *sql.Tx
@@ -329,7 +330,7 @@ func (s *Service) StageWriter(ctx context.Context, a *aw.Attempt, proof wp.Issua
 		}
 	}
 	d.staged = true
-	return Staged{data: &stagedData{service: s, attempt: a, binding: binding, issuance: proof, tx: tx, request: request, newID: d.newID, priorID: d.priorID, inserted: inserted, rotated: rotated, issued: Issued{Cookie: s.cookie(d.token, expires), CSRFToken: d.csrfToken, AssuranceExpires: credential.AssuranceExpires()}}}, nil
+	return Staged{data: &stagedData{service: s, attempt: a, binding: binding, issuance: proof, tx: tx, rootContext: ctx, request: request, newID: d.newID, priorID: d.priorID, inserted: inserted, rotated: rotated, issued: Issued{Cookie: s.cookie(d.token, expires), CSRFToken: d.csrfToken, AssuranceExpires: credential.AssuranceExpires()}}}, nil
 }
 func (s *Service) PublishWriter(c aw.Completion, p wp.Permit, staged Staged) (Issued, error) {
 	d := staged.data
