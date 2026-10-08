@@ -1,12 +1,31 @@
 package writerproof
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/google/uuid"
 )
+
+func TestFinalChronologyIsUnavailableAndExpiryIsDenied(t *testing.T) {
+	b := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	d := &evidenceData{kind: passwordKind, started: b, passwordCheck: PasswordCheck{VerifiedAt: b.Add(time.Minute), ValidUntil: b.Add(16 * time.Minute)}}
+	if !errors.Is(d.finalError(b.Add(time.Second)), ErrUnavailable) {
+		t.Fatal("backward verification chronology was not unavailable")
+	}
+	if !errors.Is(d.finalError(d.passwordCheck.ValidUntil), ErrDenied) {
+		t.Fatal("well-shaped expiry equality was not denied")
+	}
+	if err := d.finalError(b.Add(2 * time.Minute)); err != nil {
+		t.Fatal("valid chronology denied", err)
+	}
+	var absent *evidenceData
+	if !errors.Is(absent.finalError(b), ErrUnavailable) {
+		t.Fatal("zero evidence chronology accepted")
+	}
+}
 
 func id(t *testing.T) uuid.UUID {
 	t.Helper()
