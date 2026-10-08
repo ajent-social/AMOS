@@ -2,7 +2,9 @@
 
 Status: proposed resolution of the v1.24 same-database gate; not adopted, not
 implemented and not a host or executor contract. Source baseline:
-`fa6c5a35e61ed4f866652acc66addec1d76fb368`.
+`fa6c5a35e61ed4f866652acc66addec1d76fb368`; R1–R6 revision additionally
+inspects the pinned main/v1.25 and PR76 source snapshots identified in the
+[writer proposal](current-session-writers.md).
 Read this with [the recheck candidate](current-session-recheck.md) and
 [the host contract](continuity-host.md). Independent review must assess the
 combined revision before any source grant.
@@ -10,9 +12,14 @@ combined revision before any source grant.
 ## Decision: one privately owned runtime capability
 
 The selected composition constructs one `*storage.RuntimeDB` with
-`storage.OpenRuntime`. It passes that exact pointer to
-`session.NewWithTxRunner` and retains it privately for every transaction that
-calls that session service's `RecheckCurrentTx`. It retains the resulting exact
+`storage.OpenRuntime`. For the complete W1 profile it passes that exact pointer
+only to
+`authoritywriter.New`, then passes the resulting exact private root to
+`session.NewWithWriter`. The root uses that runtime for both writer Run and
+non-mutating Read transactions, including every `RecheckCurrentTx` call.
+The earlier reader-only custody proposal used `session.NewWithTxRunner`; it is
+not the W1 constructor path and must not silently select Legacy during W1 startup.
+It retains the resulting exact
 `*session.Service` privately too. Middleware and recheck use that same service,
 not two services with equal configuration. The owning constructor is responsible
 for cleanup on partial construction and shutdown.
@@ -22,16 +29,18 @@ The composition must not accept a separately supplied session service, arbitrary
 selects a transaction source. It exposes HTTP behavior and lifecycle operations,
 not these private fields or an authority constructor that accepts their pieces.
 No business handler receives the session service or pool. Trusted authority code
-obtains its transaction only as the argument of the retained runtime handle's
-`WithTx` callback. All calls to the recheck method inside that composition must
-be within that lexical callback and use its argument unchanged.
+obtains its transaction only inside the retained
+runtime's WithTx callback as managed by Root.Run/Read. All recheck calls stay
+within that callback lifetime and use its argument unchanged.
 
 The selected profile does not reuse `apphost.NewLocal`: its `LocalConfig.Business`
 receives development capabilities, and that host opens a separate pool for jobs.
 Those existing development behaviors remain intact, but they are not the custody
 proof for this runtime composition. A later host constructor and its exact file
-ownership must be adopted separately. This decision adds no exported constructor,
-transaction wrapper or context-injection API now.
+ownership must be adopted separately. This document adds no source now; the API
+appendix proposes the exact additive
+writer constructors for independent review. No public context-injection API is
+proposed.
 
 This is a trusted-code invariant, not a property inferred from a transaction.
 `RecheckCurrentTx` cannot distinguish a transaction on a copied database with
@@ -135,3 +144,91 @@ closed composition rule. Composed admission still requires its implementation,
 actual checks, complete producer/writer protocol, current workspace/resource
 contract and completion protocol. No task count, product acceptance, fixture
 permission, source assignment, deployment or provider qualification changes here.
+
+## R5: W1 profile and no-old-replica cutover
+
+This revision is still a proposal. The [writer API](current-session-writer-api.md)
+fixes the concrete dependency graph and constructors; the
+[entry inventory](current-session-writers.md#r5-finite-entry-coverage) is its finite
+native participant allowlist. No source grant follows from these declarations.
+
+Select a process-wide immutable profile, Unselected → Legacy or W1, in
+`internal/authoritywriter`. The legacy constructors call SelectLegacy on first
+construction (including legacy RuntimeDB service adapters). `ActivateW1(root)`
+requires Unselected and atomically sets W1 to that exact private root; a different
+root, existing Legacy selection or later profile switch fails construction.
+The production composition calls ActivateW1 before constructing any native
+service/store. It constructs only the API appendix's writer-aware services and
+passes no raw pool/TxRunner/SQL transaction to business configuration. Read-only
+reader services are constructed by that same composition with private capability
+custody; they do not select a legacy writer profile.
+
+Every old identity/workspace/MFA/personal constructor and detached issuance entry
+checks the frozen profile before SQL. In W1 it returns the existing domain
+unavailable/configuration error even if supplied a genuine root transaction;
+only NewWriter/StageWriter accept its Attempt. Legacy constructors in Legacy
+retain existing development behavior. NewWriter checks root/profile/lifetime;
+each call repeats the row/phase check. The profile is ordering admission, not
+credential proof and not transaction origin attestation. No package-global pool,
+credential constructor, context setter or external producer registry is added.
+A process that already built a legacy service must restart in W1; it cannot
+silently relabel that service. Registration, renewal, signout, supplied-Tx paths,
+policy, primary proof, vault and delivery variants all appear in the construction
+manifest, including their concrete type and exact source revision.
+
+This process marker cannot stop an old executable using its own SQL credentials.
+Before W1 admission the deployment owner must execute a separately authorized
+coordinated cutover: stop new legacy traffic and jobs; drain all legacy authority
+transactions and terminate only positively identified residual owned sessions;
+stop every old writer replica; prevent restart with the old runtime identity
+(by disabling its login/access or rotating deployment credentials); provision the
+reviewed singleton/grants; deploy only the reviewed W1 composition; verify the
+active-replica/version and database-session inventory before enabling traffic.
+A maintenance window is the selected initial transition. No mixed rolling
+upgrade, legacy writer sidecar or concurrent development host may use this
+installation. Rollback requires another full drain before returning to Legacy;
+never run both to avoid downtime. These are future deployment prerequisites,
+not actions authorized or performed by this document.
+
+Direct arbitrary privileged SQL and migration/administrative principals remain
+outside W1. The singleton is cooperative; possession of UPDATE on authority
+tables does not force acquiring G. Admission therefore requires exact code and
+replica custody as well as role qualification, not a false claim of database
+row-level enforcement of the application marker.
+
+## R2 and R6: gate and bounded completion admission
+
+Use the writer document's exact `public.identity_writer_gate` schema with
+`SELECT(id)` and `UPDATE(lock_slot)` only. Its INSERT/DELETE/TRUNCATE/key UPDATE,
+ownership and DDL are denied to the runtime identity, including inherited paths.
+Missing id=1 or actual non-writable/non-READ-COMMITTED mode is unavailable before
+domain work. Migration number/registry/grants remain integrator-owned.
+
+The root derives one five-second total deadline on entry, honoring any earlier
+caller deadline. It includes pool checkout and G contention and is never reset.
+The native password verifier runs once under C. Federation exchange remains
+outside G with its own original bounded request and nonrefreshable provider
+receipt; unsupported validity adapters are explicit gates, not omitted product
+methods. Begin/request actions have unconsumed-record fences; completed actions
+have their own transition fences. CounterOnlyDenied may commit only the exact
+MFA three-column update after its separate final fence; a public error alone
+never selects a commit path. All other denial/unavailable outcomes roll back.
+
+At F the native method compares current held rows to its original evidence and
+intended transition after every declared callback and constraint wait. Commit
+follows without further domain work. Output is buffered and released only by a
+matching Completion/Permit; root timeout, cancellation or failed/unknown commit
+releases none. F is the freshness linearization instant conditional on commit,
+not a guarantee about future network receipt time. A failed/indeterminate commit
+cannot be represented as proof that nothing committed; report unavailable and
+preserve ordinary idempotency/recovery semantics without automatic replay.
+
+Required additional composition checks are W23–W28 in the writer document plus:
+legacy object then ActivateW1 fails; W1 then each old constructor fails before
+SQL; a raw unrooted tx cannot enter any NewWriter method; registered root cannot
+be replaced; partial-construction cleanup; full native factory manifest; static
+import/internal-boundary checks; a staged value cannot publish using another
+attempt's completion; a CounterOnlyDenied completion cannot publish success.
+The old-replica negative must demonstrate that an old binary *can bypass* G if
+left with access, then demonstrate that the reviewed cutover removes that access.
+Do not mislabel an application marker as prevention of privileged SQL.
