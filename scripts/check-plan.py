@@ -1,97 +1,216 @@
 #!/usr/bin/env python3
-"""Validate planning structure; this does not verify product implementation."""
+"""Bounded current-source semantics and projection freshness; no execution certification."""
+import argparse
+import hashlib
 import json
 import re
-import sys
-import argparse
 from pathlib import Path
+import sys
 
-if __name__ == "__main__" and (Path(__file__).resolve().parents[1] / "docs/planning/wazi-source.json").exists():
-    raise SystemExit("Retired baseline command: current plan is wazi-source.json. Use go run ./cmd/portableplan and the pinned wazi-contract validator. Current projection/release tooling requires migration; no stale view was written or qualified.")
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE_REF = 'docs/planning/wazi-source.json'
+REGISTRY_REFS = ('docs/planning/execution-state.json', 'docs/planning/sdlc-stage-state.json')
+# Retention boundary for the adopted full inventory, independent of mutable input.
+INVENTORY_COUNT = 1501
+INVENTORY_SHA256 = 'a1444086050732da078fc9df94dbccc1ea7bfd06994568ff46df48a81e796bfb'
+MAX_BYTES = 16 * 1024 * 1024
 
 
-ROOT=Path(__file__).resolve().parents[1]
-errors=[]
-def check(ok,message):
-    if not ok: errors.append(message)
+class PlanError(ValueError):
+    pass
+
+
+def require(condition, message):
+    if not condition:
+        raise PlanError(message)
+
+
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        require(key not in result, 'duplicate JSON object key')
+        result[key] = value
+    return result
+
+
+def read_json(path):
+    with path.open('rb') as stream:
+        raw = stream.read(MAX_BYTES + 1)
+    require(len(raw) <= MAX_BYTES, 'input exceeds bounded size')
+    value = json.loads(raw, object_pairs_hook=unique_object,
+                       parse_constant=lambda _: (_ for _ in ()).throw(PlanError('non-finite JSON number')))
+    require(isinstance(value, dict), 'input root must be an object')
+    return value, 'sha256:' + hashlib.sha256(raw).hexdigest()
+
+
+def string(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def string_list(value):
+    return isinstance(value, list) and all(string(item) for item in value)
+
+
+def validate_source(source):
+    require(source.get('schema') == 'amos-local-sdlc-plan-v1' and
+            source.get('contract') == 'amos-wazi-authored-plan/1',
+            'unsupported current source; retired baseline is not a current plan')
+    retained = source.get('required_task_ids')
+    require(string_list(retained), 'missing retained task inventory')
+    require(len(retained) == INVENTORY_COUNT and len(set(retained)) == INVENTORY_COUNT,
+            'retained task inventory count differs from adopted full plan')
+    require(hashlib.sha256('\n'.join(sorted(retained)).encode()).hexdigest() == INVENTORY_SHA256,
+            'retained task IDs differ from adopted full plan')
+    rows = source.get('tasks')
+    require(isinstance(rows, list) and len(rows) == INVENTORY_COUNT, 'missing or extra current tasks')
+    tasks = {}
+    products = set()
+    for row in rows:
+        require(isinstance(row, dict), 'task must be an object')
+        tid = row.get('id')
+        require(string(tid) and tid in retained and tid not in tasks, 'unknown or duplicate task ID')
+        native = row
+        if 'native_product_task' in row:
+            products.add(tid)
+            native = row['native_product_task']
+            require(isinstance(native, dict) and native.get('id') == tid, 'product identity mismatch')
+            require(not {'title', 'stage', 'deps', 'acceptance'} & row.keys(),
+                    'duplicate authored product fields')
+            require(string_list(native.get('acceptance')) and native['acceptance'], 'missing product acceptance')
+            acceptance = '\n'.join(native['acceptance'])
+        else:
+            acceptance = row.get('acceptance')
+        require(string(native.get('title')) and string(native.get('stage')) and string(acceptance),
+                'task lacks title, stage or acceptance')
+        deps = native.get('deps')
+        require(string_list(deps) and len(deps) == len(set(deps)), 'invalid or repeated dependencies')
+        # These are authored definitions, never qualified execution snapshots.
+        for item in (row, native):
+            require('authoredStatus' not in item or item['authoredStatus'] == 'pending',
+                    'authored status promotion is forbidden')
+        tasks[tid] = {'id': tid, 'title': native['title'], 'stage': native['stage'],
+                      'acceptance': acceptance, 'deps': deps}
+    require(set(tasks) == set(retained), 'missing retained task IDs')
+    require(products == {tid for tid in retained if re.fullmatch(r'T[0-9]+\.[0-9]+', tid)},
+            'retained product task representation changed')
+    # Kahn traversal avoids recursion limits on long valid or malicious graphs.
+    remaining = {tid: len(task['deps']) for tid, task in tasks.items()}
+    followers = {tid: [] for tid in tasks}
+    for tid, task in tasks.items():
+        for dep in task['deps']:
+            require(dep in tasks, 'dangling dependency')
+            followers[dep].append(tid)
+    ready = [tid for tid, count in remaining.items() if count == 0]
+    visited = 0
+    while ready:
+        tid = ready.pop()
+        visited += 1
+        for child in followers[tid]:
+            remaining[child] -= 1
+            if remaining[child] == 0:
+                ready.append(child)
+    require(visited == len(tasks), 'dependency cycle')
+    require(source.get('terminal_task') in tasks, 'missing terminal task')
+    return tasks, products
+
+
+def load_current(source_path=None, root=ROOT):
+    source, source_digest = read_json(source_path or root / SOURCE_REF)
+    tasks, products = validate_source(source)
+    registries = {}
+    digests = {}
+    for ref in REGISTRY_REFS:
+        registry, digest = read_json(root / ref)
+        entries = registry
+        if ref.endswith('sdlc-stage-state.json'):
+            require(registry.get('schema') == 'amos-local-sdlc-stage-receipts-v1', 'unsupported receipt journal')
+            entries = registry.get('tasks')
+        require(isinstance(entries, dict), 'registry tasks must be an object')
+        for tid, record in entries.items():
+            require(tid in tasks and isinstance(record, dict), 'registry references unknown task or invalid record')
+            require(string(record.get('status')), 'registry record lacks status')
+            if ref.endswith('execution-state.json'):
+                require(tid in products, 'product registry references a lifecycle task')
+                require(record['status'] in {'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'ACCEPTED'}, 'invalid product registry status')
+                if record['status'] == 'ACCEPTED':
+                    require(record.get('certification') == 'REVIEWED' and
+                            string_list(record.get('evidence')) and record['evidence'],
+                            'accepted registry record lacks reviewed evidence')
+            else:
+                require(record.get('task_id') == tid, 'receipt task identity mismatch')
+        registries[ref] = registry
+        digests[ref] = digest
+    return source, tasks, products, source_digest, registries, digests
+
+
+def projection_files(current):
+    source, tasks, products, digest, registries, registry_digests = current
+    projected = []
+    for tid, task in sorted(tasks.items()):
+        dependencies = []
+        for dep in task['deps']:
+            dependency = {'taskId': 'amos:task:' + dep,
+                          'predicate': 'domain-accepted' if dep in products else 'execution-complete'}
+            if dep in products:
+                dependency['requirementId'] = 'amos:acceptance:' + dep
+            dependencies.append(dependency)
+        projected.append({'id': 'amos:task:' + tid, 'canonicalId': tid,
+                          'title': task['title'], 'stage': task['stage'],
+                          'acceptance': task['acceptance'], 'authoredStatus': 'pending',
+                          'dependencies': dependencies})
+    payload = {'schema': 'amos-current-plan-projection/1', 'planId': 'amos:plan',
+               'source': {'ref': SOURCE_REF, 'digest': digest},
+               'registryDigests': registry_digests, 'tasks': projected,
+               'authoredSource': source, 'registryRecords': registries,
+               'narrativeStatusIsQualifiedEvidence': False,
+               'evidence': [], 'evaluations': []}
+    # Preserve complete source and registry records without claiming to authenticate them.
+    encoded = json.dumps(payload, ensure_ascii=True, sort_keys=True, indent=2) + '\n'
+    lines = ['# Current plan projection', '',
+             'Read-only derived inventory; no task execution or release is certified.',
+             'All authored statuses are pending. Registry records remain separate, unqualified inputs.',
+             'Full source, acceptance text and unchanged registry records are in current-plan.json.', '',
+             f'Source digest: `{digest}`.', f'Tasks: {len(tasks)}.', '',
+             '| Task | Stage | Title | Authored status | Dependencies |',
+             '|---|---|---|---|---|']
+    def cell(value):
+        # Escape authored text so it cannot inject Markdown/HTML into the index.
+        import html
+        return html.escape(value).replace('|', '&#124;').replace('\n', ' ').replace('\r', ' ').replace('`', '&#96;').replace('[', '&#91;').replace(']', '&#93;')
+    for task in projected:
+        lines.append('| ' + ' | '.join(cell(value) for value in (
+            task['canonicalId'], task['stage'], task['title'], 'pending',
+            ', '.join(dep['taskId'] for dep in task['dependencies']) or 'none')) + ' |')
+    return {'current-plan.json': encoded.encode(), 'current-plan.md': ('\n'.join(lines) + '\n').encode()}
+
+
+def check_projection(directory, files):
+    require(directory.is_dir() and not directory.is_symlink(), 'projection directory missing or symlinked')
+    for name, expected in files.items():
+        path = directory / name
+        require(path.is_file() and not path.is_symlink(), 'projection file missing or symlinked')
+        with path.open('rb') as stream:
+            actual = stream.read(len(expected) + 1)
+        require(actual == expected, 'stale or altered projection: ' + name)
+
 
 def main():
-    parser=argparse.ArgumentParser()
-    parser.add_argument('--data', type=Path, default=ROOT/'docs/planning/plan-data.json')
-    args=parser.parse_args()
-    d=json.loads(args.data.read_text())
-    epics=d['epics']; ts=[t for e in epics for t in e['tasks']]; us=d['use_cases']
-    progress_path=ROOT/'docs/planning/execution-state.json'
-    progress=json.loads(progress_path.read_text()) if progress_path.exists() else {}
-    ids=[t['id'] for t in ts]; uids=[u['id'] for u in us]; lookup={t['id']:t for t in ts}
-    check(len(ids)==len(set(ids)),'Duplicate task ID')
-    check(len(uids)==len(set(uids)),'Duplicate use-case ID')
-    for t in ts:
-        for field in ['objective','owned_paths','instructions','acceptance','verification','negative_test','use_cases','stage','lane']:
-            check(bool(t.get(field)),f"{t['id']}: missing {field}")
-        check(30<=t['estimate_minutes']<=90,f"{t['id']}: estimate outside granular range")
-        check(t['lane'] in [f'L{i:02}' for i in range(1,17)],f"{t['id']}: invalid lane")
-        for dep in t['deps']:
-            check(dep in lookup,f"{t['id']}: missing dependency {dep}")
-            if dep in lookup:
-                check(lookup[dep]['wave']<t['wave'],f"{t['id']}: dependency not in earlier wave: {dep}")
-                check(lookup[dep]['stage']<=t['stage'],f"{t['id']}: later-stage dependency: {dep}")
-        for u in t['use_cases']: check(u in uids,f"{t['id']}: unknown use case {u}")
-        p=ROOT/f"docs/tasks/{t['id']}.md"
-        check(p.is_file(),f"Missing task contract {t['id']}")
-        if p.exists():
-            text=p.read_text()
-            for h in ['## Objective','## Scope','## Acceptance criteria','## Verification','## Negative verification','Certification: ']:
-                check(h in text,f"{t['id']}: missing contract section {h}")
-            check(t['title'] in text,f"{t['id']}: stale contract title")
-        check(not any('REQUIRES:' in str(v) for v in t.values()),f"{t['id']}: unresolved semantic dependency")
-    for tid,state in progress.items():
-        check(tid in lookup, f'Unknown execution task {tid}')
-        check(state.get('status') in {'PLANNED','IN_PROGRESS','BLOCKED','ACCEPTED'},f'{tid}: invalid execution status')
-        if state.get('status')=='ACCEPTED':
-            check(bool(state.get('evidence')),f'{tid}: acceptance requires evidence')
-            check(state.get('certification')=='REVIEWED',f'{tid}: acceptance requires reviewed certification')
-            if tid in lookup:
-                for dep in lookup[tid]['deps']:
-                    check(progress.get(dep,{}).get('status')=='ACCEPTED',f'{tid}: unaccepted dependency {dep}')
-    for u in uids: check(any(u in t['use_cases'] for t in ts),f"Uncovered use case {u}")
-    seen=[]
-    for w in d['waves']:
-        check(0<len(w['tasks'])<=16,f"Wave {w['id']}: invalid size")
-        lanes=[lookup[i]['lane'] for i in w['tasks']]
-        check(len(lanes)==len(set(lanes)),f"Wave {w['id']}: multiple writers in lane")
-        for i,a in enumerate(w['tasks']):
-            for b in w['tasks'][i+1:]:
-                for left in lookup[a]['owned_paths']:
-                    for right in lookup[b]['owned_paths']:
-                        left=left.rstrip('/*');right=right.rstrip('/*')
-                        check(not(left==right or left.startswith(right+'/') or right.startswith(left+'/')),f"Wave {w['id']}: overlapping owned paths for {a}/{b}")
-        seen+=w['tasks']
-    check(sorted(seen)==sorted(ids),'Wave inventory differs from tasks')
-    for e in epics:
-        p=ROOT/f"docs/plans/{e['id']}.md"
-        check(p.exists(),f"Missing epic {e['id']}")
-        if p.exists():
-            marks=re.findall(r'^- \[[ x]\] (T\d+\.\d+) ',p.read_text(),re.M)
-            check(marks==[t['id'] for t in e['tasks']],f"Epic task inventory mismatch {e['id']}")
-    for p in (ROOT/'docs').rglob('*.md'):
-        text=p.read_text()
-        check(not re.search(r'/Users/|/home/|file://|\bAKIA[A-Z0-9]{16}\b',text),f"Potential private path/credential in {p.relative_to(ROOT)}")
-        for target in re.findall(r'\]\(([^)]+)\)',text):
-            if '://' in target or target.startswith('#'):continue
-            dest=(p.parent/target.split('#')[0]).resolve()
-            check(dest.exists(),f"Broken link {p.relative_to(ROOT)} -> {target}")
-    check((ROOT/'docs/usecases-manifest.json').exists(),'Missing canonical manifest')
-    reached=set()
-    def visit(i):
-        if i in reached or i not in lookup:return
-        reached.add(i)
-        for dep in lookup[i]['deps']:visit(dep)
-    visit('T16.12')
-    check(reached==set(ids),'Full release gate does not reach every planned task')
-    if errors:
-        print('\n'.join(errors));return 1
-    print(f"PASS: {len(epics)} epics, {len(ts)} tasks, {len(us)} covered use cases, {len(d['waves'])} dependency-ordered waves, peak {max(len(w['tasks']) for w in d['waves'])} slots. Planning checks only; no product execution certified.")
-    return 0
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--data', type=Path, help='current-source candidate; retired baseline rejected')
+    parser.add_argument('--projection-dir', type=Path, help='also compare both derived files byte-for-byte')
+    args = parser.parse_args()
+    try:
+        current = load_current(args.data)
+        if args.projection_dir:
+            check_projection(args.projection_dir, projection_files(current))
+        print(f'PASS: {len(current[1])} current tasks; bounded source semantics' +
+              (' and projection freshness' if args.projection_dir else '') +
+              ' only. No execution, receipt authenticity, or release qualified.')
+        return 0
+    except (OSError, ValueError, TypeError, RecursionError) as exc:
+        print('ERROR: current plan validation failed: ' + str(exc), file=sys.stderr)
+        return 2
 
-if __name__=='__main__':sys.exit(main())
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""Validate AMOS release-matrix completeness and evidence gates."""
+"""Fail closed on current release qualification; retain explicit historical parser checks."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-
-if __name__ == "__main__" and (Path(__file__).resolve().parents[1] / "docs/planning/wazi-source.json").exists():
-    raise SystemExit("Retired baseline command: current plan is wazi-source.json. Use go run ./cmd/portableplan and the pinned wazi-contract validator. Current projection/release tooling requires migration; no stale view was written or qualified.")
 
 from typing import Any
 
@@ -570,7 +568,7 @@ def self_test(matrix: dict[str, Any], inventory: dict[str, Any]) -> None:
 
     def run_structure_fixture(path: Path, expected_status: int) -> str:
         result = subprocess.run(
-            [sys.executable, str(Path(__file__).resolve()), "--input", str(path), "--structure-only"],
+            [sys.executable, str(Path(__file__).resolve()), "--historical-product", "--input", str(path), "--structure-only"],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -663,39 +661,49 @@ def self_test(matrix: dict[str, Any], inventory: dict[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--historical-product", action="store_true", help="explicit retired-baseline parser checks only; never release qualification")
     parser.add_argument("--input", type=Path, default=MATRIX_PATH, help=argparse.SUPPRESS)
     modes = parser.add_mutually_exclusive_group()
-    modes.add_argument("--strict", action="store_const", const="strict", dest="mode", help="run release-promotion evidence gates (the default)")
+    modes.add_argument("--strict", action="store_const", const="strict", dest="mode", help="report current release qualification blockers (the default)")
     modes.add_argument("--structure-only", action="store_const", const="structure", dest="mode", help=argparse.SUPPRESS)
     parser.set_defaults(mode="strict")
     parser.add_argument("--self-test", action="store_true", help="run synthetic parser and rejection checks only")
     args = parser.parse_args()
     try:
+        if not args.historical_product:
+            spec = importlib.util.spec_from_file_location(
+                "amos_current_plan", Path(__file__).with_name("check-plan.py"))
+            checker = importlib.util.module_from_spec(spec)
+            sys.dont_write_bytecode = True
+            spec.loader.exec_module(checker)
+            current = checker.load_current()
+            print(
+                f"BLOCKED: current source contains {len(current[1])} tasks; current release "
+                "coverage and receipt qualification are not implemented. The historical "
+                "matrix cannot qualify this plan, including in structure-only/self-test mode.",
+                file=sys.stderr,
+            )
+            return 1
+        if args.mode == "strict" and not args.self_test:
+            print("BLOCKED: historical baseline cannot qualify a current release; "
+                  "only explicit --structure-only or --self-test checks are supported.", file=sys.stderr)
+            return 1
         matrix = read_matrix(args.input)
         inventory = expected_inventory()
         structural_errors = validate_structure(matrix, inventory)
         if args.self_test:
             self_test(matrix, inventory)
-            print("PASS: synthetic parser and rejection checks; no release evidence was qualified")
+            print("PASS: historical-only synthetic parser and rejection checks; no current plan or release evidence was qualified")
             return 0
         if structural_errors:
             for error in structural_errors:
                 print(f"ERROR: {error}", file=sys.stderr)
             return 2
         if args.mode == "structure":
-            print("PASS: matrix structure only; release evidence was not qualified")
+            print("PASS: historical-only matrix structure; no current plan or release evidence was qualified")
             return 0
-        blockers = validate_release(matrix)
-        if blockers:
-            preview = blockers[:12]
-            for blocker in preview:
-                print(f"BLOCKED: {blocker}", file=sys.stderr)
-            if len(blockers) > len(preview):
-                print(f"BLOCKED: {len(blockers) - len(preview)} additional release blockers", file=sys.stderr)
-            return 1
-        print(f"PASS: release matrix {matrix['candidate_id']} is complete for the declared scope")
-        return 0
-    except (OSError, json.JSONDecodeError, MatrixError, TypeError, KeyError) as exc:
+        raise MatrixError("unsupported historical mode; no release qualified")
+    except (OSError, ValueError, MatrixError, TypeError, KeyError, RecursionError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
