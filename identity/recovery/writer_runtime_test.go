@@ -211,10 +211,10 @@ func TestRecoveryWriterRuntimeRequiredService(t *testing.T) {
 	})
 	t.Run("guarded password change preserves actor and completes epoch transition", func(t *testing.T) {
 		raw := bytes.Repeat([]byte{0x52}, 32)
-		digest := sha256.Sum256(raw)
+		digest := sha256.Sum256([]byte(base64.RawURLEncoding.EncodeToString(raw)))
 		cookie := &http.Cookie{Name: "__Host-amos_session", Value: base64.RawURLEncoding.EncodeToString(raw)}
 		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
-			_, e := tx.ExecContext(ctx, `INSERT INTO identity_sessions(id,person_id,installation_id,application_id,environment_id,token_digest,security_epoch,authentication_method,issued_at,authenticated_at,expires_at,idle_expires_at) SELECT $1,$2,$3,$4,$5,$6,1,'email_password',at-interval '1 minute',at-interval '1 minute',at+interval '1 hour',at+interval '30 minutes' FROM (SELECT clock_timestamp() AS at) sample`, newRecoveryID(t), account.personID, cfg.InstallationID, cfg.ApplicationID, cfg.EnvironmentID, digest[:])
+			_, e := tx.ExecContext(ctx, `INSERT INTO identity_sessions(id,person_id,installation_id,application_id,environment_id,token_digest,security_epoch,authentication_method,issued_at,authenticated_at,last_seen_at,expires_at,idle_expires_at) SELECT $1,$2,$3,$4,$5,$6,1,'email_password',at-interval '1 minute',at-interval '1 minute',at,at+interval '1 hour',at+interval '30 minutes' FROM (SELECT clock_timestamp() AS at) sample`, newRecoveryID(t), account.personID, cfg.InstallationID, cfg.ApplicationID, cfg.EnvironmentID, digest[:])
 			return e
 		}); e != nil {
 			t.Fatal(e)
