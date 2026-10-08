@@ -1,6 +1,7 @@
 package session
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -51,6 +52,13 @@ type writerRequestData struct {
 }
 type Staged struct{ data *stagedData }
 type stagedData struct {
+	mu                sync.Mutex
+	checked, finalOK  bool
+	tx                *sql.Tx
+	request           WriterRequest
+	newID, priorID    uuid.UUID
+	inserted, rotated currentRow
+
 	service  *Service
 	attempt  *aw.Attempt
 	binding  aw.Binding
@@ -306,12 +314,31 @@ func (s *Service) StageWriter(ctx context.Context, a *aw.Attempt, proof wp.Issua
 	if err != nil {
 		return Staged{}, writerFailure(a, ErrUnavailable)
 	}
+	inserted, _, err := s.readCurrent(ctx, tx, credential.PersonID(), d.newID, false)
+	if err != nil {
+		return Staged{}, writerFailure(a, err)
+	}
+	if inserted.person != credential.PersonID() || inserted.epoch != credential.SecurityEpoch() || inserted.method != credential.Method() || !inserted.authenticated.Equal(credential.AuthenticatedAt()) || !inserted.absolute.Equal(expires) || !inserted.idle.Equal(minTime(expires, credential.AuthenticatedAt().Add(30*time.Minute))) || !bytes.Equal(inserted.digest, digest[:]) || inserted.level != credential.Assurance() || (inserted.level != "aal1" && (!inserted.elevated.Valid || !inserted.elevated.Time.Equal(credential.AssuranceExpires()))) {
+		return Staged{}, writerFailure(a, ErrUnavailable)
+	}
+	var rotated currentRow
+	if d.priorID != uuid.Nil {
+		rotated, _, err = s.readCurrent(ctx, tx, d.priorPerson, d.priorID, false)
+		if !errors.Is(err, ErrUnauthenticated) || !rotated.revoked.Valid {
+			return Staged{}, writerFailure(a, ErrUnavailable)
+		}
+	}
 	d.staged = true
-	return Staged{data: &stagedData{service: s, attempt: a, binding: binding, issuance: proof, issued: Issued{Cookie: s.cookie(d.token, expires), CSRFToken: d.csrfToken, AssuranceExpires: credential.AssuranceExpires()}}}, nil
+	return Staged{data: &stagedData{service: s, attempt: a, binding: binding, issuance: proof, tx: tx, request: request, newID: d.newID, priorID: d.priorID, inserted: inserted, rotated: rotated, issued: Issued{Cookie: s.cookie(d.token, expires), CSRFToken: d.csrfToken, AssuranceExpires: credential.AssuranceExpires()}}}, nil
 }
 func (s *Service) PublishWriter(c aw.Completion, p wp.Permit, staged Staged) (Issued, error) {
 	d := staged.data
-	if s == nil || d == nil || d.service != s || !p.Matches(d.attempt, d.issuance) || !c.Matches(d.attempt) {
+	if d == nil {
+		return Issued{}, ErrUnavailable
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if !d.finalOK || s == nil || d.service != s || !p.Matches(d.attempt, d.issuance) || !c.Matches(d.attempt) {
 		return Issued{}, ErrUnavailable
 	}
 	outcome, err := p.Outcome()

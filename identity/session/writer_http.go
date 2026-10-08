@@ -147,7 +147,11 @@ func (s *Service) runBrowser(r *http.Request, action wp.Action) (identity.Princi
 		}
 		rows, e := s.DiscoverPrior(ctx, a, request, action)
 		if e != nil {
-			return deny(e)
+			reason = e
+			if errors.Is(e, ErrUnauthenticated) {
+				return aw.DeniedRollback
+			}
+			return aw.UnavailableRollback
 		}
 		d := request.data
 		if d.priorID == uuid.Nil {
