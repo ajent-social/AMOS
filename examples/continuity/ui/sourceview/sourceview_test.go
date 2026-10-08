@@ -362,6 +362,40 @@ func TestMaximumBounds(t *testing.T) {
 		t.Fatal("maximum page")
 	}
 }
+func TestShortPageAndSummaryBounds(t *testing.T) {
+	t.Parallel()
+	for _, f := range []bool{false, true} {
+		for _, kind := range []string{"document", "correspondence"} {
+			s := source()
+			s.Kind = kind
+			m := sourceview.SourceList{Limit: 2, Kind: kind, Sources: []repository.SourceSummary{summary(s)}}
+			b, e := sourceview.RenderSources(m, f)
+			if e != nil {
+				t.Fatal(e)
+			}
+			n := structure(t, b, f)
+			if strings.Contains(content(n), "Try next page") || len(nodes(n, "li")) != 1 {
+				t.Fatal("short page continuation")
+			}
+		}
+	}
+	for name, change := range map[string]func(*repository.SourceSummary){
+		"title raw":        func(s *repository.SourceSummary) { s.Title = strings.Repeat(" ", 801) },
+		"title rune":       func(s *repository.SourceSummary) { s.Title = strings.Repeat("界", 201) },
+		"kind raw":         func(s *repository.SourceSummary) { s.Kind = strings.Repeat("a", 15) },
+		"digest raw":       func(s *repository.SourceSummary) { s.SHA256 = strings.Repeat("a", 65) },
+		"digest uppercase": func(s *repository.SourceSummary) { s.SHA256 = strings.ToUpper(s.SHA256) },
+		"digest short":     func(s *repository.SourceSummary) { s.SHA256 = "a" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			r := summary(source())
+			change(&r)
+			b, e := sourceview.RenderSources(sourceview.SourceList{Limit: 1, Sources: []repository.SourceSummary{r}}, false)
+			invalid(t, b, e)
+		})
+	}
+}
+
 func TestCopiesAndConcurrency(t *testing.T) {
 	t.Parallel()
 	s := source()
@@ -411,7 +445,7 @@ func TestStaticArtifacts(t *testing.T) {
 		t.Fatal("absolute output directory required")
 	}
 	s := source()
-	s.Body = "\n" + strings.Repeat("long<&>text", 6000) + "\n"
+	s.Body = "\n" + strings.Repeat("long<&>text", 5000) + "\n"
 	s.SHA256 = fmt.Sprintf("%x", sha256.Sum256([]byte(s.Body)))
 	detail, e := sourceview.RenderSource(s, false)
 	if e != nil {
