@@ -152,7 +152,7 @@ func TestPrivateReadRuntimeRequiredService(t *testing.T) {
 			t.Fatal("foreign source disclosed")
 		}
 	})
-	t.Run("public context alone has no private admission", func(t *testing.T) {
+	t.Run("context without private admission has no authority", func(t *testing.T) {
 		b, e := core.source(ctx, sourceQuery{Limit: 10})
 		if b != nil || !errors.Is(e, errDenied) {
 			t.Fatal("unadmitted context disclosed")
