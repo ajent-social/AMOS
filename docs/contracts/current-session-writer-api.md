@@ -198,7 +198,7 @@ type Action uint8
 const (
     Register Action = iota + 1; PasswordSignIn; EmailRequest; EmailConfirm
     ResetRequest; ResetComplete; PasswordChange; MagicRequest; MagicConfirm
-    MFABegin; MFAConfirm; MFAChallenge; MFAStatus
+    MFABegin; MFAConfirm; MFAChallenge
     FederationBeginLogin; FederationBeginLink
     FederationCallbackLogin; FederationCallbackLink
     Renew; Signout; Revoke; Assurance
@@ -282,7 +282,7 @@ same-attempt primary evidence. No reference to a mutable input Actor pointer is
 retained. Nil actor is legal only for FederationBeginLogin/CallbackLogin.
 Federation native code alone calls FlowBegin/FlowCallback after its respective
 local URL or provider validation contract. Actor handles renewal/signout/revoke/
-assurance/status; it does not manufacture new credential authority.
+assurance; it does not manufacture new credential authority.
 
 `wp.Finalize` verifies token, the exact root-recorded F instant, original bounds
 and action/transition shape. For request/begin actions it returns a Success
@@ -296,7 +296,7 @@ in the action table; only then calls Finalize. This is a trusted implementation
 obligation, not evidence that the ordering package authenticated those facts.
 ForIssue accepts only password sign-in, magic confirmation, successful TOTP or
 federation callback-login evidence; it rejects requests, begin, link, counter,
-status and legacy VerifiedCredential. It produces provisional staging authority,
+legacy VerifiedCredential and every non-issuing action. It produces provisional staging authority,
 not permission to publish. Final Permit is required for publication after commit.
 
 `Issuance.Credential` performs the wp-owned translation to the existing
@@ -333,6 +333,13 @@ func NewWriter(a *aw.Attempt) (*Store, error)
 func NewIssuer(a *aw.Attempt, proof wp.Issuance) (*Store, error)
 // identity/mfa
 func NewWriterStore(a *aw.Attempt) (*Store, error)
+// identity/mfa read-only Status participant: no mutation methods on ReadStore.
+type ReadStore struct { tx *sql.Tx }
+func NewReadStore(tx *sql.Tx) (*ReadStore, error)
+func (s *ReadStore) Find(ctx context.Context, scope Scope,
+    id uuid.UUID) (Factor, error)
+func (s *ReadStore) FindCurrent(ctx context.Context, scope Scope,
+    state FactorState) (Factor, error)
 // workspace/personal
 func NewWriter(a *aw.Attempt) (*Participant, error)
 // identity/store, additive binding used by workspace/personal:
@@ -388,7 +395,14 @@ registration and MFA call the explicit capability variants. Other public native
 HTTP/service actions retain their shapes and dispatch private W1 implementations
 when built with NewWithWriter; caller-selected principal arguments must match
 session-owned admission, never establish it. Existing read previews remain
-non-authorizing, nonlocking transactions on the same private runtime.
+non-authorizing, nonlocking transactions on the same private runtime. MFA Status
+uses NewReadStore only inside Root.Read after the session-owned reader recheck;
+ReadStore exposes plain Find/FindCurrent, cannot expire/activate/count failures
+or mint wp evidence, and cannot be converted to Store. Its returned Factor is
+only input to the final actor/policy/status fence, not authority. NewReadStore
+is a separate read-only constructor and does not call SelectLegacy. Close of
+the lexical transaction invalidates its SQL handle. This explicitly replaces
+Status's old NewStore call rather than making a hidden legacy exception.
 
 The runtime composition, not lower packages, binds concrete native dependencies:
 `*password.Hasher`, `*primaryproof.Verifier`, `*session.Service`,
