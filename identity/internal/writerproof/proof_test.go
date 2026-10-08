@@ -133,3 +133,12 @@ func TestEveryOriginalFinalBoundIsStrict(t *testing.T) {
 		})
 	}
 }
+
+func TestPrimarySnapshotRejectsZeroAndSupportsNativeTOTPMethod(t *testing.T) {
+	if _, err := (Evidence{}).PasswordSnapshot(nil, MFABegin); err == nil {
+		t.Fatal("zero evidence snapshot admitted")
+	}
+	if !method("password+totp") || method("unknown_method") {
+		t.Fatal("closed native actor method vocabulary mismatch")
+	}
+}
