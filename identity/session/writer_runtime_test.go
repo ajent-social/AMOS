@@ -224,7 +224,7 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 		}
 	})
 	var issued Issued
-	for _, mode := range []string{"success", "cancel after finish", "staging replay", "action mismatch"} {
+	for _, mode := range []string{"success", "cancel after finish", "staging replay", "action mismatch", "disabled person", "staged fence replay", "wrong staged time"} {
 		t.Run("staging "+mode, func(t *testing.T) {
 			caseCtx, stop := context.WithCancel(ctx)
 			defer stop()
@@ -278,7 +278,22 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				if _, e = store.NewIssuer(a, issuance); e != nil {
 					return fail(e)
 				}
+				if mode == "disabled person" {
+					// Synthetic same-transaction state change tests the native terminal mapping.
+					if e = a.RecordMutation(aw.CredentialWrite, []aw.Row{{Table: aw.Persons, ID: person, Access: aw.ExistingUpdate}}); e != nil {
+						return fail(e)
+					}
+					if _, e = tx.ExecContext(ctx, `UPDATE identity_persons SET state='self_disabled' WHERE id=$1`, person); e != nil {
+						return fail(e)
+					}
+				}
 				staged, e = service.StageWriter(ctx, a, issuance, request)
+				if mode == "disabled person" {
+					if !errors.Is(e, ErrUnauthenticated) {
+						t.Error("terminal semantic denial misclassified", e)
+					}
+					return aw.DeniedRollback
+				}
 				if mode == "action mismatch" {
 					if e == nil {
 						t.Error("wrong action issued")
@@ -287,6 +302,14 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				}
 				if e != nil {
 					return fail(e)
+				}
+				var initialIdle time.Time
+				if e = tx.QueryRowContext(ctx, `SELECT idle_expires_at FROM identity_sessions WHERE id=$1`, request.data.newID).Scan(&initialIdle); e != nil {
+					return fail(e)
+				}
+				// SQL timestamps have microsecond precision; V came from this DB.
+				if !initialIdle.Equal(v.Add(30 * time.Minute)) {
+					return fail(errors.New("initial idle bound refreshed after verification"))
 				}
 				if e = issuance.Check(a); e != nil {
 					return fail(e)
@@ -304,6 +327,24 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				if e != nil {
 					return fail(e)
 				}
+				if mode == "wrong staged time" {
+					if e = service.CheckStagedWriter(ctx, a, staged, f.Add(time.Nanosecond)); e == nil {
+						t.Error("caller-selected final time admitted")
+					}
+					return aw.UnavailableRollback
+				}
+				if e = service.CheckStagedWriter(ctx, a, staged, f); e != nil {
+					return fail(e)
+				}
+				if mode == "staged fence replay" {
+					if e = service.CheckStagedWriter(ctx, a, staged, f); e == nil {
+						t.Error("staged fence replay admitted")
+					}
+					if staged.data.finalOK {
+						t.Error("failed replay retained success marker")
+					}
+					return aw.UnavailableRollback
+				}
 				permit, e = wp.Finalize(a, evidence, f)
 				if e != nil {
 					return fail(e)
@@ -317,6 +358,9 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				return aw.Success
 			})
 
+			if mode == "disabled person" && !errors.Is(e, aw.ErrDenied) {
+				t.Error("terminal participant outcome lost", e)
+			}
 			if mode != "success" {
 				if e == nil {
 					t.Fatal("failed attempt committed")

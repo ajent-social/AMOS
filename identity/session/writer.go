@@ -1,6 +1,7 @@
 package session
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -51,6 +52,13 @@ type writerRequestData struct {
 }
 type Staged struct{ data *stagedData }
 type stagedData struct {
+	mu                sync.Mutex
+	checked, finalOK  bool
+	tx                *sql.Tx
+	request           WriterRequest
+	newID, priorID    uuid.UUID
+	inserted, rotated currentRow
+
 	service  *Service
 	attempt  *aw.Attempt
 	binding  aw.Binding
@@ -166,10 +174,23 @@ func issuing(action wp.Action) bool {
 	return false
 }
 func writerFailure(a *aw.Attempt, err error) error {
-	if e := a.Finish(aw.UnavailableRollback); e != nil {
+	outcome := aw.UnavailableRollback
+	if errors.Is(err, ErrUnauthenticated) {
+		outcome = aw.DeniedRollback
+	}
+	if e := a.Finish(outcome); e != nil {
 		return err
 	}
 	return err
+}
+
+// Store participant errors already marked the terminal root outcome. Mapping
+// them must neither Finish again nor resume SQL after a semantic denial.
+func terminalStoreError(err error) error {
+	if errors.Is(err, store.ErrSessionUnavailable) || errors.Is(err, store.ErrPersonUnavailable) || errors.Is(err, store.ErrChallengeUnavailable) {
+		return ErrUnauthenticated
+	}
+	return ErrUnavailable
 }
 
 // DiscoverPrior runs only in G. Its result includes a cross-person prior-cookie
@@ -277,28 +298,47 @@ func (s *Service) StageWriter(ctx context.Context, a *aw.Attempt, proof wp.Issua
 		return Staged{}, writerFailure(a, ErrUnauthenticated)
 	}
 	if d.priorID != uuid.Nil {
-		// Use the exact scoped discovered digest. Revoked rows are harmless, but no
-		// other error can be ignored after staging starts.
+		// The exact prior row was discovered and acquired. Any participant
+		// failure is terminal, including a semantic disappearance/revocation.
 		err = st.RevokeSessionScoped(ctx, d.digest, store.SessionScope{InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID})
-		if err != nil && !errors.Is(err, store.ErrSessionUnavailable) {
-			return Staged{}, writerFailure(a, ErrUnavailable)
+		if err != nil {
+			return Staged{}, terminalStoreError(err)
 		}
 	}
 	digest := sha256.Sum256([]byte(d.token))
 	err = st.CreateSession(ctx, store.Session{ID: d.newID, PersonID: credential.PersonID(), InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID, TokenDigest: digest[:], SecurityEpoch: credential.SecurityEpoch(), AuthenticationMethod: credential.Method(), AuthenticatedAt: credential.AuthenticatedAt(), ExpiresAt: expires, AssuranceLevel: credential.Assurance(), AssuranceExpires: credential.AssuranceExpires()})
 	if err != nil {
-		return Staged{}, writerFailure(a, ErrUnavailable)
+		return Staged{}, terminalStoreError(err)
 	}
 	binding, err := a.Binding()
 	if err != nil {
 		return Staged{}, writerFailure(a, ErrUnavailable)
 	}
+	inserted, _, err := s.readCurrent(ctx, tx, credential.PersonID(), d.newID, false)
+	if err != nil {
+		return Staged{}, writerFailure(a, err)
+	}
+	if inserted.person != credential.PersonID() || inserted.epoch != credential.SecurityEpoch() || inserted.method != credential.Method() || !inserted.authenticated.Equal(credential.AuthenticatedAt()) || !inserted.absolute.Equal(expires) || !inserted.idle.Equal(minTime(expires, credential.AuthenticatedAt().Add(30*time.Minute))) || !bytes.Equal(inserted.digest, digest[:]) || inserted.level != credential.Assurance() || (inserted.level != "aal1" && (!inserted.elevated.Valid || !inserted.elevated.Time.Equal(credential.AssuranceExpires()))) {
+		return Staged{}, writerFailure(a, ErrUnavailable)
+	}
+	var rotated currentRow
+	if d.priorID != uuid.Nil {
+		rotated, _, err = s.readCurrent(ctx, tx, d.priorPerson, d.priorID, false)
+		if !errors.Is(err, ErrUnauthenticated) || !rotated.revoked.Valid {
+			return Staged{}, writerFailure(a, ErrUnavailable)
+		}
+	}
 	d.staged = true
-	return Staged{data: &stagedData{service: s, attempt: a, binding: binding, issuance: proof, issued: Issued{Cookie: s.cookie(d.token, expires), CSRFToken: d.csrfToken, AssuranceExpires: credential.AssuranceExpires()}}}, nil
+	return Staged{data: &stagedData{service: s, attempt: a, binding: binding, issuance: proof, tx: tx, request: request, newID: d.newID, priorID: d.priorID, inserted: inserted, rotated: rotated, issued: Issued{Cookie: s.cookie(d.token, expires), CSRFToken: d.csrfToken, AssuranceExpires: credential.AssuranceExpires()}}}, nil
 }
 func (s *Service) PublishWriter(c aw.Completion, p wp.Permit, staged Staged) (Issued, error) {
 	d := staged.data
-	if s == nil || d == nil || d.service != s || !p.Matches(d.attempt, d.issuance) || !c.Matches(d.attempt) {
+	if d == nil {
+		return Issued{}, ErrUnavailable
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if !d.finalOK || s == nil || d.service != s || !p.Matches(d.attempt, d.issuance) || !c.Matches(d.attempt) {
 		return Issued{}, ErrUnavailable
 	}
 	outcome, err := p.Outcome()

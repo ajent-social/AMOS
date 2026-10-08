@@ -69,6 +69,11 @@ type currentRow struct {
 }
 
 func (s *Service) readCurrent(ctx context.Context, tx *sql.Tx, person, id uuid.UUID, locking bool) (currentRow, time.Time, error) {
+	return s.readCurrentAt(ctx, tx, person, id, locking, time.Time{})
+}
+
+// A nonzero fixed time is the root-recorded final sample; it is never refreshed.
+func (s *Service) readCurrentAt(ctx context.Context, tx *sql.Tx, person, id uuid.UUID, locking bool, now time.Time) (currentRow, time.Time, error) {
 	var v currentRow
 	suffix := ""
 	if locking {
@@ -97,9 +102,10 @@ func (s *Service) readCurrent(ctx context.Context, tx *sql.Tx, person, id uuid.U
 	if err != nil {
 		return v, time.Time{}, ErrUnavailable
 	}
-	var now time.Time
-	if err = tx.QueryRowContext(ctx, `SELECT pg_catalog.clock_timestamp()`).Scan(&now); err != nil || now.IsZero() {
-		return v, time.Time{}, ErrUnavailable
+	if now.IsZero() {
+		if err = tx.QueryRowContext(ctx, `SELECT pg_catalog.clock_timestamp()`).Scan(&now); err != nil || now.IsZero() {
+			return v, time.Time{}, ErrUnavailable
+		}
 	}
 	switch state {
 	case "active", "pending_verification", "self_disabled", "administratively_disabled", "deletion_pending":
@@ -218,7 +224,10 @@ func (s *Service) RecheckCurrentTx(ctx context.Context, tx *sql.Tx) (identity.Pr
 }
 func (s *Service) ActorForWriter(ctx context.Context, a *aw.Attempt, request WriterRequest) (wp.ActorCheck, error) {
 	d, err := s.writerRequest(ctx, request)
-	if err != nil || d.admission == nil || d.attempt != a {
+	if err != nil {
+		return wp.ActorCheck{}, err
+	}
+	if d.admission == nil || d.attempt != a {
 		return wp.ActorCheck{}, ErrUnauthenticated
 	}
 	rows := []aw.Row{{Table: aw.Persons, ID: d.admission.principal.PersonID(), Access: aw.ExistingUpdate}, {Table: aw.Sessions, ID: d.admission.session, Access: aw.ExistingUpdate}}
