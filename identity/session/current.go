@@ -218,7 +218,10 @@ func (s *Service) RecheckCurrentTx(ctx context.Context, tx *sql.Tx) (identity.Pr
 }
 func (s *Service) ActorForWriter(ctx context.Context, a *aw.Attempt, request WriterRequest) (wp.ActorCheck, error) {
 	d, err := s.writerRequest(ctx, request)
-	if err != nil || d.admission == nil || d.attempt != a {
+	if err != nil {
+		return wp.ActorCheck{}, err
+	}
+	if d.admission == nil || d.attempt != a {
 		return wp.ActorCheck{}, ErrUnauthenticated
 	}
 	rows := []aw.Row{{Table: aw.Persons, ID: d.admission.principal.PersonID(), Access: aw.ExistingUpdate}, {Table: aw.Sessions, ID: d.admission.session, Access: aw.ExistingUpdate}}

@@ -200,11 +200,11 @@ func (s *Service) runBrowser(r *http.Request, action wp.Action) (identity.Princi
 			e = st.RevokeSessionScoped(ctx, d.digest, scope)
 		}
 		if e != nil {
-			if errors.Is(e, store.ErrSessionUnavailable) {
-				reason = ErrUnauthenticated
+			reason = terminalStoreError(e)
+			if errors.Is(reason, ErrUnauthenticated) {
 				return aw.DeniedRollback
 			}
-			return deny(ErrUnavailable)
+			return aw.UnavailableRollback
 		}
 		after, _, e := s.readCurrent(ctx, tx, d.priorPerson, d.priorID, false)
 		if action == wp.Signout {
