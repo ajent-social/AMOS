@@ -432,3 +432,58 @@ func TestChallengeFreshnessRequiredServiceExactBoundary(t *testing.T) {
 		t.Fatal("exact challenge boundary schedule failed")
 	}
 }
+
+// Errors from real runtime statements at both post-lock stages must remain
+// sanitized and return no bound identity. The caller retains rollback control.
+func TestChallengeFreshnessRequiredServiceStatementErrors(t *testing.T) {
+	for _, name := range []string{"clock", "update"} {
+		t.Run(name, func(t *testing.T) {
+			f := newChallengeFixture(t)
+			rollback := errors.New("rollback challenge statement error")
+			err := f.db.WithTx(f.ctx, nil, func(actual *sql.Tx) error {
+				connector := &freshnessBoundaryConnector{tx: actual, boundary: func(ctx context.Context, _ time.Time) error {
+					_, err := actual.ExecContext(ctx, `SELECT 1/0`)
+					if err == nil {
+						t.Fatal("database error probe did not fail")
+					}
+					if name == "clock" {
+						return err
+					}
+					// The real transaction is now aborted; the actual method's final UPDATE
+					// must fail even though its clock scan was successfully forwarded.
+					return nil
+				}}
+				probeDB := sql.OpenDB(connector)
+				defer func() {
+					if err := probeDB.Close(); err != nil {
+						t.Error("error facade close failed")
+					}
+				}()
+				probeTx, err := probeDB.BeginTx(f.ctx, nil)
+				if err != nil {
+					return err
+				}
+				defer func() {
+					if err := probeTx.Rollback(); err != nil {
+						t.Error("error facade rollback failed")
+					}
+				}()
+				got, err := challengeConsume(f.ctx, probeTx, f)
+				challengeAssert(t, f, got, err, store.ErrPersistence)
+				return rollback
+			})
+			if !errors.Is(err, rollback) {
+				t.Fatal("statement failure rollback failed")
+			}
+			if err := f.db.WithTx(f.ctx, nil, func(tx *sql.Tx) error {
+				at, err := challengeRead(f.ctx, tx, f.id)
+				if at.Valid {
+					t.Fatal("failed statement consumed challenge")
+				}
+				return err
+			}); err != nil {
+				t.Fatal("read after statement error failed")
+			}
+		})
+	}
+}
