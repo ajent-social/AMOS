@@ -40397,7 +40397,7 @@
       "stage": "preflight",
       "deps": [
         "T-RPL-DOMAIN.6",
-        "T-RPL-HOST-CONTRACT.6"
+        "T-RPL-REPOSITORY-CONTRACT.6"
       ],
       "owner": "Integration coordinator",
       "estimate": "bounded slice; revalidate at preflight",
@@ -41648,6 +41648,138 @@
       "acceptance": "Original full product and production terminal plus every added replacement, feature-evolution and optional-context branch have independently reviewed, landed and qualified evidence at their explicit boundaries. No narrative labels or baseline rehearsal replace full release qualification; consumer cutover still requires separate authorization.",
       "status": "PLANNED",
       "projection_id": "E-REPLACEMENT.T-REPLACEMENT-ACCEPT"
+    },
+    {
+      "id": "T-RPL-REPOSITORY-CONTRACT.1",
+      "title": "Adopt transaction-only continuity repository contract: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact caller-owned transaction, four-part scope, application schema fragment, typed API, bounded reads, CAS/activity/rollback and zero-effect semantics reviewed. This gate admits storage mechanics only; host/current-authority composition stays blocked on T-RPL-HOST-CONTRACT.6. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/034-continuity-repository-boundary.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REPOSITORY-CONTRACT.1"
+    },
+    {
+      "id": "T-RPL-REPOSITORY-CONTRACT.2",
+      "title": "Adopt transaction-only continuity repository contract: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-REPOSITORY-CONTRACT.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact caller-owned transaction, four-part scope, application schema fragment, typed API, bounded reads, CAS/activity/rollback and zero-effect semantics reviewed. This gate admits storage mechanics only; host/current-authority composition stays blocked on T-RPL-HOST-CONTRACT.6. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/034-continuity-repository-boundary.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REPOSITORY-CONTRACT.2"
+    },
+    {
+      "id": "T-RPL-REPOSITORY-CONTRACT.3",
+      "title": "Adopt transaction-only continuity repository contract: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-REPOSITORY-CONTRACT.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact caller-owned transaction, four-part scope, application schema fragment, typed API, bounded reads, CAS/activity/rollback and zero-effect semantics reviewed. This gate admits storage mechanics only; host/current-authority composition stays blocked on T-RPL-HOST-CONTRACT.6. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/034-continuity-repository-boundary.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REPOSITORY-CONTRACT.3"
+    },
+    {
+      "id": "T-RPL-REPOSITORY-CONTRACT.4",
+      "title": "Adopt transaction-only continuity repository contract: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-REPOSITORY-CONTRACT.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact caller-owned transaction, four-part scope, application schema fragment, typed API, bounded reads, CAS/activity/rollback and zero-effect semantics reviewed. This gate admits storage mechanics only; host/current-authority composition stays blocked on T-RPL-HOST-CONTRACT.6. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/034-continuity-repository-boundary.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REPOSITORY-CONTRACT.4"
+    },
+    {
+      "id": "T-RPL-REPOSITORY-CONTRACT.5",
+      "title": "Adopt transaction-only continuity repository contract: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-REPOSITORY-CONTRACT.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact caller-owned transaction, four-part scope, application schema fragment, typed API, bounded reads, CAS/activity/rollback and zero-effect semantics reviewed. This gate admits storage mechanics only; host/current-authority composition stays blocked on T-RPL-HOST-CONTRACT.6. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/034-continuity-repository-boundary.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REPOSITORY-CONTRACT.5"
+    },
+    {
+      "id": "T-RPL-REPOSITORY-CONTRACT.6",
+      "title": "Adopt transaction-only continuity repository contract: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-REPOSITORY-CONTRACT.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact caller-owned transaction, four-part scope, application schema fragment, typed API, bounded reads, CAS/activity/rollback and zero-effect semantics reviewed. This gate admits storage mechanics only; host/current-authority composition stays blocked on T-RPL-HOST-CONTRACT.6. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/034-continuity-repository-boundary.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REPOSITORY-CONTRACT.6"
     }
   ],
   "scope": "Complete original product plus AWS production at https://amos.sire.run",
@@ -46495,14 +46627,20 @@
     "T-OPTIONAL-CONTEXT.4",
     "T-OPTIONAL-CONTEXT.5",
     "T-OPTIONAL-CONTEXT.6",
-    "T-REPLACEMENT-ACCEPT"
+    "T-REPLACEMENT-ACCEPT",
+    "T-RPL-REPOSITORY-CONTRACT.1",
+    "T-RPL-REPOSITORY-CONTRACT.2",
+    "T-RPL-REPOSITORY-CONTRACT.3",
+    "T-RPL-REPOSITORY-CONTRACT.4",
+    "T-RPL-REPOSITORY-CONTRACT.5",
+    "T-RPL-REPOSITORY-CONTRACT.6"
   ],
   "replacement_context": {
     "status": "PROPOSED_PENDING_REVIEW",
     "baseline_terminal": "T-RPL-REHEARSAL.6",
     "mapping": "docs/planning/replacement-baseline.md",
     "original_task_count": 1501,
-    "added_task_count": 79,
+    "added_task_count": 85,
     "qualification": "Existing evidence registries remain authoritative. Baseline terminal supplements and does not replace complete product/production terminal. Generic feature contracts remain unadopted until reviewed.",
     "original_full_scope_terminal": "T-PROD.13",
     "full_scope_terminal": "T-REPLACEMENT-ACCEPT"
