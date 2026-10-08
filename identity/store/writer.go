@@ -48,8 +48,11 @@ func (s *Store) failed(err error) error {
 	return err
 }
 func (s *Store) participant(ctx context.Context, phase aw.Phase, rows []aw.Row, kind aw.Mutation, writes []aw.Row) (*Store, error) {
-	if s == nil || ctx == nil {
+	if s == nil {
 		return nil, ErrInvalidInput
+	}
+	if ctx == nil {
+		return nil, s.failed(ErrInvalidInput)
 	}
 	if s.attempt == nil {
 		if err := aw.SelectLegacy(); err != nil {
