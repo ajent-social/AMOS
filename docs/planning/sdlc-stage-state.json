@@ -173,7 +173,7 @@
         "findings": []
       },
       "external_blockers": [],
-      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2\u20136 and corrective chainF1/R1."
+      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2–6 and corrective chainF1/R1."
     },
     "T-SDLC-10-7.2": {
       "task_id": "T-SDLC-10-7.2",
@@ -2897,6 +2897,168 @@
       },
       "external_blockers": [],
       "next_action": "Continue separately gated guide, source retrieval, SSR, host/current-authority and isolated rehearsal; no composed replacement or original product acceptance."
+    },
+    "T-RPL-GUIDE.1": {
+      "task_id": "T-RPL-GUIDE.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-GUIDE.2",
+        "tip": "146d65c6bf114e6441f1c54aece82ef53c12fe80",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-DOMAIN.6"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "0ff5df62c4ccb5133fa2f64b7c6581e5b4af6e87",
+        "landed": "0df0347b3922da351dc45783846a92b3ccabf39f",
+        "pr": 59
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-guide-20261008.md for exact source and actual pure checks; no composed acceptance."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure continuity guide package; reviewer distinct from source author"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source rendering and separately gated authenticated retrieval, full SSR, host and rehearsal; product acceptance unchanged."
+    },
+    "T-RPL-GUIDE.2": {
+      "task_id": "T-RPL-GUIDE.2",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "T-RPL-GUIDE.2",
+        "tip": "146d65c6bf114e6441f1c54aece82ef53c12fe80",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-GUIDE.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "0ff5df62c4ccb5133fa2f64b7c6581e5b4af6e87",
+        "landed": "0df0347b3922da351dc45783846a92b3ccabf39f",
+        "pr": 59
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-guide-20261008.md for exact source and actual pure checks; no composed acceptance."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure continuity guide package; reviewer distinct from source author"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source rendering and separately gated authenticated retrieval, full SSR, host and rehearsal; product acceptance unchanged."
+    },
+    "T-RPL-GUIDE.3": {
+      "task_id": "T-RPL-GUIDE.3",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "T-RPL-GUIDE.2",
+        "tip": "146d65c6bf114e6441f1c54aece82ef53c12fe80",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-GUIDE.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "0ff5df62c4ccb5133fa2f64b7c6581e5b4af6e87",
+        "landed": "0df0347b3922da351dc45783846a92b3ccabf39f",
+        "pr": 59
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-guide-20261008.md for exact source and actual pure checks; no composed acceptance."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure continuity guide package; reviewer distinct from source author"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source rendering and separately gated authenticated retrieval, full SSR, host and rehearsal; product acceptance unchanged."
+    },
+    "T-RPL-GUIDE.4": {
+      "task_id": "T-RPL-GUIDE.4",
+      "status": "COMPLETE",
+      "owner": "Independent exact-head reviewer",
+      "claim": {
+        "resource": "T-RPL-GUIDE.2",
+        "tip": "146d65c6bf114e6441f1c54aece82ef53c12fe80",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-GUIDE.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "0ff5df62c4ccb5133fa2f64b7c6581e5b4af6e87",
+        "landed": "0df0347b3922da351dc45783846a92b3ccabf39f",
+        "pr": 59
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-guide-20261008.md for exact source and actual pure checks; no composed acceptance."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure continuity guide package; reviewer distinct from source author"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source rendering and separately gated authenticated retrieval, full SSR, host and rehearsal; product acceptance unchanged."
+    },
+    "T-RPL-GUIDE.5": {
+      "task_id": "T-RPL-GUIDE.5",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-GUIDE.2",
+        "tip": "146d65c6bf114e6441f1c54aece82ef53c12fe80",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-GUIDE.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "0ff5df62c4ccb5133fa2f64b7c6581e5b4af6e87",
+        "landed": "0df0347b3922da351dc45783846a92b3ccabf39f",
+        "pr": 59
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-guide-20261008.md for exact source and actual pure checks; no composed acceptance."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure continuity guide package; reviewer distinct from source author"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source rendering and separately gated authenticated retrieval, full SSR, host and rehearsal; product acceptance unchanged."
+    },
+    "T-RPL-GUIDE.6": {
+      "task_id": "T-RPL-GUIDE.6",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-GUIDE.2",
+        "tip": "146d65c6bf114e6441f1c54aece82ef53c12fe80",
+        "scope": "Coordinator-held source delegation; other lifecycle steps retain integrator ownership"
+      },
+      "dependency_receipts": [
+        "T-RPL-GUIDE.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "0ff5df62c4ccb5133fa2f64b7c6581e5b4af6e87",
+        "landed": "0df0347b3922da351dc45783846a92b3ccabf39f",
+        "pr": 59
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-guide-20261008.md for exact source and actual pure checks; no composed acceptance."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure continuity guide package; reviewer distinct from source author"
+      },
+      "external_blockers": [],
+      "next_action": "Continue source rendering and separately gated authenticated retrieval, full SSR, host and rehearsal; product acceptance unchanged."
     }
   },
   "receipt_requirements": [
