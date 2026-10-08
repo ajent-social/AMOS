@@ -376,3 +376,13 @@ READ COMMITTED, exact row locking before expiry sampling, and one post-lock
 database instant for conditional consumption and its timestamp. Independent
 review and landing precede the two-file source assignment. Complete credential
 producers, writer ordering, session provenance and resource authority stay open.
+
+## Proposed amendment v1.23: email confirmation completion freshness
+
+[The email confirmation proposal](../contracts/email-confirmation-freshness.md)
+and [ADR 037](../adr/037-email-confirmation-freshness.md) move shared challenge
+consumption after the bound email/person statements in one explicit READ COMMITTED
+transaction. Failure rolls back staged verification/activation. This is a narrow
+producer freshness correction, not writer compatibility or host/current-authority
+adoption. Independent exact-head review and landing precede the separately claimed
+Confirm source slice; historical T3.6 component acceptance is unchanged.
