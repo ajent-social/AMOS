@@ -218,31 +218,33 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 	if !valid {
 		address = "invalid@example.invalid"
 	}
-	var personID, installationID, applicationID uuid.UUID
+	var personID, installationID, applicationID, emailID, credentialID uuid.UUID
+	var comparisonKey string
 	environmentID := s.cfg.EnvironmentID
 	var epoch int64
 	var state string
 	var verified sql.NullTime
 	var encoded string
 	err := s.db.WithTx(r.Context(), nil, func(tx *sql.Tx) error {
-		return tx.QueryRowContext(r.Context(), `SELECT p.id,p.installation_id,p.application_id,p.security_epoch,p.state,e.verified_at,c.verifier_hash
+		return tx.QueryRowContext(r.Context(), `SELECT p.id,p.installation_id,p.application_id,p.security_epoch,p.state,e.verified_at,c.verifier_hash,e.id,e.comparison_key,c.id
 			FROM identity_emails e JOIN identity_persons p ON p.id=e.person_id AND p.installation_id=e.installation_id AND p.application_id=e.application_id
 			JOIN identity_credentials c ON c.person_id=p.id AND c.method='email_password' AND c.revoked_at IS NULL
 			WHERE e.installation_id=$1 AND e.application_id=$2 AND e.comparison_key=lower($3)
-			LIMIT 1`, s.cfg.InstallationID, s.cfg.ApplicationID, address).Scan(&personID, &installationID, &applicationID, &epoch, &state, &verified, &encoded)
+			LIMIT 1`, s.cfg.InstallationID, s.cfg.ApplicationID, address).Scan(&personID, &installationID, &applicationID, &epoch, &state, &verified, &encoded, &emailID, &comparisonKey, &credentialID)
 	})
 	known := err == nil
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 		return
 	}
+	expectedHash := encoded
 	var persist password.PersistRehash
 	if known {
 		persist = func(ctx context.Context, oldHash, newHash string) error {
-			return s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			err := s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 				result, err := tx.ExecContext(ctx, `UPDATE identity_credentials SET verifier_hash=$1
 					WHERE person_id=$2 AND method='email_password' AND verifier_hash=$3 AND revoked_at IS NULL
-					AND EXISTS (SELECT 1 FROM identity_persons p WHERE p.id=$2 AND p.installation_id=$4 AND p.application_id=$5)`, newHash, personID, oldHash, s.cfg.InstallationID, s.cfg.ApplicationID)
+					AND id=$6 AND EXISTS (SELECT 1 FROM identity_persons p WHERE p.id=$2 AND p.installation_id=$4 AND p.application_id=$5)`, newHash, personID, oldHash, s.cfg.InstallationID, s.cfg.ApplicationID, credentialID)
 				if err != nil {
 					return err
 				}
@@ -255,6 +257,10 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 				}
 				return nil
 			})
+			if err == nil {
+				expectedHash = newHash
+			}
+			return err
 		}
 	}
 	result, hashErr := s.cfg.Passwords.Verify(r.Context(), "signin:"+address, in.Password, encoded, persist)
@@ -266,15 +272,74 @@ func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
 		write(w, r, http.StatusUnauthorized, "auth.unauthenticated", "Email or password is incorrect.")
 		return
 	}
-	now := time.Now().UTC()
-	proof, err := authproof.NewVerifiedCredential(personID, installationID, applicationID, environmentID, epoch, "email_password", now, "aal1", now.Add(12*time.Hour))
-	if err != nil {
-		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
-		return
+	if !result.RehashPersisted {
+		expectedHash = encoded
 	}
-	issued, err := s.cfg.Sessions.IssueForRequest(r.Context(), proof, r)
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+	stale := errors.New("stale password admission")
+	var issued session.Issued
+	err = s.db.WithTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false}, func(tx *sql.Tx) error {
+		var isolation, readOnly string
+		if err := tx.QueryRowContext(ctx, `SELECT pg_catalog.current_setting('transaction_isolation'),pg_catalog.current_setting('transaction_read_only')`).Scan(&isolation, &readOnly); err != nil {
+			return err
+		}
+		if isolation != "read committed" || readOnly != "off" {
+			return storage.ErrTransaction
+		}
+		var currentState string
+		var currentEpoch int64
+		if err := tx.QueryRowContext(ctx, `SELECT state,security_epoch FROM identity_persons
+			WHERE id=$1 AND installation_id=$2 AND application_id=$3 FOR SHARE`, personID, installationID, applicationID).Scan(&currentState, &currentEpoch); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return stale
+			}
+			return err
+		}
+		if currentState != "active" || currentEpoch != epoch {
+			return stale
+		}
+		var currentKey string
+		var currentVerified sql.NullTime
+		if err := tx.QueryRowContext(ctx, `SELECT comparison_key,verified_at FROM identity_emails
+			WHERE id=$1 AND person_id=$2 AND installation_id=$3 AND application_id=$4 FOR SHARE`, emailID, personID, installationID, applicationID).Scan(&currentKey, &currentVerified); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return stale
+			}
+			return err
+		}
+		if currentKey != comparisonKey || !currentVerified.Valid || !currentVerified.Time.Equal(verified.Time) {
+			return stale
+		}
+		var currentMethod, currentHash string
+		var revoked sql.NullTime
+		if err := tx.QueryRowContext(ctx, `SELECT method,verifier_hash,revoked_at FROM identity_credentials
+			WHERE id=$1 AND person_id=$2 FOR SHARE`, credentialID, personID).Scan(&currentMethod, &currentHash, &revoked); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return stale
+			}
+			return err
+		}
+		if currentMethod != "email_password" || revoked.Valid || currentHash != expectedHash {
+			return stale
+		}
+		var now time.Time
+		if err := tx.QueryRowContext(ctx, `SELECT pg_catalog.clock_timestamp()`).Scan(&now); err != nil {
+			return err
+		}
+		proof, err := authproof.NewVerifiedCredential(personID, installationID, applicationID, environmentID, epoch, "email_password", now, "aal1", now.Add(12*time.Hour))
+		if err != nil {
+			return err
+		}
+		issued, err = s.cfg.Sessions.IssueForRequestTx(ctx, tx, proof, r)
+		return err
+	})
 	if err != nil {
-		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
+		if errors.Is(err, stale) && !errors.Is(err, storage.ErrTransaction) && ctx.Err() == nil {
+			write(w, r, http.StatusUnauthorized, "auth.unauthenticated", "Email or password is incorrect.")
+		} else {
+			write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
+		}
 		return
 	}
 	http.SetCookie(w, issued.Cookie)

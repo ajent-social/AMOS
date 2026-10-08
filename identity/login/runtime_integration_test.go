@@ -418,7 +418,18 @@ func TestLoginRuntimeRequiredService(t *testing.T) {
 				var transactionErr error
 				rollback := errors.New("requested callback rollback")
 				runner := loginRunnerFunc(func(c context.Context, o *sql.TxOptions, fn func(*sql.Tx) error) error {
-					if c != requestCtx || o != nil {
+					if path == "/auth" && o == nil {
+						if c != requestCtx {
+							return errors.New("initial read context changed")
+						}
+						return db.WithTx(c, o, fn)
+					}
+					if path == "/auth" {
+						deadline, bounded := c.Deadline()
+						if o == nil || o.ReadOnly || o.Isolation != sql.LevelReadCommitted || !bounded || time.Until(deadline) > 3*time.Second || c.Err() != requestCtx.Err() {
+							return errors.New("issuance context or options changed")
+						}
+					} else if c != requestCtx || o != nil {
 						return errors.New("transaction context or options changed")
 					}
 					transactionErr = db.WithTx(c, o, func(tx *sql.Tx) error {
@@ -458,7 +469,7 @@ func TestLoginRuntimeRequiredService(t *testing.T) {
 					failing = makeService(runner, db)
 					target = "rollback-" + newID(t).String() + "@example.test"
 				} else {
-					failing = makeService(db, runner)
+					failing = makeService(runner, db)
 				}
 				w := post(requestCtx, failing, path, target, secret, nil)
 				if !reached {
