@@ -169,6 +169,26 @@ func TestDatabaseTimeFenceDoesNotRefreshOrAcceptEquality(t *testing.T) {
 	}
 }
 
+func TestReadCompletionCancellationSuppressesPublication(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// Deterministic completion-boundary fault, not a PostgreSQL driver schedule:
+	// cancellation becomes observable while completion still returns success.
+	commit := func() error { cancel(); return nil }
+	if err := readCompletion(ctx, commit()); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("successful completion hid cancellation and permitted read publication")
+	}
+	if err := readCompletion(context.Background(), nil); err != nil {
+		t.Fatal("uncanceled completion denied", err)
+	}
+	if err := readCompletion(context.Background(), ErrDenied); !errors.Is(err, ErrDenied) {
+		t.Fatal("denied read lost its result")
+	}
+	if err := readCompletion(context.Background(), errors.New("synthetic failed commit")); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("failed commit permitted publication")
+	}
+}
+
 func TestProfilesAreImmutableInSeparateProcesses(t *testing.T) {
 	for _, mode := range []string{"legacy", "writer"} {
 		t.Run(mode, func(t *testing.T) {
