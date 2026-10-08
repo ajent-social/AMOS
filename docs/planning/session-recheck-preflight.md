@@ -104,3 +104,10 @@ addresses only the shared store method's lock-wait expiry boundary. It does not
 close the email inline-consume finding, credential-producer transaction graphs,
 magic-link proof timing or refreshed-principal/provenance requirements above.
 Independent review/adoption and actual service negatives precede source acceptance.
+
+
+The [v1.23 email confirmation proposal](../contracts/email-confirmation-freshness.md)
+addresses the separate inline producer, including bound email/person waits before
+shared challenge consumption. It preserves the existing lock chain and does not
+close writer-order, provenance or host-authority gates. Independent design and
+actual-service source verification remain required.
