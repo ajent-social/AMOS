@@ -10,7 +10,7 @@ provider and release scope remains in the original product plan.
 
 Extend the existing `workspace/context` owner; do not copy its selection SQL into
 a business app or compare a user to a configured owner identifier. Preserve the
-legacy constructor/middleware and standalone Resolve behavior at their historical
+legacy constructor/middleware and its private `resolve` helper at their historical
 boundary. Add a DB-free constructor and caller-transaction method:
 
 ```go
