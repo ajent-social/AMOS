@@ -40653,7 +40653,8 @@
         "examples/continuity/guide/"
       ],
       "contract_refs": [
-        "docs/planning/replacement-baseline.md"
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-guide.md"
       ],
       "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.1"
     },
@@ -40673,7 +40674,8 @@
         "examples/continuity/guide/"
       ],
       "contract_refs": [
-        "docs/planning/replacement-baseline.md"
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-guide.md"
       ],
       "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.2"
     },
@@ -40693,7 +40695,8 @@
         "examples/continuity/guide/"
       ],
       "contract_refs": [
-        "docs/planning/replacement-baseline.md"
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-guide.md"
       ],
       "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.3"
     },
@@ -40713,7 +40716,8 @@
         "examples/continuity/guide/"
       ],
       "contract_refs": [
-        "docs/planning/replacement-baseline.md"
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-guide.md"
       ],
       "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.4"
     },
@@ -40733,7 +40737,8 @@
         "examples/continuity/guide/"
       ],
       "contract_refs": [
-        "docs/planning/replacement-baseline.md"
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-guide.md"
       ],
       "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.5"
     },
@@ -40753,7 +40758,8 @@
         "examples/continuity/guide/"
       ],
       "contract_refs": [
-        "docs/planning/replacement-baseline.md"
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-guide.md"
       ],
       "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.6"
     },
