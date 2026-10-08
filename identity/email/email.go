@@ -18,7 +18,9 @@ import (
 	"time"
 
 	deliveryemail "github.com/ajent-social/amos/delivery/email"
+	"github.com/ajent-social/amos/delivery/email/materialstore"
 	"github.com/ajent-social/amos/identity/store"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/jobs"
 	"github.com/ajent-social/amos/jobs/sqlstore"
 	"github.com/ajent-social/amos/storage"
@@ -45,6 +47,7 @@ type Config struct {
 	DevelopmentLoopback bool
 	InstallationID      uuid.UUID
 	ApplicationID       uuid.UUID
+	EnvironmentID       uuid.UUID
 	ApplicationOrigin   string
 	ChallengeLifetime   time.Duration
 }
@@ -63,14 +66,18 @@ type TxRunner interface {
 }
 
 type Service struct {
-	db             TxRunner
-	outbox         *sqlstore.Store
-	renderer       *deliveryemail.Renderer
-	materials      ProtectedMaterialWriter
-	origin         *url.URL
-	installationID uuid.UUID
-	applicationID  uuid.UUID
-	ttl            time.Duration
+	root            *aw.Root
+	writerOutbox    *sqlstore.TxWriter
+	writerMaterials *materialstore.Writer
+	environmentID   uuid.UUID
+	db              TxRunner
+	outbox          *sqlstore.Store
+	renderer        *deliveryemail.Renderer
+	materials       ProtectedMaterialWriter
+	origin          *url.URL
+	installationID  uuid.UUID
+	applicationID   uuid.UUID
+	ttl             time.Duration
 }
 
 type Acknowledgement struct {
@@ -88,11 +95,7 @@ func New(db *storage.DB, outbox *sqlstore.Store, renderer *deliveryemail.Rendere
 // NewWithTxRunner constructs a service without probing or taking ownership of db.
 // Trusted composition must bind identity, outbox and materials to one database.
 func NewWithTxRunner(db TxRunner, outbox *sqlstore.Store, renderer *deliveryemail.Renderer, materials ProtectedMaterialWriter, cfg Config) (*Service, error) {
-	if nilTxRunner(db) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || cfg.ChallengeLifetime < MinChallengeLifetime || cfg.ChallengeLifetime > MaxChallengeLifetime || cfg.ChallengeLifetime%time.Second != 0 {
-		return nil, ErrInvalidRequest
-	}
-	origin, err := parseOrigin(cfg.ApplicationOrigin, cfg.DevelopmentLoopback)
-	if err != nil {
+	if nilTxRunner(db) || aw.SelectLegacy() != nil {
 		return nil, ErrInvalidRequest
 	}
 	configured := 0
@@ -108,6 +111,23 @@ func NewWithTxRunner(db TxRunner, outbox *sqlstore.Store, renderer *deliveryemai
 	if configured != 0 && configured != 3 {
 		return nil, ErrInvalidRequest
 	}
+	s, err := configuredService(renderer, cfg)
+	if err != nil {
+		return nil, err
+	}
+	s.db = db
+	s.outbox = outbox
+	s.materials = materials
+	return s, nil
+}
+func configuredService(renderer *deliveryemail.Renderer, cfg Config) (*Service, error) {
+	if !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || cfg.ChallengeLifetime < MinChallengeLifetime || cfg.ChallengeLifetime > MaxChallengeLifetime || cfg.ChallengeLifetime%time.Second != 0 {
+		return nil, ErrInvalidRequest
+	}
+	origin, err := parseOrigin(cfg.ApplicationOrigin, cfg.DevelopmentLoopback)
+	if err != nil {
+		return nil, ErrInvalidRequest
+	}
 	if renderer != nil {
 		challengeID, idErr := uuid.NewV7()
 		materialID, materialErr := uuid.NewV7()
@@ -120,7 +140,8 @@ func NewWithTxRunner(db TxRunner, outbox *sqlstore.Store, renderer *deliveryemai
 			return nil, ErrInvalidRequest
 		}
 	}
-	return &Service{db: db, outbox: outbox, renderer: renderer, materials: materials, origin: origin, installationID: cfg.InstallationID, applicationID: cfg.ApplicationID, ttl: cfg.ChallengeLifetime}, nil
+
+	return &Service{renderer: renderer, origin: origin, installationID: cfg.InstallationID, applicationID: cfg.ApplicationID, environmentID: cfg.EnvironmentID, ttl: cfg.ChallengeLifetime}, nil
 }
 
 func nilTxRunner(db TxRunner) bool {
@@ -140,6 +161,12 @@ func nilTxRunner(db TxRunner) bool {
 // Missing/already-verified contacts and a reached issue budget return the same
 // acknowledgement, avoiding account/contact enumeration.
 func (s *Service) IssueVerification(ctx context.Context, personID, emailID, requestID uuid.UUID) (Acknowledgement, error) {
+	if s != nil && s.root != nil {
+		return s.issueWriter(ctx, personID, emailID, requestID)
+	}
+	if aw.SelectLegacy() != nil {
+		return Acknowledgement{}, ErrUnavailable
+	}
 	if s == nil || s.db == nil || ctx == nil || !validID(personID) || !validID(emailID) || !validID(requestID) {
 		return Acknowledgement{}, ErrInvalidRequest
 	}
@@ -210,6 +237,9 @@ func (s *Service) IssueVerification(ctx context.Context, personID, emailID, requ
 // in the caller's account-registration transaction. Callers must return any
 // error so the account, challenge, material envelope, and outbox all roll back.
 func (s *Service) QueueExistingChallengeTx(ctx context.Context, tx *sql.Tx, personID, emailID, challengeID, requestID uuid.UUID, rawToken string) error {
+	if aw.SelectLegacy() != nil {
+		return ErrUnavailable
+	}
 	if s == nil || ctx == nil || tx == nil || !validID(personID) || !validID(emailID) || !validID(challengeID) || !validID(requestID) {
 		return ErrInvalidRequest
 	}
@@ -286,6 +316,12 @@ func (s *Service) queueChallengeTx(ctx context.Context, tx *sql.Tx, personID, em
 // Preview performs a read-only validity check for a GET confirmation page. It
 // never consumes or refreshes the challenge.
 func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, rawToken string) (Page, error) {
+	if s != nil && s.root != nil {
+		return s.previewWriter(ctx, challengeID, rawToken)
+	}
+	if aw.SelectLegacy() != nil {
+		return Page{}, ErrUnavailable
+	}
 	if s == nil || s.db == nil || ctx == nil {
 		return Page{}, ErrUnavailable
 	}
@@ -321,6 +357,12 @@ func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, rawToken s
 // A commit error is unavailable and may have an unknown outcome.
 // Wrong-purpose, expired, unknown and replayed tokens share one error.
 func (s *Service) Confirm(ctx context.Context, challengeID uuid.UUID, rawToken string) error {
+	if s != nil && s.root != nil {
+		return s.confirmWriter(ctx, challengeID, rawToken)
+	}
+	if aw.SelectLegacy() != nil {
+		return ErrUnavailable
+	}
 	if s == nil || s.db == nil || ctx == nil || !validID(challengeID) {
 		return ErrChallengeUnavailable
 	}
@@ -401,7 +443,7 @@ func (s *Service) Handler() http.Handler { return http.HandlerFunc(s.serveHTTP) 
 
 func (s *Service) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	setPrivateHeaders(w)
-	if s == nil || s.db == nil || r == nil {
+	if s == nil || (s.db == nil && s.root == nil) || r == nil {
 		http.Error(w, "Email verification is unavailable.", http.StatusServiceUnavailable)
 		return
 	}

@@ -16,7 +16,7 @@ import (
 func (s *Service) ConfirmHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		setPrivateHeaders(w)
-		if s == nil || s.db == nil || s.origin == nil {
+		if s == nil || (s.db == nil && s.root == nil) || s.origin == nil {
 			confirmationError(w, http.StatusServiceUnavailable, "dependency.unavailable")
 			return
 		}

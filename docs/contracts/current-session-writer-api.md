@@ -743,3 +743,13 @@ time and assurance bounds to that same issuance credential when constructing
 the input. Legacy callers with both fields zero retain existing behavior;
 nonzero fields require validated closed levels and finite bounds. Independent
 early review precedes implementation.
+
+Email verification's legacy Config contains installation/application but no
+environment. Add `EnvironmentID uuid.UUID`: legacy construction may leave it
+zero and preserves its existing behavior; NewWithWriter requires a valid
+nonzero value and retains it immutably. Standalone email writer roots use this
+complete realm when sealing their plan; QueueExistingChallengeWriter compares
+the supplied attempt's entire realm before SQL or delivery. The field is
+trusted composition input, never parsed from an HTTP request. This supplies
+the existing W1 realm contract without exposing a root/config getter or using
+a caller-selected environment. Independent early review precedes implementation.
