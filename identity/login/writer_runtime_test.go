@@ -293,6 +293,85 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 			t.Fatal("native session refreshed original V bounds")
 		}
 	})
+	t.Run("signin rotates prior cookie owners in both ID orders", func(t *testing.T) {
+		if cookie == nil {
+			t.Fatal("native prerequisite signin failed")
+		}
+		secondAddress := "second-" + address
+		w := post(t, signup, "/signup", registrationRequest{secondAddress, phrase}, nil, "")
+		expect(t, w, http.StatusAccepted)
+		// This fixture-only activation is confined to the second synthetic person.
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			var person uuid.UUID
+			if e := tx.QueryRowContext(ctx, `UPDATE public.identity_emails SET verified_at=pg_catalog.clock_timestamp() WHERE installation_id=$1 AND application_id=$2 AND comparison_key=$3 RETURNING person_id`, cfg.InstallationID, cfg.ApplicationID, secondAddress).Scan(&person); e != nil {
+				return e
+			}
+			_, e := tx.ExecContext(ctx, `UPDATE public.identity_persons SET state='active' WHERE id=$1 AND installation_id=$2 AND application_id=$3`, person, cfg.InstallationID, cfg.ApplicationID)
+			return e
+		}); e != nil {
+			t.Fatal("second synthetic activation failed")
+		}
+		active := func(t *testing.T, address string) (uuid.UUID, uuid.UUID) {
+			t.Helper()
+			var person, id uuid.UUID
+			if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+				return tx.QueryRowContext(ctx, `SELECT s.person_id,s.id FROM public.identity_sessions s JOIN public.identity_emails e ON e.person_id=s.person_id AND e.installation_id=s.installation_id AND e.application_id=s.application_id WHERE s.installation_id=$1 AND s.application_id=$2 AND s.environment_id=$3 AND e.comparison_key=$4 AND s.revoked_at IS NULL`, cfg.InstallationID, cfg.ApplicationID, cfg.EnvironmentID, address).Scan(&person, &id)
+			}); e != nil {
+				t.Fatal("exact active session unavailable")
+			}
+			return person, id
+		}
+		firstPerson, prior := active(t, address)
+		forward, reverse := false, false
+		for _, target := range []string{secondAddress, address} {
+			oldCookie := cookie
+			before := count(t, "identity_sessions")
+			w = post(t, signin, "/auth", signInRequest{target, phrase}, []*http.Cookie{oldCookie}, "")
+			expect(t, w, http.StatusOK)
+			capture(t, w)
+			person, current := active(t, target)
+			var revoked bool
+			if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+				return tx.QueryRowContext(ctx, `SELECT revoked_at IS NOT NULL FROM public.identity_sessions WHERE id=$1 AND installation_id=$2 AND application_id=$3 AND environment_id=$4`, prior, cfg.InstallationID, cfg.ApplicationID, cfg.EnvironmentID).Scan(&revoked)
+			}); e != nil || !revoked || current == prior || cookie.Value == oldCookie.Value || count(t, "identity_sessions") != before+1 {
+				t.Fatal("cross-person native rotation did not commit exact old/new sessions")
+			}
+			if target == secondAddress {
+				forward = bytes.Compare(firstPerson[:], person[:]) < 0
+			} else {
+				reverse = person == firstPerson
+			}
+			prior = current
+		}
+		if !forward || !reverse {
+			t.Fatal("both target/prior owner ID orders were not exercised")
+		}
+	})
+	t.Run("signin leaves foreign environment prior cookie unchanged", func(t *testing.T) {
+		if cookie == nil {
+			t.Fatal("native prerequisite signin failed")
+		}
+		foreignEnvironment := newID(t)
+		var prior uuid.UUID
+		var before, after string
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			if e := tx.QueryRowContext(ctx, `UPDATE public.identity_sessions s SET environment_id=$4 WHERE s.installation_id=$1 AND s.application_id=$2 AND s.environment_id=$3 AND s.revoked_at IS NULL AND s.person_id=(SELECT person_id FROM public.identity_emails WHERE installation_id=$1 AND application_id=$2 AND comparison_key=$5) RETURNING s.id`, cfg.InstallationID, cfg.ApplicationID, cfg.EnvironmentID, foreignEnvironment, address).Scan(&prior); e != nil {
+				return e
+			}
+			return tx.QueryRowContext(ctx, `SELECT to_jsonb(s)::text FROM public.identity_sessions s WHERE id=$1`, prior).Scan(&before)
+		}); e != nil {
+			t.Fatal("synthetic foreign environment session unavailable")
+		}
+		oldCookie := cookie
+		w := post(t, signin, "/auth", signInRequest{address, phrase}, []*http.Cookie{oldCookie}, "")
+		expect(t, w, http.StatusOK)
+		capture(t, w)
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `SELECT to_jsonb(s)::text FROM public.identity_sessions s WHERE id=$1 AND environment_id=$2`, prior, foreignEnvironment).Scan(&after)
+		}); e != nil || before != after || cookie.Value == oldCookie.Value {
+			t.Fatal("local sign-in changed foreign environment cookie owner")
+		}
+	})
 	if cookie == nil {
 		t.Fatal("native prerequisite signin failed")
 	}
