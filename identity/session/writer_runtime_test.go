@@ -224,7 +224,7 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 		}
 	})
 	var issued Issued
-	for _, mode := range []string{"success", "cancel after finish", "staging replay", "action mismatch", "disabled person"} {
+	for _, mode := range []string{"success", "cancel after finish", "staging replay", "action mismatch", "disabled person", "staged fence replay", "wrong staged time"} {
 		t.Run("staging "+mode, func(t *testing.T) {
 			caseCtx, stop := context.WithCancel(ctx)
 			defer stop()
@@ -326,6 +326,24 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				f, e := a.DrainAndSample(ctx)
 				if e != nil {
 					return fail(e)
+				}
+				if mode == "wrong staged time" {
+					if e = service.CheckStagedWriter(ctx, a, staged, f.Add(time.Nanosecond)); e == nil {
+						t.Error("caller-selected final time admitted")
+					}
+					return aw.UnavailableRollback
+				}
+				if e = service.CheckStagedWriter(ctx, a, staged, f); e != nil {
+					return fail(e)
+				}
+				if mode == "staged fence replay" {
+					if e = service.CheckStagedWriter(ctx, a, staged, f); e == nil {
+						t.Error("staged fence replay admitted")
+					}
+					if staged.data.finalOK {
+						t.Error("failed replay retained success marker")
+					}
+					return aw.UnavailableRollback
 				}
 				permit, e = wp.Finalize(a, evidence, f)
 				if e != nil {

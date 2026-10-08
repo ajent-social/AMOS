@@ -69,6 +69,11 @@ type currentRow struct {
 }
 
 func (s *Service) readCurrent(ctx context.Context, tx *sql.Tx, person, id uuid.UUID, locking bool) (currentRow, time.Time, error) {
+	return s.readCurrentAt(ctx, tx, person, id, locking, time.Time{})
+}
+
+// A nonzero fixed time is the root-recorded final sample; it is never refreshed.
+func (s *Service) readCurrentAt(ctx context.Context, tx *sql.Tx, person, id uuid.UUID, locking bool, now time.Time) (currentRow, time.Time, error) {
 	var v currentRow
 	suffix := ""
 	if locking {
@@ -97,9 +102,10 @@ func (s *Service) readCurrent(ctx context.Context, tx *sql.Tx, person, id uuid.U
 	if err != nil {
 		return v, time.Time{}, ErrUnavailable
 	}
-	var now time.Time
-	if err = tx.QueryRowContext(ctx, `SELECT pg_catalog.clock_timestamp()`).Scan(&now); err != nil || now.IsZero() {
-		return v, time.Time{}, ErrUnavailable
+	if now.IsZero() {
+		if err = tx.QueryRowContext(ctx, `SELECT pg_catalog.clock_timestamp()`).Scan(&now); err != nil || now.IsZero() {
+			return v, time.Time{}, ErrUnavailable
+		}
 	}
 	switch state {
 	case "active", "pending_verification", "self_disabled", "administratively_disabled", "deletion_pending":
