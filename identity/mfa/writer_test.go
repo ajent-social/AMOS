@@ -60,7 +60,10 @@ func TestNativeWriterPureConstruction(t *testing.T) {
 		t.Fatal("nil root admitted")
 	}
 }
-func TestNativeWriterPureNoPublicPrincipalAdmission(t *testing.T) {
+
+// This exercises absence of private admission, not a forged complete principal
+// or a foreign service's otherwise valid middleware context.
+func TestNativeWriterPureRejectsMissingPrivateAdmission(t *testing.T) {
 	s, err := NewWithWriter(&aw.Root{}, writerTestConfig())
 	if err != nil {
 		t.Fatal(err)
@@ -68,10 +71,10 @@ func TestNativeWriterPureNoPublicPrincipalAdmission(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if got, err := s.BeginEnrollment(ctx, identity.Principal{}, "bounded password"); got != (Enrollment{}) || !errors.Is(err, ErrDenied) {
-		t.Fatal("public principal established enrollment authority")
+		t.Fatal("missing private admission established enrollment authority")
 	}
 	if got, err := s.Status(ctx, identity.Principal{}); got != (FactorStatus{}) || !errors.Is(err, ErrDenied) {
-		t.Fatal("public principal established status authority")
+		t.Fatal("missing private admission established status authority")
 	}
 	if got, err := NewWriter(&aw.Attempt{}); got != nil || err == nil {
 		t.Fatal("zero attempt made factor writer")
