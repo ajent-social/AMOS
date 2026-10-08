@@ -714,3 +714,17 @@ lookup. Empty inventories cannot obtain SQL and use the action's existing
 no-target denial/no-op behavior. Known-ID methods continue using their exact
 arguments directly. This preserves existing public entry-point shapes without
 an arbitrary SQL getter or a second discovery phase after P.
+
+Session staging must also match its closed WriterRequest action to the private
+issuance action without extracting evidence. Proposed additive comparison:
+
+```go
+func (i Issuance) CheckAction(a *aw.Attempt, action Action) error
+```
+
+It first applies Check's exact live/acquired/binding/issuing-variant rules, then
+requires equality with the captured closed action. It returns no action getter,
+credential or SQL and never consumes or resets the credential bit. StageWriter
+must call it with the action bound by DiscoverPrior before obtaining any session
+SQL or consuming Credential. A wrong action fails unavailable even when the
+attempt and subject match. Independent review precedes implementation.
