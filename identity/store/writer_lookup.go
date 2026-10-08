@@ -189,6 +189,6 @@ func (s *Store) CreateMagicChallenge(ctx context.Context, v Challenge, digest []
 	if p.startedAt == nil || !v.ExpiresAt.After(*p.startedAt) {
 		return s.failed(ErrInvalidInput)
 	}
-	result, e := p.tx.ExecContext(ctx, `INSERT INTO public.identity_challenges(id,person_id,email_id,purpose,token_digest,expires_at,browser_binding_digest,created_at) SELECT $1,e.person_id,e.id,$4,$5,$6,$7,$8 FROM public.identity_emails e WHERE e.id=$3 AND e.person_id=$2 AND $6>$8`, v.ID, v.PersonID, v.EmailID, v.Purpose, v.Digest, v.ExpiresAt, digest, p.startedAt)
+	result, e := p.tx.ExecContext(ctx, `INSERT INTO public.identity_challenges(id,person_id,email_id,purpose,token_digest,expires_at,browser_binding_digest,created_at) SELECT $1,e.person_id,e.id,$4,$5,$6::timestamptz,$7,$8::timestamptz FROM public.identity_emails e WHERE e.id=$3 AND e.person_id=$2 AND $6::timestamptz>$8::timestamptz`, v.ID, v.PersonID, v.EmailID, v.Purpose, v.Digest, v.ExpiresAt, digest, p.startedAt)
 	return s.failed(dbResult(result, e))
 }
