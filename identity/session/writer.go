@@ -166,10 +166,23 @@ func issuing(action wp.Action) bool {
 	return false
 }
 func writerFailure(a *aw.Attempt, err error) error {
-	if e := a.Finish(aw.UnavailableRollback); e != nil {
+	outcome := aw.UnavailableRollback
+	if errors.Is(err, ErrUnauthenticated) {
+		outcome = aw.DeniedRollback
+	}
+	if e := a.Finish(outcome); e != nil {
 		return err
 	}
 	return err
+}
+
+// Store participant errors already marked the terminal root outcome. Mapping
+// them must neither Finish again nor resume SQL after a semantic denial.
+func terminalStoreError(err error) error {
+	if errors.Is(err, store.ErrSessionUnavailable) || errors.Is(err, store.ErrPersonUnavailable) || errors.Is(err, store.ErrChallengeUnavailable) {
+		return ErrUnauthenticated
+	}
+	return ErrUnavailable
 }
 
 // DiscoverPrior runs only in G. Its result includes a cross-person prior-cookie
@@ -277,17 +290,17 @@ func (s *Service) StageWriter(ctx context.Context, a *aw.Attempt, proof wp.Issua
 		return Staged{}, writerFailure(a, ErrUnauthenticated)
 	}
 	if d.priorID != uuid.Nil {
-		// Use the exact scoped discovered digest. Revoked rows are harmless, but no
-		// other error can be ignored after staging starts.
+		// The exact prior row was discovered and acquired. Any participant
+		// failure is terminal, including a semantic disappearance/revocation.
 		err = st.RevokeSessionScoped(ctx, d.digest, store.SessionScope{InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID})
-		if err != nil && !errors.Is(err, store.ErrSessionUnavailable) {
-			return Staged{}, writerFailure(a, ErrUnavailable)
+		if err != nil {
+			return Staged{}, terminalStoreError(err)
 		}
 	}
 	digest := sha256.Sum256([]byte(d.token))
 	err = st.CreateSession(ctx, store.Session{ID: d.newID, PersonID: credential.PersonID(), InstallationID: s.cfg.InstallationID, ApplicationID: s.cfg.ApplicationID, EnvironmentID: s.cfg.EnvironmentID, TokenDigest: digest[:], SecurityEpoch: credential.SecurityEpoch(), AuthenticationMethod: credential.Method(), AuthenticatedAt: credential.AuthenticatedAt(), ExpiresAt: expires, AssuranceLevel: credential.Assurance(), AssuranceExpires: credential.AssuranceExpires()})
 	if err != nil {
-		return Staged{}, writerFailure(a, ErrUnavailable)
+		return Staged{}, terminalStoreError(err)
 	}
 	binding, err := a.Binding()
 	if err != nil {

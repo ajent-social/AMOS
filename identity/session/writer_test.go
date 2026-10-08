@@ -134,7 +134,14 @@ func TestWriterPureCurrentProofAndContextActions(t *testing.T) {
 	if _, err = s.current(changed); !errors.Is(err, ErrUnauthenticated) {
 		t.Fatal("mismatched snapshot admitted")
 	}
+	actorRequest, err := s.AdmitWriterContext(ctx, wp.MFABegin)
+	if err != nil {
+		t.Fatal(err)
+	}
 	cancel()
+	if _, err = s.ActorForWriter(ctx, &aw.Attempt{}, actorRequest); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("canceled actor misclassified", err)
+	}
 	if _, err = s.current(ctx); !errors.Is(err, ErrUnavailable) {
 		t.Fatal("canceled proof admitted")
 	}

@@ -1,6 +1,9 @@
 package store
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // The assurance pair is optional only for the unchanged legacy insertion API.
 func sessionAssurance(v Session, required bool) error {
@@ -40,8 +43,10 @@ func sessionInsert(v Session) (string, []any) {
 	args := []any{v.ID, v.PersonID, v.InstallationID, v.ApplicationID, v.EnvironmentID, v.TokenDigest, v.ExpiresAt, v.AuthenticationMethod, v.AuthenticatedAt, v.SecurityEpoch}
 	assuranceFence := ""
 	if v.AssuranceLevel != "" {
+		// W1 retains the original verification instant; insertion cannot refresh I.
+		values = strings.Replace(values, "issuance_clock.now + interval '30 minutes'", "$9::timestamptz + interval '30 minutes'", 1)
 		args = append(args, v.AssuranceExpires)
-		assuranceFence = ` AND $11::timestamptz > issuance_clock.now`
+		assuranceFence = ` AND $11::timestamptz > issuance_clock.now AND $9::timestamptz + interval '30 minutes' > issuance_clock.now`
 		if v.AssuranceLevel != "aal1" {
 			columns += `, assurance_level, assurance_expires_at`
 			values += `, $12, $11`
