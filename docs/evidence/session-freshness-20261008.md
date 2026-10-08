@@ -49,6 +49,7 @@ not exercised by this runtime profile. Legacy schema-creating integration suites
 and the full-repository race suite were outside this fixture grant.
 
 The focused public scanner reports one configuration-field forwarding expression
-in the test (`Password: cfg.Password`). Inspection found no credential literal;
+in the test that forwards the configuration password field. Inspection found
+no credential literal;
 no scanner rule was suppressed and no full-green public scan is asserted. Hosted
 CI was not used as the delivery gate.
