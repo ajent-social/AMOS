@@ -50,7 +50,8 @@ Never echo supplied values into an error, header or redirect.
 
 Fragment mode is selected only by a single `HX-Request: true` with a single
 `HX-Target: continuity-source-content`. With no HX-Request, require no HX-Target
-and return a full document. Other or duplicate values return400. These headers
+and return a full document. Other, missing or duplicate fragment metadata falls
+back to the full document under the existing UI contract. These headers
 select presentation only and never bypass middleware or current authority.
 Existing renderer links and ordinary GET forms remain fully functional without
 JavaScript. This adapter does not load HTMX or promise enhanced navigation.
@@ -72,8 +73,8 @@ successful transaction completion. It maps fixed internal error classes:
 | --- | --- |
 | Committed authorized retrieval | 200, the existing bounded full/fragment source renderer bytes |
 | Invalid selector | 400, fixed invalid-request text |
-| Established denial, missing or foreign detail | 404, existing fixed SourceNotFound renderer |
-| Unavailable database, policy, renderer, transaction or completion | 503, existing fixed SourceUnavailable renderer |
+| Established denial, missing or foreign detail | 404, fixed non-enumerating Source not found message |
+| Unavailable database, policy, renderer, transaction or completion | 503, fixed Sources are temporarily unavailable message |
 | Native authentication denial | 401, fixed authentication-required text |
 
 Native middleware failure status401/403/503 is preserved but its body/headers
@@ -90,8 +91,15 @@ already delivered and performs no database or application work after that point.
 Every response sets `Cache-Control: no-store`, `Pragma: no-cache`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
 `X-Frame-Options: DENY`, and `Vary: HX-Request, HX-Target`.
-HTML responses use `text/html; charset=utf-8`; fixed text uses
-`text/plain; charset=utf-8`. Content-Length is the selected body byte length for
+All responses use `text/html; charset=utf-8`. Errors use a fixed private
+html/template with the same source section ID and full/fragment document shape,
+a fixed back link and escaped code/message/request_id fields. Generate one fresh
+server request ID for each request, never reuse the incoming header; set the
+same X-Request-ID response header and error field. This preserves the frozen
+error contract while replacing native middleware diagnostics. Use an error-returning
+UUID generator; entropy failure returns a fixed503/no protected bytes and no
+fabricated identifier. Success rendering still uses the existing sourceview
+functions unchanged. Content-Length is the selected body byte length for
 both GET and HEAD; HEAD omits the bytes on every outcome. Omit ETag,
 Last-Modified, cookies, Location and user-supplied correlation headers. CSP is
 `default-src 'none'; style-src 'self' 'unsafe-inline'; base-uri 'none';
