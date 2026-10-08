@@ -22,7 +22,8 @@ func EnqueueWriter(ctx context.Context, a *aw.Attempt, delivery aw.Delivery, sto
 	}
 	job, err := store.EnqueueWriter(ctx, a, delivery, intent)
 	if err != nil {
-		return emailWriterFailure(a)
+		// The SQL participant has already terminated the attempt.
+		return jobs.Job{}, ErrUnavailable
 	}
 	return job, nil
 }
