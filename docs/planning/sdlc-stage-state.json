@@ -3059,6 +3059,168 @@
       },
       "external_blockers": [],
       "next_action": "Continue source rendering and separately gated authenticated retrieval, full SSR, host and rehearsal; product acceptance unchanged."
+    },
+    "T-RPL-SOURCE-VIEW.1": {
+      "task_id": "T-RPL-SOURCE-VIEW.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-SOURCE-VIEW.2",
+        "tip": "c76f344410efb1166bf58dbafb8079f4adcc2e60",
+        "scope": "Historical coordinator-held source delegation; exact released after landed checks"
+      },
+      "dependency_receipts": [
+        "T-RPL-DATA.6"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "5af066db00fa8dfba2aea717dd813ccd50dd2da0",
+        "landed": "82d62c7c84a11c574bf723d72c2f2e6e510c6ec1",
+        "pr": 63
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-source-view-20261008.md for actual pure/static checks, exact identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure source presentation; different source author and reviewer; static file browser only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue authenticated retrieval, full SSR/host/current-authority and rehearsal; no full SEARCH/WEB or product acceptance."
+    },
+    "T-RPL-SOURCE-VIEW.2": {
+      "task_id": "T-RPL-SOURCE-VIEW.2",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "T-RPL-SOURCE-VIEW.2",
+        "tip": "c76f344410efb1166bf58dbafb8079f4adcc2e60",
+        "scope": "Historical coordinator-held source delegation; exact released after landed checks"
+      },
+      "dependency_receipts": [
+        "T-RPL-SOURCE-VIEW.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "5af066db00fa8dfba2aea717dd813ccd50dd2da0",
+        "landed": "82d62c7c84a11c574bf723d72c2f2e6e510c6ec1",
+        "pr": 63
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-source-view-20261008.md for actual pure/static checks, exact identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure source presentation; different source author and reviewer; static file browser only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue authenticated retrieval, full SSR/host/current-authority and rehearsal; no full SEARCH/WEB or product acceptance."
+    },
+    "T-RPL-SOURCE-VIEW.3": {
+      "task_id": "T-RPL-SOURCE-VIEW.3",
+      "status": "COMPLETE",
+      "owner": "Isolated assigned source lane",
+      "claim": {
+        "resource": "T-RPL-SOURCE-VIEW.2",
+        "tip": "c76f344410efb1166bf58dbafb8079f4adcc2e60",
+        "scope": "Historical coordinator-held source delegation; exact released after landed checks"
+      },
+      "dependency_receipts": [
+        "T-RPL-SOURCE-VIEW.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "5af066db00fa8dfba2aea717dd813ccd50dd2da0",
+        "landed": "82d62c7c84a11c574bf723d72c2f2e6e510c6ec1",
+        "pr": 63
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-source-view-20261008.md for actual pure/static checks, exact identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure source presentation; different source author and reviewer; static file browser only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue authenticated retrieval, full SSR/host/current-authority and rehearsal; no full SEARCH/WEB or product acceptance."
+    },
+    "T-RPL-SOURCE-VIEW.4": {
+      "task_id": "T-RPL-SOURCE-VIEW.4",
+      "status": "COMPLETE",
+      "owner": "Independent exact-head reviewer",
+      "claim": {
+        "resource": "T-RPL-SOURCE-VIEW.2",
+        "tip": "c76f344410efb1166bf58dbafb8079f4adcc2e60",
+        "scope": "Historical coordinator-held source delegation; exact released after landed checks"
+      },
+      "dependency_receipts": [
+        "T-RPL-SOURCE-VIEW.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "5af066db00fa8dfba2aea717dd813ccd50dd2da0",
+        "landed": "82d62c7c84a11c574bf723d72c2f2e6e510c6ec1",
+        "pr": 63
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-source-view-20261008.md for actual pure/static checks, exact identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure source presentation; different source author and reviewer; static file browser only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue authenticated retrieval, full SSR/host/current-authority and rehearsal; no full SEARCH/WEB or product acceptance."
+    },
+    "T-RPL-SOURCE-VIEW.5": {
+      "task_id": "T-RPL-SOURCE-VIEW.5",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-SOURCE-VIEW.2",
+        "tip": "c76f344410efb1166bf58dbafb8079f4adcc2e60",
+        "scope": "Historical coordinator-held source delegation; exact released after landed checks"
+      },
+      "dependency_receipts": [
+        "T-RPL-SOURCE-VIEW.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "5af066db00fa8dfba2aea717dd813ccd50dd2da0",
+        "landed": "82d62c7c84a11c574bf723d72c2f2e6e510c6ec1",
+        "pr": 63
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-source-view-20261008.md for actual pure/static checks, exact identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure source presentation; different source author and reviewer; static file browser only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue authenticated retrieval, full SSR/host/current-authority and rehearsal; no full SEARCH/WEB or product acceptance."
+    },
+    "T-RPL-SOURCE-VIEW.6": {
+      "task_id": "T-RPL-SOURCE-VIEW.6",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-SOURCE-VIEW.2",
+        "tip": "c76f344410efb1166bf58dbafb8079f4adcc2e60",
+        "scope": "Historical coordinator-held source delegation; exact released after landed checks"
+      },
+      "dependency_receipts": [
+        "T-RPL-SOURCE-VIEW.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "5af066db00fa8dfba2aea717dd813ccd50dd2da0",
+        "landed": "82d62c7c84a11c574bf723d72c2f2e6e510c6ec1",
+        "pr": 63
+      },
+      "commands_and_results": [
+        "See docs/evidence/continuity-source-view-20261008.md for actual pure/static checks, exact identities and limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Pure source presentation; different source author and reviewer; static file browser only"
+      },
+      "external_blockers": [],
+      "next_action": "Continue authenticated retrieval, full SSR/host/current-authority and rehearsal; no full SEARCH/WEB or product acceptance."
     }
   },
   "receipt_requirements": [
