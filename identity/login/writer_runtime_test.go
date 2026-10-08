@@ -267,14 +267,16 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		if body.CSRF == "" {
 			t.Fatal("committed native session missing CSRF")
 		}
+		var next *http.Cookie
 		for _, c := range w.Result().Cookies() {
 			if strings.Contains(c.Name, "amos_session") {
-				cookie = c
+				next = c
 			}
 		}
-		if cookie == nil {
+		if next == nil {
 			t.Fatal("committed native session missing cookie")
 		}
+		cookie = next
 		csrf = body.CSRF
 	}
 	t.Run("signin wrong password and original bounds", func(t *testing.T) {
@@ -640,7 +642,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 		}
 		link, e := url.Parse(material.ActionURL)
 		if e != nil {
-			t.Fatal(e)
+			t.Fatal("magic durable action URL unavailable")
 		}
 		payload := map[string]any{"challenge_id": id.String(), "token": link.Query().Get("token")}
 		w = post(t, magicConfirm, "/magic-link/confirm", payload, nil, "")
