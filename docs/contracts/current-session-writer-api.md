@@ -56,6 +56,7 @@ func NewPlan(realm Realm, rows []Row, delivery []Delivery) (Plan, error)
 type Root struct { state *rootState }
 type Attempt struct { state *attemptState }
 type Completion struct { state *completionState }
+type Release struct { data *releaseData } // terminal committed output only
 type Outcome uint8
 const (
     Success Outcome = iota + 1
@@ -95,6 +96,9 @@ const (
 )
 func (c Completion) Outcome() (Outcome, error)
 func (c Completion) Matches(a *Attempt) bool
+func (c Completion) TakeRelease(binding Binding) (Release, error)
+func (r Release) Matches(binding Binding) bool
+func (r Release) Outcome() (Outcome, error)
 ```
 
 `Root.Run` is the sole writer-transaction owner of `runtime.WithTx`, explicit writable READ COMMITTED,
@@ -164,8 +168,12 @@ private lifetime state; copying a struct does not clone admission.
 DrainAndSample runs the fixed constraint drain, advances to F and samples DB time
 once after waits. It records and returns an instant, not identity evidence. Add
 `func (a *Attempt) IsFinalSample(t time.Time) bool`: wp.Finalize requires this
-exact recorded F instant and rejects a caller-selected replacement. Finish is once only. Success/CounterOnlyDenied require the native finalizer and
-F; DeniedRollback/UnavailableRollback can finish at any earlier phase, do not
+exact recorded F instant and rejects a caller-selected replacement.
+Finish is once only. Success/CounterOnlyDenied require root-recorded F and
+valid phase/journal state. Calling the native finalizer first is a **trusted
+native caller obligation**, not a check aw can infer: aw does not import wp or
+inspect identity evidence. Root Finish alone is never authentication proof.
+DeniedRollback/UnavailableRollback can finish at any earlier phase, do not
 require a completed plan or F, and force rollback. This permits ordinary wrong
 password/no-current-proof failures without misclassifying them as missing-finalizer
 bugs. A native private reason enum retains its route mapping; only the closed
@@ -186,6 +194,48 @@ latter has the separate mutation restrictions in W1; it is not success proof.
 Run invalidates all attempt handles on every exit, including failed commit.
 Completion is created only after storage reports commit success and can release
 one matching native result. A completion for another attempt/service cannot.
+
+### Postcommit release state (R1 lifecycle clarification)
+
+Binding carries an immutable opaque identity token separate from the mutable
+attempt state. Completion stores that token, committed outcome and a private
+atomic unused/used output bit; it does not retain a live SQL capability.
+TakeRelease rejects zero/mismatched binding, noncommitted state, unknown outcome
+or an already-used bit, then atomically consumes the bit and returns Release
+with that same token/outcome. No Release can be created before successful commit.
+Release has no transaction, context, phase, acquisition or evidence-use method.
+Its Matches/Outcome getters inspect terminal state only and cannot reopen Run.
+Failure/unknown commit never creates Completion or Release.
+
+wp.Finalize creates a Permit containing a separate immutable finalization
+snapshot: captured Binding, closed action/outcome, exact F and expected staged
+issuance identity where applicable. This terminal snapshot survives root closure
+solely for publication matching; Evidence/Issuance live-use rights still expire
+on every root exit. Permit has no credential getter or SQL-authorizing method.
+The root cannot certify the native predicates and does not claim to do so.
+Native finalizers remain responsible for exact read-only row comparisons before
+wp.Finalize; session publication requires this wp-issued snapshot in addition
+to the root's committed release. Thus root F/Finish cannot alone publish a
+cookie even if trusted native code mistakenly omits wp.Finalize.
+
+PublishWriter first validates service/staged/Permit identity, consumes exactly
+one Completion.TakeRelease(staged binding), and requires
+Permit.MatchesRelease(release) with Success before returning buffered Issued.
+The wp finalization snapshot holds the staged Issuance identity copied at F;
+publication does not call the now-invalid Issuance.Credential or ParticipantTx.
+For seed/URL/ack/counter output, the respective native adapter uses the identical
+TakeRelease + Permit.MatchesRelease protocol on its typed buffered result;
+CounterOnlyDenied's release matches only its counter Permit and returns no
+success payload. Unknown-address/rate-cap no-row acknowledgements use the action's ordinary
+generic mapping after the root has closed with rollback and no staged writes;
+they do not need or fabricate credential Permit/issuance and cannot assert that
+mail was queued. Positive staged delivery acknowledgements use the release
+protocol. SQL/completion failure is never relabeled as the generic no-op branch.
+A wrong binding/permit consumes no valid output, and any failure releases none.
+Replay of PublishWriter or release extraction fails the single atomic bit.
+Copying already published public bytes cannot be prevented by a capability API;
+no claim about such application copying is made.
+
 No raw transaction check attests its database; private composition establishes it.
 
 ## Identity evidence declarations and factory ownership
@@ -193,8 +243,9 @@ No raw transaction check attests its database; private composition establishes i
 `wp` imports only `aw`, `authproof`, UUID/time and standard helpers. Its snapshot
 inputs are values used by trusted identity code; they are not public host input.
 Each factory validates the live sealed attempt, relevant acquired rows, complete
-binding/chronology and action. All fields of evidence, issuance and permit are
-private, including a shared invalidation token and exact root/attempt/action identity.
+binding/chronology and action. Evidence and Issuance fields are private, including
+a shared live-use invalidation token and exact root/attempt/action identity.
+Permit fields are separately private terminal finalization snapshots as above;
 Session WriterRequest/Staged bind the concrete session service separately; wp
 never imports session or pretends to inspect its private fields.
 
@@ -247,7 +298,7 @@ type ProviderCheck struct {
 }
 type Evidence struct { data *evidenceData }
 type Issuance struct { data *issuanceData }
-type Permit struct { data *permitData }
+type Permit struct { data *finalizationData }
 type CounterReason uint8
 const ( BadCode CounterReason = iota + 1; Replay )
 type CounterTransition struct {
@@ -272,6 +323,7 @@ func Counter(a *aw.Attempt, actor ActorCheck, primary Evidence,
 func Finalize(a *aw.Attempt, evidence Evidence, finalDBTime time.Time) (Permit, error)
 func (p Permit) Outcome() (aw.Outcome, error)
 func (p Permit) Matches(a *aw.Attempt, issuance Issuance) bool
+func (p Permit) MatchesRelease(release aw.Release) bool
 func (i Issuance) Credential(a *aw.Attempt) (authproof.VerifiedCredential, error)
 ```
 
@@ -308,7 +360,10 @@ not permission to publish. Final Permit is required for publication after commit
 `authproof.VerifiedCredential` only for the exact live acquired attempt and
 allowed issuance action, once; session StageWriter calls it. This constrained
 identity-internal getter is not an arbitrary credential constructor or business
-factory. Permit.Matches binds final evidence to the same staged issuance. Native method strings map through the fixed
+factory. Permit.Matches binds final evidence to the same staged issuance using captured
+immutable identities, including after closure; it does not require or restore
+live evidence. MatchesRelease additionally checks the terminal committed binding
+and outcome. Only a native factory/finalizer can create a nonzero Permit. Native method strings map through the fixed
 Action variant, not caller-selected strings. Subject/contact hashes stay private;
 plaintext passwords, seed material and raw cookies are never evidence fields.
 No evidence can be serialized, placed in public context or reused across attempts.
@@ -360,7 +415,7 @@ in WriterRequest; StageWriter cannot generate an unplanned session ID;
 the caller unions these before SealPlan. Malformed/missing/foreign old cookies
 retain scoped no-foreign-mutation behavior. StageWriter validates the same
 service/attempt/request/evidence and planned old/new rows, uses S capability and
-buffers cookie/CSRF. It cannot open or finish a root. PublishWriter consumes a
+buffers cookie/CSRF. It cannot open or finish a root. PublishWriter uses the explicit terminal-release protocol above with a
 matching Success Completion, final Permit and Staged value once. The permit's
 finalized state remains inspectable for publication but cannot authorize SQL
 once its attempt is closed. Counter completion has no Staged value or cookie.

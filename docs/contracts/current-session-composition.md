@@ -219,7 +219,8 @@ never selects a commit path. All other denial/unavailable outcomes roll back.
 At F the native method compares current held rows to its original evidence and
 intended transition after every declared callback and constraint wait. Commit
 follows without further domain work. Output is buffered and released only by a
-matching Completion/Permit; root timeout, cancellation or failed/unknown commit
+matching terminal Completion.TakeRelease/Permit.MatchesRelease pair; root
+timeout, cancellation or failed/unknown commit
 releases none. F is the freshness linearization instant conditional on commit,
 not a guarantee about future network receipt time. A failed/indeterminate commit
 cannot be represented as proof that nothing committed; report unavailable and
