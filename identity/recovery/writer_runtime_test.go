@@ -219,7 +219,9 @@ func TestRecoveryWriterRuntimeRequiredService(t *testing.T) {
 		}); e != nil {
 			t.Fatal(e)
 		}
-		handler, e := guard.CookieMutation(protection.PasswordChange, svc.PasswordChangeHandler())
+		reached := false
+		native := svc.PasswordChangeHandler()
+		handler, e := guard.CookieMutation(protection.PasswordChange, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { reached = true; native.ServeHTTP(w, r) }))
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -241,7 +243,8 @@ func TestRecoveryWriterRuntimeRequiredService(t *testing.T) {
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, r)
 		if w.Code != http.StatusNoContent {
-			t.Fatalf("password change status=%d", w.Code)
+			policy := cfg.Policy.(*recoveryWriterTestPolicy)
+			t.Fatalf("password change status=%d native_handler_reached=%t initial_policy_reached=%t completion_policy_reached=%t", w.Code, reached, policy.initialEpoch != 0, policy.completedTo != 0)
 		}
 		var epoch int64
 		var remaining int

@@ -269,7 +269,7 @@ func (s *Service) ready(ctx context.Context) error {
 // consuming it; the state-changing POST is separately admitted and consumes it.
 func (s *Service) PreviewHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.db == nil {
+		if s == nil || (s.root == nil && s.db == nil) {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -340,7 +340,7 @@ func (s *Service) CompleteHandler() http.Handler {
 // validates CSRF/origin, and grants separate current/new password work budgets.
 func (s *Service) PasswordChangeHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.db == nil {
+		if s == nil || (s.root == nil && s.db == nil) {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -842,7 +842,7 @@ func writeResetPage(w http.ResponseWriter, method string, available bool, challe
 // Preview validates a reset proof without consuming it. Invalid or expired
 // proofs share the same result; callers must not render the supplied token.
 func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, token string) (bool, error) {
-	if s == nil || s.db == nil || ctx == nil {
+	if s == nil || (s.root == nil && s.db == nil) || ctx == nil {
 		return false, ErrUnavailable
 	}
 	id, ok := parseID(challengeID.String())
