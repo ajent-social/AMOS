@@ -386,3 +386,13 @@ transaction. Failure rolls back staged verification/activation. This is a narrow
 producer freshness correction, not writer compatibility or host/current-authority
 adoption. Independent exact-head review and landing precede the separately claimed
 Confirm source slice; historical T3.6 component acceptance is unchanged.
+
+## Draft amendment v1.24: current-session provenance and recheck
+
+[The exact API candidate](../contracts/current-session-recheck.md) and
+[ADR 038](../adr/038-current-session-recheck-candidate.md) propose private
+same-instance middleware provenance and a non-renewing transaction recheck that
+returns a refreshed principal. This draft is not adopted or source-ready.
+Assurance case-table, same-database, complete supported producer/writer and
+resource-composition gates must be resolved independently before source. Existing
+session/current-authority contracts and product acceptance remain unchanged.
