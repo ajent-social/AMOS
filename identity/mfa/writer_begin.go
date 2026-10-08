@@ -112,7 +112,12 @@ func (s *Service) beginWriter(ctx context.Context, principal identity.Principal,
 		if e != nil {
 			return mfaFinish(a, mfaParticipantFailure(e))
 		}
-		if e = s.policy(ctx, tx, principal, "totp.enroll"); e != nil {
+		currentPrincipal, e := s.currentPolicyPrincipal(ctx, tx, actor)
+		if e != nil {
+			return policyOutcome(a, e)
+		}
+
+		if e = s.policy(ctx, tx, currentPrincipal, "totp.enroll"); e != nil {
 			return policyOutcome(a, e)
 		}
 		primary, e := s.writerPrimary.VerifyCurrentPasswordWriter(ctx, a, wp.MFABegin, actor, supplied)
@@ -163,7 +168,7 @@ func (s *Service) beginWriter(ctx context.Context, principal identity.Principal,
 		if e = checkActorFinal(ctx, tx, actor, false, f); e != nil {
 			return policyOutcome(a, e)
 		}
-		if e = s.policy(ctx, tx, principal, "totp.enroll"); e != nil {
+		if e = s.policy(ctx, tx, currentPrincipal, "totp.enroll"); e != nil {
 			return policyOutcome(a, e)
 		}
 		reader, e := NewReadStore(tx)

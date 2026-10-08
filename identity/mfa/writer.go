@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"reflect"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ import (
 func NewWithWriter(root *aw.Root, cfg TxConfig) (*Service, error) {
 	primary, ok := cfg.Primary.(*primaryproof.Verifier)
 	sessions, sessionOK := cfg.Sessions.(*session.Service)
-	if root == nil || !ok || primary == nil || !sessionOK || sessions == nil || cfg.Vault == nil || cfg.Policy == nil || cfg.Now != nil || cfg.Issuer == "" || len(cfg.Issuer) > 64 || strings.TrimSpace(cfg.Issuer) != cfg.Issuer {
+	if root == nil || !ok || primary == nil || !sessionOK || sessions == nil || nilWriterDependency(cfg.Vault) || nilWriterDependency(cfg.Policy) || cfg.Now != nil || cfg.Issuer == "" || len(cfg.Issuer) > 64 || strings.TrimSpace(cfg.Issuer) != cfg.Issuer {
 		return nil, ErrConfiguration
 	}
 	return &Service{root: root, cfg: cfg, writerPrimary: primary, writerSessions: sessions}, nil
@@ -144,4 +145,34 @@ func checkActorFinal(ctx context.Context, tx *sql.Tx, actor wp.ActorCheck, revok
 		return ErrDenied
 	}
 	return nil
+}
+
+func nilWriterDependency(value any) bool {
+	if value == nil {
+		return true
+	}
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
+}
+
+// currentPolicyPrincipal reuses the session-owned current reader only after the
+// writer acquired the exact actor P/S rows. Reacquiring their compatible SHARE
+// locks cannot introduce a new row, an upgrade or reader-to-writer promotion.
+func (s *Service) currentPolicyPrincipal(ctx context.Context, tx *sql.Tx, actor wp.ActorCheck) (identity.Principal, error) {
+	p, err := s.writerSessions.RecheckCurrentTx(ctx, tx)
+	if err != nil {
+		if errors.Is(err, session.ErrUnauthenticated) {
+			return identity.Principal{}, ErrDenied
+		}
+		return identity.Principal{}, ErrUnavailable
+	}
+	if p.PersonID() != actor.Subject.Person || p.InstallationID() != actor.Subject.Realm.Installation || p.ApplicationID() != actor.Subject.Realm.Application || p.EnvironmentID() != actor.Subject.Realm.Environment || p.SecurityEpoch() != actor.Subject.Epoch || p.AuthenticationMethod() != actor.Method || !p.AuthenticatedAt().Equal(actor.AuthenticatedAt) || string(p.Assurance().Level()) != actor.Assurance || !p.Assurance().ExpiresAt().Equal(actor.AssuranceUntil) {
+		return identity.Principal{}, ErrDenied
+	}
+	return p, nil
 }

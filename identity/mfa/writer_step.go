@@ -104,7 +104,12 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 		if e != nil {
 			return mfaFinish(a, mfaParticipantFailure(e))
 		}
-		if e = s.policy(ctx, tx, principal, policyAction); e != nil {
+		currentPrincipal, e := s.currentPolicyPrincipal(ctx, tx, actor)
+		if e != nil {
+			return policyOutcome(a, e)
+		}
+
+		if e = s.policy(ctx, tx, currentPrincipal, policyAction); e != nil {
 			return policyOutcome(a, e)
 		}
 		primary, e := s.writerPrimary.VerifyCurrentPasswordWriter(ctx, a, action, actor, input.CurrentPassword)
@@ -252,7 +257,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 		if e = checkActorFinal(ctx, tx, actor, !counter, f); e != nil {
 			return policyOutcome(a, e)
 		}
-		if e = s.policy(ctx, tx, principal, policyAction); e != nil {
+		if e = s.policy(ctx, tx, currentPrincipal, policyAction); e != nil {
 			return policyOutcome(a, e)
 		}
 		if e = checkFactorFinal(ctx, tx, expected, t); e != nil {
