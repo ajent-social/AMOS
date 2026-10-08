@@ -51,6 +51,12 @@ escape hatch exists.
 
 ## Validation and pagination
 
+Reject excessive raw input before scanning or copying: IDs at most36 bytes,
+Kind at most14 bytes, Query at most480 bytes, titles at most800 bytes, digest
+at most64 bytes and detail body at most65536 bytes. Already-normalized repository
+values fit these limits; direct padded inputs may be rejected. Bound every result
+to512 KiB; overflow returns nil and ErrInvalid.
+
 Validate the entire model before rendering. IDs use canonical lowercase RFC4122
 UUIDv7. Query is empty or trimmed 1..120 code points, valid UTF-8, no controls;
 controls must be rejected before trimming. Kind is empty, `correspondence` or
@@ -118,8 +124,11 @@ queries and bodies, no external or injected URLs, fresh output and input isolati
 and concurrent rendering. A meaningful mutation disabling escaping or accepting
 a wrong detail hash must fail the intended test; exact restoration must pass.
 Normal/race/vet/pinned lint and different exact-head review apply. Test structural
-HTML and default form/navigation behavior; actual composed browser, responsive,
-keyboard and current-authority qualification remains T-RPL-WEB/rehearsal work.
+HTML and default form/navigation behavior. Use an existing local browser on a
+new static synthetic rendered artifact, JavaScript disabled, to inspect escaping,
+keyboard focus and long content at a narrow viewport. No server, credentials or
+service are needed; this is presentation evidence only. Actual composed browser
+journeys and current-authority qualification remain T-RPL-WEB/rehearsal work.
 
 Six additive T-RPL-SOURCE-VIEW rows record this presentation component. Existing
 search/web/host tasks and all original task records remain intact. This contract
