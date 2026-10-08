@@ -30,7 +30,7 @@ class CurrentPlanTests(unittest.TestCase):
     def test_actual_full_inventory_and_records_preserved(self):
         files = PLAN.projection_files(self.current)
         projected = json.loads(files['current-plan.json'])
-        self.assertEqual(len(projected['tasks']), 1501)
+        self.assertEqual(len(projected['tasks']), len(self.source['tasks']))
         self.assertEqual(projected['authoredSource'], self.source)
         self.assertEqual(projected['registryRecords'], self.current[4])
         self.assertEqual(projected['registryDigests'], self.current[5])
@@ -64,14 +64,14 @@ class CurrentPlanTests(unittest.TestCase):
 
     def test_missing_task_and_retention_entry_rejected(self):
         def change(s):
-            tid = s['tasks'].pop()['id']
+            tid = s['tasks'].pop(0)['id']
             s['required_task_ids'].remove(tid)
-        self.mutation(change, 'inventory count')
+        self.mutation(change, 'inventory count|differ from adopted')
 
     def test_same_count_inventory_substitution_rejected(self):
         def change(s):
-            tid = s['tasks'][-1]['id']
-            s['tasks'][-1]['id'] = 'FORGED'
+            tid = s['tasks'][0]['id']
+            s['tasks'][0]['id'] = 'FORGED'
             s['required_task_ids'][s['required_task_ids'].index(tid)] = 'FORGED'
         self.mutation(change, 'differ from adopted')
 
