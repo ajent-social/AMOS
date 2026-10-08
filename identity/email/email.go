@@ -315,9 +315,11 @@ func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, rawToken s
 	return Page{Available: available}, nil
 }
 
-// Confirm consumes the challenge, verifies only its bound contact, and
-// activates the pending person atomically. A wrong-purpose, expired, unknown,
-// or replayed token has one non-enumerating error.
+// Confirm provisionally verifies the bound contact and activates its pending
+// person, then consumes the challenge after those row waits in READ COMMITTED.
+// Callback failure rolls back all writes; success is returned only after commit.
+// A commit error is unavailable and may have an unknown outcome.
+// Wrong-purpose, expired, unknown and replayed tokens share one error.
 func (s *Service) Confirm(ctx context.Context, challengeID uuid.UUID, rawToken string) error {
 	if s == nil || s.db == nil || ctx == nil || !validID(challengeID) {
 		return ErrChallengeUnavailable
@@ -326,18 +328,18 @@ func (s *Service) Confirm(ctx context.Context, challengeID uuid.UUID, rawToken s
 	if err != nil {
 		return ErrChallengeUnavailable
 	}
-	err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	err = s.db.WithTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted}, func(tx *sql.Tx) error {
 		var personID, emailID uuid.UUID
-		err := tx.QueryRowContext(ctx, `UPDATE identity_challenges c
-			SET consumed_at=transaction_timestamp()
-			FROM identity_persons p, identity_emails e
+		err := tx.QueryRowContext(ctx, `SELECT c.person_id,c.email_id FROM identity_challenges c
+			JOIN identity_persons p ON p.id=c.person_id
+			JOIN identity_emails e ON e.id=c.email_id AND e.person_id=c.person_id
 			WHERE c.id=$1 AND c.purpose=$2 AND c.token_digest=$3
-			  AND c.consumed_at IS NULL AND c.expires_at > transaction_timestamp()
+			  AND c.consumed_at IS NULL
 			  AND p.id=c.person_id AND p.state='pending_verification'
 			  AND p.installation_id=$4 AND p.application_id=$5
 			  AND e.id=c.email_id AND e.person_id=c.person_id
 			  AND e.installation_id=$4 AND e.application_id=$5 AND e.verified_at IS NULL
-			RETURNING c.person_id,c.email_id`, challengeID, verificationPurpose, digest[:], s.installationID, s.applicationID).Scan(&personID, &emailID)
+			FOR UPDATE OF c`, challengeID, verificationPurpose, digest[:], s.installationID, s.applicationID).Scan(&personID, &emailID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrChallengeUnavailable
 		}
@@ -352,7 +354,10 @@ func (s *Service) Confirm(ctx context.Context, challengeID uuid.UUID, rawToken s
 			return ErrUnavailable
 		}
 		verifiedCount, err := verified.RowsAffected()
-		if err != nil || verifiedCount != 1 {
+		if err != nil {
+			return ErrUnavailable
+		}
+		if verifiedCount != 1 {
 			return ErrChallengeUnavailable
 		}
 		result, err := tx.ExecContext(ctx, `UPDATE identity_persons
@@ -366,6 +371,17 @@ func (s *Service) Confirm(ctx context.Context, challengeID uuid.UUID, rawToken s
 			return ErrUnavailable
 		}
 		if updated != 1 {
+			return ErrChallengeUnavailable
+		}
+		identityStore, err := store.New(tx)
+		if err != nil {
+			return ErrUnavailable
+		}
+		consumed, err := identityStore.ConsumeChallenge(ctx, challengeID, verificationPurpose, digest[:])
+		if err != nil {
+			return mapIdentityError(err)
+		}
+		if consumed.PersonID != personID || consumed.EmailID != emailID {
 			return ErrChallengeUnavailable
 		}
 		return nil
