@@ -72,6 +72,21 @@ func (i Issuance) Check(a *aw.Attempt) error {
 	}
 	return nil
 }
+
+// CheckAction validates the request action without consuming the credential.
+func (i Issuance) CheckAction(a *aw.Attempt, action Action) error {
+	if err := i.Check(a); err != nil {
+		return err
+	}
+	d := i.data.evidence
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.finalized || d.issued != i.data || d.action != action {
+		return ErrUnavailable
+	}
+	return nil
+}
+
 func (i Issuance) Credential(a *aw.Attempt) (authproof.VerifiedCredential, error) {
 	if err := i.Check(a); err != nil {
 		return authproof.VerifiedCredential{}, err

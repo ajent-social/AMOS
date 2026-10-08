@@ -191,6 +191,14 @@ func TestEvidenceRuntimeRequiredService(t *testing.T) {
 					t.Error("nonconsuming issuance check failed", e)
 					return aw.UnavailableRollback
 				}
+				if e = issuance.CheckAction(a, PasswordSignIn); e != nil {
+					t.Error("matching action rejected", e)
+					return aw.UnavailableRollback
+				}
+				if e = issuance.CheckAction(a, MagicConfirm); !errors.Is(e, ErrUnavailable) {
+					t.Error("wrong request action admitted", e)
+					return aw.UnavailableRollback
+				}
 				if mode != "no credential" {
 					credential, e := issuance.Credential(a)
 					if e != nil || credential.PersonID() != sub.Person || credential.Method() != "email_password" || !credential.AuthenticatedAt().Equal(v) {
