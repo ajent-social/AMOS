@@ -302,22 +302,41 @@ func (s *Store) RevokeSession(ctx context.Context, tokenDigest []byte) error {
 }
 
 // FindActiveSession rechecks the authoritative account state and security
-// epoch on every lookup. A stale session and an unknown token have the same
-// result.
+// epoch at READ COMMITTED after locking the scoped session row. The database
+// clock is sampled only after that lock completes; no person writer ordering
+// is implied. A stale session and an unknown token have the same result.
 func (s *Store) FindActiveSession(ctx context.Context, tokenDigest []byte, scope SessionScope) (AuthenticatedSession, error) {
 	if s == nil || s.tx == nil || ctx == nil || len(tokenDigest) != 32 ||
 		!validID(scope.InstallationID) || !validID(scope.ApplicationID) || !validID(scope.EnvironmentID) {
 		return AuthenticatedSession{}, ErrInvalidInput
 	}
+	var isolation string
+	if err := s.tx.QueryRowContext(ctx, `SHOW transaction_isolation`).Scan(&isolation); err != nil || isolation != "read committed" {
+		return AuthenticatedSession{}, ErrPersistence
+	}
+	var lockedID uuid.UUID
+	err := s.tx.QueryRowContext(ctx, `SELECT id FROM identity_sessions
+		WHERE token_digest=$1 AND installation_id=$2 AND application_id=$3 AND environment_id=$4
+		FOR UPDATE`, tokenDigest, scope.InstallationID, scope.ApplicationID, scope.EnvironmentID).Scan(&lockedID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return AuthenticatedSession{}, ErrSessionUnavailable
+	}
+	if err != nil {
+		return AuthenticatedSession{}, ErrPersistence
+	}
+	var now time.Time
+	if err := s.tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
+		return AuthenticatedSession{}, ErrPersistence
+	}
 	var session AuthenticatedSession
-	err := s.tx.QueryRowContext(ctx, `
+	err = s.tx.QueryRowContext(ctx, `
 		UPDATE identity_sessions s
-		SET last_seen_at = transaction_timestamp(),
-		    idle_expires_at = LEAST(s.expires_at, transaction_timestamp() + interval '30 minutes')
+		SET last_seen_at = $5::timestamptz,
+		    idle_expires_at = LEAST(s.expires_at, $5::timestamptz + interval '30 minutes')
 		FROM identity_persons p
 		WHERE s.token_digest = $1 AND s.person_id = p.id
-		  AND s.revoked_at IS NULL AND s.expires_at > transaction_timestamp()
-		  AND s.idle_expires_at > transaction_timestamp()
+		  AND s.revoked_at IS NULL AND s.expires_at > $5::timestamptz
+		  AND s.idle_expires_at > $5::timestamptz
 		  AND p.state = 'active' AND p.security_epoch = s.security_epoch
 		  AND s.installation_id = $2 AND s.application_id = $3 AND s.environment_id = $4
 		  AND p.installation_id = s.installation_id
@@ -325,7 +344,7 @@ func (s *Store) FindActiveSession(ctx context.Context, tokenDigest []byte, scope
 		RETURNING s.id, s.person_id, s.installation_id, s.application_id,
 		          s.environment_id, s.security_epoch, s.authentication_method,
 		          s.authenticated_at`, tokenDigest, scope.InstallationID,
-		scope.ApplicationID, scope.EnvironmentID).Scan(
+		scope.ApplicationID, scope.EnvironmentID, now).Scan(
 		&session.ID, &session.PersonID, &session.InstallationID, &session.ApplicationID,
 		&session.EnvironmentID, &session.SecurityEpoch, &session.AuthenticationMethod,
 		&session.AuthenticatedAt)
