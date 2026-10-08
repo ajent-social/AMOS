@@ -232,3 +232,146 @@ without bodies; full text is disclosed only through Source. Source hash validati
 still occurs before listing a summary, so a corrupt body cannot gain a trusted
 digest by using the list path. No list silently substitutes an empty result for
 database failure, and no list reports an unbounded inventory count.
+
+## Source-grounded host authority preflight (unadopted)
+
+Audit source: `1149112f406500e2a80c194ee7290cbd45ab2c1c`.
+Scope: T-RPL-HOST-CONTRACT.1, local source list/detail disclosure only.
+This appended section records observed seams and missing admission boundaries;
+all preceding revision 1 bytes and its repository-only adoption are preserved.
+It adopts no API, ADR, migration allocation or framework version. PR2 remains
+unadopted. No runtime checks or composed journey qualification were performed
+for this preflight.
+
+### Admission matrix at the audited source
+
+Paths below are repository-relative; function names identify the inspected
+implementation rather than a proposed callable interface.
+
+| Boundary and source | Implemented behavior and transaction owner | Missing boundary before source disclosure |
+| --- | --- | --- |
+| Local composition: [apphost/local.go](../../apphost/local.go), `NewLocal`, `LocalConfig.Business`, `Host.Serve`, `schemaReady`; [binding.go](../../apphost/binding.go), `Host.bind` | `NewLocal` opens development storage and a separate jobs pool, checks existing assurance/factor schema, binds the configured installation/application/environment, and passes `*storage.DB` and `*session.Service` to the business callback. `Serve` checks a loopback TCP listener and configured port. Business routes are registered with their supplied handlers. | No automatic session/workspace/authority wrapper surrounds business handlers. Binding is installation consistency, not person/resource authorization; readiness does not check continuity tables or its migration ledger. Startup opens dependencies and the host runs local mail jobs: neither is a read-only qualification probe. A continuity constructor, finite routes, immutable config, bounds and lifecycle still need adoption. |
+| Browser admission: [identity/session/session.go](../../identity/session/session.go), `Service.Middleware`, `AllowsOrigin`, `csrfFromRequest` | Middleware parses the configured cookie, hashes its opaque token, and owns a three-second authentication transaction through `TxRunner.WithTx`. After successful transaction completion it builds verified credential material. For methods other than GET/HEAD/OPTIONS, it requires an allowed Origin (Referer origin fallback) and session-derived CSRF proof: one `X-CSRF-Token` value, otherwise one body-only `_csrf` in a bounded 16 KiB URL-encoded form. Repeated Origin/Referer headers fail. | Safe-method source reads do not receive an origin/CSRF check from this middleware. The future host must freeze the finite read methods and cross-origin disclosure policy; unsafe requests cannot become a read fallback. Middleware uses `r.Cookie`, not duplicate-session-cookie rejection. That compatibility change requires identity review, not another application credential parser. `workspaceRequestCheck.Valid` adds the finite form check only for the workspace UI. |
+| Principal provenance: same session file, `Middleware`, `IssueForRequestTx`, `issueTx`; [identity/contracts.go](../../identity/contracts.go) | Middleware attaches trusted principal material only after authentication transaction success and unsafe-method checks. `IssueForRequestTx` stages rotation in a caller transaction and requires commit before publishing cookie/CSRF values. Principal construction stays in identity's verified-authentication plumbing. | Downstream context carries a principal snapshot, not an opaque session reference bound to this exact service instance. There is no implemented same-transaction session recheck returning a refreshed principal. `NewWithTxRunner` changes construction capability only. A person ID, context selection or configured owner ID cannot replace provenance or prove current access. |
+| Session freshness: [identity/store/store.go](../../identity/store/store.go), `FindActiveSession`; [assurance.go](../../identity/store/assurance.go), `ActiveSessionAssurance` | In the caller's READ COMMITTED transaction, `FindActiveSession` locks the digest and three-part realm-matched session before sampling `clock_timestamp()`. The conditional renewal checks old idle/absolute expiry, revocation, current active person and matching security epoch. Assurance lookup follows under that session lock, samples fresh database time and downgrades expired assurance to aal1; equality is expired. | These are renewal/assurance primitives. They do not lock the person into a complete writer-compatible protocol, preserve locks after middleware commits, or recheck after later workspace/resource/policy waits. Recalling the renewing lookup is not a non-renewing disclosure-authority API. The eventual handler must receive the refreshed principal, including downgrade, rather than the earlier snapshot. |
+| Workspace selection: [workspace/context/context.go](../../workspace/context/context.go), `Resolver.Middleware`, `resolve`, `requestedWorkspace`, `FromContext` | Rejects identity headers; requires a scoped person principal (machine authority is unavailable). Header/context/cookie workspace hints are selectors. `resolve` owns another `storage.DB.WithTx`: it checks active person/security epoch, active workspace and current personal ownership, or active organization membership plus role-version permissions. Unknown/foreign/suspended/unauthorized selections share denial. Selection is copied into context after transaction completion. | This separate transaction does not hold authority through repository work. Its reads have no authority row locks and do not recheck the session or assurance. The selection is a snapshot, not a current resource grant. Workspace SQL uses installation/application; environment must remain bound through trusted session/config and the repository's four-part scope. |
+| Workspace persistence: [workspace/store/store.go](../../workspace/store/store.go), `New`, `FindPersonalWorkspace`, `FindWorkspace`, `FindMembership`, `ReadWorkspaceEpoch`, `ReadMembershipEpoch` | Store retains the caller's transaction. `FindPersonalWorkspace` joins active scoped person and active personal workspace using a caller-supplied person selector. Other read methods expose scoped state/epochs; `FindMembership` checks active person but returns membership state for the caller to judge. Mutators such as `UpdateMembership` lock person before workspace; `SetWorkspaceState` locks workspace. | Reads alone do not serialize authorization and do not supply session provenance. Reuse the owning workspace seam after its transaction contract is reviewed; do not copy its SQL into the continuity handler or replace current ownership with configured `ownerID` equality. Complete composition must reconcile person/workspace/membership writers, role facts and deferred owner constraints. |
+| Policy and operation: [policy/contracts.go](../../policy/contracts.go), `Evaluator`, `Allowed`, `Denied`, `Unavailable`; [app/operation/operation.go](../../app/operation/operation.go), `Bind`, `NewRegistry`, `InvocationContext` | Policy defines sealed decision shapes; operation binds and snapshots metadata/codecs/resolvers/handlers. Neither supplies a current authority evaluator or exported executor. The private [invokeCallback](../../app/operation/callback_invocation.go) invalidates/drains callback SQL before result completion, but its caller still owns authority and transaction completion. | The [operation contract](operation-invocation.md) requires transaction-time state, locks and post-wait checks. Its proposed `TransactionAuthorizer` returns only `policy.Decision`, so refreshed-principal handoff remains unresolved. Native handlers need their own reviewed shared authority composition; route registration is no executor bypass. Repository `*sql.Tx` and callback `DBTX` are different capabilities; no cast, pool escape or duplicate SQL adapter is authorized here. |
+| Source retrieval: [repository/repository.go](../../examples/continuity/repository/repository.go), `New`, `ready`, `args`; [list.go](../../examples/continuity/repository/list.go), `Sources`, `ids`, `listValues`; [read.go](../../examples/continuity/repository/read.go), `Source`, `source` | Repository retains one caller-owned transaction and copies four-part scope. `Sources` validates bounded literal title/body search, finite kind, cursor and limit; selects ordered scoped IDs, closes rows, then calls `Source` for each summary. `Source` checks the same scope and validates persisted content/digest. Errors return zero/nil values; unknown and foreign detail IDs are indistinguishable NotFound. | No method authorizes, commits or retries. Public `Source` uses `source(..., false)` without a row lock; reference validation's private `FOR SHARE` path is not list/detail authority. READ COMMITTED list and detail statements are not a single inventory snapshot. Scope must come from current admitted authority, with a reviewed resource/predicate strategy and freshness checks after waits. Reuse `Sources`/`Source`; no second search or SQL implementation. |
+| Presentation: [ui/sourceview/sourceview.go](../../examples/continuity/ui/sourceview/sourceview.go), `RenderSources`, `RenderSource`, `RenderSourceError`, `render` | Pure functions validate supplied models and return escaped full/fragment HTML bytes, bounded to 512 KiB; validation/template failure returns nil bytes and `ErrInvalid`. Detail checks the exact body digest. Fixed not-found/unavailable views carry no diagnostics. | Renderer has no request, SQL, authority, status, headers or commit knowledge. Digest consistency proves no disclosure right. Full and fragment responses need identical admission. Host must choose safe status, no-store/security headers and method/fragment handling without treating HX headers as authority. |
+| Completion: [storage/db.go](../../storage/db.go), `DB.WithTx`, plus repository and renderer above | `WithTx` begins one transaction, commits only after callback success, and rolls back unsuccessful work. Callback success alone is not commit success. Repository results and rendered bytes can be held privately until the owning call returns successfully. | There is no continuity HTTP completion adapter. Its adopted contract must suppress every source byte and success status on authority, retrieval, render, cancellation or commit failure; perform final database-time/authority checks after blocking work; and release buffered output only after successful commit. No streaming, early flush, speculative response or automatic replay of an uncertain commit is justified. |
+
+### Failure and method admission
+
+Existing session middleware returns 401 for absent/invalid/unavailable sessions,
+403 for origin/CSRF rejection, and 503 for authentication dependency failure.
+Workspace middleware returns 400 for invalid/missing selectors or prohibited
+identity headers, 403 for established workspace denial, and 503 when authorization
+cannot be established. These are observed mappings, not new continuity handlers.
+
+For the future local list/detail transport, freeze these mappings before source:
+
+| Condition | Required distinction; current implementation limit |
+| --- | --- |
+| Malformed cursor/query/kind/limit/detail ID | Repository `ErrInvalid`; choose the bounded transport's 400/422 mapping explicitly. No SQL or error echo from rejected values. |
+| Authenticated but denied resource, unknown or foreign detail | Non-enumerating resource response, normally 404 with `SourceNotFound`; workspace/policy denial remains distinct internally. Renderer wording supplies no authorization decision. |
+| Database, current-policy, recheck, render or commit failure | Unavailable (503), fixed safe wording, no source bytes and no successful empty page. Never convert missing evidence into a definite denial or allow. |
+| Successful empty page | Only after actual authorized retrieval and successful transaction completion; `Sources` returns a non-nil empty slice. No total-count/inventory assertion. |
+| Unsafe or unsupported method | No continuity mutation is admitted by this list/detail slice. Exact method/Allow behavior remains to be frozen; any admitted cookie mutation elsewhere retains origin and CSRF checks. GET/HEAD/OPTIONS being exempt from CSRF does not exempt them from disclosure authority. |
+
+### SQL and migration ownership
+
+Identity owns credentials/session SQL and principal provenance; workspace owns
+workspace/member state and lifecycle SQL; the integration owner owns their
+transaction-authority composition and policy semantics. Continuity owns its
+existing repository SQL and pure presentation. A future native invocation owner
+must hold the transaction from current authority through retrieval and successful
+completion. Separate middleware transactions cannot substitute for that boundary.
+
+[migrations.Core](../../migrations/core.go) contains sequences 1-7 and accepts
+additional fragments; [NewRegistry](../../migrations/registry.go) copies a
+contiguous, unique sequence. The reference app already occupies sequence 8.
+[cmd/amos/reconcile.go](../../cmd/amos/reconcile.go), `billingMigrationRegistry`,
+and [generated application templates](../../internal/scaffold/application/templates.go)
+compose existing fragments through 16. The operation contract's sequence 17 is
+only a candidate, not an available continuity allocation.
+
+[continuity.sql](../../examples/continuity/migrations/continuity.sql) remains an
+unallocated application fragment with no exported registry constructor.
+[storage.Migrate](../../storage/migrate.go) serializes migration transactions,
+checks exact ledger-prefix IDs/checksums and commits each SQL fragment and ledger
+entry together. Only the integrator may compare the target application's exact
+immutable history and allocate a new isolated composition. Do not replace the
+reference fragment at 8, assume 17 is free, reorder existing entries, or apply DDL
+from a request/host startup callback. Fresh fixture fragment provisioning does
+not qualify an existing installation upgrade. This audit allocates nothing.
+
+### Minimum next contract work and source gate
+
+The next bounded work is T-RPL-HOST-CONTRACT.2's **design**, following independent
+review of this preflight; it is not a source-ready host assignment. Keep the
+following interfaces conceptual until the existing lifecycle owners agree exact
+signatures, semantics and an independently reviewed amendment:
+
+1. **Trusted session provenance and current-principal handoff.** Identity alone
+   mints an opaque, immutable reference after successful authentication commit
+   and request admission, bound to the exact service instance. A caller-owned
+   READ COMMITTED transaction can recheck it without accepting raw credentials,
+   caller session IDs, caller time or a fabricated principal, and receive the
+   current principal including assurance downgrade. Resolve duplicate-cookie
+   semantics explicitly. No public method name/signature is adopted here.
+2. **Current workspace/resource authority.** A shared owner supplies current
+   realm/person/session/workspace/ownership or membership/permission facts and
+   the finite read requirements in that same transaction, with a complete
+   writer-compatible row/predicate protocol. Recheck database time, expiry and
+   current decisions after later resource/policy waits and before completion.
+   Define how refreshed principal and selection reach the consumer. A policy
+   decision alone cannot silently refresh either value.
+3. **Finite local transport completion and migration composition.** Adopt exact
+   config, methods/routes, request/output/time limits, safe error/header mapping,
+   full/fragment buffering and commit ownership, and an isolated migration
+   registry allocation. Consume existing repository/renderer APIs unchanged.
+   No registered operation is exposed until its shared executor gates close.
+
+The [session preflight](../planning/session-recheck-preflight.md) remains open.
+The implemented `FindActiveSession`/`ActiveSessionAssurance` and `ConsumeChallenge`
+post-lock corrections are primitive-only evidence. `ConsumeChallenge` checks
+READ COMMITTED, locks the exact ID/purpose/digest row, samples database time,
+and conditionally consumes with that instant; it neither qualifies subsequent
+producer waits nor establishes person/session authority.
+
+A concrete unresolved producer prerequisite is
+[identity/email/email.go](../../identity/email/email.go), `Service.Confirm`:
+its separate inline challenge UPDATE still tests expiry and sets `consumed_at`
+with `transaction_timestamp()` before later email/person work. It does not call
+`ConsumeChallenge`. The next narrowly scoped producer design must address that
+actual path's post-wait freshness and transaction graph under its existing owner;
+this preflight does not authorize its repair. Complete graphs also remain open
+for rotation (`issueTx` revokes an old session before new-session insertion),
+recovery's bulk revocation, magic-link proof/policy timing, MFA and federation.
+Include cross-person old cookies, foreign-key/unique-index waits, deferred
+workspace owner triggers and callback/predicate edges. Preserve federation's
+existing final flow fence; no whole-producer correctness follows from its presence.
+Do not cap a revocation set or impose a new lock order only inside a leaf helper.
+
+Ownership remains external to this document assignment: T2.8 retains shared
+operation/current-authority integration; existing identity-flow claims including
+T3.5, T3.9 and T3.15 and workspace UI claim T6.4 are not delegated by this
+preflight. T16.1 release evidence ownership is also retained. Exact remote claim
+identities and the delegated preflight claim are recorded in the private handoff;
+no claim was acquired, released or inferred expired. Before dependent edits,
+recheck exact owner custody and obtain explicit path delegation. This author
+owns only this appended section, not identity, policy, workspace, migrations,
+plan acceptance or shared wiring.
+
+Before any dependent source admission, independently review the exact authority
+amendment, complete writer graph, refreshed handoff and migration allocation.
+Prescribe real bounded two-connection schedules for revocation/epoch changes,
+idle/absolute/assurance expiry across observed waits, workspace suspension and
+foreign resources, cancellation, rollback and failed commit. Actual HTTP tests
+must prove no full/fragment bytes escape denied/unavailable/failed completion,
+unsafe origin/CSRF rejection and no-store behavior; composed browser checks
+remain separate. Primitive fixtures and pure-renderer checks cannot satisfy
+those gates. T-RPL-SEARCH.6 still gates T-RPL-WEB.1; T-RPL-WEB.6 and
+T-RPL-HOST-CONTRACT.6 still gate T-RPL-HOST.1. Unresolved authority blocks
+composition; no task acceptance or replacement readiness follows from this audit.
