@@ -19,6 +19,7 @@ import (
 	"github.com/ajent-social/amos/identity/internal/authproof"
 	"github.com/ajent-social/amos/identity/primaryproof"
 	"github.com/ajent-social/amos/identity/session"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/storage"
 	"github.com/google/uuid"
 	"github.com/pquerna/otp"
@@ -91,8 +92,11 @@ type TxConfig struct {
 }
 
 type Service struct {
-	db  TxRunner
-	cfg TxConfig
+	db             TxRunner
+	cfg            TxConfig
+	root           *aw.Root
+	writerPrimary  *primaryproof.Verifier
+	writerSessions *session.Service
 }
 
 func New(cfg Config) (*Service, error) {
@@ -105,7 +109,7 @@ func New(cfg Config) (*Service, error) {
 // NewWithTxRunner validates configuration without calling dependencies or
 // probing database readiness. A non-nil runner need not be open or ready.
 func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Service, error) {
-	if nilTxRunner(db) || cfg.Vault == nil || cfg.Primary == nil || cfg.Policy == nil || cfg.Sessions == nil || cfg.Issuer == "" || len(cfg.Issuer) > 64 || strings.TrimSpace(cfg.Issuer) != cfg.Issuer {
+	if aw.SelectLegacy() != nil || nilTxRunner(db) || cfg.Vault == nil || cfg.Primary == nil || cfg.Policy == nil || cfg.Sessions == nil || cfg.Issuer == "" || len(cfg.Issuer) > 64 || strings.TrimSpace(cfg.Issuer) != cfg.Issuer {
 		return nil, ErrConfiguration
 	}
 	if cfg.Now == nil {
@@ -150,6 +154,13 @@ type proofRequest struct {
 }
 
 func (s *Service) BeginEnrollment(ctx context.Context, principal identity.Principal, currentPassword string) (Enrollment, error) {
+	if s != nil && s.root != nil {
+		return s.beginWriter(ctx, principal, currentPassword)
+	}
+	if aw.SelectLegacy() != nil {
+		return Enrollment{}, ErrUnavailable
+	}
+
 	if s == nil || s.db == nil || ctx == nil || currentPassword == "" || len(currentPassword) > 512 {
 		return Enrollment{}, ErrUnavailable
 	}
@@ -206,6 +217,13 @@ func (s *Service) BeginEnrollment(ctx context.Context, principal identity.Princi
 }
 
 func (s *Service) Status(ctx context.Context, principal identity.Principal) (FactorStatus, error) {
+	if s != nil && s.root != nil {
+		return s.statusWriter(ctx, principal)
+	}
+	if aw.SelectLegacy() != nil {
+		return FactorStatus{}, ErrUnavailable
+	}
+
 	if s == nil || s.db == nil || ctx == nil {
 		return FactorStatus{}, ErrUnavailable
 	}
@@ -256,6 +274,13 @@ func (s *Service) Challenge(ctx context.Context, principal identity.Principal, r
 }
 
 func (s *Service) verifyAndStepUp(ctx context.Context, principal identity.Principal, r *http.Request, input proofRequest, pending bool) (session.Issued, error) {
+	if s != nil && s.root != nil {
+		return s.stepWriter(ctx, principal, r, input, pending)
+	}
+	if aw.SelectLegacy() != nil {
+		return session.Issued{}, ErrUnavailable
+	}
+
 	if s == nil || s.db == nil || ctx == nil || r == nil || input.CurrentPassword == "" || len(input.CurrentPassword) > 512 || !validTOTPCode(input.Code) || (pending && !validID(input.FactorID)) {
 		return session.Issued{}, ErrBadCode
 	}
