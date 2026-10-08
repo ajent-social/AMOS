@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/ajent-social/amos/identity"
 	"github.com/ajent-social/amos/identity/session"
@@ -66,7 +67,7 @@ func (s *Service) statusWriter(ctx context.Context, principal identity.Principal
 		if err = s.policy(ctx, tx, final, "totp.read"); err != nil {
 			return err
 		}
-		last, err := s.writerSessions.RecheckCurrentTx(ctx, tx)
+		last, at, err := s.writerSessions.RecheckCurrentSampleTx(ctx, tx)
 		if err != nil {
 			if errors.Is(err, session.ErrUnauthenticated) {
 				return ErrDenied
@@ -76,26 +77,17 @@ func (s *Service) statusWriter(ctx context.Context, principal identity.Principal
 		if last != final {
 			return ErrDenied
 		}
-		at, err := mfaClock(ctx, tx)
-		if err != nil {
-			return ErrUnavailable
-		}
+		// No SQL, policy callback or clock follows the exact actor sample.
+		var liveActive, livePending *Factor
 		if activeErr == nil {
-			if err = factorShape(active); err != nil {
-				return err
-			}
-			result.Enabled = true
+			liveActive = &active
 		}
 		if pendingErr == nil {
-			if err = factorShape(pending); err != nil {
-				return err
-			}
-			if pending.ExpiresAt.After(at) {
-				id, expires := pending.ID, *pending.ExpiresAt
-				result.Pending = true
-				result.PendingFactorID = &id
-				result.ExpiresAt = &expires
-			}
+			livePending = &pending
+		}
+		result, err = statusAt(liveActive, livePending, at)
+		if err != nil {
+			return err
 		}
 		return nil
 	})
@@ -104,6 +96,33 @@ func (s *Service) statusWriter(ctx context.Context, principal identity.Principal
 			return FactorStatus{}, ErrDenied
 		}
 		return FactorStatus{}, ErrUnavailable
+	}
+	return result, nil
+}
+
+// statusAt performs only bounded value checks against the reader's final sample.
+// Expiry changes the reported pending flag, never the stored factor state.
+func statusAt(active, pending *Factor, at time.Time) (FactorStatus, error) {
+	if at.IsZero() {
+		return FactorStatus{}, ErrUnavailable
+	}
+	result := FactorStatus{}
+	if active != nil {
+		if factorShape(*active) != nil || active.State != FactorActive || active.CreatedAt.After(at) || active.ActivatedAt.After(at) {
+			return FactorStatus{}, ErrUnavailable
+		}
+		result.Enabled = true
+	}
+	if pending != nil {
+		if factorShape(*pending) != nil || pending.State != FactorPending || pending.CreatedAt.After(at) {
+			return FactorStatus{}, ErrUnavailable
+		}
+		if pending.ExpiresAt.After(at) {
+			id, expiry := pending.ID, *pending.ExpiresAt
+			result.Pending = true
+			result.PendingFactorID = &id
+			result.ExpiresAt = &expiry
+		}
 	}
 	return result, nil
 }
