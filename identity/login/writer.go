@@ -140,7 +140,7 @@ func (s *Service) registerWriter(w http.ResponseWriter, r *http.Request) {
 			return loginFinish(a, aw.UnavailableRollback)
 		}
 		if e = a.Acquire(ctx, aw.P); e != nil {
-			return loginFinish(a, aw.UnavailableRollback)
+			return loginRootFailure(a, e)
 		}
 		b, e := a.StartedAt()
 		if e != nil {
