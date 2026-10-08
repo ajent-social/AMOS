@@ -42,11 +42,12 @@ stay unchanged. Proof is never minted after failed commit or request admission.
 
 ## Proposed recheck algorithm
 
-1. Nil service/transaction/context, absent private proof, a different service
-   instance, or mismatching current context principal returns zero principal
-   and ErrUnauthenticated before SQL. Compare the entire admitted immutable
-   principal value; public caller fields cannot substitute. Database failures
-   return zero principal and ErrUnavailable, preserving sanitized errors.
+1. Nil service/transaction/context returns zero principal and ErrUnavailable.
+   Absent private proof, a different service instance, or mismatching current
+   context principal returns zero principal and ErrUnauthenticated before SQL.
+   Compare the entire admitted immutable principal value; public caller fields
+   cannot substitute. Database failures return zero principal and ErrUnavailable,
+   preserving sanitized errors.
 2. Require actual READ COMMITTED and a transaction that permits row locking.
    Do not silently change isolation or retry. Unsupported isolation, closed or
    canceled transactions and failure to establish mode are unavailable.
@@ -63,14 +64,29 @@ stay unchanged. Proof is never minted after failed commit or request admission.
 5. Resolve current assurance using that same sampled instant. Expired elevated
    assurance downgrades to aal1; expired base session is unauthenticated. Do not
    upgrade beyond the admitted snapshot or extend its assurance validity. The
-   exact expiry when levels differ is the earlier applicable validity bound;
-   the final adopted contract must pin the case table, including an already
-   downgraded snapshot. With PersistAssurance disabled, no optional-column read
-   is allowed and only the existing aal1 profile is available.
+   exact case table below governs expiry and an already downgraded snapshot.
+   With PersistAssurance disabled, no optional-column read is allowed and only
+   the existing aal1 profile is available.
 6. Build and return the refreshed principal through identity's internal verified
    credential bridge, with zero output on every failure. Do not overwrite the
    original context proof. Repeated calls in the same transaction are permitted;
    they acquire no stronger locks and resample time after later blocking work.
+
+For assurance, let E be current absolute session expiry (idle validity is checked
+separately), A be admitted assurance expiry and C be current elevated expiry.
+The sampled instant must be strictly before every selected validity bound.
+
+| Admitted snapshot | Current durable assurance at the sampled instant | Returned assurance |
+| --- | --- | --- |
+| aal1 | Any level | aal1 through min(A,E); reject as unauthenticated if that bound has elapsed. No upgrade. |
+| aal2/aal3 with A elapsed | Any level | aal1 through E. The expired step-up does not terminate an otherwise live base session. |
+| aal2/aal3 with A live | Elevated current level with C live | Lower of the admitted/current levels through min(A,C,E). |
+| aal2/aal3 with A live | Current aal1 or expired elevated C | aal1 through E. |
+
+Unknown levels, inconsistent nullable assurance fields, invalid chronology or
+bounds beyond the schema's allowed lifetime are unavailable, not downgraded
+success. No row is repaired by this read. Tests must cover every table row,
+strict equality at A/C/E and a fresh higher persisted assurance after admission.
 
 The authority caller passes the returned principal into workspace/policy/handler
 logic. It must not keep using the original snapshot after an Allowed decision.
@@ -99,7 +115,7 @@ support this distinction; they do not qualify the complete AMOS transaction grap
 | Email confirmation, registration and issuance | Include their actual parent/contact/challenge and deferred workspace-trigger edges. v1.23 correction and earlier primitive fixes are bounded inputs, not full writer qualification. |
 | Workspace/resource/callback work after identity | Its separate contract must forbid an order that re-enters conflicting identity locks after resources. Include role/absence predicates and deferred owner checks. Repeated identity recheck may only resample already-held compatible rows. |
 
-Adoption is blocked until the assurance case table, same-database composition,
+Adoption is blocked until the proposed assurance case table, same-database composition,
 all supported producer freshness, and complete selected writer/callback/trigger
 protocol have independently reviewed resolutions and prescribed actual schedules.
 A proven subset can be a separately reviewed explicit host profile; it cannot
