@@ -46779,7 +46779,7 @@
     "baseline_terminal": "T-RPL-REHEARSAL.6",
     "mapping": "docs/planning/replacement-baseline.md",
     "original_task_count": 1501,
-    "added_task_count": 85,
+    "added_task_count": 91,
     "qualification": "Existing evidence registries remain authoritative. Baseline terminal supplements and does not replace complete product/production terminal. Generic feature contracts remain unadopted until reviewed.",
     "original_full_scope_terminal": "T-PROD.13",
     "full_scope_terminal": "T-REPLACEMENT-ACCEPT"
