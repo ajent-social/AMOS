@@ -3,7 +3,9 @@ package recovery
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	deliveryemail "github.com/ajent-social/amos/delivery/email"
 	"github.com/ajent-social/amos/delivery/email/materialstore"
@@ -202,13 +204,81 @@ func TestRecoveryWriterRuntimeRequiredService(t *testing.T) {
 			t.Fatalf("replay status=%d", w.Code)
 		}
 	})
+	t.Run("guarded password change preserves actor and completes epoch transition", func(t *testing.T) {
+		raw := bytes.Repeat([]byte{0x52}, 32)
+		digest := sha256.Sum256(raw)
+		cookie := &http.Cookie{Name: "__Host-amos_session", Value: base64.RawURLEncoding.EncodeToString(raw)}
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			_, e := tx.ExecContext(ctx, `INSERT INTO identity_sessions(id,person_id,installation_id,application_id,environment_id,token_digest,security_epoch,authentication_method,authenticated_at,expires_at,idle_expires_at) VALUES($1,$2,$3,$4,$5,$6,1,'email_password',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour',clock_timestamp()+interval '30 minutes')`, newRecoveryID(t), account.personID, cfg.InstallationID, cfg.ApplicationID, cfg.EnvironmentID, digest[:])
+			return e
+		}); e != nil {
+			t.Fatal(e)
+		}
+		handler, e := guard.CookieMutation(protection.PasswordChange, svc.PasswordChangeHandler())
+		if e != nil {
+			t.Fatal(e)
+		}
+		handler = sessions.Middleware(handler)
+		data, e := json.Marshal(map[string]string{"current_password": newPassword, "new_password": oldPassword})
+		if e != nil {
+			t.Fatal(e)
+		}
+		r := httptest.NewRequest(http.MethodPost, cfg.ApplicationOrigin+"/change-password", bytes.NewReader(data)).WithContext(ctx)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Origin", cfg.ApplicationOrigin)
+		r.RemoteAddr = "192.0.2.37:1234"
+		r.AddCookie(cookie)
+		csrf, ok := sessions.CSRFToken(r)
+		if !ok {
+			t.Fatal("native CSRF token unavailable")
+		}
+		r.Header.Set("X-CSRF-Token", csrf)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		if w.Code != http.StatusNoContent {
+			t.Fatalf("password change status=%d", w.Code)
+		}
+		var epoch int64
+		var remaining int
+		var encoded string
+		if e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+			if e := tx.QueryRowContext(ctx, `SELECT security_epoch FROM identity_persons WHERE id=$1`, account.personID).Scan(&epoch); e != nil {
+				return e
+			}
+			if e := tx.QueryRowContext(ctx, `SELECT count(*) FROM identity_sessions WHERE person_id=$1 AND revoked_at IS NULL`, account.personID).Scan(&remaining); e != nil {
+				return e
+			}
+			return tx.QueryRowContext(ctx, `SELECT verifier_hash FROM identity_credentials WHERE person_id=$1 AND method='email_password' AND revoked_at IS NULL`, account.personID).Scan(&encoded)
+		}); e != nil {
+			t.Fatal(e)
+		}
+		checked, e := setupHasher.Verify(ctx, "verify-change", oldPassword, encoded, nil)
+		if e != nil || !checked.Verified || epoch != 2 || remaining != 0 {
+			t.Fatal("password change durable transition incomplete")
+		}
+		policy := cfg.Policy.(*recoveryWriterTestPolicy)
+		if policy.initialEpoch != 1 || policy.completedFrom != 1 || policy.completedTo != 2 {
+			t.Fatal("completion did not preserve original policy actor")
+		}
+	})
+
 }
 
-type recoveryWriterTestPolicy struct{ allowRecoveryPolicy }
+type recoveryWriterTestPolicy struct {
+	allowRecoveryPolicy
+	initialEpoch, completedFrom, completedTo int64
+}
 
-func (*recoveryWriterTestPolicy) AuthorizePasswordChangeCompletion(_ context.Context, _ *sql.Tx, p identity.Principal, epoch int64) error {
+func (policy *recoveryWriterTestPolicy) AuthorizePasswordChangeCompletion(_ context.Context, _ *sql.Tx, p identity.Principal, epoch int64) error {
 	if p.SecurityEpoch() < 0 || p.SecurityEpoch() == int64(^uint64(0)>>1) || epoch != p.SecurityEpoch()+1 {
 		return ErrPolicyDenied
 	}
+	policy.completedFrom = p.SecurityEpoch()
+	policy.completedTo = epoch
+	return nil
+}
+
+func (policy *recoveryWriterTestPolicy) AuthorizePasswordChange(_ context.Context, _ *sql.Tx, p identity.Principal) error {
+	policy.initialEpoch = p.SecurityEpoch()
 	return nil
 }
