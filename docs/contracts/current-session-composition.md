@@ -163,8 +163,10 @@ passes no raw pool/TxRunner/SQL transaction to business configuration. Read-only
 reader services are constructed by that same composition with private capability
 custody; they do not select a legacy writer profile.
 
-Every old identity/workspace/MFA/personal constructor and detached issuance entry
-checks the frozen profile before SQL. In W1 it returns the existing domain
+Every old authority-writer service/store constructor and detached issuance entry
+checks the frozen profile before SQL. Pure password/primaryproof/vault objects
+without transaction ownership do not select Legacy; their old Tx-taking writer
+methods still refuse W1 use. In W1 it returns the existing domain
 unavailable/configuration error even if supplied a genuine root transaction;
 only NewWriter/StageWriter accept its Attempt. Legacy constructors in Legacy
 retain existing development behavior. NewWriter checks root/profile/lifetime;

@@ -105,6 +105,11 @@ configuration forwards this callback. Native services close over typed local
 results; they expose them only after a matching successful Completion. The
 callback receives the derived context; the attempt stores its cancellation
 function/deadline and request identity, not a reusable context for later calls.
+Run derives a context with an aw-private key/token for this attempt, preserving
+original middleware/budget context values. Participant methods require that
+same private token and an unexpired root deadline; derived shorter contexts are
+allowed, background/replaced contexts are not. There is no exported marker setter;
+this token is ordering provenance, never credential admission.
 
 Root.Read uses the same runtime and bounded context for non-mutating reader
 transactions, with explicit writable READ COMMITTED where row SHARE is needed.
