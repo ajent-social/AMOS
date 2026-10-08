@@ -16,6 +16,8 @@ type attemptState struct {
 	token            *identityToken
 	tx               *sql.Tx
 	deadline         time.Time
+	startedAt        time.Time
+	databaseDeadline time.Time
 	done             <-chan struct{}
 	live, finished   bool
 	failed           error
@@ -334,10 +336,19 @@ func (a *Attempt) DrainAndSample(ctx context.Context) (time.Time, error) {
 	if err = s.tx.QueryRowContext(ctx, `SELECT pg_catalog.clock_timestamp()`).Scan(&now); err != nil || now.IsZero() {
 		return time.Time{}, s.poison(ErrUnavailable)
 	}
+	if !s.validFinalTime(now) {
+		return time.Time{}, s.poison(ErrUnavailable)
+	}
 	s.phase = F
 	s.sample = now
 	return now, nil
 }
+
+func (s *attemptState) validFinalTime(now time.Time) bool {
+	return !now.IsZero() && !s.startedAt.IsZero() && !s.databaseDeadline.IsZero() &&
+		!now.Before(s.startedAt) && now.Before(s.databaseDeadline)
+}
+
 func (a *Attempt) IsFinalSample(t time.Time) bool {
 	s, err := a.lockLive()
 	defer unlock(s)
