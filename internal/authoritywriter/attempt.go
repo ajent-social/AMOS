@@ -385,6 +385,18 @@ func (a *Attempt) Finish(outcome Outcome) error {
 	s, err := a.lockLive()
 	defer unlock(s)
 	if err != nil {
+		// A scoped missing/occupied row is a semantic denial. It poisons all
+		// further SQL but still permits the matching terminal rollback marker.
+		// Never relabel a phase/config/query failure as an ordinary denial.
+		if s != nil && err == ErrDenied && outcome == DeniedRollback && s.live && !s.finished && s.tx != nil && active(s.root) && time.Now().Before(s.deadline) {
+			select {
+			case <-s.done:
+				return ErrUnavailable
+			default:
+				s.finished, s.outcome = true, DeniedRollback
+				return nil
+			}
+		}
 		return err
 	}
 	switch outcome {

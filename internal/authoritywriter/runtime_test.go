@@ -170,6 +170,44 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 		}
 	})
 	row := Row{Persons, person, ExistingUpdate}
+	for _, missing := range []bool{true, false} {
+		name := "occupied reserved row denies"
+		expected := Row{Persons, person, ReservedInsert}
+		if missing {
+			name = "missing existing row denies"
+			expected = Row{Persons, testID(t), ExistingUpdate}
+		}
+		t.Run(name, func(t *testing.T) {
+			denialPlan, e := NewPlan(realm, []Row{expected}, nil)
+			if e != nil {
+				t.Fatal(e)
+			}
+			completion, e := root.Run(ctx, func(ctx context.Context, a *Attempt) Outcome {
+				if e := a.SealPlan(denialPlan); e != nil {
+					t.Error(e)
+					return UnavailableRollback
+				}
+				if e := a.Acquire(ctx, P); !errors.Is(e, ErrDenied) {
+					t.Error("expected row semantic denial", e)
+					return UnavailableRollback
+				}
+				if _, e := a.ParticipantTx(ctx, P, []Row{expected}); !errors.Is(e, ErrDenied) {
+					t.Error("denied attempt regained SQL", e)
+				}
+				if e := a.Finish(DeniedRollback); e != nil {
+					t.Error("semantic rollback could not finish", e)
+					return UnavailableRollback
+				}
+				return DeniedRollback
+			})
+			if !errors.Is(e, ErrDenied) {
+				t.Fatal("missing or occupied planned row was not denied", e)
+			}
+			if _, e := completion.Outcome(); e == nil {
+				t.Fatal("semantic rollback returned completion")
+			}
+		})
+	}
 	plan, err := NewPlan(realm, []Row{row}, nil)
 	if err != nil {
 		t.Fatal(err)
