@@ -17,7 +17,7 @@ func issueFields(d *evidenceData) (string, time.Time, string, time.Time, bool) {
 		return "email_magic_link", v, "aal1", v.Add(12 * time.Hour), true
 	case d.kind == totpKind && (d.action == MFAConfirm || d.action == MFAChallenge):
 		v := d.factor.VerifiedAt
-		return d.actor.Method, v, "aal2", v.Add(15 * time.Minute), true
+		return "password+totp", v, "aal2", v.Add(15 * time.Minute), true
 	case d.kind == providerKind && d.action == FederationCallbackLogin:
 		v := d.provider.ValidatedAt
 		return d.provider.Provider, v, "aal1", v.Add(12 * time.Hour), true
