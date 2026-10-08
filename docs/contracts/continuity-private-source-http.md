@@ -60,9 +60,14 @@ JavaScript. This adapter does not load HTMX or promise enhanced navigation.
 
 Wrap the entire native middleware and inner handler in a private bounded response
 collector. It implements only `http.ResponseWriter`; no Flush, Hijack, Push,
-ReaderFrom or unwrap escape exists. It stores at most512 KiB of body and8 KiB of
-header names/values, with at most32 values. Overflow marks failure, discards the
-buffer and prevents later writes from publishing. Informational status codes,
+ReaderFrom or unwrap escape exists. It stores at most512 KiB of body. Body
+overflow marks failure, discards the buffer and prevents later writes from
+publishing. Header() necessarily returns a directly mutable http.Header map:
+8 KiB of header names/values and32 values are checked as final publication
+budgets, not an intermediate allocation quota. The closed production native
+middleware and inner handler have fixed bounded header writers; no arbitrary
+production handler is accepted. Oversized final headers are discarded before
+publication, using only separately constructed fixed failure headers. Informational status codes,
 redirects, cookies, unknown status and unexpected headers are rejected at final
 validation; no provisional middleware output is copied to the real writer.
 
