@@ -39,6 +39,9 @@ const digest = b => crypto.createHash('sha256').update(b).digest('hex');
    await page.keyboard.press('Tab');
    assert.equal(await page.locator(':focus').textContent(),'Skip to content');
    record.first_focus='Skip to content';
+   await page.keyboard.press('Enter');
+   assert.equal(await page.locator(':focus').getAttribute('id'),'main-content');
+   record.skip_activation='main-content';
    if(record.name==='detail') {
     const expected='\n'+'long<&>text'.repeat(5000)+'\n';
     assert.equal(await page.locator('pre').textContent(),expected);

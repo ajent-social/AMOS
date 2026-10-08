@@ -434,12 +434,12 @@ func TestCopiesAndConcurrency(t *testing.T) {
 	}
 }
 
-// TestStaticArtifacts is an opt-in synthetic static browser fixture generator.
+// TestStaticArtifacts generates and checks synthetic static browser fixtures.
 // Pure unit runs do not claim browser qualification or access any service.
 func TestStaticArtifacts(t *testing.T) {
 	dir := os.Getenv("SOURCEVIEW_STATIC_DIR")
 	if dir == "" {
-		return
+		dir = t.TempDir()
 	}
 	if !filepath.IsAbs(dir) {
 		t.Fatal("absolute output directory required")
@@ -459,6 +459,7 @@ func TestStaticArtifacts(t *testing.T) {
 		t.Fatal(e)
 	}
 	for name, b := range map[string][]byte{"detail.html": detail, "list.html": list} {
+		structure(t, b, false)
 		if e = os.WriteFile(filepath.Join(dir, name), b, 0600); e != nil {
 			t.Fatal(e)
 		}
