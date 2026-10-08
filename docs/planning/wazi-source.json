@@ -40013,6 +40013,1624 @@
       "status": "COMPLETE",
       "projection_id": "E-SDLC-TX.T-INT-HOST-04.3.F1",
       "dependency_depth": 21
+    },
+    {
+      "id": "T-RPL-CONTRACT.1",
+      "title": "Adopt bounded standalone continuity acceptance and pure domain contract: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact public-safe contract and acceptance mapping independently approved; no source, service or replacement acceptance inferred. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-domain.md",
+        "docs/adr/033-standalone-continuity-baseline.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-CONTRACT.1"
+    },
+    {
+      "id": "T-RPL-CONTRACT.2",
+      "title": "Adopt bounded standalone continuity acceptance and pure domain contract: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-CONTRACT.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact public-safe contract and acceptance mapping independently approved; no source, service or replacement acceptance inferred. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-domain.md",
+        "docs/adr/033-standalone-continuity-baseline.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-CONTRACT.2"
+    },
+    {
+      "id": "T-RPL-CONTRACT.3",
+      "title": "Adopt bounded standalone continuity acceptance and pure domain contract: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-CONTRACT.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact public-safe contract and acceptance mapping independently approved; no source, service or replacement acceptance inferred. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-domain.md",
+        "docs/adr/033-standalone-continuity-baseline.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-CONTRACT.3"
+    },
+    {
+      "id": "T-RPL-CONTRACT.4",
+      "title": "Adopt bounded standalone continuity acceptance and pure domain contract: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-CONTRACT.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact public-safe contract and acceptance mapping independently approved; no source, service or replacement acceptance inferred. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-domain.md",
+        "docs/adr/033-standalone-continuity-baseline.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-CONTRACT.4"
+    },
+    {
+      "id": "T-RPL-CONTRACT.5",
+      "title": "Adopt bounded standalone continuity acceptance and pure domain contract: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-CONTRACT.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact public-safe contract and acceptance mapping independently approved; no source, service or replacement acceptance inferred. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-domain.md",
+        "docs/adr/033-standalone-continuity-baseline.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-CONTRACT.5"
+    },
+    {
+      "id": "T-RPL-CONTRACT.6",
+      "title": "Adopt bounded standalone continuity acceptance and pure domain contract: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-CONTRACT.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact public-safe contract and acceptance mapping independently approved; no source, service or replacement acceptance inferred. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/planning/replacement-baseline.md",
+        "docs/contracts/continuity-domain.md",
+        "docs/adr/033-standalone-continuity-baseline.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-CONTRACT.6"
+    },
+    {
+      "id": "T-RPL-DOMAIN.1",
+      "title": "Implement continuity domain value rules: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Finite validated case changes, unsent drafts, supporting checklist and procedure revision rules pass meaningful negatives; no I/O or authority API. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/domain/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DOMAIN.1"
+    },
+    {
+      "id": "T-RPL-DOMAIN.2",
+      "title": "Implement continuity domain value rules: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-DOMAIN.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Finite validated case changes, unsent drafts, supporting checklist and procedure revision rules pass meaningful negatives; no I/O or authority API. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/domain/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DOMAIN.2"
+    },
+    {
+      "id": "T-RPL-DOMAIN.3",
+      "title": "Implement continuity domain value rules: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-DOMAIN.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Finite validated case changes, unsent drafts, supporting checklist and procedure revision rules pass meaningful negatives; no I/O or authority API. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/domain/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DOMAIN.3"
+    },
+    {
+      "id": "T-RPL-DOMAIN.4",
+      "title": "Implement continuity domain value rules: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-DOMAIN.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Finite validated case changes, unsent drafts, supporting checklist and procedure revision rules pass meaningful negatives; no I/O or authority API. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/domain/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DOMAIN.4"
+    },
+    {
+      "id": "T-RPL-DOMAIN.5",
+      "title": "Implement continuity domain value rules: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-DOMAIN.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Finite validated case changes, unsent drafts, supporting checklist and procedure revision rules pass meaningful negatives; no I/O or authority API. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/domain/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DOMAIN.5"
+    },
+    {
+      "id": "T-RPL-DOMAIN.6",
+      "title": "Implement continuity domain value rules: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-DOMAIN.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Finite validated case changes, unsent drafts, supporting checklist and procedure revision rules pass meaningful negatives; no I/O or authority API. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/domain/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DOMAIN.6"
+    },
+    {
+      "id": "T-RPL-HOST-CONTRACT.1",
+      "title": "Adopt local continuity persistence and host authority contract: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST-CONTRACT.1"
+    },
+    {
+      "id": "T-RPL-HOST-CONTRACT.2",
+      "title": "Adopt local continuity persistence and host authority contract: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-HOST-CONTRACT.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST-CONTRACT.2"
+    },
+    {
+      "id": "T-RPL-HOST-CONTRACT.3",
+      "title": "Adopt local continuity persistence and host authority contract: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-HOST-CONTRACT.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST-CONTRACT.3"
+    },
+    {
+      "id": "T-RPL-HOST-CONTRACT.4",
+      "title": "Adopt local continuity persistence and host authority contract: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-HOST-CONTRACT.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST-CONTRACT.4"
+    },
+    {
+      "id": "T-RPL-HOST-CONTRACT.5",
+      "title": "Adopt local continuity persistence and host authority contract: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-HOST-CONTRACT.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST-CONTRACT.5"
+    },
+    {
+      "id": "T-RPL-HOST-CONTRACT.6",
+      "title": "Adopt local continuity persistence and host authority contract: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-HOST-CONTRACT.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/continuity-host.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST-CONTRACT.6"
+    },
+    {
+      "id": "T-RPL-DATA.1",
+      "title": "Implement continuity application repository: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-DOMAIN.6",
+        "T-RPL-HOST-CONTRACT.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Real PostgreSQL proves scoped register, case CAS, unsent draft, supporting checklist, procedure plus atomic activity, rollback and stale/foreign denial; app-owned migrations only under integrator allocation. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/repository/",
+        "examples/continuity/migrations/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DATA.1"
+    },
+    {
+      "id": "T-RPL-DATA.2",
+      "title": "Implement continuity application repository: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-DATA.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Real PostgreSQL proves scoped register, case CAS, unsent draft, supporting checklist, procedure plus atomic activity, rollback and stale/foreign denial; app-owned migrations only under integrator allocation. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/repository/",
+        "examples/continuity/migrations/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DATA.2"
+    },
+    {
+      "id": "T-RPL-DATA.3",
+      "title": "Implement continuity application repository: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-DATA.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Real PostgreSQL proves scoped register, case CAS, unsent draft, supporting checklist, procedure plus atomic activity, rollback and stale/foreign denial; app-owned migrations only under integrator allocation. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/repository/",
+        "examples/continuity/migrations/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DATA.3"
+    },
+    {
+      "id": "T-RPL-DATA.4",
+      "title": "Implement continuity application repository: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-DATA.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Real PostgreSQL proves scoped register, case CAS, unsent draft, supporting checklist, procedure plus atomic activity, rollback and stale/foreign denial; app-owned migrations only under integrator allocation. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/repository/",
+        "examples/continuity/migrations/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DATA.4"
+    },
+    {
+      "id": "T-RPL-DATA.5",
+      "title": "Implement continuity application repository: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-DATA.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Real PostgreSQL proves scoped register, case CAS, unsent draft, supporting checklist, procedure plus atomic activity, rollback and stale/foreign denial; app-owned migrations only under integrator allocation. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/repository/",
+        "examples/continuity/migrations/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DATA.5"
+    },
+    {
+      "id": "T-RPL-DATA.6",
+      "title": "Implement continuity application repository: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-DATA.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Real PostgreSQL proves scoped register, case CAS, unsent draft, supporting checklist, procedure plus atomic activity, rollback and stale/foreign denial; app-owned migrations only under integrator allocation. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/repository/",
+        "examples/continuity/migrations/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-DATA.6"
+    },
+    {
+      "id": "T-RPL-SEARCH.1",
+      "title": "Implement bounded local source and document retrieval: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-DATA.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Authorized source drilldown and bounded real local text search resolve immutable content digests; unknown/foreign/unavailable and unsafe input cases fail visibly; no model dependency. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/search/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-SEARCH.1"
+    },
+    {
+      "id": "T-RPL-SEARCH.2",
+      "title": "Implement bounded local source and document retrieval: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-SEARCH.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Authorized source drilldown and bounded real local text search resolve immutable content digests; unknown/foreign/unavailable and unsafe input cases fail visibly; no model dependency. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/search/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-SEARCH.2"
+    },
+    {
+      "id": "T-RPL-SEARCH.3",
+      "title": "Implement bounded local source and document retrieval: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-SEARCH.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Authorized source drilldown and bounded real local text search resolve immutable content digests; unknown/foreign/unavailable and unsafe input cases fail visibly; no model dependency. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/search/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-SEARCH.3"
+    },
+    {
+      "id": "T-RPL-SEARCH.4",
+      "title": "Implement bounded local source and document retrieval: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-SEARCH.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Authorized source drilldown and bounded real local text search resolve immutable content digests; unknown/foreign/unavailable and unsafe input cases fail visibly; no model dependency. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/search/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-SEARCH.4"
+    },
+    {
+      "id": "T-RPL-SEARCH.5",
+      "title": "Implement bounded local source and document retrieval: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-SEARCH.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Authorized source drilldown and bounded real local text search resolve immutable content digests; unknown/foreign/unavailable and unsafe input cases fail visibly; no model dependency. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/search/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-SEARCH.5"
+    },
+    {
+      "id": "T-RPL-SEARCH.6",
+      "title": "Implement bounded local source and document retrieval: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-SEARCH.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Authorized source drilldown and bounded real local text search resolve immutable content digests; unknown/foreign/unavailable and unsafe input cases fail visibly; no model dependency. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/search/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-SEARCH.6"
+    },
+    {
+      "id": "T-RPL-GUIDE.1",
+      "title": "Implement explicit deterministic continuity scenarios: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-DOMAIN.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Pure guided scenarios use supplied current state and source references, preserve unknown authority and distinguish unsupported questions; no claims of live agents or effects. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/guide/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.1"
+    },
+    {
+      "id": "T-RPL-GUIDE.2",
+      "title": "Implement explicit deterministic continuity scenarios: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-GUIDE.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Pure guided scenarios use supplied current state and source references, preserve unknown authority and distinguish unsupported questions; no claims of live agents or effects. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/guide/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.2"
+    },
+    {
+      "id": "T-RPL-GUIDE.3",
+      "title": "Implement explicit deterministic continuity scenarios: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-GUIDE.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Pure guided scenarios use supplied current state and source references, preserve unknown authority and distinguish unsupported questions; no claims of live agents or effects. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/guide/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.3"
+    },
+    {
+      "id": "T-RPL-GUIDE.4",
+      "title": "Implement explicit deterministic continuity scenarios: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-GUIDE.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Pure guided scenarios use supplied current state and source references, preserve unknown authority and distinguish unsupported questions; no claims of live agents or effects. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/guide/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.4"
+    },
+    {
+      "id": "T-RPL-GUIDE.5",
+      "title": "Implement explicit deterministic continuity scenarios: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-GUIDE.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Pure guided scenarios use supplied current state and source references, preserve unknown authority and distinguish unsupported questions; no claims of live agents or effects. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/guide/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.5"
+    },
+    {
+      "id": "T-RPL-GUIDE.6",
+      "title": "Implement explicit deterministic continuity scenarios: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-GUIDE.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Pure guided scenarios use supplied current state and source references, preserve unknown authority and distinguish unsupported questions; no claims of live agents or effects. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/guide/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-GUIDE.6"
+    },
+    {
+      "id": "T-RPL-WEB.1",
+      "title": "Implement responsive continuity SSR journeys: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-DATA.6",
+        "T-RPL-SEARCH.6",
+        "T-RPL-GUIDE.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Mapped RB1-RB9 journeys through SSR and progressive HTMX, keyboard and narrow-screen states, escaped content, conflict/error states and JS-free forms; server denies final decisions and sending. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/ui/",
+        "examples/continuity/tests/browser/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-WEB.1"
+    },
+    {
+      "id": "T-RPL-WEB.2",
+      "title": "Implement responsive continuity SSR journeys: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-WEB.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Mapped RB1-RB9 journeys through SSR and progressive HTMX, keyboard and narrow-screen states, escaped content, conflict/error states and JS-free forms; server denies final decisions and sending. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/ui/",
+        "examples/continuity/tests/browser/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-WEB.2"
+    },
+    {
+      "id": "T-RPL-WEB.3",
+      "title": "Implement responsive continuity SSR journeys: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-WEB.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Mapped RB1-RB9 journeys through SSR and progressive HTMX, keyboard and narrow-screen states, escaped content, conflict/error states and JS-free forms; server denies final decisions and sending. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/ui/",
+        "examples/continuity/tests/browser/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-WEB.3"
+    },
+    {
+      "id": "T-RPL-WEB.4",
+      "title": "Implement responsive continuity SSR journeys: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-WEB.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Mapped RB1-RB9 journeys through SSR and progressive HTMX, keyboard and narrow-screen states, escaped content, conflict/error states and JS-free forms; server denies final decisions and sending. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/ui/",
+        "examples/continuity/tests/browser/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-WEB.4"
+    },
+    {
+      "id": "T-RPL-WEB.5",
+      "title": "Implement responsive continuity SSR journeys: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-WEB.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Mapped RB1-RB9 journeys through SSR and progressive HTMX, keyboard and narrow-screen states, escaped content, conflict/error states and JS-free forms; server denies final decisions and sending. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/ui/",
+        "examples/continuity/tests/browser/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-WEB.5"
+    },
+    {
+      "id": "T-RPL-WEB.6",
+      "title": "Implement responsive continuity SSR journeys: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-WEB.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Mapped RB1-RB9 journeys through SSR and progressive HTMX, keyboard and narrow-screen states, escaped content, conflict/error states and JS-free forms; server denies final decisions and sending. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/ui/",
+        "examples/continuity/tests/browser/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-WEB.6"
+    },
+    {
+      "id": "T-RPL-HOST.1",
+      "title": "Compose independently runnable local continuity app: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-WEB.6",
+        "T-RPL-HOST-CONTRACT.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/cmd/",
+        "examples/continuity/README.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST.1"
+    },
+    {
+      "id": "T-RPL-HOST.2",
+      "title": "Compose independently runnable local continuity app: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-HOST.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/cmd/",
+        "examples/continuity/README.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST.2"
+    },
+    {
+      "id": "T-RPL-HOST.3",
+      "title": "Compose independently runnable local continuity app: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-HOST.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/cmd/",
+        "examples/continuity/README.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST.3"
+    },
+    {
+      "id": "T-RPL-HOST.4",
+      "title": "Compose independently runnable local continuity app: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-HOST.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/cmd/",
+        "examples/continuity/README.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST.4"
+    },
+    {
+      "id": "T-RPL-HOST.5",
+      "title": "Compose independently runnable local continuity app: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-HOST.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/cmd/",
+        "examples/continuity/README.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST.5"
+    },
+    {
+      "id": "T-RPL-HOST.6",
+      "title": "Compose independently runnable local continuity app: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-HOST.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "examples/continuity/cmd/",
+        "examples/continuity/README.md"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-HOST.6"
+    },
+    {
+      "id": "T-RPL-REHEARSAL.1",
+      "title": "Qualify isolated continuity replacement journey: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-HOST.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "All RB1-RB10 rows have actual exact-source real-PostgreSQL/browser/restart/restore and independent receipts. No existing installation mutation or cutover; source, rehearsal, deployment and provider states separate. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/evidence/",
+        "examples/continuity/tests/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REHEARSAL.1"
+    },
+    {
+      "id": "T-RPL-REHEARSAL.2",
+      "title": "Qualify isolated continuity replacement journey: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-REHEARSAL.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "All RB1-RB10 rows have actual exact-source real-PostgreSQL/browser/restart/restore and independent receipts. No existing installation mutation or cutover; source, rehearsal, deployment and provider states separate. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/evidence/",
+        "examples/continuity/tests/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REHEARSAL.2"
+    },
+    {
+      "id": "T-RPL-REHEARSAL.3",
+      "title": "Qualify isolated continuity replacement journey: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-REHEARSAL.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "All RB1-RB10 rows have actual exact-source real-PostgreSQL/browser/restart/restore and independent receipts. No existing installation mutation or cutover; source, rehearsal, deployment and provider states separate. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/evidence/",
+        "examples/continuity/tests/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REHEARSAL.3"
+    },
+    {
+      "id": "T-RPL-REHEARSAL.4",
+      "title": "Qualify isolated continuity replacement journey: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-REHEARSAL.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "All RB1-RB10 rows have actual exact-source real-PostgreSQL/browser/restart/restore and independent receipts. No existing installation mutation or cutover; source, rehearsal, deployment and provider states separate. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/evidence/",
+        "examples/continuity/tests/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REHEARSAL.4"
+    },
+    {
+      "id": "T-RPL-REHEARSAL.5",
+      "title": "Qualify isolated continuity replacement journey: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-REHEARSAL.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "All RB1-RB10 rows have actual exact-source real-PostgreSQL/browser/restart/restore and independent receipts. No existing installation mutation or cutover; source, rehearsal, deployment and provider states separate. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/evidence/",
+        "examples/continuity/tests/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REHEARSAL.5"
+    },
+    {
+      "id": "T-RPL-REHEARSAL.6",
+      "title": "Qualify isolated continuity replacement journey: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-REHEARSAL.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "All RB1-RB10 rows have actual exact-source real-PostgreSQL/browser/restart/restore and independent receipts. No existing installation mutation or cutover; source, rehearsal, deployment and provider states separate. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/evidence/",
+        "examples/continuity/tests/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-REHEARSAL.6"
+    },
+    {
+      "id": "T-FEATURE-CONTRACT.1",
+      "title": "Adopt generic feature view operation definitions: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Resolve RFC0002 vocabulary, authoritative OpenAPI/policy references, stable identities, strict rejection and app/framework ownership; no parallel permission model. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/feature-definitions.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-CONTRACT.1"
+    },
+    {
+      "id": "T-FEATURE-CONTRACT.2",
+      "title": "Adopt generic feature view operation definitions: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-FEATURE-CONTRACT.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Resolve RFC0002 vocabulary, authoritative OpenAPI/policy references, stable identities, strict rejection and app/framework ownership; no parallel permission model. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/feature-definitions.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-CONTRACT.2"
+    },
+    {
+      "id": "T-FEATURE-CONTRACT.3",
+      "title": "Adopt generic feature view operation definitions: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-FEATURE-CONTRACT.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Resolve RFC0002 vocabulary, authoritative OpenAPI/policy references, stable identities, strict rejection and app/framework ownership; no parallel permission model. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/feature-definitions.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-CONTRACT.3"
+    },
+    {
+      "id": "T-FEATURE-CONTRACT.4",
+      "title": "Adopt generic feature view operation definitions: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-FEATURE-CONTRACT.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Resolve RFC0002 vocabulary, authoritative OpenAPI/policy references, stable identities, strict rejection and app/framework ownership; no parallel permission model. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/feature-definitions.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-CONTRACT.4"
+    },
+    {
+      "id": "T-FEATURE-CONTRACT.5",
+      "title": "Adopt generic feature view operation definitions: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-FEATURE-CONTRACT.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Resolve RFC0002 vocabulary, authoritative OpenAPI/policy references, stable identities, strict rejection and app/framework ownership; no parallel permission model. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/feature-definitions.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-CONTRACT.5"
+    },
+    {
+      "id": "T-FEATURE-CONTRACT.6",
+      "title": "Adopt generic feature view operation definitions: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-FEATURE-CONTRACT.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Resolve RFC0002 vocabulary, authoritative OpenAPI/policy references, stable identities, strict rejection and app/framework ownership; no parallel permission model. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/feature-definitions.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-CONTRACT.6"
+    },
+    {
+      "id": "T-FEATURE-BINDING.1",
+      "title": "Implement reviewed feature view operation binding: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-FEATURE-CONTRACT.6",
+        "T12.1",
+        "T2.8"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Deterministic domain-neutral generation and view binding preserve operation policy and authored overrides; missing schema/components/authority fail closed. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featurebinding/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-BINDING.1"
+    },
+    {
+      "id": "T-FEATURE-BINDING.2",
+      "title": "Implement reviewed feature view operation binding: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-FEATURE-BINDING.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Deterministic domain-neutral generation and view binding preserve operation policy and authored overrides; missing schema/components/authority fail closed. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featurebinding/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-BINDING.2"
+    },
+    {
+      "id": "T-FEATURE-BINDING.3",
+      "title": "Implement reviewed feature view operation binding: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-FEATURE-BINDING.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Deterministic domain-neutral generation and view binding preserve operation policy and authored overrides; missing schema/components/authority fail closed. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featurebinding/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-BINDING.3"
+    },
+    {
+      "id": "T-FEATURE-BINDING.4",
+      "title": "Implement reviewed feature view operation binding: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-FEATURE-BINDING.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Deterministic domain-neutral generation and view binding preserve operation policy and authored overrides; missing schema/components/authority fail closed. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featurebinding/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-BINDING.4"
+    },
+    {
+      "id": "T-FEATURE-BINDING.5",
+      "title": "Implement reviewed feature view operation binding: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-FEATURE-BINDING.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Deterministic domain-neutral generation and view binding preserve operation policy and authored overrides; missing schema/components/authority fail closed. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featurebinding/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-BINDING.5"
+    },
+    {
+      "id": "T-FEATURE-BINDING.6",
+      "title": "Implement reviewed feature view operation binding: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-FEATURE-BINDING.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Deterministic domain-neutral generation and view binding preserve operation policy and authored overrides; missing schema/components/authority fail closed. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featurebinding/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-BINDING.6"
+    },
+    {
+      "id": "T-FEATURE-EVOLUTION.1",
+      "title": "Implement reviewed feature evolution lifecycle: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-FEATURE-BINDING.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Reviewed definition diff handles rename/removal, queued work, append-only migration, compatibility, preimage conflicts and forward repair without automatic data destruction. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featureevolution/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-EVOLUTION.1"
+    },
+    {
+      "id": "T-FEATURE-EVOLUTION.2",
+      "title": "Implement reviewed feature evolution lifecycle: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-FEATURE-EVOLUTION.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Reviewed definition diff handles rename/removal, queued work, append-only migration, compatibility, preimage conflicts and forward repair without automatic data destruction. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featureevolution/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-EVOLUTION.2"
+    },
+    {
+      "id": "T-FEATURE-EVOLUTION.3",
+      "title": "Implement reviewed feature evolution lifecycle: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-FEATURE-EVOLUTION.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Reviewed definition diff handles rename/removal, queued work, append-only migration, compatibility, preimage conflicts and forward repair without automatic data destruction. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featureevolution/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-EVOLUTION.3"
+    },
+    {
+      "id": "T-FEATURE-EVOLUTION.4",
+      "title": "Implement reviewed feature evolution lifecycle: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-FEATURE-EVOLUTION.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Reviewed definition diff handles rename/removal, queued work, append-only migration, compatibility, preimage conflicts and forward repair without automatic data destruction. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featureevolution/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-EVOLUTION.4"
+    },
+    {
+      "id": "T-FEATURE-EVOLUTION.5",
+      "title": "Implement reviewed feature evolution lifecycle: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-FEATURE-EVOLUTION.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Reviewed definition diff handles rename/removal, queued work, append-only migration, compatibility, preimage conflicts and forward repair without automatic data destruction. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featureevolution/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-EVOLUTION.5"
+    },
+    {
+      "id": "T-FEATURE-EVOLUTION.6",
+      "title": "Implement reviewed feature evolution lifecycle: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-FEATURE-EVOLUTION.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Reviewed definition diff handles rename/removal, queued work, append-only migration, compatibility, preimage conflicts and forward repair without automatic data destruction. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "internal/featureevolution/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-FEATURE-EVOLUTION.6"
+    },
+    {
+      "id": "T-OPTIONAL-CONTEXT.1",
+      "title": "Adopt optional host context and bridge retirement: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Independent standalone operation, exact scoped disclosure, separately owned development/review/release, installation-specific bridge retirement, at most one effect dispatcher and reconciliation of unknown outcomes are explicit reviewed contracts; no private endpoints. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/optional-host-context.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-OPTIONAL-CONTEXT.1"
+    },
+    {
+      "id": "T-OPTIONAL-CONTEXT.2",
+      "title": "Adopt optional host context and bridge retirement: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-OPTIONAL-CONTEXT.1"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Independent standalone operation, exact scoped disclosure, separately owned development/review/release, installation-specific bridge retirement, at most one effect dispatcher and reconciliation of unknown outcomes are explicit reviewed contracts; no private endpoints. Author the bounded deliverable and documentation without modifying sibling-owned paths.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/optional-host-context.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-OPTIONAL-CONTEXT.2"
+    },
+    {
+      "id": "T-OPTIONAL-CONTEXT.3",
+      "title": "Adopt optional host context and bridge retirement: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-OPTIONAL-CONTEXT.2"
+      ],
+      "owner": "Isolated assigned source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Independent standalone operation, exact scoped disclosure, separately owned development/review/release, installation-specific bridge retirement, at most one effect dispatcher and reconciliation of unknown outcomes are explicit reviewed contracts; no private endpoints. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/optional-host-context.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-OPTIONAL-CONTEXT.3"
+    },
+    {
+      "id": "T-OPTIONAL-CONTEXT.4",
+      "title": "Adopt optional host context and bridge retirement: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-OPTIONAL-CONTEXT.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Independent standalone operation, exact scoped disclosure, separately owned development/review/release, installation-specific bridge retirement, at most one effect dispatcher and reconciliation of unknown outcomes are explicit reviewed contracts; no private endpoints. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/optional-host-context.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-OPTIONAL-CONTEXT.4"
+    },
+    {
+      "id": "T-OPTIONAL-CONTEXT.5",
+      "title": "Adopt optional host context and bridge retirement: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-OPTIONAL-CONTEXT.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Independent standalone operation, exact scoped disclosure, separately owned development/review/release, installation-specific bridge retirement, at most one effect dispatcher and reconciliation of unknown outcomes are explicit reviewed contracts; no private endpoints. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/optional-host-context.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-OPTIONAL-CONTEXT.5"
+    },
+    {
+      "id": "T-OPTIONAL-CONTEXT.6",
+      "title": "Adopt optional host context and bridge retirement: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-OPTIONAL-CONTEXT.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Independent standalone operation, exact scoped disclosure, separately owned development/review/release, installation-specific bridge retirement, at most one effect dispatcher and reconciliation of unknown outcomes are explicit reviewed contracts; no private endpoints. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "docs/contracts/optional-host-context.md",
+        "docs/adr/"
+      ],
+      "contract_refs": [
+        "docs/planning/replacement-baseline.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-OPTIONAL-CONTEXT.6"
     }
   ],
   "scope": "Complete original product plus AWS production at https://amos.sire.run",
@@ -44781,6 +46399,93 @@
     "T-INT-HOST-04.5",
     "T-INT-HOST-04.6",
     "T-INT-HOST-04.2.F1",
-    "T-INT-HOST-04.3.F1"
-  ]
+    "T-INT-HOST-04.3.F1",
+    "T-RPL-CONTRACT.1",
+    "T-RPL-CONTRACT.2",
+    "T-RPL-CONTRACT.3",
+    "T-RPL-CONTRACT.4",
+    "T-RPL-CONTRACT.5",
+    "T-RPL-CONTRACT.6",
+    "T-RPL-DOMAIN.1",
+    "T-RPL-DOMAIN.2",
+    "T-RPL-DOMAIN.3",
+    "T-RPL-DOMAIN.4",
+    "T-RPL-DOMAIN.5",
+    "T-RPL-DOMAIN.6",
+    "T-RPL-HOST-CONTRACT.1",
+    "T-RPL-HOST-CONTRACT.2",
+    "T-RPL-HOST-CONTRACT.3",
+    "T-RPL-HOST-CONTRACT.4",
+    "T-RPL-HOST-CONTRACT.5",
+    "T-RPL-HOST-CONTRACT.6",
+    "T-RPL-DATA.1",
+    "T-RPL-DATA.2",
+    "T-RPL-DATA.3",
+    "T-RPL-DATA.4",
+    "T-RPL-DATA.5",
+    "T-RPL-DATA.6",
+    "T-RPL-SEARCH.1",
+    "T-RPL-SEARCH.2",
+    "T-RPL-SEARCH.3",
+    "T-RPL-SEARCH.4",
+    "T-RPL-SEARCH.5",
+    "T-RPL-SEARCH.6",
+    "T-RPL-GUIDE.1",
+    "T-RPL-GUIDE.2",
+    "T-RPL-GUIDE.3",
+    "T-RPL-GUIDE.4",
+    "T-RPL-GUIDE.5",
+    "T-RPL-GUIDE.6",
+    "T-RPL-WEB.1",
+    "T-RPL-WEB.2",
+    "T-RPL-WEB.3",
+    "T-RPL-WEB.4",
+    "T-RPL-WEB.5",
+    "T-RPL-WEB.6",
+    "T-RPL-HOST.1",
+    "T-RPL-HOST.2",
+    "T-RPL-HOST.3",
+    "T-RPL-HOST.4",
+    "T-RPL-HOST.5",
+    "T-RPL-HOST.6",
+    "T-RPL-REHEARSAL.1",
+    "T-RPL-REHEARSAL.2",
+    "T-RPL-REHEARSAL.3",
+    "T-RPL-REHEARSAL.4",
+    "T-RPL-REHEARSAL.5",
+    "T-RPL-REHEARSAL.6",
+    "T-FEATURE-CONTRACT.1",
+    "T-FEATURE-CONTRACT.2",
+    "T-FEATURE-CONTRACT.3",
+    "T-FEATURE-CONTRACT.4",
+    "T-FEATURE-CONTRACT.5",
+    "T-FEATURE-CONTRACT.6",
+    "T-FEATURE-BINDING.1",
+    "T-FEATURE-BINDING.2",
+    "T-FEATURE-BINDING.3",
+    "T-FEATURE-BINDING.4",
+    "T-FEATURE-BINDING.5",
+    "T-FEATURE-BINDING.6",
+    "T-FEATURE-EVOLUTION.1",
+    "T-FEATURE-EVOLUTION.2",
+    "T-FEATURE-EVOLUTION.3",
+    "T-FEATURE-EVOLUTION.4",
+    "T-FEATURE-EVOLUTION.5",
+    "T-FEATURE-EVOLUTION.6",
+    "T-OPTIONAL-CONTEXT.1",
+    "T-OPTIONAL-CONTEXT.2",
+    "T-OPTIONAL-CONTEXT.3",
+    "T-OPTIONAL-CONTEXT.4",
+    "T-OPTIONAL-CONTEXT.5",
+    "T-OPTIONAL-CONTEXT.6"
+  ],
+  "replacement_context": {
+    "status": "PROPOSED_PENDING_REVIEW",
+    "baseline_terminal": "T-RPL-REHEARSAL.6",
+    "full_scope_terminal": "T-PROD.13",
+    "mapping": "docs/planning/replacement-baseline.md",
+    "original_task_count": 1501,
+    "added_task_count": 78,
+    "qualification": "Existing evidence registries remain authoritative. Baseline terminal supplements and does not replace complete product/production terminal. Generic feature contracts remain unadopted until reviewed."
+  }
 }
