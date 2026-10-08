@@ -55,7 +55,12 @@ type TxConfig struct {
 	ApplicationOrigin string
 }
 type Store struct {
-	db                                     TxRunner
+	db TxRunner
+	*writerData
+}
+
+// writerData contains only copied configuration and cryptographic state.
+type writerData struct {
 	installation, application, environment uuid.UUID
 	active                                 string
 	keys                                   map[string]cipher.AEAD
@@ -72,14 +77,25 @@ func New(cfg Config) (*Store, error) {
 
 // NewWithTxRunner validates configuration without performing database I/O.
 func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Store, error) {
-	if nilRunner(db) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || !keyPattern.MatchString(cfg.ActiveKeyID) || len(cfg.Keys) == 0 || len(cfg.Keys) > 8 {
+	if nilRunner(db) {
+		return nil, ErrConfiguration
+	}
+	data, err := newWriterData(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &Store{db: db, writerData: data}, nil
+}
+
+func newWriterData(cfg TxConfig) (*writerData, error) {
+	if !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || !keyPattern.MatchString(cfg.ActiveKeyID) || len(cfg.Keys) == 0 || len(cfg.Keys) > 8 {
 		return nil, ErrConfiguration
 	}
 	origin, e := email.ParseApplicationOrigin(cfg.ApplicationOrigin, cfg.DevelopmentLoopback)
 	if e != nil {
 		return nil, ErrConfiguration
 	}
-	s := &Store{db: db, installation: cfg.InstallationID, application: cfg.ApplicationID, environment: cfg.EnvironmentID, active: cfg.ActiveKeyID, keys: make(map[string]cipher.AEAD), origin: origin.String()}
+	s := &writerData{installation: cfg.InstallationID, application: cfg.ApplicationID, environment: cfg.EnvironmentID, active: cfg.ActiveKeyID, keys: make(map[string]cipher.AEAD), origin: origin.String()}
 	for id, key := range cfg.Keys {
 		if !keyPattern.MatchString(id) || len(key) != 32 {
 			return nil, ErrConfiguration
@@ -124,10 +140,10 @@ func parseRef(ref email.SecretReference) (uuid.UUID, error) {
 	}
 	return id, nil
 }
-func (s *Store) aad(id uuid.UUID, key string, expiry time.Time) []byte {
+func (s *writerData) aad(id uuid.UUID, key string, expiry time.Time) []byte {
 	return []byte(fmt.Sprintf("amos-email-material-v1\x00%s\x00%s\x00%s\x00%s\x00%s\x00%d", s.installation, s.application, s.environment, id, key, expiry.UnixMicro()))
 }
-func (s *Store) validMaterial(m email.PrivateMaterial) bool {
+func (s *writerData) validMaterial(m email.PrivateMaterial) bool {
 	if len(m.Recipient) > email.MaxRecipientBytes || len(m.ActionURL) > email.MaxActionURLBytes || strings.ContainsAny(m.Recipient+m.ActionURL, "\x00\r\n") {
 		return false
 	}
@@ -142,19 +158,28 @@ func (s *Store) validMaterial(m email.PrivateMaterial) bool {
 // PutVerificationMaterial never writes plaintext. Failure aborts the caller's
 // transaction; generic errors omit recipients, URLs, tokens and database text.
 func (s *Store) PutVerificationMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time) error {
+	if s == nil || s.writerData == nil {
+		return ErrUnavailable
+	}
 	return s.putMaterial(ctx, tx, ref, m, expiry, "/verify-email")
 }
 
 // PutSignInMaterial binds encrypted material to the magic-link action only.
 func (s *Store) PutSignInMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time) error {
+	if s == nil || s.writerData == nil {
+		return ErrUnavailable
+	}
 	return s.putMaterial(ctx, tx, ref, m, expiry, "/magic-link")
 }
 
 // PutPasswordResetMaterial binds encrypted material to the reset action only.
 func (s *Store) PutPasswordResetMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time) error {
+	if s == nil || s.writerData == nil {
+		return ErrUnavailable
+	}
 	return s.putMaterial(ctx, tx, ref, m, expiry, "/reset-password")
 }
-func (s *Store) putMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time, path string) error {
+func (s *writerData) putMaterial(ctx context.Context, tx *sql.Tx, ref email.SecretReference, m email.PrivateMaterial, expiry time.Time, path string) error {
 	if s == nil || ctx == nil || tx == nil || !s.validMaterial(m) {
 		return ErrUnavailable
 	}

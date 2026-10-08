@@ -242,14 +242,22 @@ func EnqueueTx(ctx context.Context, tx *sql.Tx, store *sqlstore.Store, renderer 
 	if renderer == nil || store == nil {
 		return jobs.Job{}, ErrSetupRequired
 	}
-	if err := renderer.validateRequest(req); err != nil {
+	intent, err := requestIntent(renderer, installationID, applicationID, key, req, deadline)
+	if err != nil {
 		return jobs.Job{}, err
+	}
+	return store.EnqueueTx(ctx, tx, intent)
+}
+
+func requestIntent(renderer *Renderer, installationID, applicationID uuid.UUID, key string, req Request, deadline time.Time) (jobs.Intent, error) {
+	if err := renderer.validateRequest(req); err != nil {
+		return jobs.Intent{}, err
 	}
 	payload, err := json.Marshal(req)
 	if err != nil {
-		return jobs.Job{}, ErrInvalidRequest
+		return jobs.Intent{}, ErrInvalidRequest
 	}
-	return store.EnqueueTx(ctx, tx, jobs.Intent{InstallationID: installationID, ApplicationID: applicationID, Key: key, Kind: Kind, Payload: payload, ExternalEffect: true, Deadline: deadline.UTC()})
+	return jobs.Intent{InstallationID: installationID, ApplicationID: applicationID, Key: key, Kind: Kind, Payload: payload, ExternalEffect: true, Deadline: deadline.UTC()}, nil
 }
 
 type Dispatcher struct {
