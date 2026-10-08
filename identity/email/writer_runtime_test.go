@@ -197,7 +197,7 @@ func TestEmailWriterRequiredService(t *testing.T) {
 			challenge := id()
 			seed := sha256.Sum256([]byte(challenge.String()))
 			raw := base64.RawURLEncoding.EncodeToString(seed[:])
-			digest := sha256.Sum256(seed[:])
+			digest := sha256.Sum256([]byte(raw))
 			e := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
 				created := "clock_timestamp()-interval '1 minute'"
 				expires := "clock_timestamp()+interval '10 minutes'"
