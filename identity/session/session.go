@@ -20,6 +20,7 @@ import (
 	"github.com/ajent-social/amos/identity"
 	"github.com/ajent-social/amos/identity/internal/authproof"
 	"github.com/ajent-social/amos/identity/store"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/storage"
 	"github.com/google/uuid"
 )
@@ -54,6 +55,7 @@ type TxRunner interface {
 }
 
 type Service struct {
+	root       *aw.Root
 	db         TxRunner
 	cfg        Config
 	cookieName string
@@ -65,7 +67,23 @@ func New(db *storage.DB, cfg Config) (*Service, error) {
 
 // NewWithTxRunner constructs a service without probing or taking ownership of db.
 func NewWithTxRunner(db TxRunner, cfg Config) (*Service, error) {
-	if nilTxRunner(db) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || len(cfg.AllowedOrigins) == 0 {
+	if nilTxRunner(db) {
+		return nil, ErrInvalidConfiguration
+	}
+	if err := aw.SelectLegacy(); err != nil {
+		return nil, ErrInvalidConfiguration
+	}
+	s, err := configured(cfg)
+	if err != nil {
+		return nil, err
+	}
+	s.db = db
+	return s, nil
+}
+
+func configured(cfg Config) (*Service, error) {
+	cfg.AllowedOrigins = append([]string(nil), cfg.AllowedOrigins...)
+	if !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) || len(cfg.AllowedOrigins) == 0 {
 		return nil, ErrInvalidConfiguration
 	}
 	if cfg.DevelopmentLoopback {
@@ -77,7 +95,7 @@ func NewWithTxRunner(db TxRunner, cfg Config) (*Service, error) {
 				return nil, ErrInvalidConfiguration
 			}
 		}
-		return &Service{db: db, cfg: cfg, cookieName: developmentCookie}, nil
+		return &Service{cfg: cfg, cookieName: developmentCookie}, nil
 	}
 	if !cfg.CookieSecure {
 		return nil, ErrInvalidConfiguration
@@ -87,7 +105,7 @@ func NewWithTxRunner(db TxRunner, cfg Config) (*Service, error) {
 			return nil, ErrInvalidConfiguration
 		}
 	}
-	return &Service{db: db, cfg: cfg, cookieName: productionCookie}, nil
+	return &Service{cfg: cfg, cookieName: productionCookie}, nil
 }
 
 func nilTxRunner(db TxRunner) bool {
@@ -146,6 +164,12 @@ func (s *Service) IssueForRequestTx(ctx context.Context, tx *sql.Tx, proof authp
 }
 
 func (s *Service) issueTx(ctx context.Context, tx *sql.Tx, proof authproof.VerifiedCredential, priorToken string) (Issued, error) {
+	if s != nil && s.root != nil {
+		return Issued{}, ErrUnavailable
+	}
+	if err := aw.SelectLegacy(); err != nil {
+		return Issued{}, ErrUnavailable
+	}
 	if ctx == nil || tx == nil || s == nil || proof.PersonID() == uuid.Nil || proof.InstallationID() != s.cfg.InstallationID || proof.ApplicationID() != s.cfg.ApplicationID || proof.EnvironmentID() != s.cfg.EnvironmentID {
 		return Issued{}, ErrUnauthenticated
 	}
@@ -200,11 +224,15 @@ func (s *Service) issueTx(ctx context.Context, tx *sql.Tx, proof authproof.Verif
 
 func (s *Service) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s != nil && s.root != nil {
+			s.writerMiddleware(next, w, r)
+			return
+		}
 		if s == nil || s.db == nil {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable")
 			return
 		}
-		cookie, err := r.Cookie(s.cookieName)
+		cookie, err := singleCookie(r, s.cookieName)
 		if err != nil {
 			writeError(w, r, http.StatusUnauthorized, "auth.unauthenticated")
 			return
@@ -258,11 +286,20 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 				return
 			}
 		}
-		next.ServeHTTP(w, r.WithContext(identity.ContextWithVerifiedCredential(r.Context(), proof)))
+		admittedCtx, stop := context.WithTimeout(r.Context(), 5*time.Second)
+		defer stop()
+		admittedCtx = identity.ContextWithVerifiedCredential(admittedCtx, proof)
+		principal, _ := identity.PrincipalFromContext(admittedCtx)
+		admittedCtx = s.admitCurrent(admittedCtx, active.ID, principal, digest)
+		next.ServeHTTP(w, r.WithContext(admittedCtx))
 	})
 }
 
 func (s *Service) SignOut(w http.ResponseWriter, r *http.Request) {
+	if s != nil && s.root != nil {
+		s.writerSignOut(w, r)
+		return
+	}
 	if s == nil || s.db == nil {
 		writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable")
 		return
