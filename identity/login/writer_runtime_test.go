@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -45,7 +46,7 @@ func TestNativeWriterRuntimeRequiredService(t *testing.T) {
 	if os.Getenv("AMOS_NATIVE_WRITER_CHILD") != "1" {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
-		cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestNativeWriterRuntimeRequiredService$", "-test.v")
+		cmd := exec.CommandContext(ctx, os.Args[0], "-test.run="+nativeWriterChildSelector(flag.Lookup("test.run").Value.String()), "-test.skip="+flag.Lookup("test.skip").Value.String(), "-test.v")
 		cmd.Env = append(os.Environ(), "AMOS_NATIVE_WRITER_CHILD=1")
 		if output, err := cmd.CombinedOutput(); err != nil {
 			t.Fatalf("native writer child failed: %v\n%s", err, output)
@@ -752,4 +753,29 @@ func (p *nativeWriterMagicFinalDenial) AuthorizeMagicLink(ctx context.Context, t
 		return magiclink.ErrPolicyDenied
 	}
 	return p.base.AuthorizeMagicLink(ctx, tx, person)
+}
+
+// Keep process isolation confined to this suite while preserving every selected
+// subtest component. Dropping the suffix would broaden a scoped operator run.
+func nativeWriterChildSelector(selected string) string {
+	const suite = "^TestNativeWriterRuntimeRequiredService$"
+	if slash := strings.IndexByte(selected, '/'); slash >= 0 {
+		return suite + selected[slash:]
+	}
+	return suite
+}
+
+func TestNativeWriterPureChildSelectionDoesNotBroaden(t *testing.T) {
+	const suite = "^TestNativeWriterRuntimeRequiredService$"
+	for _, tc := range []struct{ selected, want string }{
+		{"", suite},
+		{"NativeWriter", suite},
+		{suite + "/^(registration_composes|signin_wrong|magic_request)$", suite + "/^(registration_composes|signin_wrong|magic_request)$"},
+		{"NativeWriter/registration/inner", suite + "/registration/inner"},
+		{suite + "/(registration_composes|magic_request)/^$", suite + "/(registration_composes|magic_request)/^$"},
+	} {
+		if got := nativeWriterChildSelector(tc.selected); got != tc.want {
+			t.Fatal("child selection changed scoped components")
+		}
+	}
 }
