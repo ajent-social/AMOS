@@ -49,9 +49,9 @@ before trimming, and finite kind. Return400 with fixed text for invalid input.
 Never echo supplied values into an error, header or redirect.
 
 Fragment mode is selected only by a single `HX-Request: true` with a single
-`HX-Target: continuity-source-content`. With no HX-Request, require no HX-Target
-and return a full document. Other, missing or duplicate fragment metadata falls
-back to the full document under the existing UI contract. These headers
+`HX-Target: continuity-source-content`. Every metadata combination other than that exact pair selects a full document,
+including absent, incomplete, invalid or duplicate values, under the existing UI
+contract. These headers
 select presentation only and never bypass middleware or current authority.
 Existing renderer links and ordinary GET forms remain fully functional without
 JavaScript. This adapter does not load HTMX or promise enhanced navigation.
