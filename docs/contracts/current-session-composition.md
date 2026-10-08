@@ -79,7 +79,13 @@ profile; they do not establish that an installation already meets it.
 
 ## Transaction and result lifetime
 
-The authority transaction uses explicit READ COMMITTED with row locking enabled.
+The authority transaction uses explicit READ COMMITTED with `ReadOnly: false`
+and row locking enabled. The runtime role requires SELECT on all inspected
+columns and UPDATE privilege on at least one column of each row-locked table,
+as specified by PostgreSQL [SELECT privileges](https://www.postgresql.org/docs/16/sql-select.html).
+A read-only product operation therefore does not imply a database read-only
+transaction or a SELECT-only role. Grants must be provisioned and qualified
+separately; this document does not broaden an existing role.
 It receives the original bounded request context admitted by the exact session
 middleware. The recheck result replaces the admitted principal in subsequent
 trusted workspace/policy evaluation; passing the old context snapshot to a
