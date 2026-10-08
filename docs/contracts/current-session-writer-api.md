@@ -670,3 +670,20 @@ Required negatives include zero/unsealed/wrong-phase/unplanned/closed row checks
 canceled original context despite a detached derived context, and B/F backward
 or equality-at-root-deadline faults. These are additional construction checks,
 not newly accepted product tasks or obtained runtime evidence.
+
+The identity store's NewIssuer also needs the declared non-consuming validation
+without access to wp private fields. Proposed exact method:
+
+```go
+func (i Issuance) Check(a *aw.Attempt) error
+```
+
+Check validates a nonzero issuing variant, the exact live acquired attempt and
+captured binding, and its closed action/subject shape. It returns neither a
+credential nor SQL and does not consume or reset Credential's once-only bit.
+It remains valid after that getter was consumed only while the same attempt is
+live; NewIssuer and each of its issuance/elevation methods repeat this check
+alongside their exact row/phase checks. It rejects finalized/F/closed evidence,
+another attempt and zero values. Terminal Permit matching continues to use its
+separate captured immutable snapshot and never calls Check after commit.
+This additive construction detail requires independent review before source.
