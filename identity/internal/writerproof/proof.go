@@ -257,6 +257,16 @@ func Challenge(a *aw.Attempt, action Action, check ChallengeCheck) (Evidence, er
 	if inserting && !check.CreatedAt.Equal(d.started) || !inserting && check.CreatedAt.After(d.started) || action == Register && !check.Contact.VerifiedAt.IsZero() {
 		return Evidence{}, ErrUnavailable
 	}
+	if inserting {
+		ttl := check.ExpiresAt.Sub(check.CreatedAt)
+		maximum := 24 * time.Hour
+		if action == MagicRequest {
+			maximum = 30 * time.Minute
+		}
+		if ttl < time.Minute || ttl > maximum || ttl%time.Second != 0 || action == Register && ttl != 30*time.Minute {
+			return Evidence{}, ErrUnavailable
+		}
+	}
 	if (action == MagicRequest || action == MagicConfirm) && !nonzero(check.BrowserDigest) {
 		return Evidence{}, ErrUnavailable
 	}
