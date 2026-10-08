@@ -11,6 +11,10 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+if __name__ == "__main__" and (Path(__file__).resolve().parents[1] / "docs/planning/wazi-source.json").exists():
+    raise SystemExit("Retired baseline command: current plan is wazi-source.json. Use go run ./cmd/portableplan and the pinned wazi-contract validator. Current projection/release tooling requires migration; no stale view was written or qualified.")
+
 from typing import Any
 
 

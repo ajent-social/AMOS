@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 const sdlcSourceRef = "docs/planning/wazi-source.json"
@@ -12,9 +13,10 @@ const sdlcStateRef = "docs/planning/sdlc-stage-state.json"
 // definition. It never flattens multiple files into a fictional source digest.
 func exportSDLC(planBytes, stateBytes []byte) (any, error) {
 	var source struct {
-		Schema   string            `json:"schema"`
-		Contract string            `json:"contract"`
-		Tasks    []json.RawMessage `json:"tasks"`
+		Schema          string            `json:"schema"`
+		Contract        string            `json:"contract"`
+		RequiredTaskIDs []string          `json:"required_task_ids"`
+		Tasks           []json.RawMessage `json:"tasks"`
 	}
 	if err := json.Unmarshal(planBytes, &source); err != nil {
 		return nil, err
@@ -35,15 +37,35 @@ func exportSDLC(planBytes, stateBytes []byte) (any, error) {
 	state := make(map[string]narrative)
 	for _, raw := range source.Tasks {
 		var t struct {
-			ID         string   `json:"id"`
-			Title      string   `json:"title"`
-			Stage      string   `json:"stage"`
-			Deps       []string `json:"deps"`
-			Acceptance string   `json:"acceptance"`
-			Status     string   `json:"status"`
+			ID                string          `json:"id"`
+			Title             string          `json:"title"`
+			Stage             string          `json:"stage"`
+			Deps              []string        `json:"deps"`
+			Acceptance        string          `json:"acceptance"`
+			Status            string          `json:"status"`
+			NativeProductTask json.RawMessage `json:"native_product_task"`
 		}
 		if err := json.Unmarshal(raw, &t); err != nil {
 			return nil, err
+		}
+		if len(t.NativeProductTask) > 0 {
+			var product nativeTask
+			if err := json.Unmarshal(t.NativeProductTask, &product); err != nil {
+				return nil, err
+			}
+			if product.ID != t.ID {
+				return nil, fmt.Errorf("product identity mismatch %s", t.ID)
+			}
+			var fields map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &fields); err != nil {
+				return nil, err
+			}
+			for _, key := range []string{"title", "stage", "deps", "acceptance"} {
+				if _, ok := fields[key]; ok {
+					return nil, fmt.Errorf("duplicate authored product field %s.%s", t.ID, key)
+				}
+			}
+			t.Title, t.Stage, t.Deps, t.Acceptance = product.Title, product.Stage, product.Deps, strings.Join(product.Acceptance, "\n")
 		}
 		if t.Acceptance == "" {
 			return nil, fmt.Errorf("task %s lacks acceptance", t.ID)
@@ -54,6 +76,19 @@ func exportSDLC(planBytes, stateBytes []byte) (any, error) {
 		}
 		plan.Epics[0].Tasks = append(plan.Epics[0].Tasks, nativeTask{ID: t.ID, Title: t.Title, Stage: t.Stage, Deps: t.Deps, Acceptance: []string{t.Acceptance}, Other: original})
 		state[t.ID] = narrative{Status: t.Status}
+	}
+	if source.Contract == "amos-wazi-authored-plan/1" && len(source.RequiredTaskIDs) == 0 {
+		return nil, fmt.Errorf("missing retained task inventory")
+	}
+	retained := map[string]bool{}
+	for _, id := range source.RequiredTaskIDs {
+		if retained[id] {
+			return nil, fmt.Errorf("duplicate retained ID %s", id)
+		}
+		retained[id] = true
+		if _, ok := state[id]; !ok {
+			return nil, fmt.Errorf("missing retained task %s", id)
+		}
 	}
 	for id, raw := range journal.Tasks {
 		if _, ok := state[id]; !ok {
@@ -91,11 +126,20 @@ func exportSDLC(planBytes, stateBytes []byte) (any, error) {
 	for _, row := range def["tasks"].([]any) {
 		t := row.(map[string]any)
 		native := t["metadata"].(map[string]any)["nativeTask"].(map[string]json.RawMessage)
-		if _, ok := native["native_product_task"]; ok {
-			continue
-		}
+		_ = native
 		for _, dep := range t["dependencies"].([]any) {
 			d := dep.(map[string]any)
+			target := strings.TrimPrefix(d["taskId"].(string), "amos:task:")
+			isProduct := false
+			for _, task := range plan.Epics[0].Tasks {
+				if task.ID == target {
+					_, isProduct = task.Other["native_product_task"]
+					break
+				}
+			}
+			if isProduct {
+				continue
+			}
 			d["predicate"] = "execution-complete"
 			delete(d, "requirementId")
 		}

@@ -11,17 +11,19 @@ document retains the original scope and history.
 
 Produce the Wazi 0.0.1 interchange with: go run ./cmd/portableplan --sdlc
 The result contains one source-bound definition with 1,501 tasks. It is a
-read-only view, not a second scheduling authority. Product prerequisites retain
-domain-acceptance semantics; existing untyped lifecycle ordering remains
+read-only view, not a second scheduling authority. All prerequisites referencing product tasks retain
+domain-acceptance semantics; genuinely untyped lifecycle-to-lifecycle ordering remains
 execution-complete. Stage labels alone do not establish review or deployment
 approval. No execution snapshot, qualified evidence or satisfied evaluation is
 manufactured from narrative completion.
 
 After this migration is adopted, edit the combined authored source. The older
 plan-data.json and sdlc-plan.json are retained migration baselines and must
-not be independently advanced as competing plan masters. Existing render/check
-commands for those files validate historical views only; the Wazi owning
-validator checks the complete graph. Execution evidence remains in its existing
+not be independently advanced as competing plan masters. Retired render/check/release commands refuse current-mode invocation to prevent
+stale views or qualification. Their replacement remains a tooling gate; the
+exporter checks graph/preservation invariants and the Wazi owning validator
+checks portable coherence. The default export now selects the complete graph;
+--historical-product explicitly selects a distinctly identified retired baseline. Execution evidence remains in its existing
 registries and receipts, separately from authored intent. Before new dispatch,
 reconcile those live records and claims; this migration grants no admission.
 
