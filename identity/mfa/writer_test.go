@@ -112,3 +112,49 @@ func TestNativeWriterPureFactorShapeAndCounterSnapshot(t *testing.T) {
 		t.Fatal("factor counter change not compared")
 	}
 }
+
+func TestNativeWriterPureStatusUsesOriginalExpiryAndImmutableValues(t *testing.T) {
+	id := func() uuid.UUID { return uuid.Must(uuid.NewV7()) }
+	created := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	epoch := int64(1)
+	expiry := created.Add(DefaultPendingLifetime)
+	pending := Factor{ID: id(), Scope: Scope{id(), id(), id(), id()}, SeedCiphertext: make([]byte, 32), State: FactorPending, PendingSecurityEpoch: &epoch, LastUsedStep: -1, CreatedAt: created, ExpiresAt: &expiry}
+	got, err := statusAt(nil, &pending, expiry.Add(-time.Microsecond))
+	if err != nil || got.Enabled || !got.Pending || got.PendingFactorID == nil || *got.PendingFactorID != pending.ID || got.ExpiresAt == nil || !got.ExpiresAt.Equal(expiry) {
+		t.Fatal("live pending status lost original bounds")
+	}
+	*got.PendingFactorID = id()
+	*got.ExpiresAt = created
+	if pending.ID == *got.PendingFactorID || !pending.ExpiresAt.Equal(expiry) {
+		t.Fatal("status retained mutable factor fields")
+	}
+	for _, at := range []time.Time{expiry, expiry.Add(time.Microsecond)} {
+		got, err = statusAt(nil, &pending, at)
+		if err != nil || got != (FactorStatus{}) || pending.State != FactorPending || !pending.ExpiresAt.Equal(expiry) {
+			t.Fatal("expired pending status changed row or extended expiry")
+		}
+	}
+	if _, err = statusAt(nil, &pending, created.Add(-time.Microsecond)); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("future-created pending factor admitted")
+	}
+	activated := created.Add(time.Minute)
+	active := pending
+	active.State = FactorActive
+	active.PendingSecurityEpoch = nil
+	active.ExpiresAt = nil
+	active.ActivatedAt = &activated
+	active.LastUsedStep = 1
+	got, err = statusAt(&active, nil, activated)
+	if err != nil || !got.Enabled || got.Pending {
+		t.Fatal("active factor status unavailable")
+	}
+	if _, err = statusAt(&active, nil, activated.Add(-time.Microsecond)); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("future activation admitted")
+	}
+	if _, err = statusAt(nil, nil, time.Time{}); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("zero final sample admitted")
+	}
+	if _, err = statusAt(&pending, nil, expiry); !errors.Is(err, ErrUnavailable) {
+		t.Fatal("pending row reinterpreted as active")
+	}
+}

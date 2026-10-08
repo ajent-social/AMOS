@@ -22,7 +22,9 @@ request age and expiry. MFA uses the same native primary verifier, session-owned
 actor admission and ordered factor store. Enrollment fixes pending expiry to the
 original verification time. TOTP success and the sole-factor denial-counter branch
 have distinct journals and completion outcomes. Status uses a session recheck and
-a read-only factor store; it does not expire or activate factors.
+a read-only factor store; it does not expire or activate factors. Its final
+actor check returns the exact database sample used for pending-factor expiry;
+only pure value comparisons follow that sample.
 
 All session-producing flows use the private staged-session fence at the exact
 root final sample, then the method permit and committed one-use release. No
