@@ -1,141 +1,47 @@
 #!/usr/bin/env python3
-"""Render the public AMOS plan from reviewed, dependency-resolved planning data."""
-import json
+"""Render the complete current inventory into a new directory, or check without writes."""
+import argparse
+import importlib.util
 from pathlib import Path
-
-if __name__ == "__main__" and (Path(__file__).resolve().parents[1] / "docs/planning/wazi-source.json").exists():
-    raise SystemExit("Retired baseline command: current plan is wazi-source.json. Use go run ./cmd/portableplan and the pinned wazi-contract validator. Current projection/release tooling requires migration; no stale view was written or qualified.")
+import sys
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / 'docs/planning/plan-data.json'
+def load_checker():
+    spec = importlib.util.spec_from_file_location('amos_current_plan', Path(__file__).with_name('check-plan.py'))
+    module = importlib.util.module_from_spec(spec)
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(module)
+    return module
 
-def write(path, text):
-    p = ROOT / path
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(text.rstrip() + '\n')
-
-def lines(values):
-    return '\n'.join('- ' + v for v in values)
 
 def main():
-    data = json.loads(DATA.read_text())
-    progress_path = ROOT / 'docs/planning/execution-state.json'
-    progress = json.loads(progress_path.read_text()) if progress_path.exists() else {}
-    usecases = data['use_cases']
-    tasks = [t for e in data['epics'] for t in e['tasks']]
-    for e in data['epics']:
-        body = [f"# {e['id']} -- {e['title']}", '', 'fidelity: executable',
-                'Contract maturity: detailed draft; prerequisite and stage revalidation required. Execution certification is recorded individually in task contracts.', '',
-                'Acceptance: ' + ' '.join(e['exit_criteria']), '', e['intent'], '',
-                'Checked tasks have accepted execution evidence; unchecked tasks remain incomplete. The complete inventory is intentional; later-stage tasks may not dispatch before their prerequisites and external gates.', '']
-        for t in e['tasks']:
-            state = progress.get(t['id'], {})
-            status = state.get('status', 'PLANNED')
-            certified = state.get('certification', 'NOT_RUN')
-            mark = 'x' if status == 'ACCEPTED' else ' '
-            evidence = state.get('evidence', [])
-            deps = ', '.join(t['deps']) or 'none'
-            outcome = ('verifies: [' + ', '.join(t['use_cases']) + ']') if t['kind'] == 'engineering' else ('delivers: [' + t['objective'] + ']')
-            acc = f"  acc: [{t['acceptance'][0]}]" if t['kind'] == 'engineering' else '  lane: agent'
-            body += [f"- [{mark}] {t['id']} {t['title']}  Owner: {t['lane']}  Est: {t['estimate_minutes']}m  {outcome}{acc}",
-                     f"  - Stage: {t['stage']}; Wave: {t['wave']}; deps: [{deps}]; kind: {'human' if t['kind']=='human' else 'agent'}.",
-                     '  - Scope: ' + ', '.join('`' + p + '`' for p in t['owned_paths']) + '.',
-                     '  - Acceptance: ' + ' '.join(t['acceptance']),
-                     f"  - Contract: [docs/tasks/{t['id']}.md](../tasks/{t['id']}.md)."]
-            if t.get('external_gate'):
-                body += ['  - External gate: ' + t['external_gate']]
-            body += ['']
-            text = f"""# {t['id']}: {t['title']}
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--data', type=Path, help='current-source candidate; retired baseline rejected')
+    parser.add_argument('--check', action='store_true', help='validate without writes; compare output if supplied')
+    parser.add_argument('--output-dir', type=Path, help='new directory to create; existing directories are never overwritten')
+    args = parser.parse_args()
+    if not args.check and not args.output_dir:
+        parser.error('provide --check or --output-dir; in-place rendering is forbidden')
+    checker = load_checker()
+    try:
+        files = checker.projection_files(checker.load_current(args.data))
+        if args.check:
+            if args.output_dir:
+                checker.check_projection(args.output_dir, files)
+            print('PASS: current projection ' + ('freshness' if args.output_dir else 'generation (in memory only)') +
+                  '; no files written and no release qualified.')
+        else:
+            # mkdir is exclusive: no existing directory, file or symlink may be reused.
+            args.output_dir.mkdir(parents=False, exist_ok=False)
+            for name, content in files.items():
+                with (args.output_dir / name).open('xb') as stream:
+                    stream.write(content)
+            print('Rendered 1501 current tasks; registries preserved as unqualified records. No release qualified.')
+        return 0
+    except (OSError, ValueError, TypeError, RecursionError) as exc:
+        print('ERROR: current projection failed: ' + str(exc), file=sys.stderr)
+        return 2
 
-Status: {status}. Execution evidence is recorded below; release acceptance remains separate. Stage {t['stage']}; wave {t['wave']}; owning lane {t['lane']}; estimate {t['estimate_minutes']} minutes (planning hypothesis).
-
-## Objective
-
-{t['objective']}
-
-## Dependencies and readiness
-
-{deps}
-
-Read the actual outputs of every dependency before starting. Reconcile this contract against the frozen contract version and current code; report material mismatch instead of inventing behavior. The listed verification commands are future prescriptions, not claims that executables already exist.
-
-External gate: {t.get('external_gate') or 'None beyond normal task authorization and prerequisites.'}
-
-## Scope
-
-{lines(t['owned_paths'])}
-
-Only these owned paths may change. Repository-qualified upstream paths require a separate upstream task claim and that repository's permissions/review rules; they are not permission to edit a neighboring checkout. Shared module files, migration ordering, aggregate APIs, root workflow wiring and executable entrypoints remain integrator-owned unless explicitly listed and exclusively delegated.
-
-## Implementation instructions
-
-{chr(10).join(str(i + 1) + '. ' + v for i, v in enumerate(t['instructions']))}
-
-## Acceptance criteria
-
-{lines(t['acceptance'])}
-
-Use cases: {', '.join(t['use_cases'])}.
-
-## Negative verification
-
-{t['negative_test']}
-
-For behavior changes, show the check detects the predicted failure using a disposable isolated test mutation, then restore and report the passing check. Never damage a shared checkout or live environment. A design-only task uses a rejected schema/document fixture instead of pretending it changes runtime behavior.
-
-## Verification
-
-```sh
-{chr(10).join(t['verification'])}
-```
-
-Run the relevant formatter/linter gates after implementation. Required database/browser/provider suites must report absence explicitly. Provider fixtures never satisfy real-provider gates. Root release tasks distinguish integrated, provider-qualified, deployed and rehearsed evidence; no local task alone claims a production release. Heavy multi-package checks require the shared build lease and current load check documented in the execution guide.
-
-## Risks and handoff
-
-{lines(t.get('risks') or ['Resolve contract or dependency mismatch before dispatch; do not expand ownership silently.'])}
-
-Report changed paths, commands actually executed, genuine negative evidence, remaining limitations and the next integration gate. No secrets, raw diagnostic payloads or private source context in public artifacts.
-
-## Pointers
-
-- [Vision](../VISION.md)
-- [RFC 0001](../rfc/rfc-0001.md)
-- [Cross-lane contracts](../planning/contracts.md)
-- [Execution guide](../planning/execution.md)
-- [Epic](../plans/{e['id']}.md)
-
-Certification: {certified}.
-
-## Execution evidence
-
-{lines(evidence) if evidence else 'No execution evidence recorded.'}
-"""
-            write('docs/tasks/' + t['id'] + '.md', text)
-        write('docs/plans/' + e['id'] + '.md', '\n'.join(body))
-    manifest=[]
-    for u in usecases:
-        v=dict(u)
-        v['wiring_status']='PLANNED'
-        v['coverage']={'interfaces_found':[], 'has_tests':False}
-        manifest.append(v)
-    write('docs/usecases-manifest.json', json.dumps(manifest, indent=2))
-    write('.claude/scratch/usecases-manifest.json', json.dumps(manifest, indent=2))
-    rows=['# Use cases', '', 'All use cases are PLANNED. Interface paths are proposed contracts, not implemented endpoints. The canonical machine-readable manifest is `docs/usecases-manifest.json`.', '', '| ID | Domain | Outcome | Tasks |', '|---|---|---|---|']
-    for u in usecases:
-        ids=[t['id'] for t in tasks if u['id'] in t['use_cases']]
-        rows.append('| '+u['id']+' | '+u['domain']+' | '+u['name'].replace('|','/')+' | '+', '.join(ids)+' |')
-    write('docs/use-cases.md', '\n'.join(rows))
-    waves=['# Dependency and ownership waves', '', 'Waves are a capacity ceiling, not authorization to dispatch blocked work. Each listed task has its own owning lane and isolated workspace. Skip externally blocked tasks; do not skip their dependencies. An actual runtime with fewer slots runs a compatible subset. A lane has at most one active writer.', '']
-    for w in data['waves']:
-        waves += [f"## Wave {w['id']}: {len(w['tasks'])} task slots", '', '| Task | Lane | Stage | External gate |', '|---|---|---|---|']
-        for tid in w['tasks']:
-            t=next(t for t in tasks if t['id']==tid)
-            waves.append(f"| [{tid}](../tasks/{tid}.md) | {t['lane']} | {t['stage']} | {t.get('external_gate') or 'None'} |")
-        waves += ['']
-    write('docs/planning/waves.md','\n'.join(waves))
-    print(json.dumps({'epics':len(data['epics']),'tasks':len(tasks),'use_cases':len(usecases),'waves':len(data['waves']),'peak_slots':max(len(w['tasks']) for w in data['waves'])}))
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
