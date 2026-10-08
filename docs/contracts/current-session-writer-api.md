@@ -527,3 +527,13 @@ cover zero values, mutable input copies, cross-root/attempt/service, retained
 store after completion, duplicate phase/finalize/publication, unknown action,
 legacy constructor bypass and CounterOnlyDenied issuance. These checks are
 prescribed, not run by this document author.
+
+
+## B1 bounded password adapter proposal
+
+[The exact computation adapter](current-password-work.md) closes the proposed
+R6 implementation direction using the existing hasher and a globally bounded,
+context-responsive pure-computation worker. It explicitly distinguishes caller
+cancellation from Argon2 CPU termination and grants no authority to late results.
+This additive proposal requires independent review before source; the complete
+writer, caller ownership and real W28 integration gates remain open.

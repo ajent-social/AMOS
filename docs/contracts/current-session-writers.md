@@ -575,3 +575,13 @@ does not close these delivery gates:
 No real-service schedule, runtime, provider call, source implementation or task
 acceptance was performed to produce this artifact. Original/current/product
 registries and foreign source ownership remain unchanged.
+
+
+## B1 bounded password adapter proposal
+
+[The exact computation adapter](current-password-work.md) closes the proposed
+R6 implementation direction using the existing hasher and a globally bounded,
+context-responsive pure-computation worker. It explicitly distinguishes caller
+cancellation from Argon2 CPU termination and grants no authority to late results.
+This additive proposal requires independent review before source; the complete
+writer, caller ownership and real W28 integration gates remain open.
