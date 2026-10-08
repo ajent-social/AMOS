@@ -396,3 +396,18 @@ returns a refreshed principal. This draft is not adopted or source-ready.
 Assurance case-table, same-database, complete supported producer/writer and
 resource-composition gates must be resolved independently before source. Existing
 session/current-authority contracts and product acceptance remain unchanged.
+
+
+## Proposed amendment v1.25: password sign-in credential revalidation
+
+[ADR 039](../adr/039-password-signin-freshness.md) and the
+[bounded sign-in contract](../contracts/password-signin-freshness.md) bind one
+verified password/contact receipt to exact held rows in the caller-owned
+issuance transaction. Existing optional rehash behavior remains separately
+committed; no exported API, migration or whole-writer protocol is adopted.
+Independent exact-head review/landing and a new supplemental claim precede
+source. Original T3.5 acceptance and its retained ownership are unchanged.
+
+The move to `IssueForRequestTx` explicitly adopts its duplicate configured-cookie
+rejection, mapped through existing generic503/no-output handling; the previous
+first-cookie selection is not promised for this bounded repair.
