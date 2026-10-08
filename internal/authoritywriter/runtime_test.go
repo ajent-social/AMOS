@@ -112,6 +112,21 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				t.Error(err)
 				return UnavailableRollback
 			}
+			copied, copyErr := a.PlannedRows(Persons)
+			if copyErr != nil || len(copied) != 1 || copied[0] != row {
+				t.Error("sealed inventory unavailable")
+				return UnavailableRollback
+			}
+			copied[0].ID = testID(t)
+			original, copyErr := a.PlannedRows(Persons)
+			if copyErr != nil || len(original) != 1 || original[0] != row {
+				t.Error("inventory copy mutated sealed plan")
+				return UnavailableRollback
+			}
+			if empty, e := a.PlannedRows(Sessions); e != nil || len(empty) != 0 {
+				t.Error("empty planned table malformed")
+				return UnavailableRollback
+			}
 			binding, err = a.Binding()
 			if err != nil {
 				t.Error(err)
@@ -212,7 +227,7 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, mode := range []string{"denied", "missing finish", "panic", "cancel", "phase poison", "wrong context", "unplanned row", "premature success", "duplicate finish", "mutation after F", "inspection wrong row", "inspection canceled", "inspection at F"} {
+	for _, mode := range []string{"denied", "missing finish", "panic", "cancel", "phase poison", "wrong context", "unplanned row", "premature success", "duplicate finish", "mutation after F", "inspection wrong row", "inspection canceled", "inspection at F", "inventory canceled", "inventory wrong table"} {
 		t.Run(mode, func(t *testing.T) {
 			request, stop := context.WithCancel(ctx)
 			defer stop()
@@ -273,6 +288,15 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 					stop()
 					if a.CheckRows(P, []Row{row}) == nil {
 						t.Error("canceled original request inspected rows")
+					}
+				case "inventory canceled":
+					stop()
+					if _, e := a.PlannedRows(Persons); e == nil {
+						t.Error("canceled inventory admitted")
+					}
+				case "inventory wrong table":
+					if _, e := a.PlannedRows(Table(255)); e == nil {
+						t.Error("unknown table inventory admitted")
 					}
 				case "inspection at F":
 					if _, e := a.DrainAndSample(ctx); e != nil {

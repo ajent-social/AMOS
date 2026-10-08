@@ -162,6 +162,26 @@ func (a *Attempt) CheckRows(phase Phase, rows []Row) error {
 	return s.checkRows(phase, rows)
 }
 
+// PlannedRows copies one table's sealed inventory for native digest lookups.
+// It grants no SQL and cannot expand or alter the acquired plan.
+func (a *Attempt) PlannedRows(table Table) ([]Row, error) {
+	s, err := a.lockLive()
+	defer unlock(s)
+	if err != nil {
+		return nil, err
+	}
+	if s.plan == nil || tablePhase(table) == 0 || s.phase >= F {
+		return nil, s.poison(ErrPhase)
+	}
+	var rows []Row
+	for _, row := range s.plan.rows {
+		if row.Table == table {
+			rows = append(rows, row)
+		}
+	}
+	return rows, nil
+}
+
 func (a *Attempt) Acquire(ctx context.Context, phase Phase) error {
 	s, err := a.lockLive()
 	defer unlock(s)
