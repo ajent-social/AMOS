@@ -124,6 +124,47 @@ func (d *evidenceData) finalBounds(f time.Time) bool {
 	}
 }
 
+func (d *evidenceData) finalChronology(f time.Time) bool {
+	if d == nil || f.IsZero() || d.started.IsZero() || f.Before(d.started) {
+		return false
+	}
+	notBefore := func(t time.Time) bool { return !t.IsZero() && !f.Before(t) }
+	switch d.kind {
+	case passwordKind:
+		return notBefore(d.passwordCheck.VerifiedAt)
+	case challengeKind:
+		return notBefore(d.challenge.CreatedAt) && notBefore(d.challenge.VerifiedAt)
+	case actorKind:
+		return notBefore(d.actor.AuthenticatedAt)
+	case enrollmentKind:
+		return notBefore(d.actor.AuthenticatedAt) && d.primary.finalChronology(f)
+	case totpKind:
+		return notBefore(d.actor.AuthenticatedAt) && notBefore(d.factor.VerifiedAt) && d.primary.finalChronology(f)
+	case counterKind:
+		return notBefore(d.actor.AuthenticatedAt) && notBefore(d.factor.VerifiedAt) && notBefore(d.counter.UpdatedAt) && d.primary.finalChronology(f)
+	case flowKind, providerKind:
+		if !notBefore(d.flow.CreatedAt) {
+			return false
+		}
+		if (d.action == FederationBeginLink || d.action == FederationCallbackLink) && !notBefore(d.actor.AuthenticatedAt) {
+			return false
+		}
+		return d.kind != providerKind || notBefore(d.provider.ValidationStartedAt) && notBefore(d.provider.ValidatedAt)
+	default:
+		return false
+	}
+}
+
+func (d *evidenceData) finalError(f time.Time) error {
+	if !d.finalChronology(f) {
+		return ErrUnavailable
+	}
+	if !d.finalBounds(f) {
+		return ErrDenied
+	}
+	return nil
+}
+
 // Finalize checks immutable evidence bounds at the root's exact recorded F.
 // Native callers must first compare every held row to the intended transition;
 // this factory cannot infer those SQL predicates from copied snapshots.
@@ -137,8 +178,8 @@ func Finalize(a *aw.Attempt, evidence Evidence, finalDBTime time.Time) (Permit, 
 	if d.finalized {
 		return Permit{}, reject(a)
 	}
-	if !d.finalBounds(finalDBTime) {
-		return Permit{}, ErrDenied
+	if err := d.finalError(finalDBTime); err != nil {
+		return Permit{}, err
 	}
 	_, v, _, _, issuing := issueFields(d)
 	if issuing {

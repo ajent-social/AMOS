@@ -122,7 +122,7 @@ func TestEvidenceRuntimeRequiredService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, mode := range []string{"success", "duplicate issue", "duplicate credential", "duplicate finalizer", "no credential", "wrong final time", "nonissuing primary"} {
+	for _, mode := range []string{"success", "duplicate issue", "duplicate credential", "duplicate finalizer", "no credential", "wrong final time", "nonissuing primary", "backward verification"} {
 		t.Run(mode, func(t *testing.T) {
 			var permit Permit
 			var issuance Issuance
@@ -155,6 +155,9 @@ func TestEvidenceRuntimeRequiredService(t *testing.T) {
 					t.Error("verification sample failed")
 					return aw.UnavailableRollback
 				}
+				if mode == "backward verification" {
+					v = v.Add(time.Minute)
+				} // synthetic malformed snapshot, not a changed DB clock
 				action := PasswordSignIn
 				if mode == "nonissuing primary" {
 					action = PasswordChange
@@ -214,9 +217,12 @@ func TestEvidenceRuntimeRequiredService(t *testing.T) {
 					f = f.Add(time.Microsecond)
 				}
 				permit, e = Finalize(a, evidence, f)
-				if mode == "no credential" || mode == "wrong final time" {
+				if mode == "no credential" || mode == "wrong final time" || mode == "backward verification" {
 					if e == nil {
 						t.Error("invalid finalization admitted")
+					}
+					if mode == "backward verification" && !errors.Is(e, ErrUnavailable) {
+						t.Error("backward verification chronology was not unavailable")
 					}
 					if e = a.Finish(aw.UnavailableRollback); e != nil {
 						t.Error(e)
