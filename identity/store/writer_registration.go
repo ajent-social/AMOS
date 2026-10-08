@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	aw "github.com/ajent-social/amos/internal/authoritywriter"
 )
 
@@ -39,6 +40,9 @@ func (s *Store) CreatePendingAccount(ctx context.Context, v PendingAccount) erro
 		return s.failed(e)
 	}
 	if e = s.attempt.Acquire(ctx, aw.C); e != nil {
+		if errors.Is(e, aw.ErrDenied) {
+			return s.failed(ErrPersonUnavailable)
+		}
 		return s.failed(ErrPersistence)
 	}
 	rows = []aw.Row{row(aw.Emails, v.EmailID, aw.ReservedInsert)}
@@ -63,6 +67,9 @@ func (s *Store) CreatePendingAccount(ctx context.Context, v PendingAccount) erro
 		return s.failed(e)
 	}
 	if e = s.attempt.Acquire(ctx, aw.H); e != nil {
+		if errors.Is(e, aw.ErrDenied) {
+			return s.failed(ErrPersonUnavailable)
+		}
 		return s.failed(ErrPersistence)
 	}
 	rows = []aw.Row{row(aw.Challenges, v.ChallengeID, aw.ReservedInsert)}
