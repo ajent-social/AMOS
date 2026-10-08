@@ -14,6 +14,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	wp "github.com/ajent-social/amos/identity/internal/writerproof"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -41,11 +43,17 @@ const (
 // Store is scoped to one caller-owned transaction. It is intentionally not
 // safe to retain after that transaction commits or rolls back.
 type Store struct {
-	tx *sql.Tx
+	tx        *sql.Tx
+	attempt   *aw.Attempt
+	issuance  wp.Issuance
+	startedAt *time.Time
 }
 
 // New binds identity operations to an existing transaction.
 func New(tx *sql.Tx) (*Store, error) {
+	if err := aw.SelectLegacy(); err != nil {
+		return nil, ErrPersistence
+	}
 	if tx == nil {
 		return nil, ErrInvalidInput
 	}
@@ -83,7 +91,7 @@ type PendingAccount struct {
 // password verifier, and an email-verification challenge in the caller's
 // transaction. Any conflict/error must be returned from the WithTx callback
 // to roll the entire operation back.
-func (s *Store) CreatePendingAccount(ctx context.Context, input PendingAccount) error {
+func (s *Store) createPendingAccount(ctx context.Context, input PendingAccount) error {
 	if s == nil || s.tx == nil || ctx == nil || !validID(input.PersonID) ||
 		!validID(input.EmailID) || !validID(input.CredentialID) ||
 		!validID(input.ChallengeID) || !validID(input.InstallationID) ||
@@ -152,7 +160,7 @@ type ExternalBinding struct {
 
 // LinkExternalIdentity binds one exact provider connection, issuer, and
 // verified subject to a person. Duplicate bindings have a stable conflict.
-func (s *Store) LinkExternalIdentity(ctx context.Context, binding ExternalBinding) error {
+func (s *Store) linkExternalIdentity(ctx context.Context, binding ExternalBinding) error {
 	if s == nil || s.tx == nil || ctx == nil || !validID(binding.ID) ||
 		!validID(binding.PersonID) || !validID(binding.ProviderConnectionID) ||
 		!validTokenPart(binding.Provider) || !validTokenPart(binding.Issuer) ||
@@ -181,7 +189,7 @@ func (s *Store) LinkExternalIdentity(ctx context.Context, binding ExternalBindin
 
 // AdvanceSecurityEpoch invalidates sessions and grants that carry an earlier
 // epoch. It never decrements or accepts a caller-supplied new value.
-func (s *Store) AdvanceSecurityEpoch(ctx context.Context, personID uuid.UUID) (int64, error) {
+func (s *Store) advanceSecurityEpoch(ctx context.Context, personID uuid.UUID) (int64, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validID(personID) {
 		return 0, ErrInvalidInput
 	}
@@ -213,6 +221,8 @@ type Session struct {
 	AuthenticationMethod string
 	AuthenticatedAt      time.Time
 	ExpiresAt            time.Time
+	AssuranceLevel       string
+	AssuranceExpires     time.Time
 }
 
 // AuthenticatedSession is returned only after the store has checked the
@@ -239,7 +249,7 @@ type SessionScope struct {
 // CreateSession persists a session only when the person is active and the
 // supplied epoch still matches the current account epoch. Expiry is bounded
 // by the identity policy's 12-hour absolute lifetime.
-func (s *Store) CreateSession(ctx context.Context, session Session) error {
+func (s *Store) createSession(ctx context.Context, session Session) error {
 	if s == nil || s.tx == nil || ctx == nil || !validID(session.ID) ||
 		!validID(session.PersonID) || !validID(session.InstallationID) ||
 		!validID(session.ApplicationID) || !validID(session.EnvironmentID) ||
@@ -247,24 +257,11 @@ func (s *Store) CreateSession(ctx context.Context, session Session) error {
 		session.SecurityEpoch < 0 || !validAuthenticationMethod(session.AuthenticationMethod) {
 		return ErrInvalidInput
 	}
-	result, err := s.tx.ExecContext(ctx, `
-		WITH issuance_clock AS MATERIALIZED (SELECT clock_timestamp() AS now)
-		INSERT INTO identity_sessions
-			(id, person_id, installation_id, application_id, environment_id,
-			 token_digest, security_epoch, authentication_method, authenticated_at,
-			 expires_at, idle_expires_at, issued_at, last_seen_at)
-		SELECT $1, p.id, p.installation_id, p.application_id, $5,
-			$6, p.security_epoch, $8, $9, $7,
-			LEAST($7, issuance_clock.now + interval '30 minutes'), issuance_clock.now, issuance_clock.now
-		FROM identity_persons p CROSS JOIN issuance_clock
-		WHERE p.id = $2 AND p.installation_id = $3 AND p.application_id = $4
-		  AND p.state = 'active' AND p.security_epoch = $10
-		  AND $7 > issuance_clock.now
-		  AND $7 <= issuance_clock.now + interval '12 hours'
-		  AND $9 <= issuance_clock.now`,
-		session.ID, session.PersonID, session.InstallationID, session.ApplicationID,
-		session.EnvironmentID, session.TokenDigest, session.ExpiresAt,
-		session.AuthenticationMethod, session.AuthenticatedAt, session.SecurityEpoch)
+	if err := sessionAssurance(session, false); err != nil {
+		return err
+	}
+	query, args := sessionInsert(session)
+	result, err := s.tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return mapConflict(err, "identity_sessions_token_digest_key", ErrIdentifierConflict)
 	}
@@ -280,7 +277,7 @@ func (s *Store) CreateSession(ctx context.Context, session Session) error {
 
 // RevokeSession revokes the digest-addressed session once. It does not reveal
 // whether a missing digest belonged to another person.
-func (s *Store) RevokeSession(ctx context.Context, tokenDigest []byte) error {
+func (s *Store) revokeSession(ctx context.Context, tokenDigest []byte) error {
 	if s == nil || s.tx == nil || ctx == nil || len(tokenDigest) != 32 {
 		return ErrInvalidInput
 	}
@@ -305,7 +302,7 @@ func (s *Store) RevokeSession(ctx context.Context, tokenDigest []byte) error {
 // epoch at READ COMMITTED after locking the scoped session row. The database
 // clock is sampled only after that lock completes; no person writer ordering
 // is implied. A stale session and an unknown token have the same result.
-func (s *Store) FindActiveSession(ctx context.Context, tokenDigest []byte, scope SessionScope) (AuthenticatedSession, error) {
+func (s *Store) findActiveSession(ctx context.Context, tokenDigest []byte, scope SessionScope) (AuthenticatedSession, error) {
 	if s == nil || s.tx == nil || ctx == nil || len(tokenDigest) != 32 ||
 		!validID(scope.InstallationID) || !validID(scope.ApplicationID) || !validID(scope.EnvironmentID) {
 		return AuthenticatedSession{}, ErrInvalidInput
@@ -369,19 +366,19 @@ type Challenge struct {
 
 // CreateChallenge stores only a digest. The caller generates and delivers the
 // raw random secret; it is never persisted by this method.
-func (s *Store) CreateChallenge(ctx context.Context, challenge Challenge) error {
+func (s *Store) createChallenge(ctx context.Context, challenge Challenge) error {
 	if s == nil || s.tx == nil || ctx == nil || !validID(challenge.ID) ||
 		!validID(challenge.PersonID) || !validID(challenge.EmailID) ||
 		len(challenge.Digest) != 32 || !validChallengePurpose(challenge.Purpose) {
 		return ErrInvalidInput
 	}
 	result, err := s.tx.ExecContext(ctx, `
-		INSERT INTO identity_challenges (id, person_id, email_id, purpose, token_digest, expires_at)
-		SELECT $1, e.person_id, e.id, $4, $5, $6
+		INSERT INTO identity_challenges (id, person_id, email_id, purpose, token_digest, expires_at, created_at)
+		SELECT $1, e.person_id, e.id, $4, $5, $6, COALESCE($7,transaction_timestamp())
 		FROM identity_emails e
-		WHERE e.id = $3 AND e.person_id = $2 AND $6 > transaction_timestamp()`,
+		WHERE e.id = $3 AND e.person_id = $2 AND $6 > COALESCE($7,transaction_timestamp())`,
 		challenge.ID, challenge.PersonID, challenge.EmailID, challenge.Purpose,
-		challenge.Digest, challenge.ExpiresAt)
+		challenge.Digest, challenge.ExpiresAt, s.startedAt)
 	if err != nil {
 		return mapConflict(err, "identity_challenges_token_digest_key", ErrIdentifierConflict)
 	}
@@ -406,7 +403,7 @@ type ConsumedChallenge struct {
 // caller-owned READ COMMITTED transaction. It locks the exact challenge before
 // sampling database time for both expiry and consumed_at. Results are provisional
 // until caller commit; this does not establish other person or session authority.
-func (s *Store) ConsumeChallenge(ctx context.Context, id uuid.UUID, purpose string, digest []byte) (ConsumedChallenge, error) {
+func (s *Store) consumeChallenge(ctx context.Context, id uuid.UUID, purpose string, digest []byte) (ConsumedChallenge, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validID(id) ||
 		!validChallengePurpose(purpose) || len(digest) != 32 {
 		return ConsumedChallenge{}, ErrInvalidInput
@@ -446,7 +443,7 @@ func (s *Store) ConsumeChallenge(ctx context.Context, id uuid.UUID, purpose stri
 
 // MarkEmailVerified records a contact assertion after its proof challenge has
 // been consumed in the same transaction.
-func (s *Store) MarkEmailVerified(ctx context.Context, personID, emailID uuid.UUID) error {
+func (s *Store) markEmailVerified(ctx context.Context, personID, emailID uuid.UUID) error {
 	if s == nil || s.tx == nil || ctx == nil || !validID(personID) || !validID(emailID) {
 		return ErrInvalidInput
 	}
