@@ -18,7 +18,13 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 		return session.Issued{}, ErrBadCode
 	}
 	request, err := s.writerSessions.AdmitWriterRequest(r)
-	if err != nil || !s.writerSessions.WriterPrincipalMatches(request, principal) {
+	if err != nil {
+		if errors.Is(err, session.ErrUnauthenticated) {
+			return session.Issued{}, ErrDenied
+		}
+		return session.Issued{}, ErrUnavailable
+	}
+	if !s.writerSessions.WriterPrincipalMatches(request, principal) {
 		return session.Issued{}, ErrDenied
 	}
 	ctx = r.Context()
@@ -35,6 +41,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 	var permit wp.Permit
 	var output aw.Binding
 	counter := false
+	counterResult := ErrBadCode
 	reason := ErrDenied
 	completion, err := s.root.Run(ctx, func(ctx context.Context, a *aw.Attempt) aw.Outcome {
 		tx, e := a.DiscoveryTx(ctx)
@@ -166,10 +173,10 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 		expected := factor
 		if !matched || step <= factor.LastUsedStep {
 			counter = true
-			reason = ErrBadCode
+			counterResult = ErrBadCode
 			counterReason := wp.BadCode
 			if matched {
-				reason = ErrReplay
+				counterResult = ErrReplay
 				counterReason = wp.Replay
 			}
 			if e = a.RestrictCounter(factor.ID); e != nil {
@@ -280,7 +287,7 @@ func (s *Service) stepWriter(ctx context.Context, principal identity.Principal, 
 		if e != nil || outcome != aw.CounterOnlyDenied {
 			return session.Issued{}, ErrUnavailable
 		}
-		return session.Issued{}, reason
+		return session.Issued{}, counterResult
 	}
 	issued, err := s.writerSessions.PublishWriter(completion, permit, staged)
 	if err != nil {

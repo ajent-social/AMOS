@@ -10,6 +10,7 @@ import (
 
 	"github.com/ajent-social/amos/identity"
 	wp "github.com/ajent-social/amos/identity/internal/writerproof"
+	"github.com/ajent-social/amos/identity/session"
 	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/google/uuid"
 	"github.com/pquerna/otp"
@@ -21,7 +22,13 @@ func (s *Service) beginWriter(ctx context.Context, principal identity.Principal,
 		return Enrollment{}, ErrUnavailable
 	}
 	request, err := s.writerSessions.AdmitWriterContext(ctx, wp.MFABegin)
-	if err != nil || !s.writerSessions.WriterPrincipalMatches(request, principal) {
+	if err != nil {
+		if errors.Is(err, session.ErrUnauthenticated) {
+			return Enrollment{}, ErrDenied
+		}
+		return Enrollment{}, ErrUnavailable
+	}
+	if !s.writerSessions.WriterPrincipalMatches(request, principal) {
 		return Enrollment{}, ErrDenied
 	}
 	scope := scopeFor(principal)
