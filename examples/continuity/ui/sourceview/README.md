@@ -23,8 +23,8 @@ body text preserves the original bytes.
 
 Run package tests, race tests, vet and pinned repository lint. The tests inspect
 parsed HTML, form/navigation values, invalid input nil outputs, exact body text,
-maximum inputs, independent outputs and concurrent calls. Run the synthetic
-artifact test with `SOURCEVIEW_STATIC_DIR` set to a new absolute directory to
+maximum inputs, independent outputs and concurrent calls. The synthetic artifact test always generates and checks documents in a temporary
+directory. Set `SOURCEVIEW_STATIC_DIR` to a new absolute directory to
 write detail/list documents for the static browser harness in `testdata/`.
 
 The browser harness uses an explicitly supplied existing Playwright installation
