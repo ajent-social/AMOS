@@ -41648,7 +41648,8 @@
         "T-PROD.13",
         "T-RPL-REHEARSAL.6",
         "T-FEATURE-EVOLUTION.6",
-        "T-OPTIONAL-CONTEXT.6"
+        "T-OPTIONAL-CONTEXT.6",
+        "T-RPL-LOGIN-FRESHNESS.6"
       ],
       "owner": "Integration coordinator and independent acceptance reviewer",
       "estimate": "revalidate at preflight",
@@ -41913,6 +41914,150 @@
         "docs/adr/035-continuity-source-view-boundary.md"
       ],
       "projection_id": "E-REPLACEMENT.T-RPL-SOURCE-VIEW.6"
+    },
+    {
+      "id": "T-RPL-LOGIN-FRESHNESS.1",
+      "title": "Qualify password sign-in credential revalidation: preflight",
+      "kind": "agent",
+      "stage": "preflight",
+      "deps": [
+        "T3.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Reconcile exact adopted v1.25 design and supplemental source ownership while preserving original T3.5 claim; fresh reviewed runtime fixture prerequisites and existing options-test scope must be explicit.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "identity/login/login.go: Service.signIn only",
+        "identity/login/signin_freshness_integration_test.go",
+        "identity/login/transaction_test.go: affected sign-in options assertions only",
+        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+      ],
+      "contract_refs": [
+        "docs/contracts/password-signin-freshness.md",
+        "docs/adr/039-password-signin-freshness.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-LOGIN-FRESHNESS.1"
+    },
+    {
+      "id": "T-RPL-LOGIN-FRESHNESS.2",
+      "title": "Qualify password sign-in credential revalidation: author",
+      "kind": "agent",
+      "stage": "author",
+      "deps": [
+        "T-RPL-LOGIN-FRESHNESS.1"
+      ],
+      "owner": "Isolated supplemental source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Implement only Service.signIn exact credential/contact/person revalidation and caller-owned issuance, new focused tests, and narrowly affected options assertions; no other identity source or writer protocol changes.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "identity/login/login.go: Service.signIn only",
+        "identity/login/signin_freshness_integration_test.go",
+        "identity/login/transaction_test.go: affected sign-in options assertions only",
+        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+      ],
+      "contract_refs": [
+        "docs/contracts/password-signin-freshness.md",
+        "docs/adr/039-password-signin-freshness.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-LOGIN-FRESHNESS.2"
+    },
+    {
+      "id": "T-RPL-LOGIN-FRESHNESS.3",
+      "title": "Qualify password sign-in credential revalidation: verify",
+      "kind": "agent",
+      "stage": "verify",
+      "deps": [
+        "T-RPL-LOGIN-FRESHNESS.2"
+      ],
+      "owner": "Isolated supplemental source lane",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Run scoped normal/race/vet/pinned lint and real TLS service schedules, original detached and epoch-only negatives, exact restoration; missing service prerequisites fail visibly.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "identity/login/login.go: Service.signIn only",
+        "identity/login/signin_freshness_integration_test.go",
+        "identity/login/transaction_test.go: affected sign-in options assertions only",
+        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+      ],
+      "contract_refs": [
+        "docs/contracts/password-signin-freshness.md",
+        "docs/adr/039-password-signin-freshness.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-LOGIN-FRESHNESS.3"
+    },
+    {
+      "id": "T-RPL-LOGIN-FRESHNESS.4",
+      "title": "Qualify password sign-in credential revalidation: review",
+      "kind": "agent",
+      "stage": "review",
+      "deps": [
+        "T-RPL-LOGIN-FRESHNESS.3"
+      ],
+      "owner": "Independent exact-head reviewer",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "A different session reviews exact source and independently repeats actual service schedules/negatives/restoration; findings require fix and re-review. No full writer or host claim.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "identity/login/login.go: Service.signIn only",
+        "identity/login/signin_freshness_integration_test.go",
+        "identity/login/transaction_test.go: affected sign-in options assertions only",
+        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+      ],
+      "contract_refs": [
+        "docs/contracts/password-signin-freshness.md",
+        "docs/adr/039-password-signin-freshness.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-LOGIN-FRESHNESS.4"
+    },
+    {
+      "id": "T-RPL-LOGIN-FRESHNESS.5",
+      "title": "Qualify password sign-in credential revalidation: merge",
+      "kind": "agent",
+      "stage": "merge",
+      "deps": [
+        "T-RPL-LOGIN-FRESHNESS.4"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Read back exact head/base/supplemental claim/review/checks and guarded merge respecting protections; original T3.5 claim and baseline source remain preserved.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "identity/login/login.go: Service.signIn only",
+        "identity/login/signin_freshness_integration_test.go",
+        "identity/login/transaction_test.go: affected sign-in options assertions only",
+        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+      ],
+      "contract_refs": [
+        "docs/contracts/password-signin-freshness.md",
+        "docs/adr/039-password-signin-freshness.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-LOGIN-FRESHNESS.5"
+    },
+    {
+      "id": "T-RPL-LOGIN-FRESHNESS.6",
+      "title": "Qualify password sign-in credential revalidation: landed",
+      "kind": "agent",
+      "stage": "landed",
+      "deps": [
+        "T-RPL-LOGIN-FRESHNESS.5"
+      ],
+      "owner": "Integration coordinator",
+      "estimate": "bounded slice; revalidate at preflight",
+      "acceptance": "Compare exact reviewed blobs to main, run fresh actual selected service checks and retain truthful evidence; full session/current-authority/host/product gates remain open.",
+      "status": "PLANNED",
+      "owned_paths": [
+        "identity/login/login.go: Service.signIn only",
+        "identity/login/signin_freshness_integration_test.go",
+        "identity/login/transaction_test.go: affected sign-in options assertions only",
+        "identity/login/runtime_integration_test.go: affected sign-in options assertions only"
+      ],
+      "contract_refs": [
+        "docs/contracts/password-signin-freshness.md",
+        "docs/adr/039-password-signin-freshness.md"
+      ],
+      "projection_id": "E-REPLACEMENT.T-RPL-LOGIN-FRESHNESS.6"
     }
   ],
   "scope": "Complete original product plus AWS production at https://amos.sire.run",
@@ -46772,14 +46917,20 @@
     "T-RPL-SOURCE-VIEW.3",
     "T-RPL-SOURCE-VIEW.4",
     "T-RPL-SOURCE-VIEW.5",
-    "T-RPL-SOURCE-VIEW.6"
+    "T-RPL-SOURCE-VIEW.6",
+    "T-RPL-LOGIN-FRESHNESS.1",
+    "T-RPL-LOGIN-FRESHNESS.2",
+    "T-RPL-LOGIN-FRESHNESS.3",
+    "T-RPL-LOGIN-FRESHNESS.4",
+    "T-RPL-LOGIN-FRESHNESS.5",
+    "T-RPL-LOGIN-FRESHNESS.6"
   ],
   "replacement_context": {
     "status": "PROPOSED_PENDING_REVIEW",
     "baseline_terminal": "T-RPL-REHEARSAL.6",
     "mapping": "docs/planning/replacement-baseline.md",
     "original_task_count": 1501,
-    "added_task_count": 91,
+    "added_task_count": 97,
     "qualification": "Existing evidence registries remain authoritative. Baseline terminal supplements and does not replace complete product/production terminal. Generic feature contracts remain unadopted until reviewed.",
     "original_full_scope_terminal": "T-PROD.13",
     "full_scope_terminal": "T-REPLACEMENT-ACCEPT"
