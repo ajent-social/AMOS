@@ -753,3 +753,26 @@ the supplied attempt's entire realm before SQL or delivery. The field is
 trusted composition input, never parsed from an HTTP request. This supplies
 the existing W1 realm contract without exposing a root/config getter or using
 a caller-selected environment. Independent early review precedes implementation.
+
+Session-owned staged fields require a final read-only fence without exposing
+the new ID, digest, transaction or issuance. Add:
+
+```go
+func (s *Service) CheckStagedWriter(ctx context.Context, a *aw.Attempt,
+    staged Staged, finalDBTime time.Time) error
+```
+
+StageWriter retains the same lexical transaction and exact inserted/rotated row
+snapshots privately. After DrainAndSample, this method requires exact service,
+attempt, original live request context and root-recorded F. It performs only
+plain SELECT through that retained transaction, comparing the complete immutable
+new session state, original subject/realm/epoch/method/V/E/I/assurance and old
+rotation result with those staged snapshots. It applies strict original bounds
+at F and checks current person state/epoch. No new clock replaces F, lock,
+mutation, credential getter, refreshed expiry or output release is allowed.
+It is single-use; missing/replayed/changed rows fail closed. Native issuers call
+it before wp.Finalize and Finish; PublishWriter requires its successful private
+marker as well as the existing wp Permit and committed Completion. Rollback or
+closure cannot create that marker. This extends the concrete native finalizer,
+not the core ordering root or a new credential producer. Independent early
+review precedes source implementation.
