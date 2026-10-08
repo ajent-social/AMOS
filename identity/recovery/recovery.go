@@ -842,7 +842,7 @@ func writeResetPage(w http.ResponseWriter, method string, available bool, challe
 // Preview validates a reset proof without consuming it. Invalid or expired
 // proofs share the same result; callers must not render the supplied token.
 func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, token string) (bool, error) {
-	if s == nil || s.db == nil || ctx == nil {
+	if s == nil || (s.root == nil && s.db == nil) || ctx == nil {
 		return false, ErrUnavailable
 	}
 	id, ok := parseID(challengeID.String())
