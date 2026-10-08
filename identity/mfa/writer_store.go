@@ -58,8 +58,11 @@ func (s *Store) finishError(err error) error {
 	return err
 }
 func (s *Store) participant(ctx context.Context, scope Scope, rows []aw.Row, kind aw.Mutation) (*Store, error) {
-	if s == nil || ctx == nil || !validScope(scope) {
+	if s == nil {
 		return nil, ErrInvalidFactor
+	}
+	if ctx == nil || !validScope(scope) {
+		return nil, s.finishError(ErrInvalidFactor)
 	}
 	if s.attempt == nil {
 		if aw.SelectLegacy() != nil || s.tx == nil {

@@ -195,7 +195,7 @@ func (s *Service) requestWriter(ctx context.Context, address string, challengeID
 			return magicFinish(a, aw.UnavailableRollback)
 		}
 		var recent int
-		if e = tx.QueryRowContext(ctx, `SELECT count(*) FROM public.identity_challenges WHERE person_id=$1 AND email_id=$2 AND purpose=$3 AND created_at >= $4 - interval '1 hour'`, c.person, c.email, challengePurpose, b).Scan(&recent); e != nil {
+		if e = tx.QueryRowContext(ctx, `SELECT count(*) FROM public.identity_challenges WHERE person_id=$1 AND email_id=$2 AND purpose=$3 AND created_at >= $4::timestamptz - interval '1 hour'`, c.person, c.email, challengePurpose, b).Scan(&recent); e != nil {
 			return magicFinish(a, aw.UnavailableRollback)
 		}
 		if recent >= MaxIssueRequestsPerHour {
