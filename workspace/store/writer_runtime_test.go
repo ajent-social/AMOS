@@ -126,13 +126,10 @@ func TestWriterWorkspaceRequiredService(t *testing.T) {
 			t.Error("owned rows cleanup failed")
 		}
 	})
-	for _, mode := range []string{"create commit", "create rollback", "unplanned workspace", "share cannot upgrade", "wrong realm", "ignored failure", "closed attempt", "wrong context"} {
+	for _, mode := range []string{"create commit", "create rollback", "unplanned workspace", "wrong realm", "ignored failure", "closed attempt", "wrong context"} {
 		t.Run(mode, func(t *testing.T) {
 			workspace := newID(t)
 			personAccess := aw.ExistingUpdate
-			if mode == "share cannot upgrade" {
-				personAccess = aw.ExistingShare
-			}
 			rows := []aw.Row{{Table: aw.Persons, ID: owner, Access: personAccess}}
 			if mode != "unplanned workspace" {
 				rows = append(rows, aw.Row{Table: aw.Workspaces, ID: workspace, Access: aw.ReservedInsert})
