@@ -51,8 +51,15 @@ already observable cancellation. A canceled caller returns zero result and the
 context error immediately when scheduled; it neither waits for Argon2 nor joins
 the worker while holding database locks. The worker sends at most once to the
 buffered channel and releases its slot with defer; it never waits for a receiver.
-The channel is not closed by the caller. There is no retained Attempt, transaction,
-request, SQL callback, evidence factory, cookie, output writer or external effect.
+The channel is not closed by the caller. It receives no separate Attempt, transaction,
+request, SQL callback, evidence factory, cookie or output writer and performs no
+external effect. The original context is retained until computation exits: this
+is required by the native protection budget
+(`identity/protection.AdmittedBudget`), whose private one-use resource admission
+would be lost in a background context. This may transitively retain opaque
+context values; it is not a claim of zero reference retention. The worker and
+native Budget cannot extract session/writer private keys or call their APIs, and
+root exit invalidates authority handles independently of context reachability.
 
 This is the sole explicit exception to the writer proposal's no-goroutine rule:
 **pure bounded password computation may outlive its canceled waiter; authority
@@ -63,7 +70,10 @@ No successful W1 completion is permitted after the original deadline.
 
 Configured hasher Budget and Blocklist implementations must be the finite native,
 local, context-respecting implementations identified in the construction manifest;
-they may not retain the request, access authority SQL or call a provider. A stalled
+they may not retain a separate request, access authority SQL or call a provider.
+The native AdmittedBudget must consume the original private admission exactly
+once; cancellation does not refund it. Test fabricated/missing/reused admissions
+and password-change verify-then-hash ordering through the real protection guard. A stalled
 trusted computation can occupy at most the two slots and makes future admission
 busy; it cannot accumulate more workers or authorize a fallback. Independent
 qualification must measure both cancellation responsiveness and useful normal
