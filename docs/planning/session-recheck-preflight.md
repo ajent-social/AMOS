@@ -96,3 +96,11 @@ freezing writer compatibility. Recovery's bulk session revocation needs a proved
 parent-gate rule or complete bounded-set semantics; never silently revoke a
 subset to fit an ordering helper. These are source observations, not reproduced
 runtime failures or accepted repairs.
+
+## Next bounded producer primitive
+
+The [v1.22 challenge-consumption proposal](../contracts/challenge-consumption-freshness.md)
+addresses only the shared store method's lock-wait expiry boundary. It does not
+close the email inline-consume finding, credential-producer transaction graphs,
+magic-link proof timing or refreshed-principal/provenance requirements above.
+Independent review/adoption and actual service negatives precede source acceptance.

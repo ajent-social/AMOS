@@ -366,3 +366,13 @@ existing method shapes while requiring explicit READ COMMITTED, a scoped row
 lock before database-time validation/renewal, and current assurance downgrade.
 Independent design review and landing precede source. This prerequisite does
 not mint provenance or qualify writer ordering, transaction authority or dispatch.
+
+## Proposed amendment v1.22: post-lock challenge consumption freshness
+
+[ADR 036](../adr/036-challenge-consumption-freshness.md) and the
+[challenge freshness proposal](../contracts/challenge-consumption-freshness.md)
+retain the existing identity-store ConsumeChallenge shape while requiring
+READ COMMITTED, exact row locking before expiry sampling, and one post-lock
+database instant for conditional consumption and its timestamp. Independent
+review and landing precede the two-file source assignment. Complete credential
+producers, writer ordering, session provenance and resource authority stay open.
