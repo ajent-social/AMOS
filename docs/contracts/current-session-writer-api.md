@@ -639,3 +639,34 @@ material and job unique waits, wrong scope/key/purpose, raw/unrooted/retained at
 duplicate step, premature JobEnqueue, failed material, rollback, failed commit and
 original-deadline expiry at F. A callback cannot replace a typed participant with
 an arbitrary TxRunner. These are prescribed checks, not obtained qualification.
+
+## B1 evidence-factory ordering inspection
+
+Additive proposal for independent review before implementation:
+
+```go
+func (a *Attempt) CheckRows(phase Phase, rows []Row) error
+func (a *Attempt) StartedAt() (time.Time, error)
+```
+
+The context-free `wp` factory signatures above need to validate acquisition
+without obtaining SQL or fabricating a request context. CheckRows performs the
+same live-root, original cancellation/deadline, sealed-plan, minimum acquisition
+phase and exact row/access checks as ParticipantTx, returning no transaction.
+It grants no credential, acquires nothing, rejects F/closed state, and poisons
+invalid live attempts. Native factories call it on their exact subject and method
+rows before constructing evidence; it is not a substitute for native row reads
+and final comparisons. No context key or marker setter becomes public.
+
+StartedAt returns the immutable database B already required by R6, sampled
+immediately after G. Native request/begin adapters use that one instant for new
+record deadlines. It requires a live rooted attempt but need not require a sealed
+plan; it cannot choose or refresh B. The root itself records B plus the remaining
+original monotonic budget, enforces nonbackward F and strict F before that fixed
+database deadline, in addition to the original context deadline. Neither getter
+creates a final sample, advances a phase or exposes a runtime handle.
+
+Required negatives include zero/unsealed/wrong-phase/unplanned/closed row checks,
+canceled original context despite a detached derived context, and B/F backward
+or equality-at-root-deadline faults. These are additional construction checks,
+not newly accepted product tasks or obtained runtime evidence.
