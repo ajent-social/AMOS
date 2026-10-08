@@ -103,6 +103,11 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 		}
 		completion, err := root.Run(ctx, func(ctx context.Context, a *Attempt) Outcome {
 			retained = a
+			started, startErr := a.StartedAt()
+			if startErr != nil || started.IsZero() {
+				t.Error("root database start unavailable")
+				return UnavailableRollback
+			}
 			if err := a.SealPlan(plan); err != nil {
 				t.Error(err)
 				return UnavailableRollback
@@ -114,6 +119,10 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 			}
 			if err := a.Acquire(ctx, P); err != nil {
 				t.Error(err)
+				return UnavailableRollback
+			}
+			if err := a.CheckRows(P, []Row{row}); err != nil {
+				t.Error("held row inspection failed", err)
 				return UnavailableRollback
 			}
 			tx, err := a.ParticipantTx(ctx, P, []Row{row})
@@ -136,7 +145,7 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				}
 			}
 			now, err := a.DrainAndSample(ctx)
-			if err != nil || !a.IsFinalSample(now) || a.IsFinalSample(now.Add(time.Nanosecond)) {
+			if err != nil || now.Before(started) || !a.IsFinalSample(now) || a.IsFinalSample(now.Add(time.Nanosecond)) {
 				t.Error("exact final sample unavailable")
 				return UnavailableRollback
 			}
@@ -165,7 +174,7 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, mode := range []string{"denied", "missing finish", "panic", "cancel", "phase poison", "wrong context", "unplanned row", "premature success", "duplicate finish", "mutation after F"} {
+	for _, mode := range []string{"denied", "missing finish", "panic", "cancel", "phase poison", "wrong context", "unplanned row", "premature success", "duplicate finish", "mutation after F", "inspection wrong row", "inspection canceled", "inspection at F"} {
 		t.Run(mode, func(t *testing.T) {
 			request, stop := context.WithCancel(ctx)
 			defer stop()
@@ -217,6 +226,23 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 				case "unplanned row":
 					if _, e = a.ParticipantTx(ctx, P, []Row{{Persons, testID(t), ExistingUpdate}}); e == nil {
 						t.Error("unplanned row admitted")
+					}
+				case "inspection wrong row":
+					if a.CheckRows(P, []Row{{Persons, testID(t), ExistingUpdate}}) == nil {
+						t.Error("unplanned inspection admitted")
+					}
+				case "inspection canceled":
+					stop()
+					if a.CheckRows(P, []Row{row}) == nil {
+						t.Error("canceled original request inspected rows")
+					}
+				case "inspection at F":
+					if _, e := a.DrainAndSample(ctx); e != nil {
+						t.Error(e)
+						return UnavailableRollback
+					}
+					if a.CheckRows(P, []Row{row}) == nil {
+						t.Error("F reopened row inspection")
 					}
 				case "premature success":
 					if a.Finish(Success) == nil {

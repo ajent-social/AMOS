@@ -135,6 +135,33 @@ func (a *Attempt) Realm() (Realm, error) {
 	}
 	return s.plan.realm, nil
 }
+
+// StartedAt returns the one database B sampled after G. It cannot refresh the
+// original root deadline or provide identity evidence.
+func (a *Attempt) StartedAt() (time.Time, error) {
+	s, err := a.lockLive()
+	defer unlock(s)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if s.startedAt.IsZero() {
+		return time.Time{}, s.poison(ErrUnrooted)
+	}
+	return s.startedAt, nil
+}
+
+// CheckRows lets native evidence factories inspect ordering without SQL access.
+// The original request cancellation and deadline remain mandatory even though
+// this method accepts no replacement context.
+func (a *Attempt) CheckRows(phase Phase, rows []Row) error {
+	s, err := a.lockLive()
+	defer unlock(s)
+	if err != nil {
+		return err
+	}
+	return s.checkRows(phase, rows)
+}
+
 func (a *Attempt) Acquire(ctx context.Context, phase Phase) error {
 	s, err := a.lockLive()
 	defer unlock(s)
