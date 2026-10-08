@@ -2,9 +2,16 @@ package magiclink
 
 import (
 	"database/sql"
+	"errors"
 	"testing"
 	"time"
 
+	deliveryemail "github.com/ajent-social/amos/delivery/email"
+	"github.com/ajent-social/amos/delivery/email/materialstore"
+	"github.com/ajent-social/amos/identity/session"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
+	"github.com/ajent-social/amos/jobs/sqlstore"
+	"github.com/ajent-social/amos/storage"
 	"github.com/google/uuid"
 )
 
@@ -44,5 +51,54 @@ func TestNativeWriterPureStoredChallengeBoundsAndBinding(t *testing.T) {
 	copy.expires = c.expires.Add(time.Second)
 	if c.same(copy) {
 		t.Fatal("refreshed challenge expiry compared equal")
+	}
+}
+
+func TestNativeWriterPureMagicConstructionCustody(t *testing.T) {
+	id := func() uuid.UUID { return uuid.Must(uuid.NewV7()) }
+	renderer, err := deliveryemail.NewRenderer(deliveryemail.RenderConfig{FromAddress: "no-reply@example.test", ApplicationOrigin: "https://example.test", MaxBodyBytes: 4096})
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, outbox, materials, sessions := &aw.Root{}, &sqlstore.TxWriter{}, &materialstore.Writer{}, &session.Service{}
+	cfg := Config{Renderer: renderer, Sessions: sessions, Policy: allowMagicPolicy{}, InstallationID: id(), ApplicationID: id(), EnvironmentID: id(), ApplicationOrigin: "https://example.test"}
+	got, err := NewWithWriter(root, outbox, materials, cfg)
+	if err != nil || got.root != root || got.writerOutbox != outbox || got.writerMaterials != materials || got.writerSessions != sessions || got.cfg.DB != nil {
+		t.Fatal("native magic constructor changed dependency custody")
+	}
+	cfg.ChallengeLifetime = time.Minute
+	if got.cfg.ChallengeLifetime != DefaultChallengeLifetime {
+		t.Fatal("native magic retained mutable configuration")
+	}
+	cases := []struct {
+		name   string
+		mutate func(*Config)
+	}{
+		{"legacy database", func(c *Config) { c.DB = &storage.DB{} }},
+		{"legacy outbox", func(c *Config) { c.Outbox = &sqlstore.Store{} }},
+		{"legacy material", func(c *Config) { c.Materials = &materialstore.Store{} }},
+		{"typed nil session", func(c *Config) { c.Sessions = (*session.Service)(nil) }},
+		{"typed nil policy", func(c *Config) { c.Policy = (*allowMagicPolicy)(nil) }},
+		{"nil renderer", func(c *Config) { c.Renderer = nil }},
+		{"foreign ID shape", func(c *Config) { c.EnvironmentID = uuid.New() }},
+		{"fractional lifetime", func(c *Config) { c.ChallengeLifetime = time.Minute + time.Nanosecond }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			copy := cfg
+			tc.mutate(&copy)
+			if got, err := NewWithWriter(root, outbox, materials, copy); got != nil || !errors.Is(err, ErrConfiguration) {
+				t.Fatal("invalid native magic dependency admitted")
+			}
+		})
+	}
+	if got, err := NewWithWriter(nil, outbox, materials, cfg); got != nil || !errors.Is(err, ErrConfiguration) {
+		t.Fatal("nil root admitted")
+	}
+	if got, err := NewWithWriter(root, nil, materials, cfg); got != nil || !errors.Is(err, ErrConfiguration) {
+		t.Fatal("nil native outbox admitted")
+	}
+	if got, err := NewWithWriter(root, outbox, nil, cfg); got != nil || !errors.Is(err, ErrConfiguration) {
+		t.Fatal("nil native material writer admitted")
 	}
 }
