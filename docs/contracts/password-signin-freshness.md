@@ -67,7 +67,12 @@ existing migration bytes remain outside this repair.
    constructor; no public principal or proof constructor is added.
 6. Call the existing `Sessions.IssueForRequestTx` with this same context and
    transaction. Session code alone parses the prior configured cookie and stages
-   its existing rotation. Retain the person/email/credential locks until the
+   its existing rotation. Moving from `IssueForRequest` (first matching cookie)
+   to this helper explicitly adopts rejection of duplicate configured session
+   cookies. That helper error follows the unchanged non-freshness mapping: generic
+   HTTP503 `dependency.unavailable`, no cookie/CSRF/success and transaction rollback.
+   Preserve malformed, foreign-realm and single-cookie behavior; no session
+   implementation change is required. Retain the person/email/credential locks until the
    owning transaction completes. No caller may replace the supplied transaction
    or session service; existing trusted same-database/configuration composition
    remains required.
@@ -122,7 +127,8 @@ inject completion failure; record this test mechanism and its limits explicitly.
 | Same tuple unchanged after an observed person, email or credential lock wait | Real successful issuance; exact scope and normal middleware authentication succeed. Each lock wait is separately observed. |
 | Competing credential/contact/state writer after the new attempt holds the relevant row | Writer waits; issuance completes first or cancellation rolls it back. Do not label a deadlock or timeout successful serialization. |
 | Current hash requires no rehash; legacy hash rehash CAS succeeds; CAS loses to a same-epoch replacement; optional rehash fails without changing original hash | Respect the exact expected-hash rule; no second password verification. A losing replacement cannot authenticate the old password. Do not assert rollback of already committed optional rehash. |
-| Same-person and cross-person prior cookie, foreign-realm/malformed/duplicate prior cookie | Existing session rotation and error semantics preserved, foreign rows unchanged; failures disclose no provisional result. This is bounded behavior, not whole-writer compatibility. |
+| Same-person and cross-person prior cookie, foreign-realm/malformed/single prior cookie | Existing rotation and error semantics preserved, foreign rows unchanged; failures disclose no provisional result. This is bounded behavior, not whole-writer compatibility. |
+| Duplicate configured prior cookies | Newly adopted Tx-helper rejection maps to generic503 with no provisional output or committed rotation, instead of choosing the first cookie. No session source change. |
 | Cancellation while waiting at each new row lock; dependency error; closed transaction; injected failed completion |503 with no success body, Set-Cookie or CSRF; every staged new session/old-session revocation rolls back where the transaction failed. |
 | Unknown address, malformed address, wrong password, unverified and inactive account; ordinary signup | Existing generic failures/dummy work and registration behavior remain unchanged. |
 

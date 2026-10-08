@@ -407,3 +407,7 @@ issuance transaction. Existing optional rehash behavior remains separately
 committed; no exported API, migration or whole-writer protocol is adopted.
 Independent exact-head review/landing and a new supplemental claim precede
 source. Original T3.5 acceptance and its retained ownership are unchanged.
+
+The move to `IssueForRequestTx` explicitly adopts its duplicate configured-cookie
+rejection, mapped through existing generic503/no-output handling; the previous
+first-cookie selection is not promised for this bounded repair.

@@ -11,3 +11,9 @@ Existing baseline component acceptance is preserved. Supplemental source work
 has its own six-stage lifecycle, claim and exact evidence. Whole-writer ordering,
 complete producer finalization, current resource authority and host acceptance
 remain open; deadlock failures are unavailable, not liveness qualification.
+
+Using the existing caller-transaction helper deliberately rejects duplicate
+configured prior cookies instead of selecting the first one. Its error retains
+the existing generic503 mapping and releases no provisional output. Malformed,
+foreign-realm and single-cookie behavior remain unchanged; no session source
+change is part of this amendment.
