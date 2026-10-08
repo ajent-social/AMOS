@@ -173,7 +173,7 @@ func TestEmailTxRunnerOptionsAndErrors(t *testing.T) {
 	if p, e := s.Preview(ctx, emailID(t), token); p.Available || e != ErrUnavailable || calls != 1 || options == nil || !options.ReadOnly || options.Isolation != sql.LevelDefault {
 		t.Fatal("preview options or error mapping changed")
 	}
-	if e := s.Confirm(ctx, emailID(t), token); e != ErrUnavailable || calls != 2 || options != nil {
+	if e := s.Confirm(ctx, emailID(t), token); e != ErrUnavailable || calls != 2 || options == nil || options.ReadOnly || options.Isolation != sql.LevelReadCommitted {
 		t.Fatal("confirm options or error mapping changed")
 	}
 	if a, e := s.IssueVerification(ctx, emailID(t), emailID(t), emailID(t)); a.Received || e != ErrUnavailable || calls != 3 || options != nil {
