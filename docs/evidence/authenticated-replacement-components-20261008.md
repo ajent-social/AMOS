@@ -55,8 +55,10 @@ Email source `2ba08c7` with test correction `67621ce` was independently reported
 as normal/race/restored 8/8/8, plus 3/3/3 atomicity/personal-workspace checks and an
 intended personal-guard negative. The first test digest failed to reach the
 intended confirmation branch and remains failed evidence. The review session
-exited before its final consolidated receipt, so exact log/receipt reconciliation
-is still required before the batch evidence gate.
+exited before its final consolidated receipt. A different reviewer subsequently
+reconciled every retained run-log hash and source archive against the recorded
+receipts and exact Git objects, without impersonating the prior reviewer or
+rerunning the accepted component.
 
 Native login/magic/MFA/primary source through `37e31f9`, with selected-test
 propagation at `039f17b`, remains under independent review. The earlier `e57b001`
@@ -74,10 +76,30 @@ batch gate.
 Recovery source `e5cee25` adds native request, preview, reset completion and password
 change with the separately reviewed completion-policy design at `ad0a00c`.
 Author pure/race selections passed 38/38 events, with vet and pinned lint passing.
-Required-service source covers guarded reset request/completion with a real hasher;
-its author did not execute it. Independent source/runtime review, the password-change
-journey and the complete failure/wait schedules remain required. The delivery
+Required-service source covers guarded reset request/completion and password change
+with a real hasher. Independent ordinary runs through `301e8a9` passed 6/6/6
+normal/race/restored events, after correcting test chronology, preflight denial
+mapping, encoded cookie binding and root-backed handler availability. Earlier
+setup, 401 and 503 failures remain failed evidence. Typed preview follow-up
+`5ba2351`, complete failure/wait schedules and actual local completion-policy
+qualification still require their applicable review. Its author used no runtime fixture. The delivery
 wrapper terminal-error correction `2406043` likewise requires additive review.
+
+The existing session reader sample at `56b30ae` and native MFA Status use at
+`8e9cff8` received finite source review. Status pure checks passed 27 events;
+actual sampled-status runtime remains unverified. The ordinary native selection
+at `88856c3` separately passed 14/14/14 normal/race/restored events; none of those
+results includes the blocked assurance regression.
+
+Private read composition at `22ef06c` follows the independently reviewed design
+`cec5873`: one privately constructed runtime/root/session/resolver, existing
+repository and renderer, final current authority and commit-only buffered output.
+Author pure/race selections passed two events each; vet and pinned lint passed.
+It has no exported host constructor or listener. Required-service source uses
+synthetic account/session setup with actual middleware; independent source/runtime
+review, the full sign-in-to-business journey and commit-loss schedules remain open.
+The fixture extension received independent source qualification only; a fresh
+isolated runtime and actual checks are separate gates.
 
 ## Preserved limits and next gates
 
@@ -101,3 +123,7 @@ scan also reported three existing test credential-assignment heuristics; this
 record does not claim a fully green package or repository scan. Recovery source
 adds three credential-assignment heuristic matches on ordinary field equality
 expressions; these are disclosed separately and are not a green scan result.
+
+The private reader fixture test forwards its runtime connection credential through
+the standard configuration type; the scoped scanner flags that one assignment.
+No fully green repository scan is claimed.
