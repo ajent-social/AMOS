@@ -22,10 +22,16 @@ func (s *Service) completeWriter(ctx context.Context, id uuid.UUID, digest []byt
 	e := s.root.Read(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		r, e := s.reset(ctx, tx, id, digest)
 		if e != nil {
+			if errors.Is(e, ErrChallengeUnavailable) {
+				return aw.ErrDenied
+			}
 			return e
 		}
 		original, e = s.account(ctx, tx, r.person, r.email, "")
 		if e != nil {
+			if errors.Is(e, ErrChallengeUnavailable) {
+				return aw.ErrDenied
+			}
 			return e
 		}
 		var now time.Time
@@ -33,13 +39,13 @@ func (s *Service) completeWriter(ctx context.Context, id uuid.UUID, digest []byt
 			return ErrUnavailable
 		}
 		if original.credential == uuid.Nil || original.hash == "" || r.consumed.Valid || now.Before(r.created) || !now.Before(r.expires) {
-			return ErrChallengeUnavailable
+			return aw.ErrDenied
 		}
 		return nil
 	})
 	if e != nil {
-		if errors.Is(e, ErrChallengeUnavailable) {
-			return e
+		if errors.Is(e, aw.ErrDenied) {
+			return ErrChallengeUnavailable
 		}
 		return ErrUnavailable
 	}
