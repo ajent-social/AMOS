@@ -173,7 +173,7 @@
         "findings": []
       },
       "external_blockers": [],
-      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2–6 and corrective chainF1/R1."
+      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2\u20136 and corrective chainF1/R1."
     },
     "T-SDLC-10-7.2": {
       "task_id": "T-SDLC-10-7.2",
@@ -3221,6 +3221,39 @@
       },
       "external_blockers": [],
       "next_action": "Continue authenticated retrieval, full SSR/host/current-authority and rehearsal; no full SEARCH/WEB or product acceptance."
+    },
+    "T-RPL-HOST-CONTRACT.1": {
+      "task_id": "T-RPL-HOST-CONTRACT.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator with disjoint preflight author",
+      "claim": {
+        "resource": "T-RPL-HOST-CONTRACT.1",
+        "tip": "9da3b4e1501b68d9c60930067eafc9b0efb23df0",
+        "scope": "Coordinator-held preflight only; no source or host-authority grant"
+      },
+      "dependency_receipts": [
+        "T-RPL-CONTRACT.6"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "d28628dac1de88752baf97e5f36df255c6c0f495",
+        "landed": "a2e5e0da51e38c91ab4630b696fc8d674a303ef7",
+        "pr": 68
+      },
+      "commands_and_results": [
+        "Source-grounded matrix in docs/contracts/continuity-host.md; original contract prefix preserved,25 added links resolve, scoped publicscan and git diff --check PASS",
+        "Different coordinator independently traced session/workspace/repository/render/completion/migration source; exact landed document blob equals reviewed e54784155fffd65ef5624fc309ded1f3f5158cd5",
+        "Fresh landed scripts/check-plan.py PASS1592; semantic inventory check only"
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Preflight source matrix only; no actual runtime checks or authority adoption"
+      },
+      "external_blockers": [
+        "Full shared provenance/refreshed-principal/writer contract required before source",
+        "Same-transaction workspace/resource authority and HTTP completion remain unimplemented",
+        "Migration allocation remains unassigned; no installation DDL authorized"
+      ],
+      "next_action": "T-RPL-HOST-CONTRACT.2 exact authority design following docs/planning/replacement-integration-path.md; no HOST-CONTRACT.6, SEARCH.6, WEB/HOST or product acceptance from this preflight"
     }
   },
   "receipt_requirements": [
