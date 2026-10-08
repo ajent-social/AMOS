@@ -187,7 +187,7 @@ func TestPasswordWorkRuntimeRequiredService(t *testing.T) {
 	}
 	// Synthetic credential setup qualifies the real guard budget, not a native
 	// credential producer, W1 writer, or complete authentication journey.
-	proof, err := authproof.NewVerifiedCredential(person, installation, application, environment, 0, "password", now, "aal1", now.Add(time.Hour))
+	proof, err := authproof.NewVerifiedCredential(person, installation, application, environment, 0, "email_password", now, "aal1", now.Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
