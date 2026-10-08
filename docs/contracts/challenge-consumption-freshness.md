@@ -97,7 +97,7 @@ Required actual schedules:
   the waiter schedule.
 - A still-live challenge succeeds after a demonstrated wait, returns only its
   exact bound person/email, and records consumed_at no earlier than a database
-  observation after the blocker releases. Verify committed replay is unavailable.
+  observation taken by the blocker immediately before releasing its held row. Verify committed replay is unavailable.
 - A successful consume rolled back by the caller leaves a still-live token
   consumable in a later transaction. Two real competing consumers produce one
   committed success and one non-enumerating unavailable result.
