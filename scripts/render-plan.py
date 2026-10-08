@@ -36,7 +36,7 @@ def main():
             for name, content in files.items():
                 with (args.output_dir / name).open('xb') as stream:
                     stream.write(content)
-            print('Rendered 1501 current tasks; registries preserved as unqualified records. No release qualified.')
+            print('Rendered current tasks; registries preserved as unqualified records. No release qualified.')
         return 0
     except (OSError, ValueError, TypeError, RecursionError) as exc:
         print('ERROR: current projection failed: ' + str(exc), file=sys.stderr)

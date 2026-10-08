@@ -98,3 +98,8 @@ cycle fixture did not construct a cycle; it was corrected to an actual self-cycl
 and the full suite then passed. A further regression rejects reclassifying a retained
 product task as a lifecycle task. These are tooling checks only. No provider,
 production, full-build, independent-review or merged-state qualification follows.
+
+Additive plan revisions may append retained IDs and lifecycle rows. The first
+1,501 retained IDs remain pinned by their independent inventory digest; new rows
+must be listed, unique and dependency-valid. The checker does not freeze the
+whole evolving plan at its initial task count.

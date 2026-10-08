@@ -41,6 +41,19 @@ class CurrentPlanTests(unittest.TestCase):
         self.assertEqual(projected['evaluations'], [])
         self.assertEqual(files, PLAN.projection_files(self.current))
 
+    def test_additive_lifecycle_extension_preserves_retention(self):
+        source = copy.deepcopy(self.source)
+        source['tasks'].append({'id': 'NEW-LIFECYCLE', 'title': 'New review',
+                                'stage': 'review', 'deps': [source['terminal_task']],
+                                'acceptance': 'Independent exact-head review'})
+        source['required_task_ids'].append('NEW-LIFECYCLE')
+        source['terminal_task'] = 'NEW-LIFECYCLE'
+        tasks, _ = PLAN.validate_source(source)
+        self.assertEqual(len(tasks), len(self.source['tasks']) + 1)
+        source['required_task_ids'][0] = 'REPLACED-ORIGINAL'
+        with self.assertRaisesRegex(PLAN.PlanError, 'differ from adopted'):
+            PLAN.validate_source(source)
+
     def test_retired_baseline_rejected(self):
         baseline = json.loads((ROOT / 'docs/planning/plan-data.json').read_text())
         with self.assertRaisesRegex(PLAN.PlanError, 'retired baseline'):
