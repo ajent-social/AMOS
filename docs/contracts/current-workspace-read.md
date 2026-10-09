@@ -140,3 +140,49 @@ requires different exact review and a fresh serial grant before use.
 Ownership: workspace/context and store under T4.4/T4.2, shared composition under
 integrator/T2.8, source retrieval under T-RPL-SEARCH.2. No foreign identity source,
 module, migration, executable or task acceptance edit is delegated by this proposal.
+
+## Proposed binding for transaction-owned audit attribution
+
+The transaction-only resolver currently returns facts without attaching its
+private selection context. The legacy middleware owns a different database
+handle and cannot be substituted into the private runtime composition. Add this
+finite method to the existing resolver, subject to independent design review:
+
+```go
+func (r *Resolver) ResolveCurrentContextTx(ctx context.Context, tx *sql.Tx,
+    principal identity.Principal, workspaceID uuid.UUID) (context.Context, Selection, error)
+```
+
+This is a resolving operation, not a setter accepting a caller-supplied Selection.
+It first requires the native principal already in ctx to match the supplied
+freshly rechecked principal in every exposed field: installation, application,
+environment, person, security epoch, authentication method, authentication time,
+actor kind/person/machine IDs, assurance level and assurance expiry. Compare
+instants with time.Time.Equal. Missing or mismatched principal is denied without
+SQL or a bound context; nil/canceled context and missing dependencies remain
+unavailable. It then calls the existing ResolveCurrentTx exactly once with the
+same ctx, tx, principal and selector. Propagate its precise error class and return
+nil context plus zero Selection on every failure. Recheck cancellation before
+binding. On success attach a separately copied selection under the existing
+private key; return another independently copied Selection. Caller mutation and
+FromContext mutation must not change the stored snapshot. Preserve the original
+context's cancellation and values. Add no pool, credential parser, public raw
+context setter, permission callback or SQL query outside ResolveCurrentTx.
+
+The private composition must still supply its exact native session recheck and
+retained transaction. This method establishes neither session provenance nor a
+permission grant, and a retained context is not valid current authority on a
+later transaction. Invoke it before final authority sampling, retain the resolved
+workspace ID, and repeat current rechecks after waits as required by the owning
+operation contract. It is not a replacement for the complete operation evaluator,
+writer graph, final validation or commit-before-publication gates. In particular,
+the audit writer may use the bound attribution to record a denial without granting
+the attempted operation. Legacy middleware and ResolveCurrentTx stay unchanged.
+
+Required evidence includes missing/mismatched principal rejection before SQL,
+error/cancellation propagation, native admitted personal selection attached on
+the same retained transaction, independent copies of membership/permissions, and
+actual invocation audit attribution from that bound context. These checks do not
+qualify an executor or any excluded authority regression. Ownership is the
+existing T4.4 workspace/context path, with integrator-owned contract and private
+composition; no foreign identity, magic-link or MFA path is delegated.
