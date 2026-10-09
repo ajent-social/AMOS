@@ -239,10 +239,11 @@ generator gate remains open.
 The ordinary browser test remains unqualified. Its first run at `220b295` failed
 before producing any coverage. The separately reviewed finite diagnostic at
 `1c14f3` also failed, reporting the browser-launch phase and zero page/layout/form
-counts. Race execution did not follow these failures. A launch-only diagnostic
-returned an inconclusive error category; it does not establish a root cause or
-justify a browser success claim. Subsequent source changes require their own
-review and selected runtime evidence.
+counts. Race execution did not follow these failures. The first launch-only diagnostic
+returned an inconclusive category. A separately reviewed follow-up identified a
+Chromium Unix socket path-length failure under the nested test temporary directory.
+The proposed short private temporary root still requires exact source review and
+selected runtime evidence; the diagnosis is not a browser success claim.
 
 ## Preserved limits and next gates
 
