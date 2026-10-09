@@ -99,3 +99,40 @@ The legacy `tests/planning/test_retired_plan_tools.py` has three pre-existing
 harness failures: obsolete diagnostic expectations and an isolated release-tool
 fixture missing its checker dependency. They are not passing evidence; the
 explicit historical structure/self-test commands remain the historical checks.
+
+## Native authority and applicable conformance gate
+
+AMOS already declares a **native authored plan** through `cmd/portableplan`:
+`definition.source.authority` is `native`, its authority ID is
+`amos:repository`, the plan ID is `amos:plan`, task IDs use `amos:task:`, and
+product acceptance requirements use `amos:acceptance:`. This classification
+predates the Markdown compatibility view. `docs/planning/wazi-source.json`
+remains its canonical authored source; the split Markdown files are derived,
+read-only display inputs, not ordinary Markdown-owned plan definitions.
+
+The native-source conformance path preserves this existing authority and uses
+the owning native exporter with the frozen external contract and semantic
+validator. Applying the ordinary single-file Markdown normalizer would change
+portable task identities and turn product `domain-accepted` dependencies into
+`execution-complete` dependencies. Its rejection of this split display view is
+an inapplicable-adapter diagnostic, not an ordinary-conformance pass or a reason
+to weaken native semantics. No authority conversion or service enrollment is
+introduced by this repair.
+
+Qualify the external verifier artifact once with its pinned fixture suite, then
+validate the actual current native export against the same frozen package:
+
+```sh
+go run ./cmd/portableplan > current-native-plan.json
+"$PLAN_CONTRACT_VALIDATOR" fixtures --contract-digest sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d
+"$PLAN_CONTRACT_VALIDATOR" validate --contract-digest sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d current-native-plan.json
+```
+
+Keep the derived artifact outside tracked source. Record exact exporter,
+verifier, reader, source and artifact digests. Compare every exported ID,
+original native record, title, stage, acceptance and dependency to the current
+source, including all 257 product requirements and the product/lifecycle
+predicate distinction. Separately run the actual Markdown scanner/reader/router
+checks above. Neither native contract conformance nor display compatibility
+authenticates execution receipts, admits dispatch, accepts more product tasks,
+or substitutes for native application UI acceptance.
