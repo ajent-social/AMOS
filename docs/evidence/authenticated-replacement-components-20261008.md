@@ -144,10 +144,32 @@ review after its `28da29e` design review. Fifteen new pure normal and fifteen ra
 pass events, vet and zero-issue pinned lint qualify construction, exact retained
 interface forwarding and failure handling. A typed-nil guard removal failed for
 pointer and map values; exact restoration passed four events. The required-service
-test visibly failed without its prerequisite, with zero skips; its runtime checks
-remain pending. The legacy SQL transaction path keeps its existing caller ownership.
+test visibly failed without its prerequisite, with zero skips. A fresh independent
+run on integrated `0f514e9` then passed seven normal and seven race events for the
+legacy and DBTX paths: scoped discovery, committed revision/activity/draft writes
+and caller rollback. The changed legacy adapter also justified a focused ordinary
+HTTP regression run, which passed eight normal and eight race events. All five
+fixture resources, its run directory and watchdog were verified removed. The
+legacy SQL transaction path keeps its existing caller ownership.
 A real transaction signature adapter cannot qualify operation-callback invalidation
 or establish current authority. No executor is enabled by this repository change.
+
+The baseline presentation contract `04f8620` and source `af398c6` received
+independent finite design and source reviews. Thirty-seven normal and thirty-seven
+race test events, vet and zero-issue pinned lint cover the typed views, ordinary
+forms, raw input bounds, alias isolation, final positive revision, stale drafts,
+finite guide input and bounded output. Independent raw-draft preflight and output
+cap mutations failed, with exact restorations passing. Source-author escaping and
+human-decision mutations also failed their intended assertions and were restored.
+
+The `af9d422` layout and static-browser harness correction received separate
+review after an actual narrow-screen overflow failure. The corrected harness
+passed on seven synthetic file documents with JavaScript disabled: keyboard
+access, 390/1024/1440 widths and CSS text scaling at 200% and 50%. CSS scaling is
+not browser zoom. The harness substitutes only the hashed local stylesheet path;
+it exercises no HTTP, authentication, form submission, persistence or HTMX.
+The human decision stays disabled and drafts have no sending control. These
+renderers do not enable a business host or prove that their forms are bound.
 
 ## Preserved limits and next gates
 
