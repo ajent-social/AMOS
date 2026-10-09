@@ -63,7 +63,7 @@ func New(db *sql.DB, reader ReadAuthorizer, writer WriteAuthorizer, actor ActorR
 // AppendTx appends the event in the caller's transaction so domain state and
 // the corresponding security event commit or roll back together.
 func (s *Store) AppendTx(ctx context.Context, tx *sql.Tx, event audit.Event) (audit.Record, error) {
-	if s == nil || s.db == nil || ctx == nil || tx == nil || audit.Validate(event) != nil {
+	if s == nil || s.db == nil || ctx == nil || tx == nil || audit.Validate(event) != nil || event.Action == audit.ActionOperationInvoked {
 		return audit.Record{}, audit.ErrInvalidEvent
 	}
 	actor, err := s.actor.ResolveAuditActor(ctx)
@@ -82,6 +82,16 @@ func (s *Store) AppendTx(ctx context.Context, tx *sql.Tx, event audit.Event) (au
 		}
 		return audit.Record{}, audit.ErrUnavailable
 	}
+	return insertEvent(ctx, tx, event, actor)
+}
+
+// insertEvent is shared only by the generic authorized writer and the finite
+// trusted-context invocation writer. The caller retains transaction ownership.
+func insertEvent(ctx context.Context, tx *sql.Tx, event audit.Event, actor audit.Actor) (audit.Record, error) {
+	var operationID any
+	if event.OperationID != "" {
+		operationID = event.OperationID
+	}
 	attributes := event.Attributes
 	if attributes == nil {
 		attributes = []audit.Attribute{}
@@ -97,12 +107,12 @@ func (s *Store) AppendTx(ctx context.Context, tx *sql.Tx, event audit.Event) (au
 	var createdAt time.Time
 	err = tx.QueryRowContext(ctx, `INSERT INTO amos_security_audit_events
 		(id, installation_id, application_id, environment_id, workspace_id, actor_kind, actor_id,
-		 action, resource_type, resource_id, outcome, correlation_id, attributes, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,transaction_timestamp())
+		 action, resource_type, resource_id, outcome, correlation_id, attributes, operation_id, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,transaction_timestamp())
 		RETURNING created_at`,
 		id, event.InstallationID, event.ApplicationID, event.EnvironmentID, event.WorkspaceID,
 		actor.Kind, actor.ID, event.Action, event.ResourceType, event.ResourceID,
-		event.Outcome, event.CorrelationID, string(encoded)).Scan(&createdAt)
+		event.Outcome, event.CorrelationID, string(encoded), operationID).Scan(&createdAt)
 	if err != nil {
 		return audit.Record{}, unavailable(err)
 	}
@@ -162,7 +172,7 @@ func scopeForEvent(event audit.Event) audit.Scope {
 }
 
 const selectRecords = `SELECT id, installation_id, application_id, environment_id, workspace_id,
-	actor_kind, actor_id, action, resource_type, resource_id, outcome, correlation_id, attributes::text, created_at
+	actor_kind, actor_id, action, resource_type, resource_id, outcome, correlation_id, attributes::text, COALESCE(operation_id,''), created_at
 	FROM amos_security_audit_events`
 
 type rowScanner interface{ Scan(...any) error }
@@ -173,7 +183,7 @@ func scanRecord(row rowScanner) (audit.Record, error) {
 	var attributes string
 	err := row.Scan(&record.ID, &record.InstallationID, &record.ApplicationID, &record.EnvironmentID,
 		&record.WorkspaceID, &actorKind, &record.Actor.ID, &action, &resourceType,
-		&record.ResourceID, &outcome, &record.CorrelationID, &attributes, &record.CreatedAt)
+		&record.ResourceID, &outcome, &record.CorrelationID, &attributes, &record.OperationID, &record.CreatedAt)
 	if err != nil {
 		return audit.Record{}, err
 	}

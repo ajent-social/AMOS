@@ -19,10 +19,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ajent-social/amos/billing/reconcile"
 	business "github.com/ajent-social/amos/examples/reference/app/business"
 	reference "github.com/ajent-social/amos/examples/reference/migrations"
 	ui "github.com/ajent-social/amos/examples/reference/ui"
 	"github.com/ajent-social/amos/identity"
+	"github.com/ajent-social/amos/identity/federation"
 	"github.com/ajent-social/amos/identity/mfa"
 	"github.com/ajent-social/amos/identity/session"
 	"github.com/ajent-social/amos/internal/testkit"
@@ -82,7 +84,19 @@ func localDatabase(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	registry, err := migrations.Core(reference.Fragment(), ingress, binding, magic, assurance, factors, limits)
+	reconciliation, err := reconcile.Schema(15)
+	if err != nil {
+		t.Fatal(err)
+	}
+	federationFlow, err := federation.Fragment(16)
+	if err != nil {
+		t.Fatal(err)
+	}
+	invocations, err := migrations.OperationInvocations(17)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := migrations.Core(reference.Fragment(), ingress, binding, magic, assurance, factors, limits, reconciliation, federationFlow, invocations)
 	if err != nil {
 		t.Fatal(err)
 	}

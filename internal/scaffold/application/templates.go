@@ -116,7 +116,8 @@ func runMigration()error{
  limits,err:=migrations.MFAProtection(14);if err!=nil{return err}
  reconciliation,err:=reconcile.Schema(15);if err!=nil{return err}
  federationFlow,err:=federation.Fragment(16);if err!=nil{return err}
- registry,err:=migrations.Core(reference.Fragment(),ingress,binding,magic,assurance,factors,limits,reconciliation,federationFlow);if err!=nil{return err}
+ invocations,err:=migrations.OperationInvocations(17);if err!=nil{return err}
+ registry,err:=migrations.Core(reference.Fragment(),ingress,binding,magic,assurance,factors,limits,reconciliation,federationFlow,invocations);if err!=nil{return err}
  return storage.Migrate(ctx,db,registry)
 }
 `

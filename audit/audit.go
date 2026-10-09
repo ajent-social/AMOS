@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"regexp"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,6 +46,7 @@ const (
 	ActionMembershipChange Action = "workspace.membership_changed"
 	ActionGrantChanged     Action = "policy.grant_changed"
 	ActionAccessDenied     Action = "security.access_denied"
+	ActionOperationInvoked Action = "operation.invoked"
 )
 
 type ResourceType string
@@ -55,6 +57,7 @@ const (
 	ResourceWorkspace  ResourceType = "workspace"
 	ResourceGrant      ResourceType = "grant"
 	ResourceCredential ResourceType = "credential"
+	ResourceInvocation ResourceType = "invocation"
 )
 
 type Outcome string
@@ -91,6 +94,7 @@ type Event struct {
 	Outcome        Outcome      `json:"outcome"`
 	CorrelationID  uuid.UUID    `json:"correlation_id"`
 	Attributes     []Attribute  `json:"attributes"`
+	OperationID    string       `json:"operation_id,omitempty"`
 }
 
 // Record is a durable audit event. CreatedAt comes from PostgreSQL transaction
@@ -144,6 +148,13 @@ func Validate(event Event) error {
 	if !validAction(event.Action) || !validResource(event.ResourceType) || !validOutcome(event.Outcome) {
 		return ErrInvalidEvent
 	}
+	if event.Action == ActionOperationInvoked {
+		if event.ResourceType != ResourceInvocation || len(event.OperationID) < 3 || len(event.OperationID) > 120 || !operationIDPattern.MatchString(event.OperationID) || len(event.Attributes) != 0 {
+			return ErrInvalidEvent
+		}
+	} else if event.OperationID != "" || event.ResourceType == ResourceInvocation {
+		return ErrInvalidEvent
+	}
 	if len(event.Attributes) > MaxAttributes {
 		return ErrInvalidEvent
 	}
@@ -172,7 +183,7 @@ func validAction(value Action) bool {
 	switch value {
 	case ActionMaterialCreated, ActionMaterialUpdated, ActionMaterialRevoked,
 		ActionSessionIssued, ActionSessionRevoked, ActionMembershipChange,
-		ActionGrantChanged, ActionAccessDenied:
+		ActionGrantChanged, ActionAccessDenied, ActionOperationInvoked:
 		return true
 	default:
 		return false
@@ -181,7 +192,7 @@ func validAction(value Action) bool {
 
 func validResource(value ResourceType) bool {
 	switch value {
-	case ResourceMaterial, ResourceSession, ResourceWorkspace, ResourceGrant, ResourceCredential:
+	case ResourceMaterial, ResourceSession, ResourceWorkspace, ResourceGrant, ResourceCredential, ResourceInvocation:
 		return true
 	default:
 		return false
@@ -204,3 +215,5 @@ func validAttribute(attribute Attribute) bool {
 		return false
 	}
 }
+
+var operationIDPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$`)
