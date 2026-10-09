@@ -42,7 +42,7 @@ const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
    const seen=[];
    for(let i=0;i<35;i++) {
     await page.keyboard.press('Tab');
-    const focused=await page.locator(':focus').evaluate(n=>({name:n.getAttribute('name'),tag:n.tagName,disabled:n.disabled===true})).catch(()=>null);
+    const focused=await page.evaluate(()=>{const n=document.activeElement;return n?{name:n.getAttribute('name'),tag:n.tagName,disabled:n.disabled===true}:null});
     if(focused) {assert.equal(focused.disabled,false);if(focused.name) seen.push(focused.name);}
    }
    record.keyboardFields=[...new Set(seen)];
