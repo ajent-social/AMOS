@@ -236,14 +236,37 @@ and effective SQL hash through 16. Generated-application verification failed at
 the existing framework file limit; its owner boundary remains preserved and the
 generator gate remains open.
 
-The ordinary browser test remains unqualified. Its first run at `220b295` failed
-before producing any coverage. The separately reviewed finite diagnostic at
-`1c14f3` also failed, reporting the browser-launch phase and zero page/layout/form
-counts. Race execution did not follow these failures. The first launch-only diagnostic
-returned an inconclusive category. A separately reviewed follow-up identified a
-Chromium Unix socket path-length failure under the nested test temporary directory.
-The proposed short private temporary root still requires exact source review and
-selected runtime evidence; the diagnosis is not a browser success claim.
+The browser's first run at `220b295` failed before producing any coverage. The
+separately reviewed diagnostic at `1c14f3` also failed at browser launch with zero
+page/layout/form counts; no race run followed either failure. A launch-only
+follow-up identified a Chromium Unix socket path-length failure under the nested
+test temporary directory. These failures remain part of the evidence.
+
+The separately reviewed correction at `516b899` uses an explicit qualified short
+private temporary root, preserving the minimal child environment. Its directory
+permission-check mutation failed and was restored. Fresh independent normal and
+race runs each passed the single required-service browser test: 19 pages and
+navigations, 38 layout checks at 390 and 1440 widths, four keyboard checks, four
+form inspections and one anonymous denial. JavaScript was disabled, with zero
+external requests or mutations observed. Forms were inspected, not submitted;
+this does not qualify POST, persistence through a form, HTMX, browser zoom, the
+complete native producer graph or the full identity-to-business journey.
+
+The transaction-resolved workspace context at `f32bb3e` received independent
+design and source review, 23 normal and 23 race pure events, vet and zero-issue
+lint. Genuine principal-mismatch and copy-alias mutations failed and were restored.
+Five normal and five race required-service events passed using initial ordinary
+native sessions, same-instance rechecks and retained transactions. The resolver
+binds copied current selection facts only when every exposed native principal
+field matches; it supplies no permission grant or session-provenance proof.
+
+The separate audit-context test at `175e40c` passed nine normal and nine race
+events. Actual native middleware, current recheck and the resolving context feed
+the invocation audit writer on the same retained runtime transaction. All three
+finite outcomes preserve exact attribution on commit and disappear on rollback;
+missing admission and unbound context are rejected. This is audit persistence
+with native attribution, not an operation evaluator, authority writer, business
+mutation route or complete executor. No assurance transition is exercised.
 
 ## Preserved limits and next gates
 
