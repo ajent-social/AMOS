@@ -135,6 +135,8 @@ const (
 	DeniedRollback
 	CounterOnlyDenied
 	UnavailableRollback
+	OperationDeniedCommitted
+	OperationUnavailableCommitted
 )
 
 type Completion struct{ state *completionState }
@@ -207,7 +209,7 @@ func (r *Root) Run(ctx context.Context, body func(context.Context, *Attempt) Out
 			return a.state.failed
 		}
 		switch outcome {
-		case Success, CounterOnlyDenied:
+		case Success, CounterOnlyDenied, OperationDeniedCommitted, OperationUnavailableCommitted:
 			return nil
 		case DeniedRollback:
 			return ErrDenied
@@ -240,7 +242,9 @@ func (c Completion) Outcome() (Outcome, error) {
 	}
 	return c.state.outcome, nil
 }
-func committable(o Outcome) bool { return o == Success || o == CounterOnlyDenied }
+func committable(o Outcome) bool {
+	return o == Success || o == CounterOnlyDenied || o == OperationDeniedCommitted || o == OperationUnavailableCommitted
+}
 func (c Completion) TakeRelease(binding Binding) (Release, error) {
 	if _, err := c.Outcome(); err != nil {
 		return Release{}, err

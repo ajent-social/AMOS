@@ -268,6 +268,40 @@ missing admission and unbound context are rejected. This is audit persistence
 with native attribution, not an operation evaluator, authority writer, business
 mutation route or complete executor. No assurance transition is exercised.
 
+## Repository prelock and native operation journal source
+
+The repository prelock at `3d24424` has different exact-source review and scoped
+80 normal/80 race test events, vet and zero-issue pinned lint. It discovers the
+complete bounded resource closure without early reference locks, acquires fixed
+scoped rows in global UUID order and rechecks the original row before related
+validation. Case-parent locking protects an absent draft key only when every
+participating writer follows that protocol. The copied lock list is an
+observation, not authority. Independent ordering, closure and title-equality
+guard removals failed behavioral assertions and passed after exact restoration.
+Five new required-service tests were compiled only; their PostgreSQL wait and
+serialization behavior has not been executed or qualified.
+
+The native operation journal at `58ce194` has different exact-source review,
+author 78 normal/78 race events, vet and zero-issue pinned lint. Independent
+checks repeat the original tests and add completion/outcome checks; the combined
+race selection has 107 passing events. Independent transition and outcome guard
+removals failed and passed after restoration. The profile adds finite native
+steps within the existing Root D phase, forbids mixing identity mutation/delivery/
+counter paths, requires a complete terminal path before F and preserves the
+same-binding, one-use completion release. Three affected packages compile.
+Synthetic transaction values execute no SQL and prove no native admission,
+locking, final drain, commit or policy decision. No required-service run was
+performed for this journal.
+
+Both components are retained in the candidate; neither is landed or accepted as
+the complete operation executor. In particular a current-authority denial after
+Claim can only roll back through this finite journal, without an audit receipt.
+The frozen executor's atomic denial requirement remains unmet and dispatch stays
+blocked pending its separately reviewed protocol. Current-session final receipts,
+billing/resource authority, guarded callback integration, atomic replay/effects/
+audit and real native/runtime checks remain required. No existing task status or
+acceptance count changes, and no full batch or release clearance follows.
+
 ## Preserved limits and next gates
 
 Required services fail when absent; fixture success never qualifies a live

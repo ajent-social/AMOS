@@ -31,3 +31,18 @@ runtime schedules cover root rollback/poison/lifetime, reserved insertion, mode,
 least-privilege gate grants and cancellation while the gate is held. They do not
 replace the complete native producer, child-row ordering, deferred constraint,
 counter transition, delivery, reader/writer and W01–W28 integration schedules.
+
+The additive operation profile has an exact copied person/session/workspace plan
+and finite native steps within D. It forbids mixing identity mutation, delivery
+or counter paths, requires every open step to finish before the final drain, and
+binds new/replay/audit-only terminal outcomes to their respective paths. Its raw
+transaction is trusted native plumbing only; operation callbacks still require
+the guarded DBTX. A journal transition proves no policy decision or SQL effect.
+See [the exact contract](../../docs/contracts/operation-writer-journal.md).
+
+Post-claim denial remains an explicit integration gap: this profile can only
+roll back, without claiming an audit-only receipt. Full operation dispatch is
+blocked pending the atomic denial protocol, native current-authority/final
+receipts, complete billing/resource locking, callback/replay/effect/audit wiring
+and real-service qualification. The source's synthetic transaction tests execute
+no SQL and qualify only the protocol's in-memory paths and rejection guards.
