@@ -248,5 +248,182 @@ class CLITests(unittest.TestCase):
         self.assertEqual(self.before, self.hashes())
 
 
+class NativeProjectionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.current = PLAN.load_current()
+
+    def stage(self, files=None):
+        temp = tempfile.TemporaryDirectory(prefix='amos-native-plan-')
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name)
+        for name, content in (files or PLAN.native_projection_files(self.current)).items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+        return root
+
+    def test_actual_inventory_idempotent_and_authored_bytes(self):
+        files = PLAN.native_projection_files(self.current)
+        root = self.stage(files)
+        self.assertEqual(files, PLAN.native_projection_files(self.current, root))
+        PLAN.check_native_projection(root, self.current)
+        for name, digest in PLAN.PRODUCT_TEXT_SHA256.items():
+            template = PLAN.product_template(files['docs/plans/' + name], name)
+            self.assertEqual(hashlib.sha256(template.encode()).hexdigest(), digest)
+        self.assertIn(b'59/257', files['docs/plan.md'])
+        self.assertIn(b'1598 product and delivery nodes', files['docs/plan.md'])
+        self.assertIn(b'node completion is not product completion', files['docs/plan.md'])
+        self.assertEqual(len(self.current[0]['required_task_ids']), 1598)
+        self.assertEqual(len(files), 31)
+        self.assertTrue(all(len(content) < 1_000_000 for content in files.values()))
+
+    def test_all_stage_mappings_and_original_milestones(self):
+        seen = set()
+        for tid, task in self.current[1].items():
+            stage = PLAN.display_stage(task, tid in self.current[2])
+            self.assertIn(stage, PLAN.DISPLAY_STAGES)
+            seen.add(stage)
+        self.assertEqual(seen, PLAN.DISPLAY_STAGES)
+        self.assertEqual(PLAN.display_stage({'stage': 'author'}), 'implement')
+        self.assertEqual(PLAN.display_stage({'stage': 'landed'}), 'verify-landed')
+        self.assertEqual(PLAN.display_stage({'stage': 'accept'}), 'verify-landed')
+        with self.assertRaisesRegex(PLAN.PlanError, 'unsupported native display stage'):
+            PLAN.display_stage({'stage': 'future-stage'})
+        with self.assertRaisesRegex(PLAN.PlanError, 'unsupported product milestone'):
+            PLAN.display_stage({'stage': 'S99'}, True)
+
+    def test_registry_display_only_and_narrative_ignored(self):
+        current = copy.deepcopy(self.current)
+        product = next(iter(current[2]))
+        lifecycle = next(t for t in current[1] if t not in current[2])
+        for tid, ref, complete in ((product, PLAN.REGISTRY_REFS[0], 'ACCEPTED'),
+                                   (lifecycle, PLAN.REGISTRY_REFS[1], 'COMPLETE')):
+            records = current[4][ref]
+            if tid == lifecycle:
+                records = records['tasks']
+            for status, marker in ((complete, 'x'), ('IN_PROGRESS', '~'), ('BLOCKED', '-'), ('PLANNED', ' ')):
+                records[tid] = {'status': status}
+                self.assertEqual(PLAN.reported_status(current, tid), (marker, status, ref))
+            records.pop(tid)
+            self.assertEqual(PLAN.reported_status(current, tid), (' ', 'UNRECORDED', ref))
+            records[tid] = {'status': 'SUCCESS'}
+            with self.assertRaisesRegex(PLAN.PlanError, 'unsupported reported registry status'):
+                PLAN.reported_status(current, tid)
+        source = copy.deepcopy(self.current[0])
+        for row in source['tasks']:
+            row['status'] = 'COMPLETE'
+        mutated = (source, *self.current[1:])
+        self.assertEqual(PLAN.native_projection_files(mutated), PLAN.native_projection_files(self.current))
+
+    def test_freshness_rejects_metadata_content_status_and_duplicates(self):
+        root = self.stage()
+        path = root / 'docs/plans/E1.md'
+        original = path.read_bytes()
+        for before, after in ((b'Stage: implement', b'Stage: S0'),
+                              (b'product-milestone: S0', b'product-milestone: S5'),
+                              (b'- [x] T1.1', b'- [ ] T1.1'),
+                              (b'Module compiles', b'Module fails')):
+            path.write_bytes(original.replace(before, after, 1))
+            with self.assertRaises(PLAN.PlanError):
+                PLAN.check_native_projection(root, self.current)
+        path.write_bytes(original)
+        extra = root / 'docs/plans/duplicate.md'
+        extra.write_bytes(original)
+        with self.assertRaisesRegex(PLAN.PlanError, 'file set differs'):
+            PLAN.check_native_projection(root, self.current)
+        extra.unlink()
+        path.unlink()
+        with self.assertRaisesRegex(PLAN.PlanError, 'file set differs'):
+            PLAN.check_native_projection(root, self.current)
+
+    def test_product_authored_tampering_rejected_as_template(self):
+        root = self.stage()
+        path = root / 'docs/plans/E1.md'
+        path.write_bytes(path.read_bytes().replace(b'Module compiles', b'Module fails', 1))
+        with self.assertRaisesRegex(PLAN.PlanError, 'authored product text changed'):
+            PLAN.native_projection_files(self.current, root)
+
+    def test_canonical_product_drift_cannot_render_stale_template(self):
+        for field, value in (('title', 'Changed title'), ('acceptance', 'Changed acceptance'),
+                             ('deps', ['T1.2']), ('stage', 'S5')):
+            current = copy.deepcopy(self.current)
+            current[1]['T1.1'][field] = value
+            with self.assertRaisesRegex(PLAN.PlanError, 'canonical product fields differ'):
+                PLAN.native_projection_files(current)
+
+    def test_registry_change_makes_tracked_projection_stale(self):
+        root = self.stage()
+        current = copy.deepcopy(self.current)
+        current[4][PLAN.REGISTRY_REFS[0]]['T1.1']['status'] = 'IN_PROGRESS'
+        with self.assertRaisesRegex(PLAN.PlanError, 'stale or altered'):
+            PLAN.check_native_projection(root, current)
+
+    def test_native_renderer_exclusive_and_missing_consumer_visible(self):
+        temp = tempfile.TemporaryDirectory(prefix='amos-native-cli-')
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name) / 'new'
+        command = [sys.executable, str(ROOT / 'scripts/render-plan.py'), '--native-markdown', '--output-dir', str(root)]
+        first = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        PLAN.check_native_projection(root, self.current)
+        second = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(second.returncode, 2)
+        with self.assertRaisesRegex(PLAN.PlanError, 'required consumer module missing'):
+            PLAN.check_consumer(root / 'missing-consumer', root, self.current)
+
+
+def consumer_suite(consumer):
+    # Explicit integration entry point keeps the ordinary source-only suite
+    # dependency-free. This suite never substitutes a parser or skips absence.
+    class ActualConsumerTests(NativeProjectionTests):
+        def test_actual_parser_discovery_router_and_registry(self):
+            parsed = PLAN.check_consumer(consumer, ROOT, self.current)
+            self.assertEqual(len(parsed['raw']), 1598)
+            self.assertEqual(sum(r['status'] == 'complete' for r in parsed['raw']
+                                 if r['sourceId'] in self.current[2]), 59)
+            self.assertEqual(sum(r['status'] == 'complete' for r in parsed['raw']),
+                             sum(PLAN.reported_status(self.current, tid)[0] == 'x'
+                                 for tid in self.current[1]))
+            self.assertEqual({r['displayLane'] for r in parsed['raw']},
+                             {'preflight', 'implement', 'verify', 'review', 'land'})
+
+        def test_actual_consumer_rejects_duplicate_missing_and_unsupported(self):
+            root = self.stage()
+            extra = root / 'docs/plans/duplicate.md'
+            extra.write_bytes((root / 'docs/plans/E1.md').read_bytes())
+            with self.assertRaises(PLAN.PlanError):
+                PLAN.check_consumer(consumer, root, self.current)
+            extra.unlink()
+            delivery = root / 'docs/plans/delivery-01.md'
+            original = delivery.read_bytes()
+            delivery.write_bytes(original.replace(b'Stage: preflight', b'Stage: unsupported', 1))
+            with self.assertRaisesRegex(PLAN.PlanError, 'unsupported display stage'):
+                PLAN.check_consumer(consumer, root, self.current)
+            delivery.write_bytes(original)
+            hidden = root / 'docs/planning/hidden.md'
+            hidden.parent.mkdir(parents=True)
+            delivery.rename(hidden)
+            with self.assertRaises(PLAN.PlanError):
+                PLAN.check_consumer(consumer, root, self.current)
+
+        def test_actual_consumer_reported_status_and_acceptance_corruption(self):
+            root = self.stage()
+            path = root / 'docs/plans/E1.md'
+            original = path.read_bytes()
+            for before, after in ((b'- [x] T1.1', b'- [ ] T1.1'),
+                                  (b'Acceptance: [Module compiles', b'Acceptance: [Module fails')):
+                path.write_bytes(original.replace(before, after, 1))
+                with self.assertRaises(PLAN.PlanError):
+                    PLAN.check_consumer(consumer, root, self.current)
+            path.write_bytes(original)
+            PLAN.check_consumer(consumer, root, self.current)
+
+    return unittest.defaultTestLoader.loadTestsFromTestCase(ActualConsumerTests)
+
+
 if __name__ == '__main__':
+    if len(sys.argv) == 3 and sys.argv[1] == '--consumer-root':
+        result = unittest.TextTestRunner(verbosity=2).run(consumer_suite(Path(sys.argv[2])))
+        sys.exit(not result.wasSuccessful())
     unittest.main()
