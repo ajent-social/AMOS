@@ -354,6 +354,32 @@ class NativeProjectionTests(unittest.TestCase):
                 with self.assertRaisesRegex(PLAN.PlanError, 'unsupported native Markdown text'):
                     PLAN.native_projection_files(current)
 
+    def test_all_canonical_product_fields_bound_before_native_render(self):
+        original = self.current[0]['tasks'][0]['native_product_task']
+        for field in original:
+            with self.subTest(field=field):
+                current = copy.deepcopy(self.current)
+                product = current[0]['tasks'][0]['native_product_task']
+                # Exercise even fields not shown by the consumer, not just the
+                # title/stage/deps/acceptance normalized by validate_source.
+                value = product[field]
+                if isinstance(value, list):
+                    product[field] = value + ['Changed authored value']
+                elif isinstance(value, int):
+                    product[field] = value + 1
+                else:
+                    product[field] = 'Changed authored value'
+                with self.assertRaisesRegex(PLAN.PlanError, 'canonical authored product definitions changed'):
+                    PLAN.native_projection_files(current)
+        current = copy.deepcopy(self.current)
+        product = current[0]['tasks'][0]['native_product_task']
+        product['owned_paths'] = ['changed/scope']
+        product['external_gate'] = 'New required external approval'
+        tasks, products = PLAN.validate_source(current[0])
+        current = (current[0], tasks, products, *current[3:])
+        with self.assertRaisesRegex(PLAN.PlanError, 'canonical authored product definitions changed'):
+            PLAN.native_projection_files(current)
+
     def test_canonical_product_drift_cannot_render_stale_template(self):
         for field, value in (('title', 'Changed title'), ('acceptance', 'Changed acceptance'),
                              ('deps', ['T1.2']), ('stage', 'S5')):

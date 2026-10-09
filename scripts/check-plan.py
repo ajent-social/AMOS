@@ -205,6 +205,9 @@ PRODUCT_TEXT_SHA256 = {'E1.md': 'fe3ca78149c2cb356e21cb869d9b64c11871379630bdafc
  'E7.md': 'b555c4e48fbe0a9d1c0ed48d74ddd2c41bed305843aadf15c095be98c182c752',
  'E8.md': '7aaca5184adbf69ccd64dc3ee040e39eeed9aa8ba4ff072f2fc7a1fd97d47691',
  'E9.md': '45618f33024cca2ee2d9d03ea54517b36e5ae1c4f53bd4485a947301bba193e9'}
+# Bind every authored product field, including scope, gates, owner and estimates.
+# Native Markdown cannot silently retain a stale template after canonical edits.
+PRODUCT_DEFINITION_SHA256 = 'e7876c58bf80a913a46c6ee19cc0073d8187c084c43fa412e6c1cc360ad679ee'
 DISPLAY_STAGES = {'preflight', 'implement', 'verify', 'review', 'merge', 'verify-landed'}
 DISPLAY_ALIASES = {'author': 'implement', 'landed': 'verify-landed', 'accept': 'verify-landed'}
 NOTICE_START = '<!-- current-native-projection:start -->'
@@ -283,6 +286,11 @@ def native_text(value):
 def native_projection_files(current, root=ROOT):
     """Native scanner view; preserve all product prose and never write inputs."""
     tasks, products = current[1:3]
+    definitions = {row['id']: row['native_product_task'] for row in current[0]['tasks']
+                   if 'native_product_task' in row}
+    definition_bytes = json.dumps(definitions, sort_keys=True, separators=(',', ':')).encode()
+    require(hashlib.sha256(definition_bytes).hexdigest() == PRODUCT_DEFINITION_SHA256,
+            'canonical authored product definitions changed; reviewed native pin update required')
     notice = native_notice(current)
     for tid, task in tasks.items():
         require(re.fullmatch(r'[A-Z][A-Z0-9]*(?:[.-][A-Z0-9]+)+', tid),

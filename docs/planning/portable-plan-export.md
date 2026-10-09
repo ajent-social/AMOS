@@ -81,7 +81,10 @@ source/registry digests, missing or extra discoverable files, altered metadata
 and authored product text. Files stay below the consumer's 1 MB/file and 256
 split-file limits. Product preservation pins cover original authored bytes with
 checkboxes normalized and only generated metadata/delimiters removed; intentional
-authored changes require a reviewed pin update. These pins preserve text, not
+authored changes require a reviewed pin update. A separate canonical definition
+pin binds every authored product field, including scope, external gates, owners,
+estimates, instructions and verification: changing any field fails native
+generation until its template and pins are explicitly reviewed. These pins preserve text, not
 receipt authenticity. Lifecycle titles and acceptance use bracket delimiters so
 metadata-like prose cannot silently truncate current authored wording. Unsupported
 control characters, markup delimiters and task-ID syntax fail native generation
