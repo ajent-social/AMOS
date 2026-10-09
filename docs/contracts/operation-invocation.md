@@ -267,7 +267,42 @@ The executor obtains `identity.PrincipalFromContext(ctx)` and `workspace/context
 
 The transaction authorizer passes current facts to the frozen `policy.Evaluator`; operation metadata supplies requirements only. It does not manufacture a principal, selection, grant, or policy allow. Read failures become `Unavailable`. Missing/revoked membership, account, or selected resource is `Denied` (or the existing non-enumerating resource response); unavailable is never downgraded.
 
-Invocation timestamps and freshness checks use database time only. Persisted `created_at`/`completed_at` use PostgreSQL `transaction_timestamp()` in the transaction. Current-expiry checks read `clock_timestamp()` from the same database after authority locks are held and after any duplicate-row lock wait; no caller `time.Time` or application wall clock controls expiry, assurance, capacity, or ordering. If an `Allowed.ExpiresAt` is passed before commit, the executor rolls back the domain mutation and result.
+Invocation timestamps and freshness checks use database time only. Persisted
+`created_at`/`completed_at` retain PostgreSQL `transaction_timestamp()` semantics.
+Provisional current-expiry checks sample the same database after authority locks
+and again after duplicate-row or capacity waits. No caller `time.Time` or
+application wall clock controls expiry, assurance, capacity or ordering.
+
+**Proposed F-timing amendment (independent review and adoption pending):** the
+terminal freshness instant is the original native Root's single recorded F,
+obtained after all staged writes, callback/result completion and constraint drain.
+Every required session, assurance, entitlement, policy and other time bound must
+be valid strictly at F; in particular `F.Before(Allowed.ExpiresAt)` is required.
+Equality is expired. This explicitly replaces the older promise to detect an
+expiry passing at any time before commit. F is a freshness linearization point
+conditional on successful commit, not a promise that authority remains unexpired
+through commit latency or network delivery.
+
+Preserve the original five-second Root budget, including pool and gate waits,
+G then B, and all ordered P/C/H/S/W/D/F phases. No operation subphase resets that
+budget. After F, native finalizers may perform plain SELECT comparisons of
+already-held rows on the same retained transaction before existing finalization
+and `Attempt.Finish`; they acquire no new locks, make no mutations and take no
+new clock sample. No renderer, codec, provider or application callback runs in
+that interval. Where a native writer issues credentials, preserve existing
+`writerproof.Permit`, `writerproof.Finalize`, `Attempt.Finish`,
+`session.PublishWriter` and once-only committed release binding. A non-issuing
+operation needs its own independently reviewed native finalization/release
+adapter; this amendment does not manufacture one or authorize `Root.Read` writes.
+
+A failed final check rolls back staged domain/result/audit/effect work. Original
+request cancellation or failed/unknown commit suppresses protected output and
+credential publication. An unknown commit is not evidence of rollback and does
+not authorize automatic callback retry. No extra clock check after F may be used
+to paper over a missing native finalizer. This amendment changes no exported
+interface, persisted timestamp, lock order or acceptance status. Operation
+dispatch remains closed until explicit adoption and qualification of all native
+participants, complete authority adapters and the completion bridge.
 
 For each request, the executor generates a fresh internal UUIDv7 attempt ID. It is not caller-controlled. For a required-idempotency write, a new durable invocation uses that ID; an exact replay uses the existing row's ID. The transaction order is:
 
