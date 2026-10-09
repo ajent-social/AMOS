@@ -19,20 +19,34 @@ import (
 	"github.com/google/uuid"
 )
 
-// This suite requires the operator-provided same-database fixture. Synthetic
-// account/session setup is followed by actual native middleware and private
-// baseline reads, not a listener, mutation HTTP or a complete signup journey.
-func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
+const baselineRuntimeScoped = `installation_id=$1 AND application_id=$2 AND environment_id=$3 AND workspace_id=$4`
+const baselineRuntimeInsertSource = `INSERT INTO public.continuity_sources(installation_id,application_id,environment_id,workspace_id,id,kind,title,body,sha256) VALUES($1,$2,$3,$4,$5,'document','Synthetic reference',$6,$7)`
+const baselineRuntimeInsertCase = `INSERT INTO public.continuity_cases(installation_id,application_id,environment_id,workspace_id,id,property_id,title,status,revision,source_ids) VALUES($1,$2,$3,$4,$5,$6,$7,'awaiting_owner',1,$8)`
+const baselineRuntimeSourceBody = "Synthetic reference <script>untrusted</script>"
+
+type baselineRuntimeRecords struct{ workspace, property, caseID, application, procedure, activity, source uuid.UUID }
+type baselineRuntimeFixture struct {
+	*privateReadTestFixture
+	own, foreign baselineRuntimeRecords
+	draftSource  uuid.UUID
+	args         func(uuid.UUID, ...any) []any
+	exec         func(*testing.T, string, ...any)
+	marshal      func(any) []byte
+	digestText   string
+}
+
+// Both ordinary read and HTTP suites keep the original-name W1 child helper.
+// All added records and cleanup belong only to its synthetic four-part scopes.
+func privateBaselineFixture(t *testing.T) *baselineRuntimeFixture {
+	t.Helper()
 	f := privateReadFixture(t)
 	if f == nil {
-		return
-	} // The unchanged helper runs this exact name in its W1 child.
+		return nil
+	}
 
-	type records struct{ workspace, property, caseID, application, procedure, activity, source uuid.UUID }
-	own := records{f.workspaceID, testID(t), testID(t), testID(t), testID(t), testID(t), f.sourceID}
-	foreign := records{testID(t), testID(t), testID(t), testID(t), testID(t), testID(t), testID(t)}
+	own := baselineRuntimeRecords{f.workspaceID, testID(t), testID(t), testID(t), testID(t), testID(t), f.sourceID}
+	foreign := baselineRuntimeRecords{testID(t), testID(t), testID(t), testID(t), testID(t), testID(t), testID(t)}
 	draftSource := testID(t)
-	const scoped = `installation_id=$1 AND application_id=$2 AND environment_id=$3 AND workspace_id=$4`
 	args := func(workspace uuid.UUID, tail ...any) []any {
 		return append([]any{f.cfg.InstallationID, f.cfg.ApplicationID, f.cfg.EnvironmentID, workspace}, tail...)
 	}
@@ -44,7 +58,7 @@ func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
 		err := f.core.database.WithTx(ctx, nil, func(tx *sql.Tx) error {
 			for _, workspace := range []uuid.UUID{own.workspace, foreign.workspace} {
 				for _, table := range []string{"continuity_activity", "continuity_drafts", "continuity_applications", "continuity_cases", "continuity_procedures", "continuity_properties", "continuity_sources"} {
-					if _, err := tx.ExecContext(ctx, `DELETE FROM public.`+table+` WHERE `+scoped, args(workspace)...); err != nil {
+					if _, err := tx.ExecContext(ctx, `DELETE FROM public.`+table+` WHERE `+baselineRuntimeScoped, args(workspace)...); err != nil {
 						return err
 					}
 				}
@@ -83,25 +97,36 @@ func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
 			t.Fatal("owned baseline runtime DML failed")
 		}
 	}
-	const insertSource = `INSERT INTO public.continuity_sources(installation_id,application_id,environment_id,workspace_id,id,kind,title,body,sha256) VALUES($1,$2,$3,$4,$5,'document','Synthetic reference',$6,$7)`
-	const insertCase = `INSERT INTO public.continuity_cases(installation_id,application_id,environment_id,workspace_id,id,property_id,title,status,revision,source_ids) VALUES($1,$2,$3,$4,$5,$6,$7,'awaiting_owner',1,$8)`
-	const sourceBody = "Synthetic reference <script>untrusted</script>"
-	digest := sha256.Sum256([]byte(sourceBody))
+	digest := sha256.Sum256([]byte(baselineRuntimeSourceBody))
 	digestText := hex.EncodeToString(digest[:])
-	exec(t, insertSource, args(foreign.workspace, foreign.source, sourceBody, digestText)...)
-	exec(t, insertSource, args(own.workspace, draftSource, sourceBody, digestText)...)
-	for _, row := range []records{own, foreign} {
+	exec(t, baselineRuntimeInsertSource, args(foreign.workspace, foreign.source, baselineRuntimeSourceBody, digestText)...)
+	exec(t, baselineRuntimeInsertSource, args(own.workspace, draftSource, baselineRuntimeSourceBody, digestText)...)
+	for _, row := range []baselineRuntimeRecords{own, foreign} {
 		items := marshal([]domain.ChecklistItem{
 			{ID: testID(t).String(), Label: "Supporting record"},
 			{ID: testID(t).String(), Label: "Final human decision", HumanDecision: true},
 		})
 		exec(t, `INSERT INTO public.continuity_properties(installation_id,application_id,environment_id,workspace_id,id,name,area,owner_label,occupant_label,occupancy,inspection_date) VALUES($1,$2,$3,$4,$5,'Baseline 50%_ property','North','Synthetic owner','Synthetic occupant','occupied','2024-02-29')`, args(row.workspace, row.property)...)
-		exec(t, insertCase, args(row.workspace, row.caseID, row.property, "Baseline <script>case</script>", marshal([]string{row.source.String()}))...)
+		exec(t, baselineRuntimeInsertCase, args(row.workspace, row.caseID, row.property, "Baseline <script>case</script>", marshal([]string{row.source.String()}))...)
 		exec(t, `INSERT INTO public.continuity_applications(installation_id,application_id,environment_id,workspace_id,id,property_id,revision,items) VALUES($1,$2,$3,$4,$5,$6,1,$7)`, args(row.workspace, row.application, row.property, items)...)
 		exec(t, `INSERT INTO public.continuity_procedures(installation_id,application_id,environment_id,workspace_id,id,title,body,revision) VALUES($1,$2,$3,$4,$5,'Baseline procedure','Plain <script>procedure</script>',1)`, args(row.workspace, row.procedure)...)
 		// The activity actor is a synthetic display label, never read authority.
 		exec(t, `INSERT INTO public.continuity_activity(installation_id,application_id,environment_id,workspace_id,id,actor_id,resource_id,action,revision) VALUES($1,$2,$3,$4,$5,$6,$7,'case.changed',1)`, args(row.workspace, row.activity, testID(t), row.caseID)...)
 	}
+
+	return &baselineRuntimeFixture{f, own, foreign, draftSource, args, exec, marshal, digestText}
+}
+
+// This suite requires the operator-provided same-database fixture. Synthetic
+// account/session setup is followed by actual native middleware and private
+// baseline reads, not a listener, mutation HTTP or a complete signup journey.
+func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
+	data := privateBaselineFixture(t)
+	if data == nil {
+		return
+	}
+	f, own, foreign := data.privateReadTestFixture, data.own, data.foreign
+	draftSource, args, exec, marshal, digestText := data.draftSource, data.args, data.exec, data.marshal, data.digestText
 
 	read := func(t *testing.T, q baselineQuery, cancelAfterAdmission bool) ([]byte, error) {
 		t.Helper()
@@ -241,21 +266,23 @@ func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
 		if bytes.Contains(b, []byte("The case changed after this draft was saved")) {
 			t.Error("current saved draft labelled stale")
 		}
-		exec(t, `UPDATE public.continuity_cases SET revision=2 WHERE `+scoped+` AND id=$5`, args(own.workspace, own.caseID)...)
+		exec(t, `UPDATE public.continuity_cases SET revision=2 WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, own.caseID)...)
 		success(t, q, "Saved against case revision 1.", "The case changed after this draft was saved", `name="expected" value="2"`)
 	})
 	t.Run("draft failure does not become missing draft", func(t *testing.T) {
-		exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+scoped+` AND id=$5`, args(own.workspace, draftSource, strings.Repeat("0", 64))...)
+		exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, draftSource, strings.Repeat("0", 64))...)
 		t.Cleanup(func() {
-			exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+scoped+` AND id=$5`, args(own.workspace, draftSource, digestText)...)
+			exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, draftSource, digestText)...)
 		})
 		// The case's own source is intact; only the saved draft reference is corrupt.
 		success(t, baselineQuery{Page: pageCases, Limit: 10}, own.caseID.String())
 		noOutput(t, baselineQuery{Page: pageCase, ID: own.caseID.String()}, errUnavailable)
 	})
 	t.Run("missing historical draft source is not an absent draft", func(t *testing.T) {
-		exec(t, `DELETE FROM public.continuity_sources WHERE `+scoped+` AND id=$5`, args(own.workspace, draftSource)...)
-		t.Cleanup(func() { exec(t, insertSource, args(own.workspace, draftSource, sourceBody, digestText)...) })
+		exec(t, `DELETE FROM public.continuity_sources WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, draftSource)...)
+		t.Cleanup(func() {
+			exec(t, baselineRuntimeInsertSource, args(own.workspace, draftSource, baselineRuntimeSourceBody, digestText)...)
+		})
 		// The current case still resolves. The saved draft exists, but its
 		// historical source does not; that must suppress the entire detail.
 		success(t, baselineQuery{Page: pageCases, Limit: 10}, own.caseID.String())
@@ -293,15 +320,15 @@ func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
 		// Preserve this helper-owned source's exact original digest for restoration.
 		var original string
 		err := f.core.database.WithTx(f.ctx, nil, func(tx *sql.Tx) error {
-			return tx.QueryRowContext(f.ctx, `SELECT sha256 FROM public.continuity_sources WHERE `+scoped+` AND id=$5`, args(own.workspace, own.source)...).Scan(&original)
+			return tx.QueryRowContext(f.ctx, `SELECT sha256 FROM public.continuity_sources WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, own.source)...).Scan(&original)
 		})
 		if err != nil {
 			t.Fatal("owned source digest read failed")
 		}
 		t.Cleanup(func() {
-			exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+scoped+` AND id=$5`, args(own.workspace, own.source, original)...)
+			exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, own.source, original)...)
 		})
-		exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+scoped+` AND id=$5`, args(own.workspace, own.source, strings.Repeat("0", 64))...)
+		exec(t, `UPDATE public.continuity_sources SET sha256=$6 WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, own.source, strings.Repeat("0", 64))...)
 		for _, q := range []baselineQuery{
 			{Page: pageCases, Limit: 10}, {Page: pageCase, ID: own.caseID.String()},
 			{Page: pageGuide, Topic: guide.Attention, Limit: 10}, {Page: pageGuide, Topic: guide.Handover, Limit: 10},
@@ -317,7 +344,7 @@ func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
 		for i := range ids {
 			id := testID(t)
 			ids[i] = id.String()
-			exec(t, insertSource, args(own.workspace, id, sourceBody, digestText)...)
+			exec(t, baselineRuntimeInsertSource, args(own.workspace, id, baselineRuntimeSourceBody, digestText)...)
 		}
 		cases := make([]uuid.UUID, 4)
 		for i := range cases {
@@ -326,7 +353,7 @@ func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
 			if end > 99 {
 				end = 99
 			}
-			exec(t, insertCase, args(own.workspace, cases[i], own.property, "Bounded guide case", marshal(ids[i*32:end]))...)
+			exec(t, baselineRuntimeInsertCase, args(own.workspace, cases[i], own.property, "Bounded guide case", marshal(ids[i*32:end]))...)
 		}
 		// 99 new distinct references plus the original case's source = exactly100.
 		for _, topic := range []guide.Topic{guide.Attention, guide.Handover} {
@@ -337,7 +364,7 @@ func TestPrivateBaselineReadRuntimeRequiredService(t *testing.T) {
 				}
 			}
 		}
-		exec(t, `UPDATE public.continuity_cases SET source_ids=$6 WHERE `+scoped+` AND id=$5`, args(own.workspace, cases[3], marshal(ids[96:]))...)
+		exec(t, `UPDATE public.continuity_cases SET source_ids=$6 WHERE `+baselineRuntimeScoped+` AND id=$5`, args(own.workspace, cases[3], marshal(ids[96:]))...)
 		for _, topic := range []guide.Topic{guide.Attention, guide.Handover} {
 			noOutput(t, baselineQuery{Page: pageGuide, Topic: topic, Limit: 100}, errUnavailable)
 			// Bounded selection remains usable; this is not a complete inventory claim.
