@@ -19,14 +19,22 @@ import (
 const sourcePath = "/continuity/sources"
 const sourceHTTPMax = 512 * 1024
 
+type readPresentation uint8
+
+const (
+	sourcePresentation readPresentation = iota
+	baselinePresentation
+)
+
 // sourceResponse is deliberately not a Flusher, Hijacker or unwrapping writer.
 // Header's mutable map is bounded at publication, not at intermediate allocation.
 type sourceResponse struct {
-	header    http.Header
-	body      bytes.Buffer
-	status    int
-	failed    bool
-	committed bool
+	presentation readPresentation
+	header       http.Header
+	body         bytes.Buffer
+	status       int
+	failed       bool
+	committed    bool
 }
 
 func (b *sourceResponse) Header() http.Header { return b.header }
@@ -254,7 +262,7 @@ func sourceErrorBody(status int, id string, fragment bool) []byte {
 
 func (b *sourceResponse) publish(w http.ResponseWriter, r *http.Request, id string, fragment bool) {
 	status := b.status
-	if b.failed || !b.validHeaders() || r.Context().Err() != nil {
+	if b.failed || !b.validHeaders() || r.Context().Err() != nil || (b.presentation != sourcePresentation && b.presentation != baselinePresentation) {
 		status = http.StatusServiceUnavailable
 	}
 	if status != 200 && status != 400 && status != 401 && status != 403 && status != 404 && status != 405 && status != 503 {
@@ -265,7 +273,12 @@ func (b *sourceResponse) publish(w http.ResponseWriter, r *http.Request, id stri
 	}
 	body := b.body.Bytes()
 	if status != 200 {
-		body = sourceErrorBody(status, id, fragment)
+		switch b.presentation {
+		case baselinePresentation:
+			body = baselineErrorBody(status, id, fragment)
+		default:
+			body = sourceErrorBody(status, id, fragment)
+		}
 	}
 	h := w.Header()
 	for _, name := range []string{"ETag", "Last-Modified", "Set-Cookie", "Location", "X-Request-ID", "Allow"} {

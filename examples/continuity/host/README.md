@@ -44,3 +44,18 @@ selection preserves existing case/reference validation and rejects more than 100
 distinct references before retaining its source-body collection. All work remains
 inside the original bounded transaction. A missing saved draft is optional; other
 draft failures suppress the page. No business mutation or public route is enabled.
+
+The private baseline HTTP adapter binds only the reviewed property, case,
+application, procedure, activity and finite guide GET/HEAD selectors. It parses
+bounded route/query shapes before admission and obtains native form tokens from
+that same session service only afterward. No POST route is implemented. The
+existing collector enforces one publication boundary for both source and baseline
+responses; a closed presentation selector chooses only their fixed error pages.
+Unknown presentation values cannot release a collected success response.
+
+Baseline transport tests cover selectors, exact fragment fallback, HEAD, fixed
+error sections, correlation and buffered completion. Required-service test source
+reuses the same synthetic scoped setup with native middleware and checks stored
+reads, form tokens, stale drafts and no-output failures. Pure tests and authored
+runtime tests are not evidence of actual required-service execution, failed
+commit, working HTMX, form submissions or the complete native/browser journey.
