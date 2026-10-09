@@ -68,7 +68,7 @@ CREATE TABLE amos_operation_invocations (
         (state = 'completed' AND result_kind IS NOT NULL AND result_kind IN ('succeeded', 'created', 'accepted', 'no_content')
          AND result_json IS NOT NULL AND octet_length(result_json) BETWEEN 1 AND 65536
          AND reserved_bytes = octet_length(result_json)
-         AND convert_from(result_json, 'UTF8')::jsonb IS NOT NULL
+         AND convert_from(result_json, 'UTF8')::json IS NOT NULL
          AND result_sha256 IS NOT NULL AND octet_length(result_sha256) = 32
          AND completed_at IS NOT NULL)
     )
