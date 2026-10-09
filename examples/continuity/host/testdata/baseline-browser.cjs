@@ -1,11 +1,13 @@
 // Invoked only by the required-service Go test after an explicit operator grant.
-// All private input arrives via stdin. Emit only finite counts; never diagnostics,
+// All private input arrives via stdin. Emit only finite phase/counts; never diagnostics,
 // DOM, cookies, form tokens, URLs, screenshots, recordings or storage state.
 'use strict';
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const path = require('node:path');
-const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, forms: 0, denied: 0, external: 0, mutations: 0};
+// Phases: 1 input, 2 module, 3 launch, 4 context, 5 cookie, 6 page,
+// 7 navigation, 8 inspection, 9 keyboard, 10 forms, 11 anonymous, 12 close, 13 done.
+const evidence = {phase: 1, ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, forms: 0, denied: 0, external: 0, mutations: 0};
 
 (async () => {
  process.stdin.setEncoding('utf8');
@@ -26,6 +28,7 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
  for (const key of ['property', 'case', 'application', 'procedure', 'source']) {
   assert.match(input[key], /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
  }
+ evidence.phase = 2;
  const {chromium} = require(input.playwright);
  let browser;
  let launching;
@@ -38,6 +41,7 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
  const timer = setTimeout(interrupt, 35000);
  try {
   await Promise.race([deadline, (async () => {
+   evidence.phase = 3;
    launching = chromium.launch({
     executablePath: input.chromium, headless: true, timeout: 10000,
     args: ['--no-sandbox', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--disable-default-apps', '--disable-extensions', '--no-proxy-server', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE ::1'],
@@ -54,10 +58,13 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
      await route.continue();
     });
    };
+   evidence.phase = 4;
    const context = await browser.newContext(options);
    await guard(context);
+   evidence.phase = 5;
    await context.addCookies([{name: '__Host-amos_session', value: input.sessionCookie, url: origin.origin + '/', secure: true, httpOnly: true, sameSite: 'Lax'}]);
    input.sessionCookie = '';
+   evidence.phase = 6;
    const page = await context.newPage();
    page.setDefaultTimeout(3000);
    page.setDefaultNavigationTimeout(5000);
@@ -68,6 +75,7 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
     if (new URL(response.url()).pathname === '/assets/base.css' && response.status() === 200) cssLoaded++;
    });
    const inspect = async (response, source = false) => {
+    evidence.phase = 8;
     assert.ok(!interrupted);
     assert.ok(response);
     assert.equal(response.status(), 200);
@@ -87,10 +95,12 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
     await page.setViewportSize({width: 390, height: 844});
    };
    const follow = async locator => {
+    evidence.phase = 7;
     const [response] = await Promise.all([page.waitForNavigation({waitUntil: 'load'}), locator.click()]);
     return response;
    };
    const skip = async () => {
+    evidence.phase = 9;
     await page.keyboard.press('Tab');
     assert.equal(await page.locator(':focus').textContent(), 'Skip to content');
     await page.keyboard.press('Enter');
@@ -100,6 +110,7 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
     evidence.keyboard++;
    };
    const forms = async expected => {
+    evidence.phase = 10;
     const checked = await page.locator('form[method="post"]').evaluateAll((nodes, expected) =>
      nodes.length === expected && nodes.every(form => {
       const csrf = form.querySelectorAll('input[name="_csrf"]');
@@ -110,6 +121,7 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
     evidence.forms += expected;
    };
 
+   evidence.phase = 7;
    await inspect(await page.goto(origin.origin + '/continuity/properties', {waitUntil: 'load'})); // 1
    await skip();
    await page.getByLabel('Search properties', {exact: true}).fill('50%_');
@@ -158,6 +170,7 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
    assert.equal(pageErrors, 0);
    await context.close();
 
+   evidence.phase = 11;
    const anonymous = await browser.newContext(options);
    await guard(anonymous);
    const deniedPage = await anonymous.newPage();
@@ -178,10 +191,16 @@ const evidence = {ok: false, pages: 0, navigations: 0, layouts: 0, keyboard: 0, 
   if (!browser && launching) {
    try { browser = await launching; } catch { /* Launch failure has no usable browser. */ }
   }
-  if (browser) await browser.close();
+  if (browser) {
+   const previousPhase = evidence.phase;
+   evidence.phase = 12;
+   await browser.close();
+   evidence.phase = previousPhase;
+  }
   process.removeListener('SIGINT', interrupt);
   process.removeListener('SIGTERM', interrupt);
  }
+ evidence.phase = 13;
  evidence.ok = true;
  process.stdout.write(JSON.stringify(evidence) + '\n');
 })().catch(() => {

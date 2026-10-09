@@ -21,6 +21,7 @@ import (
 // browserEvidence contains only finite counters/status, never DOM, URLs,
 // credentials, headers or browser diagnostics.
 type baselineBrowserEvidence struct {
+	Phase       int  `json:"phase"`
 	OK          bool `json:"ok"`
 	Pages       int  `json:"pages"`
 	Navigations int  `json:"navigations"`
@@ -144,10 +145,13 @@ func TestPrivateBaselineBrowserRuntimeRequiredService(t *testing.T) {
 			t.Fatal("browser evidence count invalid")
 		}
 	}
-	if runErr != nil || !evidence.OK {
-		t.Fatalf("private browser failed: pages=%d layouts=%d keyboard=%d forms=%d denied=%d external=%d mutations=%d", evidence.Pages, evidence.Layouts, evidence.Keyboard, evidence.Forms, evidence.Denied, evidence.External, evidence.Mutations)
+	if evidence.Phase < 1 || evidence.Phase > 13 {
+		t.Fatal("browser evidence phase invalid")
 	}
-	if evidence.Pages != 19 || evidence.Navigations != 19 || evidence.Layouts != 38 || evidence.Keyboard != 4 || evidence.Forms != 4 || evidence.Denied != 1 || evidence.External != 0 || evidence.Mutations != 0 {
+	if runErr != nil || !evidence.OK {
+		t.Fatalf("private browser failed: phase=%d pages=%d layouts=%d keyboard=%d forms=%d denied=%d external=%d mutations=%d", evidence.Phase, evidence.Pages, evidence.Layouts, evidence.Keyboard, evidence.Forms, evidence.Denied, evidence.External, evidence.Mutations)
+	}
+	if evidence.Phase != 13 || evidence.Pages != 19 || evidence.Navigations != 19 || evidence.Layouts != 38 || evidence.Keyboard != 4 || evidence.Forms != 4 || evidence.Denied != 1 || evidence.External != 0 || evidence.Mutations != 0 {
 		t.Fatal("browser evidence incomplete or outside the read-only boundary")
 	}
 	t.Logf("private browser GET checks: pages=%d navigations=%d layouts=%d keyboard=%d forms=%d denied=%d external=%d mutations=%d", evidence.Pages, evidence.Navigations, evidence.Layouts, evidence.Keyboard, evidence.Forms, evidence.Denied, evidence.External, evidence.Mutations)
