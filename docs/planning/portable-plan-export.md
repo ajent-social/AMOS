@@ -22,3 +22,117 @@ The retired renderer, plan-check and release-evidence commands refuse current
 invocation until their replacements are qualified; do not bypass that guard to
 rewrite live projections from stale baseline files. See wazi-migration.md for
 actual checks and remaining delivery/tooling gates.
+
+## Discoverable Markdown compatibility view
+
+The current inventory contains **1,598 nodes: 257 product tasks and 1,341 delivery
+rows**, retaining the original 1,501 IDs. Product acceptance remains **59/257**.
+The native Markdown view is `docs/plan.md` plus direct `docs/plans/*.md` files.
+The existing product epics each retain their original authored text, IDs,
+dependencies, acceptance, scope and external gates. Generated delivery shards
+contain the remaining IDs exactly once. Nested historical SDLC files remain
+preserved but are not additional scanner inputs.
+
+Product milestones `S0` through `S5` are preserved as `product-milestone`;
+`Stage: implement` routes product work into the display's Build column without
+claiming lifecycle advancement. Delivery stages preserve `preflight`,
+`implement`, `verify`, `review`, `merge` and `verify-landed`. Display aliases map
+`author` to `implement`, and `landed`/`accept` to `verify-landed`; `authored-stage`
+retains the exact original label. Unknown labels fail native generation until
+an explicit mapping is reviewed. The JSON projection still preserves unknown
+stages and all authored statuses remain pending.
+
+Checkboxes are a **reported registry display**, never execution authority:
+`ACCEPTED` products and `COMPLETE` delivery records use `[x]`; `IN_PROGRESS` uses
+`[~]`; `BLOCKED` uses `[-]`; `PLANNED` and absent records use `[ ]`.
+Each row identifies `status-source`, `reported-status` and display-only authority.
+The consumer can additionally mark unfinished dependencies blocked. Its combined
+node completion percentage is not product acceptance or release readiness.
+Receipts, admission, claims, independent review and provider gates remain separate.
+
+The Python current-source pipeline remains supported; the earlier retired-command
+paragraph above describes the historical migration gate. Default JSON/table
+output is unchanged. Native output is an explicit additional mode:
+
+```sh
+python3 scripts/render-plan.py --native-markdown --output-dir ./native-plan-preview
+python3 scripts/render-plan.py --native-markdown --check --output-dir ./native-plan-preview
+python3 scripts/check-plan.py --native-root .
+python3 scripts/check-plan.py --native-root ./native-plan-preview --consumer-root "$PLAN_CONSUMER_ROOT"
+python3 -m unittest scripts.tests.test_current_plan_tooling
+python3 scripts/tests/test_current_plan_tooling.py --consumer-root "$PLAN_CONSUMER_ROOT"
+```
+
+`PLAN_CONSUMER_ROOT` must name a separately obtained actual consumer checkout
+containing `scripts/plans.mjs`, `src/plan-parser.mjs` and `src/demo.mjs`; Node.js
+must be available. The explicit consumer check fails if any prerequisite is
+missing. It imports and executes the real `scanPlans`, `parsePlan` and `laneFor`,
+without a copied parser, dependency installation or UI build. Ordinary Python
+source checks need no consumer checkout and establish no consumer compatibility.
+Exact consumer revision and file hashes belong in the qualification receipt;
+these checks do not establish native UI acceptance.
+
+Rendering requires a new directory and never overwrites an existing directory,
+symlink, baseline or registry. Output contains a staged `docs/` tree. The plan
+owner reviews and installs only its Markdown files, then rechecks the final tree
+against its exact canonical source and registry bytes. Rendering a projected
+product template again produces identical bytes. The checker detects stale
+source/registry digests, missing or extra discoverable files, altered metadata
+and authored product text. Files stay below the consumer's 1 MB/file and 256
+split-file limits. Product preservation pins cover original authored bytes with
+checkboxes normalized and only generated metadata/delimiters removed; intentional
+authored changes require a reviewed pin update. A separate canonical definition
+pin binds every authored product field, including scope, external gates, owners,
+estimates, instructions and verification: changing any field fails native
+generation until its template and pins are explicitly reviewed. These pins preserve text, not
+receipt authenticity. Lifecycle titles and acceptance use bracket delimiters so
+metadata-like prose cannot silently truncate current authored wording. Unsupported
+control characters, markup delimiters and task-ID syntax fail native generation
+rather than silently changing authored text or injecting rows.
+
+The actual-consumer regression entry point checks the full current inventory,
+all supported display lanes, preserved dependencies/acceptance/milestones,
+registry-only completion, duplicate IDs, missing discovery, unsupported stages,
+status corruption and acceptance corruption. Source tests also cover no-overwrite,
+idempotence, missing consumer prerequisites and stale registry projections.
+The legacy `tests/planning/test_retired_plan_tools.py` has three pre-existing
+harness failures: obsolete diagnostic expectations and an isolated release-tool
+fixture missing its checker dependency. They are not passing evidence; the
+explicit historical structure/self-test commands remain the historical checks.
+
+## Native authority and applicable conformance gate
+
+AMOS already declares a **native authored plan** through `cmd/portableplan`:
+`definition.source.authority` is `native`, its authority ID is
+`amos:repository`, the plan ID is `amos:plan`, task IDs use `amos:task:`, and
+product acceptance requirements use `amos:acceptance:`. This classification
+predates the Markdown compatibility view. `docs/planning/wazi-source.json`
+remains its canonical authored source; the split Markdown files are derived,
+read-only display inputs, not ordinary Markdown-owned plan definitions.
+
+The native-source conformance path preserves this existing authority and uses
+the owning native exporter with the frozen external contract and semantic
+validator. Applying the ordinary single-file Markdown normalizer would change
+portable task identities and turn product `domain-accepted` dependencies into
+`execution-complete` dependencies. Its rejection of this split display view is
+an inapplicable-adapter diagnostic, not an ordinary-conformance pass or a reason
+to weaken native semantics. No authority conversion or service enrollment is
+introduced by this repair.
+
+Qualify the external verifier artifact once with its pinned fixture suite, then
+validate the actual current native export against the same frozen package:
+
+```sh
+go run ./cmd/portableplan > current-native-plan.json
+"$PLAN_CONTRACT_VALIDATOR" fixtures --contract-digest sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d
+"$PLAN_CONTRACT_VALIDATOR" validate --contract-digest sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d current-native-plan.json
+```
+
+Keep the derived artifact outside tracked source. Record exact exporter,
+verifier, reader, source and artifact digests. Compare every exported ID,
+original native record, title, stage, acceptance and dependency to the current
+source, including all 257 product requirements and the product/lifecycle
+predicate distinction. Separately run the actual Markdown scanner/reader/router
+checks above. Neither native contract conformance nor display compatibility
+authenticates execution receipts, admits dispatch, accepts more product tasks,
+or substitutes for native application UI acceptance.

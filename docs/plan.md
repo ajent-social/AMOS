@@ -1,5 +1,22 @@
 # AMOS implementation plan
 
+<!-- current-native-projection:start -->
+## Current read-only display projection
+
+Product acceptance: **59/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
+Checkboxes report registry status only; they grant no execution, acceptance or release authority.
+The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
+Product `S0`-`S5` milestones remain `product-milestone` metadata; their display `Stage: implement` is a work bucket, not advancement.
+Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
+Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
+These generated fields do not modify canonical authored statuses or authenticate registry receipts.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Registry: `docs/planning/execution-state.json`; `sha256:2c1efa89c8b8ce6b879c005af1085c8951494b8553e6d87e450eda237a0abe18`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:88efb8666eccca1da69a9a8b762c1c54b8632920ee89315b400fb7b0baa52902`.
+See [projection contract](planning/portable-plan-export.md) for regeneration and limits.
+<!-- current-native-projection:end -->
+
 ## Wazi-compatible authored plan migration
 
 The complete authored task graph now lives in
