@@ -139,6 +139,16 @@ A listener, complete host and provider remain unqualified. The existing runtime
 configuration forwarding heuristic remains disclosed; the new HTTP
 production/tests and contract passed their scoped public scan.
 
+The additive repository adapter at `eccb9c2` received independent finite source
+review after its `28da29e` design review. Fifteen new pure normal and fifteen race
+pass events, vet and zero-issue pinned lint qualify construction, exact retained
+interface forwarding and failure handling. A typed-nil guard removal failed for
+pointer and map values; exact restoration passed four events. The required-service
+test visibly failed without its prerequisite, with zero skips; its runtime checks
+remain pending. The legacy SQL transaction path keeps its existing caller ownership.
+A real transaction signature adapter cannot qualify operation-callback invalidation
+or establish current authority. No executor is enabled by this repository change.
+
 ## Preserved limits and next gates
 
 Required services fail when absent; fixture success never qualifies a live
