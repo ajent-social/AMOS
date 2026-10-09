@@ -383,7 +383,7 @@ func TestOperationStoreRequiredService(t *testing.T) {
 		key, id := runtimeKey(t), runtimeID(t)
 		otherID := runtimeID(t)
 		a, w := requireRuntimeUsage(t, ctx, db, s)
-		started := make(chan struct{})
+		started := make(chan int, 1)
 		done := make(chan error, 1)
 		startedWorker := false
 		earlyResult := false
@@ -395,10 +395,18 @@ func TestOperationStoreRequiredService(t *testing.T) {
 			if kind != operation.ClaimNew {
 				return errRuntimeAssertion
 			}
+			var blockerPID int
+			if err := tx.QueryRowContext(ctx, `SELECT pg_backend_pid()`).Scan(&blockerPID); err != nil {
+				return errRuntimeAssertion
+			}
 			startedWorker = true
 			go func() {
 				done <- st.WithTx(ctx, func(other *sql.Tx) error {
-					close(started)
+					var waitingPID int
+					if err := other.QueryRowContext(ctx, `SELECT pg_backend_pid()`).Scan(&waitingPID); err != nil {
+						return errRuntimeAssertion
+					}
+					started <- waitingPID
 					got, kind, err := st.ClaimTx(ctx, other, otherID, s, key, req, c, 1024)
 					if err != nil {
 						return err
@@ -409,20 +417,38 @@ func TestOperationStoreRequiredService(t *testing.T) {
 					return nil
 				})
 			}()
+			waitCtx, stop := context.WithTimeout(ctx, 2*time.Second)
+			defer stop()
+			var waitingPID int
 			select {
-			case <-started:
-			case <-ctx.Done():
-				return ErrUnavailable
-			}
-			timer := time.NewTimer(50 * time.Millisecond)
-			defer timer.Stop()
-			select {
+			case waitingPID = <-started:
 			case <-done:
 				earlyResult = true
 				return errRuntimeAssertion
-			case <-timer.C:
-			case <-ctx.Done():
+			case <-waitCtx.Done():
 				return ErrUnavailable
+			}
+			// Observe the second backend blocked by the exact first backend,
+			// using the already-held first transaction, never a third pool.
+			// PIDs remain local and are not written to evidence or diagnostics.
+			tick := time.NewTicker(25 * time.Millisecond)
+			defer tick.Stop()
+			for {
+				var blocked bool
+				if err := tx.QueryRowContext(waitCtx, `SELECT $1::integer = ANY(pg_blocking_pids($2::integer))`, blockerPID, waitingPID).Scan(&blocked); err != nil {
+					return errRuntimeAssertion
+				}
+				if blocked {
+					break
+				}
+				select {
+				case <-done:
+					earlyResult = true
+					return errRuntimeAssertion
+				case <-tick.C:
+				case <-waitCtx.Done():
+					return ErrUnavailable
+				}
 			}
 			return st.CompleteTx(ctx, tx, id, operation.CachedResult{Kind: operation.ResultSucceeded, CanonicalJSON: []byte(`{}`)})
 		})
