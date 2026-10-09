@@ -9,6 +9,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ajent-social/amos/app/operation"
 	"github.com/google/uuid"
 )
 
@@ -22,7 +23,7 @@ var (
 
 type Scope struct{ InstallationID, ApplicationID, EnvironmentID, WorkspaceID uuid.UUID }
 type Repository struct {
-	tx    *sql.Tx
+	tx    operation.DBTX
 	scope Scope
 }
 type Property struct {
@@ -44,7 +45,7 @@ func New(tx *sql.Tx, scope Scope) (*Repository, error) {
 	if tx == nil || !validScope(scope) {
 		return nil, ErrInvalid
 	}
-	return &Repository{tx: tx, scope: scope}, nil
+	return &Repository{tx: transactionDB{tx}, scope: scope}, nil
 }
 func validScope(s Scope) bool {
 	for _, id := range []uuid.UUID{s.InstallationID, s.ApplicationID, s.EnvironmentID, s.WorkspaceID} {
