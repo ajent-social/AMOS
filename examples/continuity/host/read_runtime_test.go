@@ -10,11 +10,13 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/ajent-social/amos/storage"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -22,7 +24,18 @@ import (
 
 // This component uses synthetic account/session setup followed by actual native
 // middleware. It does not claim a complete signup/sign-in-to-business journey.
-func TestPrivateReadRuntimeRequiredService(t *testing.T) {
+type privateReadTestFixture struct {
+	core                             *readCore
+	ctx                              context.Context
+	cfg                              coreConfig
+	token                            string
+	sourceID, foreignID, workspaceID uuid.UUID
+}
+
+// privateReadFixture shares exact synthetic setup between distinct read and HTTP
+// suites. Each caller runs in its own process because W1 selection is immutable.
+func privateReadFixture(t *testing.T) *privateReadTestFixture {
+	t.Helper()
 	path := os.Getenv("AMOS_CONTINUITY_READ_RUNTIME_TEST_CONFIG")
 	if path == "" {
 		t.Fatal("required same-database W1/continuity TLS fixture absent")
@@ -30,12 +43,12 @@ func TestPrivateReadRuntimeRequiredService(t *testing.T) {
 	if os.Getenv("AMOS_CONTINUITY_READ_CHILD") != "1" {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
-		cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestPrivateReadRuntimeRequiredService$", "-test.v")
+		cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^"+regexp.QuoteMeta(t.Name())+"$", "-test.v")
 		cmd.Env = append(os.Environ(), "AMOS_CONTINUITY_READ_CHILD=1")
 		if output, e := cmd.CombinedOutput(); e != nil {
 			t.Fatalf("private reader child failed: %v\n%s", e, output)
 		}
-		return
+		return nil
 	}
 	var input struct {
 		Host           string `json:"host"`
@@ -66,7 +79,7 @@ func TestPrivateReadRuntimeRequiredService(t *testing.T) {
 		t.Fatal("required fixture CA unavailable")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+	t.Cleanup(cancel)
 	cfg := coreConfig{Database: storage.RuntimeConfig{Host: input.Host, Port: input.Port, Database: input.Database, User: input.User, Password: input.Password, RootCAPEM: roots, StartupTimeout: 3 * time.Second, MaxOpenConns: 2, MaxIdleConns: 1, ConnMaxLifetime: time.Minute, ConnMaxIdleTime: time.Minute}, InstallationID: testID(t), ApplicationID: testID(t), EnvironmentID: testID(t), Origin: "https://reader.example.test"}
 	core, e := openReadCore(ctx, cfg)
 	if e != nil {
@@ -116,6 +129,15 @@ func TestPrivateReadRuntimeRequiredService(t *testing.T) {
 	}); e != nil {
 		t.Fatal("required source fixture tables or coherent setup unavailable")
 	}
+	return &privateReadTestFixture{core: core, ctx: ctx, cfg: cfg, token: token, sourceID: sourceID, foreignID: foreignID, workspaceID: workspace}
+}
+
+func TestPrivateReadRuntimeRequiredService(t *testing.T) {
+	f := privateReadFixture(t)
+	if f == nil {
+		return
+	}
+	core, ctx, cfg, token, sourceID, foreignID := f.core, f.ctx, f.cfg, f.token, f.sourceID, f.foreignID
 	read := func(t *testing.T, q sourceQuery) ([]byte, error) {
 		t.Helper()
 		var result []byte
