@@ -93,14 +93,35 @@ allocation. All counters are bigint with checked subtraction rather than
 unchecked arithmetic. No quota is implicit or auto-created by a claim.
 
 Capacity installation and allocation are owner provisioning, not normal request
-work. The first store exposes no quota mutation API or automatic provisioning.
-The SQL fragment enforces owner allocation changes with triggers that lock the
-installation allocator before actor rows, and actor before workspace rows.
-It disallows deletion or reducing an allocation below recorded consumption;
-installation hard-limit reductions are outside this slice. Normal claims update
-only usage columns and do not lock the installation allocator. Capacity reports
-and an authorized owner allocation command remain explicit dispatch prerequisites.
-Fixture provisioning is not qualification of that future owner interface.
+work. The Go store exposes no quota mutation API or automatic provisioning.
+Do not attempt to establish allocation lock order in a BEFORE-row trigger:
+PostgreSQL can already hold that row's lock before invoking it. Instead the new
+SQL fragment supplies three SECURITY INVOKER owner functions, with EXECUTE
+revoked from PUBLIC: `amos_operation_install_capacity(uuid,bigint)`,
+`amos_operation_allocate_actor(uuid,uuid,uuid,text,uuid,bigint)`, and
+`amos_operation_allocate_workspace(uuid,uuid,uuid,text,uuid,uuid,bigint)`.
+Their arguments are the complete selector in the table-key order, followed by
+positive desired capacity bytes. Installation setup inserts once or increases;
+actor/workspace allocation inserts or increases only. No decrease, deletion or
+reallocation API is supplied. Functions return void or a fixed SQL error.
+
+Each allocation function explicitly locks installation FIRST, then existing
+actor, then existing workspace where applicable, before any affected-row write.
+Actor allocation atomically charges the increase against the installation's
+allocated_bytes; actor replacement cannot double-charge its old allocation.
+Workspace allocation validates against the held actor limit and installation
+hard limit; workspace use is also charged to the shared actor counter, so many
+workspace allocations cannot consume beyond that actor's allocation. No owner
+function calls a provider or changes roles. Future qualified runtime roles get
+SELECT and usage-column UPDATE on capacity tables only, never allocation-column
+UPDATE, INSERT, DELETE or owner-function EXECUTE. A fresh fixture must prove
+this least-privilege split before runtime checks. SQL privileges constrain the
+runtime application role, not a malicious schema owner.
+
+Normal claims update only usage columns and do not lock the installation
+allocator. The operator-facing authorization/command and bounded capacity health
+report remain explicit dispatch prerequisites; exact source SQL functions and
+fixture provisioning alone do not qualify that future owner interface.
 
 Invocation rows carry UUIDv7 ID, the complete scope, a 32-byte key digest,
 32-byte request hash, frozen descriptor/schema digests, revision, reservation
