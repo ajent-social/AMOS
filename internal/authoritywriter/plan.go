@@ -68,9 +68,10 @@ type Delivery struct {
 }
 type Plan struct{ data *planData }
 type planData struct {
-	realm    Realm
-	rows     []Row
-	delivery []Delivery
+	operation *OperationPlan
+	realm     Realm
+	rows      []Row
+	delivery  []Delivery
 }
 
 func validID(id uuid.UUID) bool { return id.Version() == 7 && id.Variant() == uuid.RFC4122 }

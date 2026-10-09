@@ -11,24 +11,25 @@ import (
 
 type Attempt struct{ state *attemptState }
 type attemptState struct {
-	mu               sync.Mutex
-	root             *rootState
-	token            *identityToken
-	tx               *sql.Tx
-	deadline         time.Time
-	startedAt        time.Time
-	databaseDeadline time.Time
-	done             <-chan struct{}
-	live, finished   bool
-	failed           error
-	plan             *planData
-	phase            Phase
-	outcome          Outcome
-	sample           time.Time
-	deliveryStep     DeliveryStep
-	deliveryRecorded DeliveryStep
-	counter          uuid.UUID
-	journal          []mutationRecord
+	operationOpen, operationCompleted OperationStep
+	mu                                sync.Mutex
+	root                              *rootState
+	token                             *identityToken
+	tx                                *sql.Tx
+	deadline                          time.Time
+	startedAt                         time.Time
+	databaseDeadline                  time.Time
+	done                              <-chan struct{}
+	live, finished                    bool
+	failed                            error
+	plan                              *planData
+	phase                             Phase
+	outcome                           Outcome
+	sample                            time.Time
+	deliveryStep                      DeliveryStep
+	deliveryRecorded                  DeliveryStep
+	counter                           uuid.UUID
+	journal                           []mutationRecord
 }
 type mutationRecord struct {
 	kind     Mutation
@@ -214,6 +215,9 @@ func (a *Attempt) ParticipantTx(ctx context.Context, phase Phase, rows []Row) (*
 	if err = s.checkContext(ctx); err != nil {
 		return nil, err
 	}
+	if s.plan != nil && s.plan.operation != nil && s.phase >= D {
+		return nil, s.poison(ErrPhase)
+	}
 	if err = s.checkRows(phase, rows); err != nil {
 		return nil, err
 	}
@@ -320,6 +324,9 @@ func (a *Attempt) RecordMutation(kind Mutation, rows []Row) error {
 	if err != nil {
 		return err
 	}
+	if s.plan != nil && s.plan.operation != nil {
+		return s.poison(ErrPhase)
+	}
 	if kind < RegistrationWrite || kind > DeliveryWrite {
 		return s.poison(ErrPhase)
 	}
@@ -376,6 +383,9 @@ func (a *Attempt) DrainAndSample(ctx context.Context) (time.Time, error) {
 	if s.plan == nil || (s.phase != W && s.phase != D) || (len(s.plan.delivery) != 0 && (s.deliveryStep != JobEnqueue || s.deliveryRecorded != JobEnqueue)) {
 		return time.Time{}, s.poison(ErrPhase)
 	}
+	if s.plan.operation != nil && !s.operationTerminal() {
+		return time.Time{}, s.poison(ErrPhase)
+	}
 	if _, err = s.tx.ExecContext(ctx, `SET CONSTRAINTS ALL IMMEDIATE`); err != nil {
 		return time.Time{}, s.poison(ErrUnavailable)
 	}
@@ -419,6 +429,9 @@ func (a *Attempt) Finish(outcome Outcome) error {
 		}
 		return err
 	}
+	if s.plan != nil && s.plan.operation != nil && outcome != DeniedRollback && outcome != UnavailableRollback && !s.operationOutcome(outcome) {
+		return s.poison(ErrPhase)
+	}
 	switch outcome {
 	case Success:
 		if s.phase != F || s.sample.IsZero() || s.counter != uuid.Nil {
@@ -426,6 +439,10 @@ func (a *Attempt) Finish(outcome Outcome) error {
 		}
 	case CounterOnlyDenied:
 		if s.phase != F || s.sample.IsZero() || s.counter == uuid.Nil || len(s.journal) != 1 || s.journal[0].kind != CounterWrite {
+			return s.poison(ErrPhase)
+		}
+	case OperationDeniedCommitted, OperationUnavailableCommitted:
+		if s.plan == nil || s.plan.operation == nil || s.phase != F || s.sample.IsZero() || !s.operationOutcome(outcome) {
 			return s.poison(ErrPhase)
 		}
 	case DeniedRollback, UnavailableRollback:
