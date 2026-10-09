@@ -171,6 +171,41 @@ it exercises no HTTP, authentication, form submission, persistence or HTMX.
 The human decision stays disabled and drafts have no sending control. These
 renderers do not enable a business host or prove that their forms are bound.
 
+The private baseline reader at `6d7ef6d` received independent design, source
+and required-service review. Its ordinary pure checks passed 101 normal and 101
+race test events, including the focused source-HTTP regression checks after the
+shared read-path change. The repository draft correction separately passed five
+normal and five race events. Only absence of the initial saved-draft row is
+optional; a saved draft with a missing case or historical source fails
+unavailable. The original behavior and independent fix-removal mutation failed
+the intended assertions, and exact restoration passed. The guide distinct-source
+bound mutation also failed and was restored.
+
+On a fresh independent PostgreSQL fixture, baseline reads passed 25 normal and
+25 race events; ordinary source HTTP passed eight in each mode. The actual
+missing-historical-source regression failed when the production fix was removed,
+and all 25 baseline events passed after restoration. This exercises scoped
+lists/details, the five guide topics, saved and stale drafts, missing/foreign
+records, cancellation, corrupt sources and the 100/101 distinct-reference bound.
+It does not establish a complete native producer graph or public host.
+
+The private baseline HTTP adapter at `3f2a4b6` received independent exact source
+review after its `2737a09` design. Its pure checks passed 126 normal and 126 race
+events, including 42 existing source-HTTP events needed for the shared collector
+change. Vet and pinned lint passed. Independent unknown-presentation and wrong
+error-section mutations failed; exact restorations passed. The adapter admits
+bounded GET/HEAD selectors, obtains form tokens from the same native session
+service after admission, and uses the existing buffered publication path.
+
+A distinct fresh PostgreSQL fixture passed 21 baseline-HTTP normal and 21 race
+events. The extracted test helper and changed response collector justified
+focused baseline-read 25/25 and source-HTTP 8/8 regression events on that exact
+head. All runs had zero failures or skips; missing prerequisites separately
+failed visibly. These are ordinary private-handler checks with synthetic native
+session setup. They do not exercise a real browser, public listener, POST
+mutation, failed commit or full signup-to-business journey. Those gates remain
+open. Fixture cleanup and exact source identity are recorded independently.
+
 ## Preserved limits and next gates
 
 Required services fail when absent; fixture success never qualifies a live
