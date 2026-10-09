@@ -32,6 +32,18 @@ result or policy representation.
 
 ```go
 // app/operation
+// AuditOutcome aliases the existing finite audit vocabulary. It is not a new
+// defined string type. The root audit package does not import operation.
+type AuditOutcome = audit.Outcome
+const (
+    AuditSucceeded = audit.OutcomeSucceeded
+    AuditDenied = audit.OutcomeDenied
+    AuditUnavailable = audit.OutcomeUnavailable
+)
+type InvocationAuditWriter interface {
+    AppendInvocationTx(context.Context, *sql.Tx, identity.ID, string,
+        AuditOutcome, identity.ID) error
+}
 // Scope is a persistence selector, never authority.
 type Scope struct {
     InstallationID, ApplicationID, EnvironmentID, WorkspaceID identity.ID
@@ -78,6 +90,15 @@ READ COMMITTED transaction and propagates callback failure through rollback;
 no automatic retry, provider call or independent commit occurs. Caller-owned
 transactions must also be READ COMMITTED. The caller retains authority and
 final disclosure duties; `ClaimReplay` is never permission to publish.
+
+The existing privateRuntimeDB composition and current-authority Root runner
+continue to own the transaction in the eventual authenticated invocation.
+They supply that SAME retained transaction to ClaimTx/CompleteTx and the audit
+writer. Store.WithTx is not substituted for Root.Run and cannot establish the
+root's admission, deadline or finalization protocol. No second connection pool,
+raw transaction accessor, new authority runner or executable composition follows
+from this storage constructor. Its WithTx seam is qualified as storage mechanics
+only; full current-authority executor composition remains separately gated.
 
 ## Durable rows and capacity
 
@@ -179,6 +200,15 @@ it. Denied attempts may append their finite event without granting the attempted
 operation. Ordinary `Store.AppendTx` rejects operation.invoked, so its generic
 write-authorizer API cannot substitute for the invocation writer. Both writers
 share one private bounded insert helper. No event is committed independently.
+
+The canonical `operation.AuditOutcome = audit.Outcome` alias above explicitly
+resolves the former cross-package pseudocode ambiguity. The concrete writer
+keeps the audit.Outcome parameter and must include the compile-time assertion
+`var _ operation.InvocationAuditWriter = (*InvocationWriter)(nil)`.
+Import direction is audit root <- operation <- audit/sqlstore; the audit root
+never imports its sqlstore child or operation. Independent source checks must
+compile this assertion; assigning two distinct defined string types is not an
+adapter and does not satisfy the interface.
 
 ## Required evidence
 
