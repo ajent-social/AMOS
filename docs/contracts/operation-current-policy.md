@@ -284,7 +284,7 @@ arbitrary operation receipt. The authorizer's
 frozen public method remains the provisional acquisition/evaluation boundary;
 a private native finalizer is a separate mandatory integration dependency, not
 an overload that resamples after F. Where native issuance is involved, preserve
-the existing `writerproof.Permit`, `writerproof.Finalize`, `Root.Finish` and
+the existing `writerproof.Permit`, `writerproof.Finalize`, `Attempt.Finish` and
 `session.PublishWriter` sequence, including exact `Completion.TakeRelease` /
 `Permit.MatchesRelease` binding and once-only publication. There is no new
 `NativePermit`, `FinalizeWriter`, generic credential permit or callback that can
