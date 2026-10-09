@@ -126,11 +126,17 @@ and validates header publication budgets, replaces native errors with fixed
 escaped messages, preserves HEAD and full/fragment behavior, and releases source
 bytes only after the private read returns successful completion.
 
-The distinct ordinary native HTTP suite at `21e7c17` shares the existing synthetic
-setup and has compile-only and pinned-lint evidence. Its actual required-service
-runs are pending. Test-only collector responses do not prove database completion,
-native signup-to-business behavior, a listener or full host admission. The existing
-runtime configuration forwarding heuristic remains disclosed; the new HTTP
+The distinct ordinary native HTTP suite at `21e7c17` received independent exact
+source review and actual PostgreSQL-backed native middleware checks: eight normal
+and eight race pass events, with zero failures or skips. The seven cases cover
+literal listing, escaped fragment detail, HEAD, foreign scope, missing session,
+canceled request and stored digest corruption. The reviewer used fresh synthetic
+account setup; this is not a complete native signup-to-business journey or a
+failed-commit schedule. A placement failure before resource creation remains
+failed evidence; the diagnosed placement-only retry passed. All five owned
+fixture resources, its run directory and watchdog were verified removed.
+A listener, complete host and provider remain unqualified. The existing runtime
+configuration forwarding heuristic remains disclosed; the new HTTP
 production/tests and contract passed their scoped public scan.
 
 ## Preserved limits and next gates
