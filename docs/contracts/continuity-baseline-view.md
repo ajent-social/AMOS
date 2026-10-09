@@ -61,12 +61,27 @@ fixed unsupported/unavailable presentation without describing it as a model repl
 
 Reject raw excessive fields before copying or scanning: IDs at most36 bytes,
 titles/labels/names/areas at most800, query at most480, procedure body at most24000,
-draft body at most16000, token exactly43, and each ID/item array at most32 entries.
+draft body at most16000, token exactly43, and each nested source-ID/checklist-item
+array at most32 entries. Raw finite values are bounded before comparison: topic
+at most18 bytes, occupancy at most8, case status at most24, activity action at
+most32 and inspection date at most10. These byte ceilings do not admit unknown
+enums. Property Query rejects controls before trimming, is valid UTF-8, at most
+480 raw bytes and at most120 runes after trimming; empty is allowed.
 List lengths are at most100 and no greater than Limit, which is1..100. After is
 empty or canonical UUIDv7. Rows have distinct strictly ascending IDs greater than
 After; activity uses its existing ID order. Empty lists remain ordinary empty
 pages, never proof of complete inventory. All output is capped at512 KiB during
 template execution; overflow discards the whole output.
+
+Guide Selection.Cases and Selection.Sources each allow at most100 entries,
+independent of the nested32-item bound. Before calling guide.Answer, complete a
+raw-length preflight over the request and every supplied case and source, including
+all nested IDs: source ID at most36, title at most800, Body at most65536 and SHA256
+exactly64 bytes. Apply the same raw case bounds as other views. Only after that
+complete preflight may guide.Answer scan, hash, copy or validate semantic content.
+The existing guide validates exact topics, topic-specific CaseID rules, complete
+selection shape, UTF-8, source digest and cross-references. No omitted field or
+unrendered source is exempt from preflight or existing semantic validation.
 
 Use canonical lowercase RFC4122 UUIDv7 IDs, positive revisions, valid UTF-8 and
 the existing domain field bounds and finite enums. Text labels reject controls
@@ -131,6 +146,11 @@ Try next page, preserving normalized filters. Search clears the previous cursor.
 Property detail links to the case/application registers without pretending a
 relationship or filtered result was retrieved. Cases link to their property and
 supplied source references; all source links use existing sourceview paths.
+The guide page includes an ordinary GET form targeting /continuity/guide, with
+a labelled topic selector containing exactly the five existing finite topics and
+an optional labelled case selector drawn from validated supplied cases. Topic
+labels explain when a case is required; request validity remains the existing
+guide policy. It works without JavaScript and does not fabricate missing cases.
 Guide responses distinguish supplied records from unknown authority, preserve
 source references and describe draft output as unsent. No invented facts appear.
 
