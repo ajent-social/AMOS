@@ -246,6 +246,11 @@ participant. Its outcomes do not include a policy-denial audit-only commit.
 for that event. `Root.Read` is non-mutating trusted plumbing, not an escape hatch.
 A native operation-root extension needs its own explicit finite participant,
 journal, audit-only outcome and ordering design/review before implementation.
+Preserve the original Root five-second total budget (including pool/G waits),
+G then database B, and ordered P/C/H/S/W/D/F phases, including empty phases.
+Neither a policy call, repeated recheck nor a later database sample resets it.
+The operation-specific classes above must be mapped into a reviewed extension
+of this protocol, not implemented as an independent alternative phase machine.
 
 Proposed sequence for that future native operation root:
 
@@ -278,7 +283,14 @@ existing current-operation finalizer. The existing writer evidence is not an
 arbitrary operation receipt. The authorizer's
 frozen public method remains the provisional acquisition/evaluation boundary;
 a private native finalizer is a separate mandatory integration dependency, not
-an overload that resamples after F.
+an overload that resamples after F. Where native issuance is involved, preserve
+the existing `writerproof.Permit`, `writerproof.Finalize`, `Root.Finish` and
+`session.PublishWriter` sequence, including exact `Completion.TakeRelease` /
+`Permit.MatchesRelease` binding and once-only publication. There is no new
+`NativePermit`, `FinalizeWriter`, generic credential permit or callback that can
+replace these checks. The non-issuing operation output/release bridge remains
+unimplemented and needs an exact separately reviewed API and native ownership;
+an audit/store transaction test does not establish that bridge.
 
 W1 defines F as the freshness linearization instant conditional on successful
 commit, not network-receipt time. The older operation wording says an Allowed
