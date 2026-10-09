@@ -23,6 +23,7 @@ import (
 // These scripted driver tests prove Go decisions and SQL call/argument order.
 // They do not qualify PostgreSQL syntax, constraints, roles or concurrency.
 type step struct {
+	before      func()
 	match       string
 	args        []any
 	rows        [][]driver.Value
@@ -90,6 +91,9 @@ func (c *connection) next(query string, args []driver.NamedValue) step {
 		if !reflect.DeepEqual(actual, expected) {
 			c.s.t.Fatalf("SQL arguments differ: got %v want %v", actual, expected)
 		}
+	}
+	if st.before != nil {
+		st.before()
 	}
 	return st
 }
@@ -451,7 +455,6 @@ func TestCompleteStoredFailures(t *testing.T) {
 				v[20] = time.Now()
 			case "bad_state":
 				v[15] = "bad"
-				want = ErrInvalid
 			case "bad_id":
 				v[0] = uuid.Nil.String()
 			}
@@ -697,5 +700,21 @@ func TestCompleteSQLFailuresAreFinite(t *testing.T) {
 				t.Fatal("SQL diagnostics escaped")
 			}
 		})
+	}
+}
+
+func TestCompleteSnapshotsBeforeSQL(t *testing.T) {
+	body := []byte(`{"ok":true}`)
+	snapshot := append([]byte(nil), body...)
+	digest := sha256.Sum256(snapshot)
+	first := isolation()
+	first.before = func() { body[0] = '!' }
+	steps := []step{first, {match: selectInvocation, rows: [][]driver.Value{stored(false, nil)}}}
+	steps = append(steps, capacities(1000, 200, 500, 100)...)
+	n := int64(len(snapshot))
+	steps = append(steps, step{match: updateActorSQL, args: append(actorArgs(scope()), 100+n), affected: 1}, step{match: updateWorkspaceSQL, args: append(append(actorArgs(scope()), scope().WorkspaceID), n), affected: 1}, step{match: completeInvocation, args: []any{id(6), "succeeded", snapshot, digest[:], n}, affected: 1})
+	st, tx, _ := transaction(t, steps...)
+	if err := st.CompleteTx(context.Background(), tx, id(6), operation.CachedResult{Kind: operation.ResultSucceeded, CanonicalJSON: body}); err != nil {
+		t.Fatal(err)
 	}
 }

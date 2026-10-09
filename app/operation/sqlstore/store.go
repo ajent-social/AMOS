@@ -235,7 +235,12 @@ func (s *Store) ClaimTx(ctx context.Context, tx *sql.Tx, id identity.ID, scope o
 // The deferred database guard prevents a pending claim from becoming visible in
 // a later transaction. The trusted caller supplies transaction provenance.
 func (s *Store) CompleteTx(ctx context.Context, tx *sql.Tx, id identity.ID, result operation.CachedResult) error {
-	if !validID(id) || !validResult(result) {
+	if !validID(id) || len(result.CanonicalJSON) < 1 || len(result.CanonicalJSON) > maxResultBytes {
+		return ErrInvalid
+	}
+	// Freeze the bounded caller bytes before validation or any blocking SQL.
+	result.CanonicalJSON = append([]byte(nil), result.CanonicalJSON...)
+	if !validResult(result) {
 		return ErrInvalid
 	}
 	if err := s.transaction(ctx, tx); err != nil {
@@ -248,8 +253,11 @@ func (s *Store) CompleteTx(ctx context.Context, tx *sql.Tx, id identity.ID, resu
 	if err != nil || !stored.valid() {
 		return ErrUnavailable
 	}
-	if stored.state != "pending" {
+	if stored.state == "completed" {
 		return ErrInvalid
+	}
+	if stored.state != "pending" {
+		return ErrUnavailable
 	}
 	if stored.kind.Valid || stored.inv.Result.CanonicalJSON != nil || stored.digest != nil || stored.completedAt.Valid {
 		return ErrUnavailable
@@ -270,7 +278,7 @@ func (s *Store) CompleteTx(ctx context.Context, tx *sql.Tx, id identity.ID, resu
 	if err := updateUsage(ctx, tx, stored.inv.Scope, c.actorUsed-release, c.workspaceUsed-release); err != nil {
 		return err
 	}
-	body := append([]byte(nil), result.CanonicalJSON...)
+	body := result.CanonicalJSON
 	digest := sha256.Sum256(body)
 	return execOne(ctx, tx, completeInvocation, id, string(result.Kind), body, digest[:], actual)
 }
