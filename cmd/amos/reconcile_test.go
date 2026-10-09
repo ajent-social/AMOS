@@ -72,8 +72,8 @@ func TestBillingMigrationKeepsFoundationAndAppendsReconciliation(t *testing.T) {
 		t.Fatal(err)
 	}
 	entries := registry.Migrations()
-	if len(entries) != 16 || entries[14].Sequence != 15 || entries[14].Namespace != "billing_reconcile" || entries[15].Sequence != 16 || entries[15].Name != "federation_flows" {
-		t.Fatal("reconciliation migration allocation changed")
+	if len(entries) != 17 || entries[16].ID() != "000017.operation.invocations" || entries[14].Sequence != 15 || entries[14].Namespace != "billing_reconcile" || entries[15].Sequence != 16 || entries[15].Name != "federation_flows" {
+		t.Fatal("reference migration allocation changed")
 	}
 }
 
