@@ -101,6 +101,38 @@ review, the full sign-in-to-business journey and commit-loss schedules remain op
 The fixture extension received independent source qualification only; a fresh
 isolated runtime and actual checks are separate gates.
 
+## Additional finite checks recorded 2026-10-09
+
+Subsequent independent receipts close several earlier component review items,
+without accepting the complete batch. Native ordinary selection at `0f361ee`
+passed normal/race/restored 14/14/14 events and pure selections 36/36/36.
+Recovery typed/HTTP preview at `728e126` passed ordinary 7/7/7, including repeated
+preview and GET/HEAD without token consumption. Private read composition at
+`22ef06c` passed ordinary 6/6/6 with actual native middleware and scoped retrieval.
+These do not cover the complete writer graph, public-principal/two-handle
+composition cases, full failure/wait schedules or actual commit loss.
+
+Label-only corrections `9c48a5b` and `525f846` received independent review
+without rerunning unchanged production checks. All 44 reviewed component blobs
+were independently compared with integrated candidate `004a499`. Earlier failed
+runs remain failed evidence; source identity does not promote runtime coverage.
+
+The private source HTTP contract `785915d` received separate early design review.
+Its implementation `e408f31` received independent finite source review, 42
+normal and 42 race pass events, vet and pinned lint with zero issues. Independent
+commit-marker and publication-cancellation mutations failed their intended
+assertions; exact restorations passed. The response collector bounds body storage
+and validates header publication budgets, replaces native errors with fixed
+escaped messages, preserves HEAD and full/fragment behavior, and releases source
+bytes only after the private read returns successful completion.
+
+The distinct ordinary native HTTP suite at `21e7c17` shares the existing synthetic
+setup and has compile-only and pinned-lint evidence. Its actual required-service
+runs are pending. Test-only collector responses do not prove database completion,
+native signup-to-business behavior, a listener or full host admission. The existing
+runtime configuration forwarding heuristic remains disclosed; the new HTTP
+production/tests and contract passed their scoped public scan.
+
 ## Preserved limits and next gates
 
 Required services fail when absent; fixture success never qualifies a live
