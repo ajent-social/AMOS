@@ -496,6 +496,44 @@ func TestOperationStoreRequiredService(t *testing.T) {
 			t.Fatal("wrong isolation accepted")
 		}
 	})
+	for _, invalid := range []struct {
+		name string
+		body []byte
+		code string
+	}{
+		{"database_invalid_utf8", []byte{'"', 255, '"'}, "22021"},
+		{"database_malformed_json", []byte(`{`), "22P02"},
+	} {
+		t.Run(invalid.name, func(t *testing.T) {
+			id, key := runtimeID(t), runtimeKey(t)
+			a, w := requireRuntimeUsage(t, ctx, db, s)
+			err := st.WithTx(ctx, func(tx *sql.Tx) error {
+				_, kind, err := st.ClaimTx(ctx, tx, id, s, key, req, c, len(invalid.body))
+				if err != nil {
+					return err
+				}
+				if kind != operation.ClaimNew {
+					return errRuntimeAssertion
+				}
+				// Bypass Go validation only for this exact-owned pending row so
+				// PostgreSQL's syntax/encoding constraint is actually exercised.
+				digest := sha256.Sum256(invalid.body)
+				_, err = tx.ExecContext(ctx, completeInvocation, id, "succeeded", invalid.body, digest[:], int64(len(invalid.body)))
+				var postgres interface{ SQLState() string }
+				if !errors.As(err, &postgres) || postgres.SQLState() != invalid.code {
+					return errRuntimeAssertion
+				}
+				return errRuntimeRollback
+			})
+			if err != errRuntimeRollback {
+				t.Fatal("database result validation did not return expected data exception")
+			}
+			afterA, afterW := requireRuntimeUsage(t, ctx, db, s)
+			if a != afterA || w != afterW {
+				t.Fatal("rejected database result retained capacity")
+			}
+		})
+	}
 	t.Run("stored_checksum_corruption", func(t *testing.T) {
 		key, id := runtimeKey(t), runtimeID(t)
 		// Create an exact-owned malformed completed row through the ordinary
