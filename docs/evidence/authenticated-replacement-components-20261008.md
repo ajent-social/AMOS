@@ -206,6 +206,44 @@ session setup. They do not exercise a real browser, public listener, POST
 mutation, failed commit or full signup-to-business journey. Those gates remain
 open. Fixture cleanup and exact source identity are recorded independently.
 
+The additive operation persistence contract and shared audit types received
+independent finite design and source review. The parent audit checks passed 29
+normal and 29 race events, including three existing checks justified by the
+shared validator change. The operation store production source at `e5fe632`
+passed 132 normal and 132 race events, vet and zero-issue pinned lint. Independent
+request-binding and result-snapshot mutations failed their intended assertions;
+exact restoration passed. Required-service test additions through `4d003f1`
+received separate source review, including specific database error codes for
+invalid UTF-8 and malformed JSON, and an observed database lock wait between the
+two existing connections.
+
+A fresh independently operated fixture passed 17 normal and 17 race store events
+at `4d003f1`, and 19 normal and 19 race audit events at `bd8319a`, with zero failures
+or skips. These cover exact replay bytes, escaped NUL and large JSON numbers,
+conflicts, rollback, pending completion, reservation bounds and shrinkage,
+concurrent same-key storage, shared audit insertion/readback, legacy nullable
+operation identifiers, finite binding/privacy constraints and runtime privilege
+denials. Audit tests use synthetic attribution and do not qualify successful
+native-context attribution. No executor or provider dispatcher is enabled.
+
+The fixture independently checked restricted column privileges and actual
+permission denials. In a separate owned schema, the exact ordered SQL for
+migrations 1 through 17 applied successfully; five owner-allocation rejection
+cases, explicit increases and rollback checks passed. This is ordered SQL
+evidence, not execution of the migration ledger, a historical-data upgrade, or
+concurrent owner allocation. Source checks preserve every original migration ID
+and effective SQL hash through 16. Generated-application verification failed at
+the existing framework file limit; its owner boundary remains preserved and the
+generator gate remains open.
+
+The ordinary browser test remains unqualified. Its first run at `220b295` failed
+before producing any coverage. The separately reviewed finite diagnostic at
+`1c14f3` also failed, reporting the browser-launch phase and zero page/layout/form
+counts. Race execution did not follow these failures. A launch-only diagnostic
+returned an inconclusive error category; it does not establish a root cause or
+justify a browser success claim. Subsequent source changes require their own
+review and selected runtime evidence.
+
 ## Preserved limits and next gates
 
 Required services fail when absent; fixture success never qualifies a live
@@ -232,3 +270,9 @@ expressions; these are disclosed separately and are not a green scan result.
 The private reader fixture test forwards its runtime connection credential through
 the standard configuration type; the scoped scanner flags that one assignment.
 No fully green repository scan is claimed.
+
+The operation store and audit required-service tests add two scanner findings on
+ordinary typed credential forwarding from private test configuration. Independent
+source review classified those two as heuristic matches without literal secrets;
+the failed scan result remains recorded and no suppression or fully green scan
+is claimed.
