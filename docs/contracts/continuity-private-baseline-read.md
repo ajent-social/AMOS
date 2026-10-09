@@ -72,6 +72,15 @@ Case detail reads the case and then its saved draft. Only repository.ErrNotFound
 for that draft means no supplied draft; every other draft failure suppresses the
 whole page. The renderer preserves stale-draft revision and warning semantics.
 
+To make that distinction accurate, the integrator also owns the narrow error
+classification in `repository/read.go`'s Draft method and focused regression tests.
+ErrNotFound from the initial saved-draft row lookup means absent or foreign draft.
+After that row has been found, failure to resolve its case or historical source
+references is ErrUnavailable with a zero draft, including a nested ErrNotFound.
+An existing saved snapshot with missing dependencies is not an absent draft and
+must never become a successful page without that snapshot. SQL, scopes, row
+validation, public method shapes and all other repository methods stay unchanged.
+
 Guide uses the existing deterministic `guide.Answer` through `RenderGuide`.
 For explain-case and owner-draft, read exactly the selected case. For attention and
 handover, read one supplied case page of at most Limit (1..100), with no cursor;
