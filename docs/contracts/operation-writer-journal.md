@@ -105,6 +105,19 @@ false policy-denial event and releases no output. The public operation conflict
 remains a conflict; Root rollback markers are not the public policy vocabulary.
 An unusable transaction never attempts audit-only commit.
 
+**Post-Claim denial is an explicit unimplemented integration dependency.** A
+current-authority refresh after a capacity/duplicate wait may deny or become
+unavailable after Claim has staged reservation/pending-invocation rows. This
+finite journal cannot then enter either audit-only terminal path: doing so could
+commit those rows while claiming an audit-only outcome. Its only safe available
+terminal behavior is whole-attempt rollback with no output, no Completion and
+no claim that a denial event was recorded. That behavior does not satisfy the
+full frozen executor's audit requirement and therefore blocks dispatch for that
+executor. No implicit savepoint, second transaction, reservation compensation,
+retry or relabeled success is allowed. A separately reviewed exact native unwind
+or other owner-approved atomic denial protocol must close this gap before
+operation dispatch; implementing this ordering prerequisite does not close it.
+
 Authority includes same-instance session provenance/current checks, refreshed
 principal/workspace handoff, policy and billing facts. Resources acquires and
 revalidates complete ordered native closure. Claim owns ordered actor/workspace
