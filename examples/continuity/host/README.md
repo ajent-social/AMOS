@@ -35,3 +35,12 @@ mechanics, not actual authentication or failed database completion. Real native
 HTTP retrieval, failure schedules and the full browser journey remain unqualified
 until independently exercised with a separately authorized fixture. This adapter
 does not register a public route or satisfy full host admission.
+
+The private baseline reader uses a closed page selector for the existing property,
+case, application, procedure, activity and guide views. It shares the source
+reader's exact admission, workspace and final completion path. Supplied form tokens
+are presentation data; they never grant admission or authorize a mutation. Guide
+selection preserves existing case/reference validation and rejects more than 100
+distinct references before retaining its source-body collection. All work remains
+inside the original bounded transaction. A missing saved draft is optional; other
+draft failures suppress the page. No business mutation or public route is enabled.

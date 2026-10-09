@@ -157,9 +157,11 @@ func (r *Repository) Draft(ctx context.Context, caseID string) (domain.Draft, er
 	}
 	// A saved draft remains a historical snapshot after later case edits; validate
 	// its own positive revision and references without rebinding it to newer state.
+	// Once the draft row exists, a missing dependency is unavailable storage,
+	// never an absent draft that a caller may safely omit from its presentation.
 	c, err := r.Case(ctx, caseID)
 	if err != nil {
-		return domain.Draft{}, err
+		return domain.Draft{}, ErrUnavailable
 	}
 	if d.CaseRevision > c.Revision {
 		return domain.Draft{}, ErrUnavailable
@@ -171,7 +173,7 @@ func (r *Repository) Draft(ctx context.Context, caseID string) (domain.Draft, er
 		return domain.Draft{}, ErrUnavailable
 	}
 	if err = r.references(ctx, d.SourceIDs); err != nil {
-		return domain.Draft{}, err
+		return domain.Draft{}, ErrUnavailable
 	}
 	return valid, nil
 }
