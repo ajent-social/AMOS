@@ -77,9 +77,15 @@ For explain-case and owner-draft, read exactly the selected case. For attention 
 handover, read one supplied case page of at most Limit (1..100), with no cursor;
 describe the selection as bounded, not all records. Spending-authority supplies an
 empty selection and retains its explicit unknown-authority response. Collect the
-selected cases' distinct source IDs, rejecting more than100 before fetching any
-source body. Fetch each distinct source through Repository.Source in canonical ID
-order, preserving current scope and digest checks. Do not truncate references,
+selected cases' distinct source IDs, rejecting more than100 before building the
+guide's retained source-body collection. Existing Repository.Case/Cases already
+validate each case's references through Source; their bounded validation may read
+up to100 cases times32 references before this aggregate check. Preserve that
+validation rather than bypassing it or claiming that no body was read. All work
+remains under the same original Root.Read deadline. After the aggregate check,
+fetch each distinct source through Repository.Source in canonical ID order,
+retaining at most100 bodies and preserving current scope and digest checks.
+Do not truncate references,
 duplicate search SQL, infer missing sources or treat source text as instructions.
 An oversized selection is unavailable; it does not return an incomplete briefing.
 
