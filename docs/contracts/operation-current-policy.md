@@ -17,8 +17,10 @@ portability and release requirements remain in scope.
 ## 1. Preserve the public decision boundary
 
 Keep `policy.Evaluator.Evaluate(ctx, principal, resource, requirements) Decision`
-and `operation.TransactionAuthorizer.RecheckCurrentTx(ctx, tx, principal,
-selection, resource, lockSet, requirements) Decision` unchanged. Only
+and the specified `operation.TransactionAuthorizer.RecheckCurrentTx(ctx, tx,
+principal, selection, resource, lockSet, requirements) Decision` unchanged.
+The latter remains a frozen design surface, not an implemented interface in
+`app/operation` at this baseline. Only
 `policy.Allowed`, `policy.Denied` and `policy.Unavailable` are policy outcomes.
 A resource or requirement is a selector/declaration, never authoritative evidence.
 Do not introduce a second permissions table, entitlement vocabulary, transport
@@ -257,23 +259,34 @@ Proposed sequence for that future native operation root:
   intent and append success audit. For replay, validate stored bytes/schema and
   buffer them without callback or a second success event. All work is provisional.
 - Refresh locked non-temporal facts before the final drain. Run the existing root
-  constraint drain and take its single recorded F. At F, native sealed receipts
-  evaluate session/assurance, billing and policy against **that exact instant**
-  in memory; they do not acquire locks, read SQL, call providers, render, encode
-  or invoke application code. Finish and commit follow. Failure rolls back all
-  staged mutation/result/audit/effect work and releases no output.
+  constraint drain and take its single recorded F. At F, concrete native
+  finalizers perform the W1-required plain-read comparisons of already-held
+  authority rows and intended transitions using their original lexical
+  transaction. They evaluate session/assurance, billing and policy against
+  **that exact instant**. They acquire no new lock, take no new clock sample,
+  mutate nothing, and call no provider, renderer, codec or application callback.
+  Finish and commit follow. Failure rolls back all staged mutation/result/audit/
+  effect work and releases no output.
 
 `RecheckCurrentSampleTx` cannot be called after `DrainAndSample`: it executes SQL
 and takes another clock sample. The native identity owner must supply a sealed
 held-row receipt/final check tied to the original private admission and attempt,
-reusing its existing validation logic, before this design can compose F. The
-existing writer evidence is not an arbitrary operation receipt. The authorizer's
+reusing its existing validation logic, before this design can compose F.
+`session.CheckStagedWriter` demonstrates a native plain-read final fence using
+private `readCurrentAt(..., false, f)`; it checks a staged issuance and is not an
+existing current-operation finalizer. The existing writer evidence is not an
+arbitrary operation receipt. The authorizer's
 frozen public method remains the provisional acquisition/evaluation boundary;
 a private native finalizer is a separate mandatory integration dependency, not
 an overload that resamples after F.
 
-F is the freshness linearization instant conditional on successful commit, not
-network-receipt time. No extra SQL clock is inserted between F and commit.
+W1 defines F as the freshness linearization instant conditional on successful
+commit, not network-receipt time. The older operation wording says an Allowed
+expiry passed before commit must roll back. That wording cannot be certified as
+a stronger commit-time clock promise by this design: the integrator must resolve
+it explicitly against W1 before operation dispatch is admitted. This proposal
+recommends the existing F semantics and does not silently amend the frozen
+operation contract. No extra SQL clock is inserted between F and commit.
 Cancellation and failed/unknown commit suppress output; unknown commit is not
 proof of rollback and does not authorize automatic retry. Persisted timestamps
 retain the operation store's transaction-time semantics. Audit-only denials need
