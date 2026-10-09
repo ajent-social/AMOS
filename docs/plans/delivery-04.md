@@ -1016,4 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [Current task contract, owned paths, source changes and T13.9, T7.11, T9.5 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-

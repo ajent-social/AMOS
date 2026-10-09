@@ -1016,4 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-

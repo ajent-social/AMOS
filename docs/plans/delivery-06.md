@@ -1016,4 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
-

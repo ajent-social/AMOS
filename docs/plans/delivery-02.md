@@ -1016,4 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [Logs support correlation across app and business service without storing raw bodies. Injected credentials never appear in encoded log output. Named scoped checks pass and the specified negative case is demonstrated; live/production qualification remains a separate explicitly authorized E16 gate where applicable. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-

@@ -1016,4 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.]
-

@@ -272,10 +272,24 @@ def native_notice(current):
         NOTICE_END, '', ''])
 
 
+def native_text(value):
+    # Bracket-delimited metadata must remain one literal Markdown line. Refuse
+    # unsupported authored syntax instead of escaping or silently changing it.
+    require(not re.search(r'[\x00-\x1f\x7f<>\[\]`]', value),
+            'unsupported native Markdown text delimiter or control character')
+    return value
+
+
 def native_projection_files(current, root=ROOT):
     """Native scanner view; preserve all product prose and never write inputs."""
     tasks, products = current[1:3]
     notice = native_notice(current)
+    for tid, task in tasks.items():
+        require(re.fullmatch(r'[A-Z][A-Z0-9]*(?:[.-][A-Z0-9]+)+', tid),
+                'unsupported native task ID')
+        if tid not in products:
+            native_text(task['title'])
+            native_text(task['acceptance'])
     files = {}
     seen = set()
     for name in PRODUCT_TEXT_SHA256:
@@ -325,7 +339,7 @@ def native_projection_files(current, root=ROOT):
                 f'  reported-status: {status}',
                 '  authority: reported-display-only',
                 f'  Acceptance: [{task["acceptance"]}]', ''])
-        files[f'docs/plans/delivery-{start // 100 + 1:02d}.md'] = ('\n'.join(lines) + '\n').encode()
+        files[f'docs/plans/delivery-{start // 100 + 1:02d}.md'] = ('\n'.join(lines).rstrip() + '\n').encode()
     master = strip_notice((root / 'docs/plan.md').read_text())
     heading, rest = master.split('\n', 1)
     master_notice = notice.replace('../planning/portable-plan-export.md', 'planning/portable-plan-export.md')

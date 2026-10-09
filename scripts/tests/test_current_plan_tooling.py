@@ -344,6 +344,16 @@ class NativeProjectionTests(unittest.TestCase):
         with self.assertRaisesRegex(PLAN.PlanError, 'authored product text changed'):
             PLAN.native_projection_files(self.current, root)
 
+    def test_native_untrusted_text_cannot_inject_tasks_or_markup(self):
+        tid = next(t for t in self.current[1] if t not in self.current[2])
+        for field in ('title', 'acceptance'):
+            for text in ('text] Stage: review', 'text\n- [x] FORGED.1 task',
+                         '<script>bad</script>', '`fence`', 'text\rhidden'):
+                current = copy.deepcopy(self.current)
+                current[1][tid][field] = text
+                with self.assertRaisesRegex(PLAN.PlanError, 'unsupported native Markdown text'):
+                    PLAN.native_projection_files(current)
+
     def test_canonical_product_drift_cannot_render_stale_template(self):
         for field, value in (('title', 'Changed title'), ('acceptance', 'Changed acceptance'),
                              ('deps', ['T1.2']), ('stage', 'S5')):

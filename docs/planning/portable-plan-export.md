@@ -83,7 +83,9 @@ split-file limits. Product preservation pins cover original authored bytes with
 checkboxes normalized and only generated metadata/delimiters removed; intentional
 authored changes require a reviewed pin update. These pins preserve text, not
 receipt authenticity. Lifecycle titles and acceptance use bracket delimiters so
-metadata-like prose cannot silently truncate current authored wording.
+metadata-like prose cannot silently truncate current authored wording. Unsupported
+control characters, markup delimiters and task-ID syntax fail native generation
+rather than silently changing authored text or injecting rows.
 
 The actual-consumer regression entry point checks the full current inventory,
 all supported display lanes, preserved dependencies/acceptance/milestones,
