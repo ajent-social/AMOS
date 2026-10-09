@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -42,6 +43,74 @@ func (b *baselineBrowserOutput) Write(p []byte) (int, error) {
 	return b.buffer.Write(p)
 }
 
+// createBaselineBrowserTemp requires an operator-qualified short cache root.
+// The caller owns only the exclusive child, never the configured root itself.
+func createBaselineBrowserTemp(root string) (string, error) {
+	if !filepath.IsAbs(root) || filepath.Clean(root) != root || len(root) > 32 {
+		return "", errors.New("required short browser temporary root invalid")
+	}
+	info, err := os.Lstat(root)
+	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 || info.Mode().Perm() != 0700 {
+		return "", errors.New("required short browser temporary root unavailable")
+	}
+	child, err := os.MkdirTemp(root, "b-")
+	if err != nil {
+		return "", errors.New("exclusive browser temporary directory unavailable")
+	}
+	return child, nil
+}
+
+func TestBaselineBrowserTempRoot(t *testing.T) {
+	// A tiny, exclusive unit-test directory is not a qualified browser fixture.
+	root, err := os.MkdirTemp("/tmp", "bb-")
+	if err != nil {
+		t.Fatal("unit temporary root unavailable")
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(root); err != nil {
+			t.Error("unit temporary root cleanup failed")
+		}
+	})
+	for _, invalid := range []string{"", "relative", root + "/.", root + "/missing", strings.Repeat("/long", 9)} {
+		if child, err := createBaselineBrowserTemp(invalid); err == nil || child != "" {
+			t.Fatal("invalid temporary root accepted")
+		}
+	}
+	if err := os.Chmod(root, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := createBaselineBrowserTemp(root); err == nil {
+		t.Fatal("nonprivate root accepted")
+	}
+	if err := os.Chmod(root, 0700); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(root, "link")
+	if err := os.Symlink(root, link); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := createBaselineBrowserTemp(link); err == nil {
+		t.Fatal("symlink root accepted")
+	}
+	child, err := createBaselineBrowserTemp(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Lstat(child)
+	if err != nil || !info.IsDir() || info.Mode().Perm() != 0700 || filepath.Dir(child) != root || len(child) > 46 {
+		t.Fatal("exclusive short child invalid")
+	}
+	if err := os.RemoveAll(child); err != nil {
+		t.Fatal("owned child cleanup failed")
+	}
+	if _, err := os.Lstat(child); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("owned child remains")
+	}
+	if _, err := os.Lstat(root); err != nil {
+		t.Fatal("configured root was removed")
+	}
+}
+
 // Explicit local Node/Playwright/Chromium prerequisites are operator-qualified.
 // This test never installs tools. It exercises synthetic native GET navigation,
 // not public-host admission, POST/CSRF verification or an enrollment journey.
@@ -58,6 +127,15 @@ func TestPrivateBaselineBrowserRuntimeRequiredService(t *testing.T) {
 	node := localPath("AMOS_CONTINUITY_BROWSER_NODE", true)
 	playwright := localPath("AMOS_CONTINUITY_BROWSER_PLAYWRIGHT", false)
 	chromium := localPath("AMOS_CONTINUITY_BROWSER_CHROMIUM", true)
+	temporary, err := createBaselineBrowserTemp(os.Getenv("AMOS_CONTINUITY_BROWSER_TEMP_ROOT"))
+	if err != nil {
+		t.Fatal("required qualified short browser temporary root unavailable")
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(temporary); err != nil {
+			t.Error("owned browser temporary directory cleanup failed")
+		}
+	})
 	f := privateBaselineFixture(t)
 	if f == nil {
 		return
@@ -124,7 +202,7 @@ func TestPrivateBaselineBrowserRuntimeRequiredService(t *testing.T) {
 	cmd.Stdin = bytes.NewReader(payload)
 	// No inherited runtime configuration, Node preload or browser profile. The
 	// disposable browser profile and all temporary files stay under the test's TMPDIR.
-	cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "LANG=C.UTF-8", "TMPDIR=" + t.TempDir()}
+	cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "LANG=C.UTF-8", "TMPDIR=" + temporary}
 	cmd.Cancel = func() error { return cmd.Process.Signal(os.Interrupt) }
 	cmd.WaitDelay = 15 * time.Second
 	var output baselineBrowserOutput
