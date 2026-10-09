@@ -80,6 +80,7 @@ type TransactionStore interface {
 }
 // app/operation/sqlstore
 func New(*sql.DB) (*Store, error)
+func NewWithRunner(storage.TxRunner) (*Store, error)
 ```
 
 The store rejects nil context/transaction, non-UUIDv7 identifiers, actor kinds
@@ -97,8 +98,16 @@ They supply that SAME retained transaction to ClaimTx/CompleteTx and the audit
 writer. Store.WithTx is not substituted for Root.Run and cannot establish the
 root's admission, deadline or finalization protocol. No second connection pool,
 raw transaction accessor, new authority runner or executable composition follows
-from this storage constructor. Its WithTx seam is qualified as storage mechanics
-only; full current-authority executor composition remains separately gated.
+from these storage constructors. `NewWithRunner` retains the exact existing
+storage.TxRunner interface and rejects nil/typed-nil before any I/O. It opens no
+pool and extracts no raw pool. `WithTx` delegates once with READ COMMITTED options
+to that retained runner. Legacy `New(*sql.DB)` wraps the caller's existing pool
+with a private runner; it never opens another pool or takes ownership of Close.
+Both constructors and ClaimTx/CompleteTx remain storage mechanics only, not a
+transaction-provenance proof. The trusted Root owner still supplies the held
+transaction to each participant. Full current-authority executor composition
+remains separately gated. Store errors are exactly exported `ErrInvalid` and
+`ErrUnavailable`; arbitrary SQL diagnostics are not returned.
 
 ## Durable rows and capacity
 
