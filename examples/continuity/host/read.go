@@ -66,10 +66,22 @@ func readClass(e error) error {
 // privately admitted session can pass its native recheck. Bytes remain private
 // until the exact Root.Read transaction has committed successfully.
 func (c *readCore) source(ctx context.Context, q sourceQuery) ([]byte, error) {
+	return c.readPage(ctx, q, nil)
+}
+
+// readPage has two closed native branches and one authority/completion path.
+// A baseline branch must not carry a second source selector or a callback.
+func (c *readCore) readPage(ctx context.Context, q sourceQuery, baseline *baselineQuery) ([]byte, error) {
 	if c == nil || c.root == nil || c.sessions == nil || c.workspaces == nil || ctx == nil || ctx.Err() != nil {
 		return nil, errUnavailable
 	}
-	if !validSourceQuery(q) {
+	if baseline != nil {
+		value, ok := normalizeBaselineQuery(*baseline)
+		if !ok || q != (sourceQuery{WorkspaceID: value.WorkspaceID}) {
+			return nil, errInvalid
+		}
+		baseline = &value
+	} else if !validSourceQuery(q) {
 		return nil, errInvalid
 	}
 	var buffered []byte
@@ -97,7 +109,12 @@ func (c *readCore) source(ctx context.Context, q sourceQuery) ([]byte, error) {
 		if e != nil {
 			return fail(errUnavailable)
 		}
-		if q.ID == "" {
+		if baseline != nil {
+			buffered, e = renderBaseline(ctx, repo, *baseline)
+			if e != nil {
+				return fail(e)
+			}
+		} else if q.ID == "" {
 			values, e := repo.Sources(ctx, q.After, q.Query, q.Kind, q.Limit)
 			if e != nil {
 				return fail(readClass(e))
