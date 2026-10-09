@@ -273,7 +273,7 @@ Provisional current-expiry checks sample the same database after authority locks
 and again after duplicate-row or capacity waits. No caller `time.Time` or
 application wall clock controls expiry, assurance, capacity or ordering.
 
-**Proposed F-timing amendment (independent review and adoption pending):** the
+**F-timing amendment (adopted for isolated B1 implementation after independent review; runtime dispatch remains gated):** the
 terminal freshness instant is the original native Root's single recorded F,
 obtained after all staged writes, callback/result completion and constraint drain.
 Every required session, assurance, entitlement, policy and other time bound must
@@ -301,7 +301,7 @@ credential publication. An unknown commit is not evidence of rollback and does
 not authorize automatic callback retry. No extra clock check after F may be used
 to paper over a missing native finalizer. This amendment changes no exported
 interface, persisted timestamp, lock order or acceptance status. Operation
-dispatch remains closed until explicit adoption and qualification of all native
+dispatch remains closed until qualification of all native
 participants, complete authority adapters and the completion bridge.
 
 For each request, the executor generates a fresh internal UUIDv7 attempt ID. It is not caller-controlled. For a required-idempotency write, a new durable invocation uses that ID; an exact replay uses the existing row's ID. The transaction order is:
