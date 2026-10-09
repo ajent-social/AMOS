@@ -12,6 +12,13 @@ only a successful caller commit permits reporting success or disclosing them.
 The repository never commits, rolls back or retries. Database diagnostics are
 replaced by fixed sentinels and failures return zero outputs.
 
+`NewWithDBTX` accepts the canonical `operation.DBTX` interface for a future
+trusted operation callback. Every query uses that exact interface; the repository
+does not unwrap it or extend its lifetime. Nil interfaces, typed nils and invalid
+scopes fail before I/O. Construction does not prove current authority or a guarded
+callback. The legacy `New(*sql.Tx, Scope)` path retains its caller-owned transaction
+behavior. Actual guarded callback integration remains a separate qualification gate.
+
 The unallocated fragment at `../migrations/continuity.sql` is not registered or
 applied automatically. An integrator must review immutable migration history
 before any installation use. Runtime tests require an operator-created fresh
