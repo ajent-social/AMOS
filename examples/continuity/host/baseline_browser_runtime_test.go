@@ -32,13 +32,13 @@ type baselineBrowserEvidence struct {
 	Mutations   int  `json:"mutations"`
 }
 
-type baselineBrowserOutput struct{ bytes.Buffer }
+type baselineBrowserOutput struct{ buffer bytes.Buffer }
 
 func (b *baselineBrowserOutput) Write(p []byte) (int, error) {
-	if len(p) > 4096-b.Len() {
+	if len(p) > 4096-b.buffer.Len() {
 		return 0, io.ErrShortWrite
 	}
-	return b.Buffer.Write(p)
+	return b.buffer.Write(p)
 }
 
 // Explicit local Node/Playwright/Chromium prerequisites are operator-qualified.
@@ -131,7 +131,7 @@ func TestPrivateBaselineBrowserRuntimeRequiredService(t *testing.T) {
 	cmd.Stderr = io.Discard
 	runErr := cmd.Run()
 	var evidence baselineBrowserEvidence
-	decoder := json.NewDecoder(bytes.NewReader(output.Bytes()))
+	decoder := json.NewDecoder(bytes.NewReader(output.buffer.Bytes()))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&evidence); err != nil {
 		t.Fatal("browser evidence invalid")
