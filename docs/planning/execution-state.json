@@ -698,5 +698,15 @@
       "A disposable IAM mutation replacing kms:GenerateDataKey with kms:Decrypt failed as expected; restored source matched byte-for-byte and the test passed.",
       "Evidence is limited to memory storage and Pulumi mocks. Live S3, KMS/IAM, lifecycle, host-loss durability, hosted CI, deployment, and remote-to-local restore integration are not established."
     ]
+  },
+  "T8.3": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Candidate 2925ae81a7838965054c3e90a8c1d2834ea3376b independently reviewed clear and merged by PR #93 as dadab8ab3b53305cd38565d69e383d294dfabcd2.",
+      "Landed go test ./internal/infra/state -run TestBootstrap -count=1 and go vet ./internal/infra/state passed.",
+      "Disposable negative mutation set all four public-access-block controls false; TestBootstrapPulumiMocksEnforceRetentionAndSeparation failed on expected assertions; source was restored byte-for-byte and the named suite passed.",
+      "Live AWS bootstrap, locking/recovery exercise, and production qualification remain unrun under the separate E16 gate."
+    ]
   }
 }
