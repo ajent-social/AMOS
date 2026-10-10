@@ -12,11 +12,20 @@ import (
 	"github.com/ajent-social/amos/internal/initializer"
 )
 
+func ownerTempDir(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
 func TestGeneratorRejectsUnsupportedProfilesAndMissingSource(t *testing.T) {
-	if _, err := selectFramework(filepath.Join(t.TempDir(), "absent")); err == nil {
+	if _, err := selectFramework(filepath.Join(ownerTempDir(t), "absent")); err == nil {
 		t.Fatal("missing apphost source accepted")
 	}
-	parent := t.TempDir()
+	parent := ownerTempDir(t)
 	input := initializer.Input{SchemaVersion: 1, AppSlug: "sample-app", ModulePath: "example.com/sample/app", ParentDir: parent, Target: "sample-app", Modules: []string{"identity", "workspace"}, Mode: "production-target", BusinessMode: "integrated-go", PublicOrigin: "https://sample.example", DeploymentProfile: "managed", CloudflareRequired: true}
 	_, err := initializer.Initialize(context.Background(), input, Generator{SourceDir: filepath.Join(parent, "absent")})
 	if err == nil {
@@ -39,7 +48,10 @@ func TestGeneratorCopiesPrivateConfigurationAndReviewedRuntime(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(root, "apphost", "local.go")); err != nil {
 		t.Fatal("AMOS runtime source is unavailable")
 	}
-	parent := t.TempDir()
+	parent := ownerTempDir(t)
+	if err := os.Chmod(parent, 0o700); err != nil {
+		t.Fatal(err)
+	}
 	input := initializer.Input{SchemaVersion: 1, AppSlug: "sample-app", ModulePath: "example.com/sample/app", ParentDir: parent, Target: "sample-app", Modules: []string{"identity", "workspace"}, Mode: "evaluation", BusinessMode: "integrated-go", PublicOrigin: "http://127.0.0.1:8080"}
 	result, err := initializer.Initialize(context.Background(), input, Generator{SourceDir: root})
 	if err != nil {
@@ -101,7 +113,7 @@ func TestGeneratorResumePreservesPrivateRuntimeIdentity(t *testing.T) {
 	if err != nil {
 		t.Fatal("framework source unavailable")
 	}
-	parent := t.TempDir()
+	parent := ownerTempDir(t)
 	input := initializer.Input{SchemaVersion: 1, AppSlug: "resume-app", ModulePath: "example.test/resume", ParentDir: parent, Target: "resume-app", Modules: []string{"identity", "workspace"}, Mode: "evaluation", BusinessMode: "integrated-go", PublicOrigin: "http://127.0.0.1:4188"}
 	generator := Generator{SourceDir: root}
 	result, err := initializer.Initialize(context.Background(), input, initializer.GeneratorFunc(func(ctx context.Context, c initializer.Config, f *initializer.Files) error {

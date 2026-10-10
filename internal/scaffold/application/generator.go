@@ -22,8 +22,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const MaxFrameworkFiles = 128
-const initializerFileBudget = 128
+// Keep generation bounded while allowing the reviewed runtime closure (136 files,
+// plus its app-owned sources and generated command overhead) to fit.
+const MaxFrameworkFiles = initializer.MaxGeneratedFiles
+const initializerFileBudget = initializer.MaxGeneratedFiles
 const generatedFileOverhead = 16
 const maxFrameworkFileBytes = 8 << 20
 const maxFrameworkBytes = 64 << 20
