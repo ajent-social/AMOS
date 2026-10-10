@@ -42,6 +42,7 @@ func TestModeRejectsIncompleteAndOutOfZoneConfiguration(t *testing.T) {
 		edit func(*Mode)
 	}{
 		{"missing zone", func(m *Mode) { m.ZoneID = " " }},
+		{"padded zone ID", func(m *Mode) { m.ZoneID = " zone-123 " }},
 		{"missing proxy mode", func(m *Mode) { m.Proxy = "" }},
 		{"hostname outside zone", func(m *Mode) { m.Hostname = "app.other.test" }},
 		{"unsupported profile", func(m *Mode) { m.Profile = "aws_other" }},

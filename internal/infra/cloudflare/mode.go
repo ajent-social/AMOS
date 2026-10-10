@@ -62,7 +62,10 @@ func (m Mode) Validate() error {
 	if m.Profile != ProfileAWSManaged && m.Profile != ProfileAWSVM {
 		return fmt.Errorf("unsupported Cloudflare hosting profile %q", m.Profile)
 	}
-	if strings.TrimSpace(m.ZoneID) == "" {
+	if strings.TrimSpace(m.ZoneID) != m.ZoneID {
+		return errors.New("cloudflare zone ID must not contain surrounding whitespace")
+	}
+	if m.ZoneID == "" {
 		return errors.New("cloudflare zone ID is required")
 	}
 	zone, err := normalizeHostname(m.ZoneName)
@@ -127,9 +130,9 @@ func normalizeHostname(host string) (string, error) {
 			return "", fmt.Errorf("invalid DNS label %q", label)
 		}
 		for _, r := range label {
-			validLetter := r >= 97 && r <= 122
-			validDigit := r >= 48 && r <= 57
-			if !validLetter && !validDigit && r != 45 {
+			validLetter := r >= 'a' && r <= 'z'
+			validDigit := r >= '0' && r <= '9'
+			if !validLetter && !validDigit && r != '-' {
 				return "", fmt.Errorf("invalid character in DNS label %q", label)
 			}
 		}
