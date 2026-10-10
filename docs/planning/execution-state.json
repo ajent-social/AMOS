@@ -667,5 +667,15 @@
       "Named tests, scoped race/vet and pinned zero-issue lint passed. Independent reviewer repeated scoped tests and public PostgreSQL ingress negative/restored evidence; existing 36 module versions preserved. Fresh landed package test passed.",
       "Accepted source/Pulumi mock component only. No AWS calls, preview, provider qualification, spending or deployment; actual backup KMS context and all production gates remain separate. See docs/evidence/aws-network-20261007.md."
     ]
+  },
+  "T11.2": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Independent exact-head review cleared commit 425cdebd39da656093c3fbd37f927eb1c4a4721b; reviewed tree 0c0b6c1b6daf73246230d18519eb4b3f9d20c379 contains only the three assigned contract/schema/fixture paths.",
+      "Focused race test and vet passed on the reviewed candidate. Draft 2020-12 schema meta-validation plus valid and negative mapping fixtures passed; scoped golangci-lint v2.14.0 built with Go 1.27.1 reported zero issues.",
+      "Rebase merge PR #82 landed at e413e8371f3334eff5ba53df6691424dd89ddcf8. Detached landed package test, vet and schema meta-validation passed.",
+      "Accepted design and fixture contract only. Runtime tool generation and authorization enforcement are not implemented or qualified; PR had no hosted check statuses."
+    ]
   }
 }
