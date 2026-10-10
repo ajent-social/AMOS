@@ -3,12 +3,14 @@ package apphost
 import (
 	"context"
 	"database/sql"
-	"errors"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -20,20 +22,38 @@ import (
 	"github.com/google/uuid"
 )
 
-type localBillingProviderStub struct{}
-
-func (localBillingProviderStub) CreateCheckout(context.Context, provider.CheckoutRequest) (provider.Outcome[provider.CheckoutSession], error) {
-	return provider.Outcome[provider.CheckoutSession]{}, errors.New("provider stub must not be called by page rendering")
-}
-func (localBillingProviderStub) RecoverCheckout(context.Context, provider.CheckoutRequest, billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error) {
-	return provider.Outcome[provider.CheckoutSession]{}, errors.New("provider stub must not be called by page rendering")
-}
-func (localBillingProviderStub) ReadConfirmedCheckout(context.Context, provider.CheckoutRequest, billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error) {
-	return provider.Outcome[provider.CheckoutSession]{}, errors.New("provider stub must not be called by page rendering")
+type localBillingProviderStub struct {
+	mu           sync.Mutex
+	createCalls  int
+	recoverCalls int
+	keys         []string
 }
 
-var _ checkout.Provider = localBillingProviderStub{}
-var _ checkout.ConfirmedCheckoutReader = localBillingProviderStub{}
+func (s *localBillingProviderStub) CreateCheckout(_ context.Context, req provider.CheckoutRequest) (provider.Outcome[provider.CheckoutSession], error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.createCalls++
+	s.keys = append(s.keys, req.IdempotencyKey)
+	return provider.Outcome[provider.CheckoutSession]{State: provider.SubscriptionUnknown, ObservedAt: time.Now().UTC()}, nil
+}
+func (s *localBillingProviderStub) RecoverCheckout(_ context.Context, req provider.CheckoutRequest, _ billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.recoverCalls++
+	s.keys = append(s.keys, req.IdempotencyKey)
+	return provider.Outcome[provider.CheckoutSession]{State: provider.SubscriptionUnknown, ObservedAt: time.Now().UTC()}, nil
+}
+func (*localBillingProviderStub) ReadConfirmedCheckout(context.Context, provider.CheckoutRequest, billingstore.Intent) (provider.Outcome[provider.CheckoutSession], error) {
+	return provider.Outcome[provider.CheckoutSession]{State: provider.SubscriptionUnknown, ObservedAt: time.Now().UTC()}, nil
+}
+func (s *localBillingProviderStub) calls() (int, int, []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.createCalls, s.recoverCalls, append([]string(nil), s.keys...)
+}
+
+var _ checkout.Provider = (*localBillingProviderStub)(nil)
+var _ checkout.ConfirmedCheckoutReader = (*localBillingProviderStub)(nil)
 
 func TestLocalBillingUsesRealSessionAndScopedApplicationCatalog(t *testing.T) {
 	dsn := localDatabase(t)
@@ -60,7 +80,7 @@ func TestLocalBillingUsesRealSessionAndScopedApplicationCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stub := localBillingProviderStub{}
+	stub := &localBillingProviderStub{}
 	cfg.Billing = &LocalBillingConfig{
 		Catalog: catalogConfig, Provider: stub, ContinuationReader: stub,
 		ProviderAccountID: "acct_test", AccountMode: provider.AccountTest,
@@ -162,12 +182,63 @@ func TestLocalBillingUsesRealSessionAndScopedApplicationCatalog(t *testing.T) {
 	if strings.Contains(body, `href="/projects"`) {
 		t.Fatal("missing subscription projection exposed the paid business action")
 	}
+	if err := seedLocalBillingAccount(t, ctx, host, cfg, personalWorkspaceID); err != nil {
+		t.Fatalf("seed active workspace billing account: %v", err)
+	}
+
+	form := url.Values{
+		"_csrf":           {localBillingFormValue(t, body, "_csrf")},
+		"price_key":       {localBillingFormValue(t, body, "price_key")},
+		"idempotency_key": {localBillingFormValue(t, body, "idempotency_key")},
+	}
+	if form.Get("price_key") != "pro-month" {
+		t.Fatalf("checkout form selected unexpected server-owned price key %q", form.Get("price_key"))
+	}
+	status, retryBody, _ := localBillingCheckoutPost(t, client, origin, form)
+	if status != http.StatusServiceUnavailable || !strings.Contains(retryBody, "Retry checkout safely") {
+		t.Fatalf("AAL1 checkout attempt did not fail closed with a retry surface: status=%d body=%q", status, retryBody)
+	}
+	createCalls, recoverCalls, keys := stub.calls()
+	if createCalls != 0 || recoverCalls != 0 || len(keys) != 0 {
+		t.Fatalf("AAL1 checkout reached provider: create=%d recover=%d keys=%v", createCalls, recoverCalls, keys)
+	}
+	if err := elevateLocalBillingSession(t, ctx, host, personID); err != nil {
+		t.Fatalf("prepare test session with completed AAL2 step-up: %v", err)
+	}
+	status, retryBody, intentCookie := localBillingCheckoutPost(t, client, origin, form)
+	if status != http.StatusAccepted || !strings.Contains(retryBody, `data-state="unknown"`) || !strings.Contains(retryBody, "Check payment status again") {
+		t.Fatalf("unknown checkout was not presented as pending recovery: status=%d body=%q", status, retryBody)
+	}
+	if intentCookie == nil || !validLocalBillingIntentID(intentCookie.Value) || !intentCookie.Secure {
+		t.Fatalf("checkout response did not set a secure intent cookie: %+v", intentCookie)
+	}
+	status, retryBody, retryIntentCookie := localBillingCheckoutPost(t, client, origin, form)
+	if status != http.StatusAccepted || !strings.Contains(retryBody, `data-state="unknown"`) {
+		t.Fatalf("same-key provider recovery did not remain unknown: status=%d body=%q", status, retryBody)
+	}
+	createCalls, recoverCalls, keys = stub.calls()
+	if createCalls != 1 || recoverCalls != 1 || len(keys) != 2 || keys[0] != form.Get("idempotency_key") || keys[1] != keys[0] {
+		t.Fatalf("same-key retry calls create=%d recover=%d keys=%v", createCalls, recoverCalls, keys)
+	}
+	if retryIntentCookie == nil || retryIntentCookie.Value != intentCookie.Value {
+		t.Fatalf("same-key retry changed checkout intent cookie: first=%+v retry=%+v", intentCookie, retryIntentCookie)
+	}
+	intentID := intentCookie.Value
+	status, statusBody := localBillingStatus(t, client, origin, intentID)
+	if status != http.StatusOK || !strings.Contains(statusBody, `"state":"unknown"`) {
+		t.Fatalf("unconfirmed checkout status=%d body=%q", status, statusBody)
+	}
+
 	if err := seedLocalBillingProjection(t, ctx, host, cfg, personalWorkspaceID, "pending", time.Now().UTC().Add(-2*time.Second)); err != nil {
 		t.Fatalf("seed pending projection: %v", err)
 	}
 	status, body = response(t, client, http.MethodGet, origin+"/billing", "", nil)
 	if status != http.StatusOK || strings.Contains(body, `href="/projects"`) {
 		t.Fatalf("pending projection was presented as paid: status=%d", status)
+	}
+	status, statusBody = localBillingStatus(t, client, origin, intentID)
+	if status != http.StatusOK || !strings.Contains(statusBody, `"state":"unknown"`) {
+		t.Fatalf("pending projection changed checkout status=%d body=%q", status, statusBody)
 	}
 	if err := seedLocalBillingProjection(t, ctx, host, cfg, personalWorkspaceID, "confirmed", time.Now().UTC().Add(-time.Second)); err != nil {
 		t.Fatalf("seed confirmed projection: %v", err)
@@ -176,6 +247,115 @@ func TestLocalBillingUsesRealSessionAndScopedApplicationCatalog(t *testing.T) {
 	if status != http.StatusOK || !strings.Contains(body, `href="/projects"`) {
 		t.Fatalf("confirmed scoped projection did not unlock the configured action: status=%d", status)
 	}
+	status, statusBody = localBillingStatus(t, client, origin, intentID)
+	if status != http.StatusOK || !strings.Contains(statusBody, `"state":"paid"`) || !strings.Contains(statusBody, `"action_path":"/projects"`) {
+		t.Fatalf("confirmed projection did not recover checkout status=%d body=%q", status, statusBody)
+	}
+}
+
+func elevateLocalBillingSession(t *testing.T, ctx context.Context, host *Host, personID uuid.UUID) error {
+	t.Helper()
+	return host.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		result, err := tx.ExecContext(ctx, `UPDATE identity_sessions SET assurance_level='aal2', assurance_expires_at=transaction_timestamp()+interval '10 minutes' WHERE person_id=$1 AND revoked_at IS NULL`, personID)
+		if err != nil {
+			return err
+		}
+		count, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if count != 1 {
+			return fmt.Errorf("updated %d active sessions, want one", count)
+		}
+		return nil
+	})
+}
+
+func localBillingFormValue(t *testing.T, body, name string) string {
+	t.Helper()
+	marker := `name="` + name + `" value="`
+	start := strings.Index(body, marker)
+	if start < 0 {
+		t.Fatalf("form field %q not found", name)
+	}
+	start += len(marker)
+	end := strings.Index(body[start:], `"`)
+	if end < 0 {
+		t.Fatalf("form field %q has no closing value quote", name)
+	}
+	return body[start : start+end]
+}
+
+func validLocalBillingIntentID(value string) bool {
+	_, err := uuid.Parse(value)
+	return err == nil
+}
+
+func localBillingCheckoutPost(t *testing.T, client *http.Client, origin string, form url.Values) (int, string, *http.Cookie) {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodPost, origin+"/billing/start-checkout", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", origin)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var intentCookie *http.Cookie
+	for _, cookie := range resp.Cookies() {
+		if cookie.Name == "amos_billing_checkout_intent" {
+			clone := *cookie
+			intentCookie = &clone
+			break
+		}
+	}
+	return resp.StatusCode, string(body), intentCookie
+}
+
+func localBillingStatus(t *testing.T, client *http.Client, origin, intentID string) (int, string) {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodGet, origin+"/billing/return/status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.AddCookie(&http.Cookie{Name: "amos_billing_checkout_intent", Value: intentID})
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp.StatusCode, string(body)
+}
+
+func seedLocalBillingAccount(t *testing.T, ctx context.Context, host *Host, cfg LocalConfig, workspaceID uuid.UUID) error {
+	t.Helper()
+	binding := provider.Binding{
+		InstallationID: cfg.InstallationID.String(), EnvironmentID: cfg.EnvironmentID.String(),
+		WorkspaceID: workspaceID.String(), Provider: "stripe", AccountID: "acct_test", AccountMode: provider.AccountTest,
+	}
+	return host.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+		store, err := billingstore.New(tx)
+		if err != nil {
+			return err
+		}
+		account, err := store.EnsureWorkspaceAccount(ctx, mustUUID(t), binding)
+		if err != nil {
+			return err
+		}
+		_, err = store.BindCustomer(ctx, mustUUID(t), account.ID, binding, "cus_test_local_billing")
+		return err
+	})
 }
 
 func seedLocalBillingProjection(t *testing.T, ctx context.Context, host *Host, cfg LocalConfig, workspaceID uuid.UUID, state string, observed time.Time) error {

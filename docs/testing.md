@@ -3,8 +3,9 @@
 The generated application composes identity, workspace, health, and reserved
 billing routes. Billing UI requires explicit server-owned catalog and provider
 configuration; without it, the billing route fails closed as unavailable.
-PostgreSQL-backed HTTP tests exercise the authenticated billing page and
-workspace-scoped subscription projection. These checks do not qualify a live
+PostgreSQL-backed HTTP tests exercise the authenticated billing page, the
+permission-checked checkout form submission, same-key provider recovery, and
+workspace-scoped subscription status. These checks do not qualify a live
 provider or deployment.
 
 ## API and database
@@ -33,9 +34,12 @@ go test ./apphost -run '^TestLocalBillingUsesRealSessionAndScopedApplicationCata
 ```
 
 The billing integration test signs up and verifies a real session, renders
-server-configured catalog choices, and checks that only a fresh confirmed
-subscription projection reveals the configured action. Its provider is a test
-stub; it does not qualify provider behavior.
+server-configured catalog choices, confirms AAL1 cannot invoke checkout, and
+then uses a test-only persisted AAL2 assurance fixture to exercise checkout,
+same-key recovery, and status polling through the application host. A fresh
+confirmed workspace projection alone reveals the configured action. Its
+provider is a test stub; this test does not exercise TOTP step-up or qualify
+provider behavior.
 
 `./scripts/test-api.sh providers` is a separate opt-in gate. It first requires
 `AMOS_RUN_PROVIDER_TESTS=1`, then fails with an explicit unavailable-suite
