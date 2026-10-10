@@ -128,7 +128,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.URL.Path == "/billing" && r.Method == http.MethodGet:
 		h.showBilling(w, r)
-	case r.URL.Path == "/billing/checkout/start" && r.Method == http.MethodPost:
+	case r.URL.Path == "/billing/start-checkout" && r.Method == http.MethodPost:
 		h.start(w, r)
 	case r.URL.Path == "/billing/return" && r.Method == http.MethodGet:
 		h.showReturn(w, r)
@@ -516,9 +516,9 @@ const pageHTML = `<!doctype html>
 <main id="main-content"><h1>{{.Heading}}</h1>{{if .Payer}}<p>Active workspace payer: <strong>{{.Payer}}</strong></p>{{end}}{{if .Notice}}<p id="payment-notice" role="{{if .Unavailable}}alert{{else}}status{{end}}" aria-live="polite">{{.Notice}}</p>{{end}}
 {{if and .Current.Plan (eq .Current.State "paid")}}<section aria-labelledby="current-plan"><h2 id="current-plan">Current plan</h2><p>{{.Current.Plan}} &middot; {{.Current.Currency}} {{price .Current.AmountMinor}} / {{if eq .Current.State "paid"}}active{{else}}checking{{end}}</p></section>{{end}}
 {{if .ActionPath}}<p><a class="button" href="{{.ActionPath}}">Continue to your paid workspace</a></p>{{end}}
-{{if .HasChoices}}<form action="/billing/checkout/start" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="idempotency_key" value="{{.IdempotencyKey}}"><fieldset><legend>Available plans</legend>{{range .Choices}}<label><input type="radio" name="price_key" value="{{.PriceKey}}" required>{{.Plan}} &middot; {{.Currency}} {{price .AmountMinor}} / {{.Interval}}</label>{{end}}</fieldset><button type="submit">Continue to secure checkout</button></form>{{end}}
+{{if .HasChoices}}<form action="/billing/start-checkout" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="idempotency_key" value="{{.IdempotencyKey}}"><fieldset><legend>Available plans</legend>{{range .Choices}}<label><input type="radio" name="price_key" value="{{.PriceKey}}" required>{{.Plan}} &middot; {{.Currency}} {{price .AmountMinor}} / {{.Interval}}</label>{{end}}</fieldset><button type="submit">Continue to secure checkout</button></form>{{end}}
 {{if .HasRetry}}<form action="/billing/return/retry" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><button type="submit">Check payment status again</button></form>{{end}}
-{{if .HasStartRetry}}<form action="/billing/checkout/start" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="price_key" value="{{.RetryPriceKey}}"><input type="hidden" name="idempotency_key" value="{{.RetryKey}}"><button type="submit">Retry checkout safely</button></form>{{end}}
+{{if .HasStartRetry}}<form action="/billing/start-checkout" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="price_key" value="{{.RetryPriceKey}}"><input type="hidden" name="idempotency_key" value="{{.RetryKey}}"><button type="submit">Retry checkout safely</button></form>{{end}}
 {{if .State}}<p id="payment-state" data-state="{{.State}}">{{.State}}</p><p id="payment-details" aria-live="polite"></p>{{if .HasRetry}}<section id="payment-poll" data-url="/billing/return/status" data-attempts="6" aria-live="polite"></section>{{end}}{{end}}
 </main><script>
 (() => {
