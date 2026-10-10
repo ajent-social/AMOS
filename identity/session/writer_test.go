@@ -20,6 +20,38 @@ func writerConfig(t *testing.T) Config {
 	t.Helper()
 	return Config{InstallationID: uuid.Must(uuid.NewV7()), ApplicationID: uuid.Must(uuid.NewV7()), EnvironmentID: uuid.Must(uuid.NewV7()), AllowedOrigins: []string{"https://example.test"}, CookieSecure: true}
 }
+func TestWriterMiddlewareRejectsOriginAndCSRFBeforeRenewal(t *testing.T) {
+	cfg := writerConfig(t)
+	s, err := NewWithWriter(&aw.Root{}, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const token = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	cases := []struct {
+		name, origin string
+	}{
+		{name: "denied origin", origin: "https://attacker.test"},
+		{name: "missing csrf", origin: "https://example.test"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "https://example.test/protected", http.NoBody)
+			request.AddCookie(&http.Cookie{Name: s.cookieName, Value: token})
+			request.Header.Set("Origin", tc.origin)
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			called := false
+			response := httptest.NewRecorder()
+			s.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true })).ServeHTTP(response, request)
+			if response.Code != http.StatusForbidden {
+				t.Fatalf("status %d, want forbidden", response.Code)
+			}
+			if called {
+				t.Fatal("rejected request reached handler")
+			}
+		})
+	}
+}
+
 func testPrincipal(t *testing.T, cfg Config, level string, at, expiry time.Time) identity.Principal {
 	t.Helper()
 	proof, err := authproof.NewVerifiedCredential(uuid.Must(uuid.NewV7()), cfg.InstallationID, cfg.ApplicationID, cfg.EnvironmentID, 0, "email_password", at, level, expiry)

@@ -394,6 +394,45 @@ func TestWriterRuntimeRequiredService(t *testing.T) {
 	if issued.Cookie == nil {
 		t.Fatal("staging prerequisite missing")
 	}
+	t.Run("unsafe request rejection does not renew session", func(t *testing.T) {
+		digest, ok := tokenDigest(issued.Cookie.Value)
+		if !ok {
+			t.Fatal("issued cookie has invalid digest")
+		}
+		readActivity := func() (time.Time, time.Time) {
+			t.Helper()
+			var lastSeen, idleExpires time.Time
+			if err := db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+				return tx.QueryRowContext(ctx, "SELECT last_seen_at,idle_expires_at FROM public.identity_sessions WHERE token_digest=$1", digest[:]).Scan(&lastSeen, &idleExpires)
+			}); err != nil {
+				t.Fatal(err)
+			}
+			return lastSeen, idleExpires
+		}
+		for _, tc := range []struct {
+			name, origin string
+		}{
+			{name: "denied origin", origin: "https://attacker.test"},
+			{name: "missing csrf", origin: "https://example.test"},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				beforeSeen, beforeIdle := readActivity()
+				request := httptest.NewRequest(http.MethodPost, "https://example.test/protected", http.NoBody).WithContext(ctx)
+				request.AddCookie(issued.Cookie)
+				request.Header.Set("Origin", tc.origin)
+				request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				response := httptest.NewRecorder()
+				service.Middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Error("rejected request reached handler") })).ServeHTTP(response, request)
+				if response.Code != http.StatusForbidden {
+					t.Fatalf("status %d, want forbidden", response.Code)
+				}
+				afterSeen, afterIdle := readActivity()
+				if !afterSeen.Equal(beforeSeen) || !afterIdle.Equal(beforeIdle) {
+					t.Fatalf("rejected request renewed session: last_seen %s -> %s, idle_expires %s -> %s", beforeSeen, afterSeen, beforeIdle, afterIdle)
+				}
+			})
+		}
+	})
 	t.Run("native middleware private reader and no mutation", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "https://example.test/protected", nil).WithContext(ctx)
 		request.AddCookie(issued.Cookie)

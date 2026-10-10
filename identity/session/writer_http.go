@@ -51,20 +51,20 @@ func (s *Service) writerMiddleware(next http.Handler, w http.ResponseWriter, r *
 		sessionHTTPError(w, r, ErrUnauthenticated)
 		return
 	}
-	// Parse a bounded body once on the original request so the private
-	// renewal request does not consume downstream form input.
+	// Reject unsafe browser requests before renewal can mutate session activity.
+	// browserCheck also bounds and parses form bodies before the private
+	// renewal request, preserving downstream form input.
 	if unsafeMethod(r.Method) {
-		csrfFromRequest(w, r)
+		if err := s.browserCheck(w, r); err != nil {
+			return
+		}
 	}
 	principal, id, err := s.runBrowser(r, wp.Renew)
 	if err != nil {
 		sessionHTTPError(w, r, err)
 		return
 	}
-	// Admission is minted only after commit and request boundary checks.
-	if err = s.browserCheck(w, r); err != nil {
-		return
-	}
+	// Admission is minted only after renewal commits.
 	credential, err := credentialForPrincipal(principal)
 	if err != nil {
 		sessionHTTPError(w, r, err)
