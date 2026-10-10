@@ -243,8 +243,8 @@ func Restore(ctx context.Context, r Request) (prepared *Prepared, resultErr erro
 			cc, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			stageName := pgx.Identifier{stage}.Sanitize()
-			if _, fenceErr := admin.Exec(cc, "ALTER DATABASE "+stageName+" WITH ALLOW_CONNECTIONS false"); fenceErr != nil {
-				resultErr = errors.Join(resultErr, ErrCleanup)
+			if fenceErr := fenceDatabaseIfExists(cc, admin, stage); fenceErr != nil {
+				resultErr = errors.Join(resultErr, fenceErr)
 			}
 			if _, cleanupErr := admin.Exec(cc, "DROP DATABASE IF EXISTS "+stageName); cleanupErr != nil {
 				resultErr = errors.Join(resultErr, ErrCleanup)
@@ -287,6 +287,35 @@ func Restore(ctx context.Context, r Request) (prepared *Prepared, resultErr erro
 	keep = true
 	return &Prepared{request: r, manifest: p.Manifest, stage: stage, elapsed: time.Since(start)}, nil
 }
+func fenceDatabaseIfExists(ctx context.Context, admin *pgx.Conn, name string) error {
+	var exists bool
+	if err := admin.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", name).Scan(&exists); err != nil {
+		return ErrCleanup
+	}
+	if !exists {
+		return nil
+	}
+	if _, err := admin.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{name}.Sanitize()+" WITH ALLOW_CONNECTIONS false"); err != nil {
+		return ErrCleanup
+	}
+	return nil
+}
+func resolveStageName(ctx context.Context, admin *pgx.Conn, stage, target string) (string, error) {
+	if stage == target {
+		return target, nil
+	}
+	var exists bool
+	if err := admin.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", stage).Scan(&exists); err != nil {
+		return "", ErrActivation
+	}
+	if exists {
+		return stage, nil
+	}
+	if err := admin.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", target).Scan(&exists); err != nil || !exists {
+		return "", ErrActivation
+	}
+	return target, nil
+}
 func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resultErr error) {
 	if p == nil || checker == nil {
 		return ErrActivation
@@ -314,6 +343,11 @@ func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resul
 			resultErr = errors.Join(resultErr, ErrCleanup)
 		}
 	}()
+	resolvedStage, resolveErr := resolveStageName(ctx, admin, p.stage, p.request.Target)
+	if resolveErr != nil {
+		return ErrActivation
+	}
+	p.stage = resolvedStage
 	activeName := p.stage
 	activated := false
 	defer func() {
@@ -322,8 +356,8 @@ func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resul
 		}
 		cc, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		if _, closeErr := admin.Exec(cc, "ALTER DATABASE "+pgx.Identifier{activeName}.Sanitize()+" WITH ALLOW_CONNECTIONS false"); closeErr != nil {
-			resultErr = errors.Join(resultErr, ErrCleanup)
+		if closeErr := fenceDatabaseIfExists(cc, admin, activeName); closeErr != nil {
+			resultErr = errors.Join(resultErr, closeErr)
 		}
 	}()
 	// Arm the fence cleanup before enabling connections. An ambiguous DDL
@@ -351,7 +385,23 @@ func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resul
 		return ErrActivation
 	}
 	if p.stage != p.request.Target {
+		var targetExists bool
+		if e = admin.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", p.request.Target).Scan(&targetExists); e != nil || targetExists {
+			return ErrActivation
+		}
 		if _, e = admin.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{p.stage}.Sanitize()+" RENAME TO "+pgx.Identifier{p.request.Target}.Sanitize()); e != nil {
+			resolveCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			probe, connectErr := pgx.Connect(resolveCtx, p.request.AdminURL)
+			if connectErr == nil {
+				if resolved, inspectErr := resolveStageName(resolveCtx, probe, p.stage, p.request.Target); inspectErr == nil {
+					p.stage = resolved
+					activeName = resolved
+				}
+				if closeErr := probe.Close(context.Background()); closeErr != nil {
+					resultErr = errors.Join(resultErr, ErrCleanup)
+				}
+			}
 			return ErrActivation
 		}
 		p.stage = p.request.Target
@@ -385,6 +435,11 @@ func (p *Prepared) Discard(ctx context.Context) (resultErr error) {
 			resultErr = errors.Join(resultErr, ErrCleanup)
 		}
 	}()
+	resolvedStage, resolveErr := resolveStageName(ctx, c, p.stage, p.request.Target)
+	if resolveErr != nil {
+		return ErrCleanup
+	}
+	p.stage = resolvedStage
 	_, e = c.Exec(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{p.stage}.Sanitize())
 	if e == nil {
 		p.active = false
