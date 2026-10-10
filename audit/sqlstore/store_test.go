@@ -242,9 +242,15 @@ func applyAuditMigration(t *testing.T, schema string) {
 			t.Error("close isolated migration database")
 		}
 	})
-	registry, err := migrations.NewRegistry(migrations.Fragment{Namespace: "audit", Migrations: []migrations.Migration{{Sequence: 1, Name: "security_audit_events", SQL: string(contents)}}})
+	// This isolated fragment fixture has its own test-only ledger. The real
+	// reference composition keeps invocation migration at sequence 17.
+	invocations, err := migrations.OperationInvocations(2)
 	if err != nil {
-		t.Fatal("construct isolated one-fragment registry")
+		t.Fatal("load invocation audit extension")
+	}
+	registry, err := migrations.NewRegistry(migrations.Fragment{Namespace: "audit", Migrations: []migrations.Migration{{Sequence: 1, Name: "security_audit_events", SQL: string(contents)}}}, invocations)
+	if err != nil {
+		t.Fatal("construct isolated audit fixture registry")
 	}
 	if err := storage.Migrate(context.Background(), migrationDB, registry); err != nil {
 		t.Fatal("apply owned audit migration fragment")

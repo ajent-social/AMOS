@@ -20,8 +20,8 @@ var (
 	_ func(TxRunner, *sqlstore.Store, *deliveryemail.Renderer, ProtectedMaterialWriter, Config) (*Service, error)    = NewWithTxRunner
 	_ TxRunner                                                                                                       = (*storage.DB)(nil)
 	_ TxRunner                                                                                                       = (*storage.RuntimeDB)(nil)
-	// An unkeyed literal freezes the legacy field order and types as well as names.
-	_ = Config{false, uuid.Nil, uuid.Nil, "", time.Duration(0)}
+	// Named legacy fields retain zero-environment construction after the reviewed W1 addition.
+	_ = Config{DevelopmentLoopback: false, InstallationID: uuid.Nil, ApplicationID: uuid.Nil, ApplicationOrigin: "", ChallengeLifetime: time.Duration(0)}
 )
 
 type emailRunnerFunc func(context.Context, *sql.TxOptions, func(*sql.Tx) error) error

@@ -62,7 +62,7 @@ func (r *Repository) references(ctx context.Context, ids []string) error {
 func (r *Repository) Case(ctx context.Context, id string) (domain.Case, error) {
 	return r.caseRecord(ctx, id, false)
 }
-func (r *Repository) caseRecord(ctx context.Context, id string, lock bool) (domain.Case, error) {
+func (r *Repository) caseRow(ctx context.Context, id string, lock bool) (domain.Case, error) {
 	if r.ready(ctx) != nil || !validID(id) {
 		return domain.Case{}, ErrInvalid
 	}
@@ -83,6 +83,16 @@ func (r *Repository) caseRecord(ctx context.Context, id string, lock bool) (doma
 	if !ok {
 		return domain.Case{}, ErrUnavailable
 	}
+	return c, nil
+}
+
+// caseRecord preserves legacy relation checks and source SHARE locks. Discovery
+// uses caseRow instead so it cannot acquire resources before global ordering.
+func (r *Repository) caseRecord(ctx context.Context, id string, lock bool) (domain.Case, error) {
+	c, err := r.caseRow(ctx, id, lock)
+	if err != nil {
+		return domain.Case{}, err
+	}
 	if _, err = r.Property(ctx, c.PropertyID); err != nil {
 		return domain.Case{}, err
 	}
@@ -94,7 +104,7 @@ func (r *Repository) caseRecord(ctx context.Context, id string, lock bool) (doma
 func (r *Repository) Application(ctx context.Context, id string) (domain.Application, error) {
 	return r.application(ctx, id, false)
 }
-func (r *Repository) application(ctx context.Context, id string, lock bool) (domain.Application, error) {
+func (r *Repository) applicationRow(ctx context.Context, id string, lock bool) (domain.Application, error) {
 	if r.ready(ctx) != nil || !validID(id) {
 		return domain.Application{}, ErrInvalid
 	}
@@ -114,6 +124,14 @@ func (r *Repository) application(ctx context.Context, id string, lock bool) (dom
 	a, ok := appValue(a)
 	if !ok {
 		return domain.Application{}, ErrUnavailable
+	}
+	return a, nil
+}
+
+func (r *Repository) application(ctx context.Context, id string, lock bool) (domain.Application, error) {
+	a, err := r.applicationRow(ctx, id, lock)
+	if err != nil {
+		return domain.Application{}, err
 	}
 	if _, err = r.Property(ctx, a.PropertyID); err != nil {
 		return domain.Application{}, err
@@ -157,9 +175,11 @@ func (r *Repository) Draft(ctx context.Context, caseID string) (domain.Draft, er
 	}
 	// A saved draft remains a historical snapshot after later case edits; validate
 	// its own positive revision and references without rebinding it to newer state.
+	// Once the draft row exists, a missing dependency is unavailable storage,
+	// never an absent draft that a caller may safely omit from its presentation.
 	c, err := r.Case(ctx, caseID)
 	if err != nil {
-		return domain.Draft{}, err
+		return domain.Draft{}, ErrUnavailable
 	}
 	if d.CaseRevision > c.Revision {
 		return domain.Draft{}, ErrUnavailable
@@ -171,7 +191,7 @@ func (r *Repository) Draft(ctx context.Context, caseID string) (domain.Draft, er
 		return domain.Draft{}, ErrUnavailable
 	}
 	if err = r.references(ctx, d.SourceIDs); err != nil {
-		return domain.Draft{}, err
+		return domain.Draft{}, ErrUnavailable
 	}
 	return valid, nil
 }

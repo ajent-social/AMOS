@@ -22,9 +22,13 @@ import (
 	"unicode"
 
 	deliveryemail "github.com/ajent-social/amos/delivery/email"
+	"github.com/ajent-social/amos/delivery/email/materialstore"
 	"github.com/ajent-social/amos/identity"
 	"github.com/ajent-social/amos/identity/password"
+	"github.com/ajent-social/amos/identity/primaryproof"
+	"github.com/ajent-social/amos/identity/session"
 	"github.com/ajent-social/amos/identity/store"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/jobs/sqlstore"
 	"github.com/ajent-social/amos/storage"
 	"github.com/google/uuid"
@@ -87,9 +91,15 @@ type TxConfig struct {
 }
 
 type Service struct {
-	db     TxRunner
-	cfg    TxConfig
-	origin *url.URL
+	root            *aw.Root
+	sessions        *session.Service
+	primary         *primaryproof.Verifier
+	writerOutbox    *sqlstore.TxWriter
+	writerMaterials *materialstore.Writer
+	writerPolicy    WriterPolicy
+	db              TxRunner
+	cfg             TxConfig
+	origin          *url.URL
 }
 
 type Acknowledgement struct {
@@ -126,7 +136,18 @@ func New(cfg Config) (*Service, error) {
 
 // NewWithTxRunner constructs recovery without probing or owning the runner.
 func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Service, error) {
-	if nilTxRunner(db) || cfg.Passwords == nil || cfg.Outbox == nil || cfg.Renderer == nil || cfg.Materials == nil || cfg.Policy == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
+	if nilTxRunner(db) || cfg.Outbox == nil || nilRecoveryDependency(cfg.Materials) || aw.SelectLegacy() != nil {
+		return nil, ErrConfiguration
+	}
+	s, err := configuredRecovery(cfg)
+	if err != nil {
+		return nil, err
+	}
+	s.db = db
+	return s, nil
+}
+func configuredRecovery(cfg TxConfig) (*Service, error) {
+	if cfg.Passwords == nil || cfg.Renderer == nil || nilRecoveryDependency(cfg.Policy) || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
 		return nil, ErrConfiguration
 	}
 	if cfg.ChallengeLifetime == 0 {
@@ -139,7 +160,7 @@ func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Service, error) {
 	if err != nil {
 		return nil, ErrConfiguration
 	}
-	s := &Service{db: db, cfg: cfg, origin: origin}
+	s := &Service{cfg: cfg, origin: origin}
 	probeID, err := store.NewID()
 	if err != nil {
 		return nil, ErrUnavailable
@@ -200,11 +221,14 @@ func (s *Service) RequestHandler() http.Handler {
 }
 
 func (s *Service) ready(ctx context.Context) error {
-	if s == nil || s.db == nil || ctx == nil {
+	if s == nil || ctx == nil {
+		return ErrUnavailable
+	}
+	if s.root == nil && (s.db == nil || aw.SelectLegacy() != nil) {
 		return ErrUnavailable
 	}
 	var ready bool
-	err := s.db.WithTx(ctx, nil, func(tx *sql.Tx) error {
+	probe := func(ctx context.Context, tx *sql.Tx) error {
 		var readOnly, defaultReadOnly, recovery bool
 		if err := tx.QueryRowContext(ctx, `SELECT current_setting('transaction_read_only')::boolean,
 			current_setting('default_transaction_read_only')::boolean, pg_is_in_recovery()`).Scan(&readOnly, &defaultReadOnly, &recovery); err != nil {
@@ -228,7 +252,13 @@ func (s *Service) ready(ctx context.Context) error {
 			COALESCE(has_table_privilege(current_user,to_regclass('email_delivery_material'),'INSERT'),false) AND
 			COALESCE(has_table_privilege(current_user,to_regclass('amos_jobs'),'SELECT'),false) AND
 			COALESCE(has_table_privilege(current_user,to_regclass('amos_jobs'),'INSERT'),false)`).Scan(&ready)
-	})
+	}
+	var err error
+	if s.root != nil {
+		err = s.root.Read(ctx, probe)
+	} else {
+		err = s.db.WithTx(ctx, nil, func(tx *sql.Tx) error { return probe(ctx, tx) })
+	}
 	if err != nil || !ready {
 		return ErrUnavailable
 	}
@@ -239,7 +269,7 @@ func (s *Service) ready(ctx context.Context) error {
 // consuming it; the state-changing POST is separately admitted and consumes it.
 func (s *Service) PreviewHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.db == nil {
+		if s == nil || (s.root == nil && s.db == nil) {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -310,7 +340,7 @@ func (s *Service) CompleteHandler() http.Handler {
 // validates CSRF/origin, and grants separate current/new password work budgets.
 func (s *Service) PasswordChangeHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.db == nil {
+		if s == nil || (s.root == nil && s.db == nil) {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -353,6 +383,12 @@ func (s *Service) PasswordChangeHandler() http.Handler {
 }
 
 func (s *Service) request(ctx context.Context, address string) error {
+	if s != nil && s.root != nil {
+		return s.requestWriter(ctx, address)
+	}
+	if aw.SelectLegacy() != nil {
+		return ErrUnavailable
+	}
 	if s == nil || s.db == nil || ctx == nil {
 		return ErrUnavailable
 	}
@@ -420,6 +456,12 @@ func (s *Service) request(ctx context.Context, address string) error {
 }
 
 func (s *Service) preview(ctx context.Context, challengeID uuid.UUID, digest []byte) (bool, error) {
+	if s != nil && s.root != nil {
+		return s.previewWriter(ctx, challengeID, digest)
+	}
+	if aw.SelectLegacy() != nil {
+		return false, ErrUnavailable
+	}
 	var available bool
 	err := s.db.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
 		return tx.QueryRowContext(ctx, `SELECT EXISTS (
@@ -438,6 +480,12 @@ func (s *Service) preview(ctx context.Context, challengeID uuid.UUID, digest []b
 }
 
 func (s *Service) complete(ctx context.Context, challengeID uuid.UUID, digest []byte, newPassword string) error {
+	if s != nil && s.root != nil {
+		return s.completeWriter(ctx, challengeID, digest, newPassword)
+	}
+	if aw.SelectLegacy() != nil {
+		return ErrUnavailable
+	}
 	if s == nil || s.db == nil || ctx == nil {
 		return ErrUnavailable
 	}
@@ -554,6 +602,12 @@ func (s *Service) resetPreflight(ctx context.Context, challengeID uuid.UUID, dig
 }
 
 func (s *Service) change(ctx context.Context, principal identity.Principal, currentPassword, newPassword string) error {
+	if s != nil && s.root != nil {
+		return s.changeWriter(ctx, principal, currentPassword, newPassword)
+	}
+	if aw.SelectLegacy() != nil {
+		return ErrUnavailable
+	}
 	if s == nil || s.db == nil || ctx == nil {
 		return ErrUnavailable
 	}
@@ -788,7 +842,7 @@ func writeResetPage(w http.ResponseWriter, method string, available bool, challe
 // Preview validates a reset proof without consuming it. Invalid or expired
 // proofs share the same result; callers must not render the supplied token.
 func (s *Service) Preview(ctx context.Context, challengeID uuid.UUID, token string) (bool, error) {
-	if s == nil || s.db == nil || ctx == nil {
+	if s == nil || (s.root == nil && s.db == nil) || ctx == nil {
 		return false, ErrUnavailable
 	}
 	id, ok := parseID(challengeID.String())

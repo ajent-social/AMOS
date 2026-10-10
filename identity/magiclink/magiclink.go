@@ -23,9 +23,11 @@ import (
 	"unicode"
 
 	deliveryemail "github.com/ajent-social/amos/delivery/email"
+	"github.com/ajent-social/amos/delivery/email/materialstore"
 	"github.com/ajent-social/amos/identity/internal/authproof"
 	"github.com/ajent-social/amos/identity/session"
 	"github.com/ajent-social/amos/identity/store"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/jobs/sqlstore"
 	"github.com/ajent-social/amos/storage"
 	"github.com/google/uuid"
@@ -85,9 +87,13 @@ type Config struct {
 }
 
 type Service struct {
-	cfg      Config
-	origin   string
-	cookieNS string
+	cfg             Config
+	origin          string
+	cookieNS        string
+	root            *aw.Root
+	writerOutbox    *sqlstore.TxWriter
+	writerMaterials *materialstore.Writer
+	writerSessions  *session.Service
 }
 
 type issueRequest struct {
@@ -116,9 +122,16 @@ type previewData struct {
 }
 
 func New(cfg Config) (*Service, error) {
+	if aw.SelectLegacy() != nil {
+		return nil, ErrConfiguration
+	}
 	if cfg.DB == nil || cfg.Outbox == nil || cfg.Renderer == nil || cfg.Materials == nil || cfg.Sessions == nil || cfg.Policy == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
 		return nil, ErrConfiguration
 	}
+	return configured(cfg)
+}
+
+func configured(cfg Config) (*Service, error) {
 	if cfg.ChallengeLifetime == 0 {
 		cfg.ChallengeLifetime = DefaultChallengeLifetime
 	}
@@ -148,7 +161,7 @@ func New(cfg Config) (*Service, error) {
 // RequestHandler handles POST /api/v1/identity/magic-links.
 func (s *Service) RequestHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.cfg.DB == nil {
+		if !s.available() {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -206,7 +219,7 @@ func (s *Service) RequestHandler() http.Handler {
 // creating a session. A different browser must take an explicit confirm POST.
 func (s *Service) PreviewHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.cfg.DB == nil {
+		if !s.available() {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -255,7 +268,7 @@ func (s *Service) PreviewHandler() http.Handler {
 // only after commit succeeds.
 func (s *Service) ConfirmHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s == nil || s.cfg.DB == nil {
+		if !s.available() {
 			writeError(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
 			return
 		}
@@ -319,6 +332,14 @@ func (s *Service) ConfirmHandler() http.Handler {
 }
 
 func (s *Service) ready(ctx context.Context) error {
+	if !s.available() {
+		return ErrUnavailable
+	}
+
+	if s != nil && s.root != nil {
+		return s.root.Read(ctx, func(ctx context.Context, tx *sql.Tx) error { return s.cfg.Policy.Ready(ctx, tx) })
+	}
+
 	var ready bool
 	err := s.cfg.DB.WithTx(ctx, nil, func(tx *sql.Tx) error {
 		var readOnly, defaultReadOnly, recovery bool
@@ -355,6 +376,14 @@ func (s *Service) ready(ctx context.Context) error {
 }
 
 func (s *Service) request(ctx context.Context, address string, challengeID uuid.UUID, token, binding string, requestID uuid.UUID) error {
+	if !s.available() {
+		return ErrUnavailable
+	}
+
+	if s != nil && s.root != nil {
+		return s.requestWriter(ctx, address, challengeID, token, binding, requestID)
+	}
+
 	_, tokenDigest, err := parseToken(token)
 	if err != nil {
 		return ErrUnavailable
@@ -418,8 +447,12 @@ func (s *Service) request(ctx context.Context, address string, challengeID uuid.
 }
 
 func (s *Service) preview(ctx context.Context, challengeID uuid.UUID, digest []byte) (bool, error) {
+	if !s.available() {
+		return false, ErrUnavailable
+	}
+
 	var available bool
-	err := s.cfg.DB.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+	err := s.read(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		return tx.QueryRowContext(ctx, `SELECT EXISTS (
 			SELECT 1 FROM identity_challenges c
 			JOIN identity_persons p ON p.id=c.person_id
@@ -435,11 +468,15 @@ func (s *Service) preview(ctx context.Context, challengeID uuid.UUID, digest []b
 }
 
 func (s *Service) bindingMatches(ctx context.Context, challengeID uuid.UUID, digest []byte) bool {
+	if !s.available() {
+		return false
+	}
+
 	if len(digest) != sha256.Size {
 		return false
 	}
 	var stored []byte
-	err := s.cfg.DB.WithTx(ctx, &sql.TxOptions{ReadOnly: true}, func(tx *sql.Tx) error {
+	err := s.read(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		return tx.QueryRowContext(ctx, `SELECT browser_binding_digest FROM identity_challenges
 			WHERE id=$1 AND purpose=$2 AND consumed_at IS NULL AND expires_at>transaction_timestamp()`, challengeID, challengePurpose).Scan(&stored)
 	})
@@ -447,8 +484,16 @@ func (s *Service) bindingMatches(ctx context.Context, challengeID uuid.UUID, dig
 }
 
 func (s *Service) confirm(ctx context.Context, challengeID uuid.UUID, digest []byte, binding string, confirmDifferentDevice bool, r *http.Request) (session.Issued, error) {
+	if !s.available() {
+		return session.Issued{}, ErrUnavailable
+	}
+
+	if s != nil && s.root != nil {
+		return s.confirmWriter(ctx, challengeID, digest, binding, confirmDifferentDevice, r)
+	}
+
 	var issued session.Issued
-	if s == nil || s.cfg.DB == nil || ctx == nil || r == nil {
+	if !s.available() || ctx == nil || r == nil {
 		return issued, ErrUnavailable
 	}
 	var tokenBindingDigest []byte

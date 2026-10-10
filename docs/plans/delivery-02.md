@@ -12,8 +12,8 @@ Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-land
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
-Registry: `docs/planning/execution-state.json`; `sha256:2c1efa89c8b8ce6b879c005af1085c8951494b8553e6d87e450eda237a0abe18`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:88efb8666eccca1da69a9a8b762c1c54b8632920ee89315b400fb7b0baa52902`.
+Registry: `docs/planning/execution-state.json`; `sha256:0949d4a388af10655906e1d4ae415372ff31fca437893e3d4b464957d6149760`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:6ae4b0594209343bcb0f27305da70a96d562807833073626eba0d21932269004`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
@@ -37,63 +37,63 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   authority: reported-display-only
   Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.]
 
-- [ ] T-RPL-LOGIN-FRESHNESS.1 [Qualify password sign-in credential revalidation: preflight]
+- [x] T-RPL-LOGIN-FRESHNESS.1 [Qualify password sign-in credential revalidation: preflight]
   Stage: preflight
   canonical-id: T-RPL-LOGIN-FRESHNESS.1
   authored-stage: preflight
   deps: [T3.5]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Reconcile exact adopted v1.25 design and supplemental source ownership while preserving original T3.5 claim; fresh reviewed runtime fixture prerequisites and existing failure-injection adapter scope must be explicit.]
 
-- [ ] T-RPL-LOGIN-FRESHNESS.2 [Qualify password sign-in credential revalidation: author]
+- [x] T-RPL-LOGIN-FRESHNESS.2 [Qualify password sign-in credential revalidation: author]
   Stage: implement
   canonical-id: T-RPL-LOGIN-FRESHNESS.2
   authored-stage: author
   deps: [T-RPL-LOGIN-FRESHNESS.1]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Implement only Service.signIn exact credential/contact/person revalidation and caller-owned issuance, new focused tests, and narrowly affected existing /auth failure-injection forwarding adapter; no other identity source or writer protocol changes.]
 
-- [ ] T-RPL-LOGIN-FRESHNESS.3 [Qualify password sign-in credential revalidation: verify]
+- [x] T-RPL-LOGIN-FRESHNESS.3 [Qualify password sign-in credential revalidation: verify]
   Stage: verify
   canonical-id: T-RPL-LOGIN-FRESHNESS.3
   authored-stage: verify
   deps: [T-RPL-LOGIN-FRESHNESS.2]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Run scoped normal/race/vet/pinned lint and real TLS service schedules, original detached and epoch-only negatives, exact restoration; missing service prerequisites fail visibly.]
 
-- [ ] T-RPL-LOGIN-FRESHNESS.4 [Qualify password sign-in credential revalidation: review]
+- [x] T-RPL-LOGIN-FRESHNESS.4 [Qualify password sign-in credential revalidation: review]
   Stage: review
   canonical-id: T-RPL-LOGIN-FRESHNESS.4
   authored-stage: review
   deps: [T-RPL-LOGIN-FRESHNESS.3]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [A different session reviews exact source and independently repeats actual service schedules/negatives/restoration; findings require fix and re-review. No full writer or host claim.]
 
-- [ ] T-RPL-LOGIN-FRESHNESS.5 [Qualify password sign-in credential revalidation: merge]
+- [x] T-RPL-LOGIN-FRESHNESS.5 [Qualify password sign-in credential revalidation: merge]
   Stage: merge
   canonical-id: T-RPL-LOGIN-FRESHNESS.5
   authored-stage: merge
   deps: [T-RPL-LOGIN-FRESHNESS.4]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Read back exact head/base/supplemental claim/review/checks and guarded merge respecting protections; original T3.5 claim and baseline source remain preserved.]
 
-- [ ] T-RPL-LOGIN-FRESHNESS.6 [Qualify password sign-in credential revalidation: landed]
+- [x] T-RPL-LOGIN-FRESHNESS.6 [Qualify password sign-in credential revalidation: landed]
   Stage: verify-landed
   canonical-id: T-RPL-LOGIN-FRESHNESS.6
   authored-stage: landed
   deps: [T-RPL-LOGIN-FRESHNESS.5]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Compare exact reviewed blobs to main, run fresh actual selected service checks and retain truthful evidence; full session/current-authority/host/product gates remain open.]
 

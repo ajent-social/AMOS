@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/migrations"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -67,16 +68,19 @@ type Factor struct {
 
 // Store only uses the caller's transaction; factor state and session changes
 // can therefore be committed as one security transition.
-type Store struct{ tx *sql.Tx }
+type Store struct {
+	tx      *sql.Tx
+	attempt *aw.Attempt
+}
 
 func NewStore(tx *sql.Tx) (*Store, error) {
-	if tx == nil {
+	if aw.SelectLegacy() != nil || tx == nil {
 		return nil, ErrInvalidFactor
 	}
 	return &Store{tx: tx}, nil
 }
 
-func (s *Store) CreatePending(ctx context.Context, factor Factor, securityEpoch int64, now time.Time) error {
+func (s *Store) createPending(ctx context.Context, factor Factor, securityEpoch int64, now time.Time) error {
 	if s == nil || s.tx == nil || ctx == nil || !validScope(factor.Scope) || !validID(factor.ID) || len(factor.SeedCiphertext) < 32 || len(factor.SeedCiphertext) > 4096 || securityEpoch < 0 || now.IsZero() || factor.State != FactorPending {
 		return ErrInvalidFactor
 	}
@@ -84,6 +88,10 @@ func (s *Store) CreatePending(ctx context.Context, factor Factor, securityEpoch 
 	if err := s.tx.QueryRowContext(ctx, `UPDATE identity_totp_factors SET state='expired',pending_security_epoch=NULL,expires_at=NULL,updated_at=$5 WHERE installation_id=$1 AND application_id=$2 AND environment_id=$3 AND person_id=$4 AND state='pending' AND expires_at<=$5 RETURNING 1`, factor.Scope.InstallationID, factor.Scope.ApplicationID, factor.Scope.EnvironmentID, factor.Scope.PersonID, now.UTC()).Scan(&expired); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return ErrFactorStore
 	}
+	return s.insertPending(ctx, factor, securityEpoch, now)
+}
+
+func (s *Store) insertPending(ctx context.Context, factor Factor, securityEpoch int64, now time.Time) error {
 	result, err := s.tx.ExecContext(ctx, `INSERT INTO identity_totp_factors(id,installation_id,application_id,environment_id,person_id,seed_ciphertext,seed_format,state,pending_security_epoch,last_used_step,failed_attempts,created_at,expires_at)
 		SELECT $1,$2,$3,$4,$5,$6,1,'pending',$7,-1,0,$8,$9
 		WHERE EXISTS(SELECT 1 FROM identity_persons p WHERE p.id=$5 AND p.installation_id=$2 AND p.application_id=$3 AND p.state='active' AND p.security_epoch=$7)
@@ -104,7 +112,7 @@ func (s *Store) CreatePending(ctx context.Context, factor Factor, securityEpoch 
 	return nil
 }
 
-func (s *Store) Find(ctx context.Context, scope Scope, id uuid.UUID) (Factor, error) {
+func (s *Store) find(ctx context.Context, scope Scope, id uuid.UUID) (Factor, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validScope(scope) || !validID(id) {
 		return Factor{}, ErrInvalidFactor
 	}
@@ -138,7 +146,7 @@ func (s *Store) Find(ctx context.Context, scope Scope, id uuid.UUID) (Factor, er
 	return f, nil
 }
 
-func (s *Store) FindCurrent(ctx context.Context, scope Scope, state FactorState) (Factor, error) {
+func (s *Store) findCurrent(ctx context.Context, scope Scope, state FactorState) (Factor, error) {
 	if state != FactorPending && state != FactorActive {
 		return Factor{}, ErrInvalidFactor
 	}
@@ -173,7 +181,7 @@ func (s *Store) FindCurrent(ctx context.Context, scope Scope, state FactorState)
 	return f, nil
 }
 
-func (s *Store) ActivatePendingAndConsumeStep(ctx context.Context, scope Scope, id uuid.UUID, securityEpoch, step int64, activeCiphertext []byte, now time.Time) error {
+func (s *Store) activatePendingAndConsumeStep(ctx context.Context, scope Scope, id uuid.UUID, securityEpoch, step int64, activeCiphertext []byte, now time.Time) error {
 	if s == nil || s.tx == nil || ctx == nil || !validScope(scope) || !validID(id) || securityEpoch < 0 || step < 0 || len(activeCiphertext) < 32 || len(activeCiphertext) > 4096 || now.IsZero() {
 		return ErrInvalidFactor
 	}
@@ -198,7 +206,7 @@ func (s *Store) ActivatePendingAndConsumeStep(ctx context.Context, scope Scope, 
 }
 
 // AcceptStep atomically consumes an active factor's accepted RFC 6238 step.
-func (s *Store) AcceptStep(ctx context.Context, scope Scope, id uuid.UUID, step int64, now time.Time) (bool, error) {
+func (s *Store) acceptStep(ctx context.Context, scope Scope, id uuid.UUID, step int64, now time.Time) (bool, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validScope(scope) || !validID(id) || step < 0 || now.IsZero() {
 		return false, ErrInvalidFactor
 	}
@@ -212,7 +220,7 @@ func (s *Store) AcceptStep(ctx context.Context, scope Scope, id uuid.UUID, step 
 	return rows == 1, mapRowsError(err)
 }
 
-func (s *Store) RecordFailure(ctx context.Context, scope Scope, id uuid.UUID, now time.Time) error {
+func (s *Store) recordFailure(ctx context.Context, scope Scope, id uuid.UUID, now time.Time) error {
 	if s == nil || s.tx == nil || ctx == nil || !validScope(scope) || !validID(id) || now.IsZero() {
 		return ErrInvalidFactor
 	}

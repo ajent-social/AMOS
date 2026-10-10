@@ -62,16 +62,11 @@ func FromContext(ctx context.Context) (Selection, bool) {
 	if !ok {
 		return Selection{}, false
 	}
-	s.Permissions = append([]string(nil), s.Permissions...)
-	if s.Membership != nil {
-		membership := *s.Membership
-		s.Membership = &membership
-	}
-	return s, true
+	return copySelection(s), true
 }
 
 func New(db *storage.DB, cfg Config) (*Resolver, error) {
-	if db == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
+	if db == nil || !validConfig(cfg) {
 		return nil, ErrInvalidConfiguration
 	}
 	return &Resolver{db: db, cfg: cfg}, nil
@@ -173,7 +168,7 @@ func (r *Resolver) resolve(ctx context.Context, principal identity.Principal, wo
 		selection.Workspace = workspace
 		switch workspace.Kind {
 		case workspacestore.KindPersonal:
-			if workspace.PersonalOwnerID != personID {
+			if !personalOwner(workspace, personID) {
 				return ErrDenied
 			}
 		case workspacestore.KindOrganization:
@@ -211,8 +206,7 @@ func (r *Resolver) resolve(ctx context.Context, principal identity.Principal, wo
 	if err != nil {
 		return Selection{}, ErrUnavailable
 	}
-	selection.Permissions = append([]string(nil), selection.Permissions...)
-	return selection, nil
+	return copySelection(selection), nil
 }
 
 func requestedWorkspace(req *http.Request) (uuid.UUID, error) {

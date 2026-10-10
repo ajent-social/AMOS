@@ -10,6 +10,7 @@ import (
 	"github.com/ajent-social/amos/identity/internal/authproof"
 	"github.com/ajent-social/amos/identity/password"
 	"github.com/ajent-social/amos/identity/store"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"time"
 )
 
@@ -30,6 +31,9 @@ func New(hasher *password.Hasher) (*Verifier, error) {
 // accepts this exact person-bound key only once per admitted MFA mutation.
 func (v *Verifier) VerifyCurrentPassword(ctx context.Context, tx *sql.Tx, principal identity.Principal, supplied string) (authproof.VerifiedCredential, error) {
 	empty := authproof.VerifiedCredential{}
+	if aw.SelectLegacy() != nil {
+		return empty, ErrUnavailable
+	}
 	if v == nil || v.hasher == nil || ctx == nil || tx == nil || principal.PersonID().Version() != 7 {
 		return empty, ErrUnavailable
 	}

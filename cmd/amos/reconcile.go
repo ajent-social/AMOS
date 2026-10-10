@@ -183,7 +183,11 @@ func billingMigrationRegistry() (migrations.Registry, error) {
 	if err != nil {
 		return migrations.Registry{}, err
 	}
-	return migrations.Core(reference.Fragment(), ingress, binding, magic, assurance, factors, limits, reconciliation, federationFlow)
+	invocations, err := migrations.OperationInvocations(17)
+	if err != nil {
+		return migrations.Registry{}, err
+	}
+	return migrations.Core(reference.Fragment(), ingress, binding, magic, assurance, factors, limits, reconciliation, federationFlow, invocations)
 }
 
 // Reject ambiguous duplicate keys and excessive nesting before typed decoding.

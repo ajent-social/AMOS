@@ -8,7 +8,7 @@ import (
 
 // SetSessionAssurance is a caller-transaction write for a newly verified
 // session. The database also bounds assurance to fifteen minutes.
-func (s *Store) SetSessionAssurance(ctx context.Context, id uuid.UUID, level string, expires time.Time) error {
+func (s *Store) setSessionAssurance(ctx context.Context, id uuid.UUID, level string, expires time.Time) error {
 	if s == nil || s.tx == nil || ctx == nil || !validID(id) || (level != "aal2" && level != "aal3") || expires.IsZero() {
 		return ErrInvalidInput
 	}
@@ -30,7 +30,7 @@ func (s *Store) SetSessionAssurance(ctx context.Context, id uuid.UUID, level str
 // that lookup holds the session row lock and verifies account state and epoch.
 // One fresh database instant governs session lifetime and both assurance values;
 // equality at either expiry boundary is expired.
-func (s *Store) ActiveSessionAssurance(ctx context.Context, id uuid.UUID) (string, time.Time, error) {
+func (s *Store) activeSessionAssurance(ctx context.Context, id uuid.UUID) (string, time.Time, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validID(id) {
 		return "", time.Time{}, ErrInvalidInput
 	}

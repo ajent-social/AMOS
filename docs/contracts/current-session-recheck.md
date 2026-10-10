@@ -142,3 +142,18 @@ barriers and complete row sets. No sleep, mock or source-read result qualifies
 those schedules. Independent rejected-protocol mutations, restored checks and
 fresh landed service checks remain mandatory. Host/executor/provider/release
 qualification is not implied by the primitive.
+
+
+## Concrete composition and writer resolutions under review
+
+The [database composition proposal](current-session-composition.md) selects one
+privately retained runtime capability and makes the trusted-caller limitation
+explicit. The [writer/producer proposal](current-session-writers.md) specifies
+complete transaction-root admission, cross-person discovery, ordered row sets,
+method evidence and final constraint/freshness fences with finite schedules.
+Its database-wide singleton is a substantive serialization/migration proposal,
+not an adopted default. Its exact shared Go surface, complete participant
+coverage and provider evidence remain review gates. Neither document grants
+source ownership, closes the workspace/resource contract or qualifies actual
+writers. Adoption review must decide these concrete proposals rather than
+repeat a generic source audit.

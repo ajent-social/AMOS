@@ -22,6 +22,7 @@ import (
 	"github.com/ajent-social/amos/identity/password"
 	"github.com/ajent-social/amos/identity/session"
 	"github.com/ajent-social/amos/identity/store"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/storage"
 	"github.com/ajent-social/amos/workspace/personal"
 	"github.com/google/uuid"
@@ -58,8 +59,9 @@ type TxConfig struct {
 }
 
 type Service struct {
-	db  TxRunner
-	cfg TxConfig
+	db   TxRunner
+	cfg  TxConfig
+	root *aw.Root
 }
 
 func New(cfg Config) (*Service, error) {
@@ -76,7 +78,7 @@ func New(cfg Config) (*Service, error) {
 
 // NewWithTxRunner constructs a service without probing or taking ownership of db.
 func NewWithTxRunner(db TxRunner, cfg TxConfig) (*Service, error) {
-	if nilTxRunner(db) || cfg.Passwords == nil || cfg.Email == nil || cfg.Sessions == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
+	if aw.SelectLegacy() != nil || nilTxRunner(db) || cfg.Passwords == nil || cfg.Email == nil || cfg.Sessions == nil || !validID(cfg.InstallationID) || !validID(cfg.ApplicationID) || !validID(cfg.EnvironmentID) {
 		return nil, ErrConfiguration
 	}
 	if cfg.ChallengeLifetime == 0 {
@@ -141,6 +143,14 @@ type response struct {
 }
 
 func (s *Service) register(w http.ResponseWriter, r *http.Request) {
+	if s != nil && s.root != nil {
+		s.registerWriter(w, r)
+		return
+	}
+	if aw.SelectLegacy() != nil {
+		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
+		return
+	}
 	var in registrationRequest
 	if !decode(w, r, &in) {
 		write(w, r, http.StatusBadRequest, "request.invalid", "Invalid request.")
@@ -209,6 +219,14 @@ func (s *Service) register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) signIn(w http.ResponseWriter, r *http.Request) {
+	if s != nil && s.root != nil {
+		s.signInWriter(w, r)
+		return
+	}
+	if aw.SelectLegacy() != nil {
+		write(w, r, http.StatusServiceUnavailable, "dependency.unavailable", "Service unavailable.")
+		return
+	}
 	var in signInRequest
 	if !decode(w, r, &in) {
 		write(w, r, http.StatusBadRequest, "request.invalid", "Invalid request.")

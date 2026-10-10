@@ -3254,6 +3254,174 @@
         "Migration allocation remains unassigned; no installation DDL authorized"
       ],
       "next_action": "T-RPL-HOST-CONTRACT.2 exact authority design following docs/planning/replacement-integration-path.md; no HOST-CONTRACT.6, SEARCH.6, WEB/HOST or product acceptance from this preflight"
+    },
+    "T-RPL-LOGIN-FRESHNESS.1": {
+      "task_id": "T-RPL-LOGIN-FRESHNESS.1",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-LOGIN-FRESHNESS.2",
+        "tip": "9dee80d1aa42c1597edd5d51a9c860baff670abb",
+        "scope": "Supplemental bounded signIn source delegation; original T3.5 ownership preserved; release remains coordinator-owned"
+      },
+      "dependency_receipts": [
+        "T3.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "fca24649b442d1563dc2ea410679eababed0b69d",
+        "landed": "09d441ba4cadae9b2658f4673b1a4e0e7d78dfce",
+        "pr": 76
+      },
+      "commands_and_results": [
+        "Independent actual TLS runtime normal/race/restored and fresh landed each 80 pass events with zero skips; scoped vet/pinned lint pass; original and epoch-only regressions fail both intended stale assertions.",
+        "See docs/evidence/password-signin-freshness-20261008.md for commands, exact log digests, historical incomplete attempts and forwarding limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Bounded password signIn three-file source; reviewer did not author source; independent genuine negatives/restored and exact landed blobs verified"
+      },
+      "external_blockers": [],
+      "next_action": "Continue complete writer/current-session/workspace/resource and host batch; no broader identity or product acceptance."
+    },
+    "T-RPL-LOGIN-FRESHNESS.2": {
+      "task_id": "T-RPL-LOGIN-FRESHNESS.2",
+      "status": "COMPLETE",
+      "owner": "Isolated supplemental source lane",
+      "claim": {
+        "resource": "T-RPL-LOGIN-FRESHNESS.2",
+        "tip": "9dee80d1aa42c1597edd5d51a9c860baff670abb",
+        "scope": "Supplemental bounded signIn source delegation; original T3.5 ownership preserved; release remains coordinator-owned"
+      },
+      "dependency_receipts": [
+        "T-RPL-LOGIN-FRESHNESS.1"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "fca24649b442d1563dc2ea410679eababed0b69d",
+        "landed": "09d441ba4cadae9b2658f4673b1a4e0e7d78dfce",
+        "pr": 76
+      },
+      "commands_and_results": [
+        "Independent actual TLS runtime normal/race/restored and fresh landed each 80 pass events with zero skips; scoped vet/pinned lint pass; original and epoch-only regressions fail both intended stale assertions.",
+        "See docs/evidence/password-signin-freshness-20261008.md for commands, exact log digests, historical incomplete attempts and forwarding limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Bounded password signIn three-file source; reviewer did not author source; independent genuine negatives/restored and exact landed blobs verified"
+      },
+      "external_blockers": [],
+      "next_action": "Continue complete writer/current-session/workspace/resource and host batch; no broader identity or product acceptance."
+    },
+    "T-RPL-LOGIN-FRESHNESS.3": {
+      "task_id": "T-RPL-LOGIN-FRESHNESS.3",
+      "status": "COMPLETE",
+      "owner": "Isolated supplemental source lane",
+      "claim": {
+        "resource": "T-RPL-LOGIN-FRESHNESS.2",
+        "tip": "9dee80d1aa42c1597edd5d51a9c860baff670abb",
+        "scope": "Supplemental bounded signIn source delegation; original T3.5 ownership preserved; release remains coordinator-owned"
+      },
+      "dependency_receipts": [
+        "T-RPL-LOGIN-FRESHNESS.2"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "fca24649b442d1563dc2ea410679eababed0b69d",
+        "landed": "09d441ba4cadae9b2658f4673b1a4e0e7d78dfce",
+        "pr": 76
+      },
+      "commands_and_results": [
+        "Independent actual TLS runtime normal/race/restored and fresh landed each 80 pass events with zero skips; scoped vet/pinned lint pass; original and epoch-only regressions fail both intended stale assertions.",
+        "See docs/evidence/password-signin-freshness-20261008.md for commands, exact log digests, historical incomplete attempts and forwarding limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Bounded password signIn three-file source; reviewer did not author source; independent genuine negatives/restored and exact landed blobs verified"
+      },
+      "external_blockers": [],
+      "next_action": "Continue complete writer/current-session/workspace/resource and host batch; no broader identity or product acceptance."
+    },
+    "T-RPL-LOGIN-FRESHNESS.4": {
+      "task_id": "T-RPL-LOGIN-FRESHNESS.4",
+      "status": "COMPLETE",
+      "owner": "Independent exact-head reviewer",
+      "claim": {
+        "resource": "T-RPL-LOGIN-FRESHNESS.2",
+        "tip": "9dee80d1aa42c1597edd5d51a9c860baff670abb",
+        "scope": "Supplemental bounded signIn source delegation; original T3.5 ownership preserved; release remains coordinator-owned"
+      },
+      "dependency_receipts": [
+        "T-RPL-LOGIN-FRESHNESS.3"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "fca24649b442d1563dc2ea410679eababed0b69d",
+        "landed": "09d441ba4cadae9b2658f4673b1a4e0e7d78dfce",
+        "pr": 76
+      },
+      "commands_and_results": [
+        "Independent actual TLS runtime normal/race/restored and fresh landed each 80 pass events with zero skips; scoped vet/pinned lint pass; original and epoch-only regressions fail both intended stale assertions.",
+        "See docs/evidence/password-signin-freshness-20261008.md for commands, exact log digests, historical incomplete attempts and forwarding limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Bounded password signIn three-file source; reviewer did not author source; independent genuine negatives/restored and exact landed blobs verified"
+      },
+      "external_blockers": [],
+      "next_action": "Continue complete writer/current-session/workspace/resource and host batch; no broader identity or product acceptance."
+    },
+    "T-RPL-LOGIN-FRESHNESS.5": {
+      "task_id": "T-RPL-LOGIN-FRESHNESS.5",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-LOGIN-FRESHNESS.2",
+        "tip": "9dee80d1aa42c1597edd5d51a9c860baff670abb",
+        "scope": "Supplemental bounded signIn source delegation; original T3.5 ownership preserved; release remains coordinator-owned"
+      },
+      "dependency_receipts": [
+        "T-RPL-LOGIN-FRESHNESS.4"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "fca24649b442d1563dc2ea410679eababed0b69d",
+        "landed": "09d441ba4cadae9b2658f4673b1a4e0e7d78dfce",
+        "pr": 76
+      },
+      "commands_and_results": [
+        "Independent actual TLS runtime normal/race/restored and fresh landed each 80 pass events with zero skips; scoped vet/pinned lint pass; original and epoch-only regressions fail both intended stale assertions.",
+        "See docs/evidence/password-signin-freshness-20261008.md for commands, exact log digests, historical incomplete attempts and forwarding limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Bounded password signIn three-file source; reviewer did not author source; independent genuine negatives/restored and exact landed blobs verified"
+      },
+      "external_blockers": [],
+      "next_action": "Continue complete writer/current-session/workspace/resource and host batch; no broader identity or product acceptance."
+    },
+    "T-RPL-LOGIN-FRESHNESS.6": {
+      "task_id": "T-RPL-LOGIN-FRESHNESS.6",
+      "status": "COMPLETE",
+      "owner": "Integration coordinator",
+      "claim": {
+        "resource": "T-RPL-LOGIN-FRESHNESS.2",
+        "tip": "9dee80d1aa42c1597edd5d51a9c860baff670abb",
+        "scope": "Supplemental bounded signIn source delegation; original T3.5 ownership preserved; release remains coordinator-owned"
+      },
+      "dependency_receipts": [
+        "T-RPL-LOGIN-FRESHNESS.5"
+      ],
+      "source_or_artifact_identity": {
+        "reviewed_head": "fca24649b442d1563dc2ea410679eababed0b69d",
+        "landed": "09d441ba4cadae9b2658f4673b1a4e0e7d78dfce",
+        "pr": 76
+      },
+      "commands_and_results": [
+        "Independent actual TLS runtime normal/race/restored and fresh landed each 80 pass events with zero skips; scoped vet/pinned lint pass; original and epoch-only regressions fail both intended stale assertions.",
+        "See docs/evidence/password-signin-freshness-20261008.md for commands, exact log digests, historical incomplete attempts and forwarding limits."
+      ],
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "scope": "Bounded password signIn three-file source; reviewer did not author source; independent genuine negatives/restored and exact landed blobs verified"
+      },
+      "external_blockers": [],
+      "next_action": "Continue complete writer/current-session/workspace/resource and host batch; no broader identity or product acceptance."
     }
   },
   "receipt_requirements": [

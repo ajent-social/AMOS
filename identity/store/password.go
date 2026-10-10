@@ -9,7 +9,7 @@ import (
 
 // FindCurrentPassword locks the active account and password credential for a
 // caller transaction after a request-bound principal has supplied its epoch.
-func (s *Store) FindCurrentPassword(ctx context.Context, scope SessionScope, person uuid.UUID, epoch int64) (string, error) {
+func (s *Store) findCurrentPassword(ctx context.Context, scope SessionScope, person uuid.UUID, epoch int64) (string, error) {
 	if s == nil || s.tx == nil || ctx == nil || !validID(person) || !validID(scope.InstallationID) || !validID(scope.ApplicationID) || !validID(scope.EnvironmentID) || epoch < 0 {
 		return "", ErrInvalidInput
 	}

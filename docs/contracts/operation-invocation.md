@@ -267,7 +267,42 @@ The executor obtains `identity.PrincipalFromContext(ctx)` and `workspace/context
 
 The transaction authorizer passes current facts to the frozen `policy.Evaluator`; operation metadata supplies requirements only. It does not manufacture a principal, selection, grant, or policy allow. Read failures become `Unavailable`. Missing/revoked membership, account, or selected resource is `Denied` (or the existing non-enumerating resource response); unavailable is never downgraded.
 
-Invocation timestamps and freshness checks use database time only. Persisted `created_at`/`completed_at` use PostgreSQL `transaction_timestamp()` in the transaction. Current-expiry checks read `clock_timestamp()` from the same database after authority locks are held and after any duplicate-row lock wait; no caller `time.Time` or application wall clock controls expiry, assurance, capacity, or ordering. If an `Allowed.ExpiresAt` is passed before commit, the executor rolls back the domain mutation and result.
+Invocation timestamps and freshness checks use database time only. Persisted
+`created_at`/`completed_at` retain PostgreSQL `transaction_timestamp()` semantics.
+Provisional current-expiry checks sample the same database after authority locks
+and again after duplicate-row or capacity waits. No caller `time.Time` or
+application wall clock controls expiry, assurance, capacity or ordering.
+
+**F-timing amendment (adopted for isolated B1 implementation after independent review; runtime dispatch remains gated):** the
+terminal freshness instant is the original native Root's single recorded F,
+obtained after all staged writes, callback/result completion and constraint drain.
+Every required session, assurance, entitlement, policy and other time bound must
+be valid strictly at F; in particular `F.Before(Allowed.ExpiresAt)` is required.
+Equality is expired. This explicitly replaces the older promise to detect an
+expiry passing at any time before commit. F is a freshness linearization point
+conditional on successful commit, not a promise that authority remains unexpired
+through commit latency or network delivery.
+
+Preserve the original five-second Root budget, including pool and gate waits,
+G then B, and all ordered P/C/H/S/W/D/F phases. No operation subphase resets that
+budget. After F, native finalizers may perform plain SELECT comparisons of
+already-held rows on the same retained transaction before existing finalization
+and `Attempt.Finish`; they acquire no new locks, make no mutations and take no
+new clock sample. No renderer, codec, provider or application callback runs in
+that interval. Where a native writer issues credentials, preserve existing
+`writerproof.Permit`, `writerproof.Finalize`, `Attempt.Finish`,
+`session.PublishWriter` and once-only committed release binding. A non-issuing
+operation needs its own independently reviewed native finalization/release
+adapter; this amendment does not manufacture one or authorize `Root.Read` writes.
+
+A failed final check rolls back staged domain/result/audit/effect work. Original
+request cancellation or failed/unknown commit suppresses protected output and
+credential publication. An unknown commit is not evidence of rollback and does
+not authorize automatic callback retry. No extra clock check after F may be used
+to paper over a missing native finalizer. This amendment changes no exported
+interface, persisted timestamp, lock order or acceptance status. Operation
+dispatch remains closed until qualification of all native
+participants, complete authority adapters and the completion bridge.
 
 For each request, the executor generates a fresh internal UUIDv7 attempt ID. It is not caller-controlled. For a required-idempotency write, a new durable invocation uses that ID; an exact replay uses the existing row's ID. The transaction order is:
 
@@ -275,9 +310,9 @@ For each request, the executor generates a fresh internal UUIDv7 attempt ID. It 
 2. Begin one transaction and recheck current authority with row/predicate serialization. If denied or unavailable, call `InvocationAuditWriter.AppendInvocationTx` using the attempt ID, registered operation ID, finite outcome, and server correlation ID; commit only that audit event and return the decision. An audit write failure rolls back and surfaces `Unavailable`.
 3. Claim/reserve the realm+key row using the attempt ID. A changed request hash returns conflict with no callback and no invocation audit event; it is not a policy denial. An exact duplicate may wait on the existing row; after that wait, re-read database time and recheck current authority before disclosing the stored result. A now-denied or unavailable caller never sees cached output. Capacity exhaustion returns `Unavailable` before callback execution and may write only an unavailable attempt event. Audit failure rolls back and surfaces `Unavailable`.
 4. Invoke the registered callback with `InvocationContext` containing the immutable invocation ID, same transaction, principal, selection, complete locked-resource set, and transaction-only effect enqueuer. Domain writes may touch only the prelocked set and new rows beneath those locked parents; any other adapter is incompatible and cannot dispatch. Domain writes and any outbox intent use this transaction. No provider call is permitted.
-5. Canonically encode and validate output; enforce the reserved byte maximum; persist the output and release unused capacity; call `AppendInvocationTx` with the invocation ID and succeeded outcome; commit. Any callback, output, effect-intent, audit, or commit error rolls back all mutation/result/audit/effect rows. Retry after rollback uses the same client key and may safely run because no completed local effect or external intent committed.
+5. Canonically encode and validate output; enforce the reserved byte maximum; persist the output and release unused capacity; call `AppendInvocationTx` with the invocation ID and succeeded outcome; commit. Any callback, output, effect-intent or audit error requires rollback of all mutation/result/audit/effect rows. Commit failure suppresses output; an unknown commit outcome must not be described as confirmed rollback. A later request with the same key must resolve the durable claim/result under current authority before deciding whether a callback may run. Retry after confirmed rollback uses the same client key because no local effect or external intent committed.
 
-For policy-denied/unavailable attempts, no idempotency claim, callback, domain mutation, or effect intent is created. Append one audit-only `operation.invoked` event in the same transaction with the fresh attempt ID and finite outcome; commit the event before returning the decision. If the authorizer has made the transaction unusable, or the event cannot be committed, return `Unavailable` and do not claim that the event was recorded. Changed-hash conflicts emit no invocation audit event, because the finite audit vocabulary has no conflict outcome and relabeling a key conflict as policy denied would be false. Cache-capacity exhaustion returns unavailable and may record only a bounded unavailable attempt. An exact authorized replay emits no second success event. A transient callback/output/commit failure rolls back the invocation transaction and is not recorded as a completed success.
+For policy-denied/unavailable attempts, no idempotency claim, callback, domain mutation, or effect intent is created. Append one audit-only `operation.invoked` event in the same transaction with the fresh attempt ID and finite outcome; commit the event before returning the decision. If the authorizer has made the transaction unusable, or the event cannot be committed, return `Unavailable` and do not claim that the event was recorded. Changed-hash conflicts emit no invocation audit event, because the finite audit vocabulary has no conflict outcome and relabeling a key conflict as policy denied would be false. Cache-capacity exhaustion returns unavailable and may record only a bounded unavailable attempt. An exact authorized replay emits no second success event. A callback/output failure before commit requires rollback and must not be recorded as a completed success. A failed commit suppresses publication; if its outcome is unknown, a durable completed success may already exist. Resolve the durable claim under fresh authority on a later request; neither absence nor automatic callback retry follows from that error.
 
 ## Store and transactional seams
 
@@ -328,7 +363,7 @@ The callback receives its immutable invocation ID in the same transaction contex
 
 The current audit contract is finite and append-only. Its integrator-owned schema and Go API do not yet accept an `operation.invoked` action, an `invocation` resource, or `operation_id`. Root must extend the Go event validator/append/read API and the SQL constraints in the same additive sequence as the invocation table. The event has exactly one action (`operation.invoked`), one resource type (`invocation`), a UUIDv7 resource ID, existing finite outcome (`succeeded`, `denied`, `unavailable`), server-resolved tenant and actor fields, correlation ID, and a separately validated stable `operation_id` required only for this action. Do not put request/key digest, input/output, permission lists, session data, or free-form error/provider detail in attributes. Exact replay does not append another success event. Audit rows remain append-only and under the existing retention rule.
 
-The root-owned transaction audit adapter is privileged internal persistence, not a caller-facing audit write permission: policy denial must still be able to append its bounded denial event using trusted middleware attribution, without authorizing the denied operation. It must not accept actor/scope/operation ID from request payload. Audit failures follow the transaction rules above: successful mutations roll back if success audit cannot commit; denial/unavailability returns unavailable if its audit-only event cannot commit. Independent privacy/security review is required before landing the schema/event extension.
+The root-owned transaction audit adapter is privileged internal persistence, not a caller-facing audit write permission: policy denial must still be able to append its bounded denial event using trusted middleware attribution, without authorizing the denied operation. It must not accept actor/scope/operation ID from request payload. Audit failures follow the transaction rules above: a success-audit append failure before commit requires rollback of staged mutations; a commit error suppresses publication without asserting rollback if the outcome is unknown. Denial/unavailability returns unavailable when its audit-only commit is not confirmed and cannot claim that the event was recorded. Independent privacy/security review is required before landing the schema/event extension.
 
 ## Migration and composition
 

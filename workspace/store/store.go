@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -47,11 +48,18 @@ const (
 	RoleMember               = "member"
 )
 
-type Store struct{ tx *sql.Tx }
+type Store struct {
+	tx             *sql.Tx
+	writer         *aw.Attempt
+	writerFinished bool
+}
 
 func New(tx *sql.Tx) (*Store, error) {
 	if tx == nil {
 		return nil, ErrInvalidInput
+	}
+	if err := aw.SelectLegacy(); err != nil {
+		return nil, ErrPersistence
 	}
 	return &Store{tx: tx}, nil
 }
@@ -102,7 +110,7 @@ type UpdateMembershipInput struct {
 
 // CreatePersonalWorkspace writes the unique personal resource for an active
 // person. The owner FK and partial unique index enforce tenant-local ownership.
-func (s *Store) CreatePersonalWorkspace(ctx context.Context, in CreatePersonalInput) (Workspace, error) {
+func (s *Store) createPersonalWorkspace(ctx context.Context, in CreatePersonalInput) (Workspace, error) {
 	if !s.valid(ctx) || !validID(in.ID) || !validScope(in.Scope) || !validID(in.OwnerPersonID) {
 		return Workspace{}, ErrInvalidInput
 	}
@@ -124,7 +132,7 @@ func (s *Store) CreatePersonalWorkspace(ctx context.Context, in CreatePersonalIn
 // CreateOrganizationWorkspace and its active owner membership are one SQL
 // transaction. The deferred database constraint rejects a committed ownerless
 // active organization even if a future caller bypasses this method.
-func (s *Store) CreateOrganizationWorkspace(ctx context.Context, in CreateOrganizationInput) (Workspace, Membership, error) {
+func (s *Store) createOrganizationWorkspace(ctx context.Context, in CreateOrganizationInput) (Workspace, Membership, error) {
 	if !s.valid(ctx) || !validID(in.ID) || !validID(in.OwnerMembershipID) || !validScope(in.Scope) || !validID(in.OwnerPersonID) {
 		return Workspace{}, Membership{}, ErrInvalidInput
 	}
@@ -154,7 +162,7 @@ func (s *Store) CreateOrganizationWorkspace(ctx context.Context, in CreateOrgani
 // AddMembership adds a current human membership to an active organization.
 // Callers must perform current actor/permission checks before this persistence
 // operation; membership selection alone grants nothing.
-func (s *Store) AddMembership(ctx context.Context, in AddMembershipInput) (Membership, error) {
+func (s *Store) addMembership(ctx context.Context, in AddMembershipInput) (Membership, error) {
 	if !s.valid(ctx) || !validID(in.ID) || !validScope(in.Scope) || !validID(in.WorkspaceID) || !validID(in.PersonID) || !validRole(in.Role) || in.RoleVersion < 1 {
 		return Membership{}, ErrInvalidInput
 	}
@@ -172,6 +180,14 @@ func (s *Store) AddMembership(ctx context.Context, in AddMembershipInput) (Membe
 }
 
 func (s *Store) insertMembership(ctx context.Context, m Membership) error {
+	if s != nil && s.writer != nil {
+		if err := s.prepareWriter(ctx, m.Scope, aw.W, writerRow{mutable: true, table: aw.Persons, id: m.PersonID}, writerRow{mutable: true, table: aw.Workspaces, id: m.WorkspaceID}, writerRow{mutable: true, table: aw.Memberships, id: m.ID, access: aw.ReservedInsert}); err != nil {
+			return err
+		}
+		if err := s.writer.RecordMutation(aw.WorkspaceWrite, []aw.Row{{Table: aw.Memberships, ID: m.ID, Access: aw.ReservedInsert}}); err != nil {
+			return ErrPersistence
+		}
+	}
 	result, err := s.tx.ExecContext(ctx, `INSERT INTO workspace_memberships (id,installation_id,application_id,workspace_id,person_id,role_key,role_version,state)
 		SELECT $1,w.installation_id,w.application_id,w.id,p.id,$6,$7,'active'
 		FROM workspaces w JOIN identity_persons p ON p.id=$5 AND p.installation_id=w.installation_id AND p.application_id=w.application_id
@@ -192,7 +208,7 @@ func (s *Store) insertMembership(ctx context.Context, m Membership) error {
 
 // UpdateMembership serializes all membership transitions on the workspace
 // row. Deferred owner constraints preserve at least one active org owner.
-func (s *Store) UpdateMembership(ctx context.Context, in UpdateMembershipInput) (Membership, error) {
+func (s *Store) updateMembership(ctx context.Context, in UpdateMembershipInput) (Membership, error) {
 	if !s.valid(ctx) || !validScope(in.Scope) || !validID(in.WorkspaceID) || !validID(in.PersonID) || !validRole(in.Role) || in.RoleVersion < 1 || !validMembershipState(in.State) {
 		return Membership{}, ErrInvalidInput
 	}
@@ -215,7 +231,7 @@ func (s *Store) UpdateMembership(ctx context.Context, in UpdateMembershipInput) 
 	return s.getMembership(ctx, in.Scope, in.WorkspaceID, in.PersonID)
 }
 
-func (s *Store) SetWorkspaceState(ctx context.Context, scope Scope, id uuid.UUID, state string) (Workspace, error) {
+func (s *Store) setWorkspaceState(ctx context.Context, scope Scope, id uuid.UUID, state string) (Workspace, error) {
 	if !s.valid(ctx) || !validScope(scope) || !validID(id) || !validWorkspaceState(state) {
 		return Workspace{}, ErrInvalidInput
 	}
@@ -237,7 +253,7 @@ func (s *Store) SetWorkspaceState(ctx context.Context, scope Scope, id uuid.UUID
 
 // FindWorkspace always requires the installation/application scope alongside
 // the resource ID, so a valid identifier from another tenant is not returned.
-func (s *Store) FindWorkspace(ctx context.Context, scope Scope, id uuid.UUID) (Workspace, error) {
+func (s *Store) findWorkspace(ctx context.Context, scope Scope, id uuid.UUID) (Workspace, error) {
 	if !s.valid(ctx) || !validScope(scope) || !validID(id) {
 		return Workspace{}, ErrInvalidInput
 	}
@@ -256,7 +272,7 @@ func (s *Store) FindWorkspace(ctx context.Context, scope Scope, id uuid.UUID) (W
 // FindPersonalWorkspace selects the active personal resource of a currently
 // active person inside an explicit application realm. IDs are selectors only;
 // callers must obtain ownerID from the authenticated person principal.
-func (s *Store) FindPersonalWorkspace(ctx context.Context, scope Scope, ownerID uuid.UUID) (Workspace, error) {
+func (s *Store) findPersonalWorkspace(ctx context.Context, scope Scope, ownerID uuid.UUID) (Workspace, error) {
 	if !s.valid(ctx) || !validScope(scope) || !validID(ownerID) {
 		return Workspace{}, ErrInvalidInput
 	}
@@ -273,7 +289,7 @@ func (s *Store) FindPersonalWorkspace(ctx context.Context, scope Scope, ownerID 
 	return w, nil
 }
 
-func (s *Store) FindMembership(ctx context.Context, scope Scope, workspaceID, personID uuid.UUID) (Membership, error) {
+func (s *Store) findMembership(ctx context.Context, scope Scope, workspaceID, personID uuid.UUID) (Membership, error) {
 	if !s.valid(ctx) || !validScope(scope) || !validID(workspaceID) || !validID(personID) {
 		return Membership{}, ErrInvalidInput
 	}
@@ -290,7 +306,7 @@ func (s *Store) FindMembership(ctx context.Context, scope Scope, workspaceID, pe
 	return m, nil
 }
 
-func (s *Store) ReadWorkspaceEpoch(ctx context.Context, scope Scope, id uuid.UUID) (int64, error) {
+func (s *Store) readWorkspaceEpoch(ctx context.Context, scope Scope, id uuid.UUID) (int64, error) {
 	if !s.valid(ctx) || !validScope(scope) || !validID(id) {
 		return 0, ErrInvalidInput
 	}
@@ -305,7 +321,7 @@ func (s *Store) ReadWorkspaceEpoch(ctx context.Context, scope Scope, id uuid.UUI
 	return epoch, nil
 }
 
-func (s *Store) ReadMembershipEpoch(ctx context.Context, scope Scope, workspaceID, personID uuid.UUID) (int64, error) {
+func (s *Store) readMembershipEpoch(ctx context.Context, scope Scope, workspaceID, personID uuid.UUID) (int64, error) {
 	if !s.valid(ctx) || !validScope(scope) || !validID(workspaceID) || !validID(personID) {
 		return 0, ErrInvalidInput
 	}
@@ -334,6 +350,11 @@ func (s *Store) getMembership(ctx context.Context, scope Scope, workspaceID, per
 }
 
 func (s *Store) lockWorkspace(ctx context.Context, scope Scope, id uuid.UUID) error {
+	if s != nil && s.writer != nil {
+		if err := s.prepareWriter(ctx, scope, aw.W, writerRow{mutable: true, table: aw.Workspaces, id: id}); err != nil {
+			return err
+		}
+	}
 	var found uuid.UUID
 	err := s.tx.QueryRowContext(ctx, `SELECT id FROM workspaces WHERE id=$1 AND installation_id=$2 AND application_id=$3 FOR UPDATE`, id, scope.InstallationID, scope.ApplicationID).Scan(&found)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -345,6 +366,11 @@ func (s *Store) lockWorkspace(ctx context.Context, scope Scope, id uuid.UUID) er
 	return nil
 }
 func (s *Store) lockPerson(ctx context.Context, scope Scope, id uuid.UUID) error {
+	if s != nil && s.writer != nil {
+		if err := s.prepareWriter(ctx, scope, aw.P, writerRow{mutable: true, table: aw.Persons, id: id}); err != nil {
+			return err
+		}
+	}
 	var state string
 	err := s.tx.QueryRowContext(ctx, `SELECT state FROM identity_persons WHERE id=$1 AND installation_id=$2 AND application_id=$3 FOR SHARE`, id, scope.InstallationID, scope.ApplicationID).Scan(&state)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -356,6 +382,11 @@ func (s *Store) lockPerson(ctx context.Context, scope Scope, id uuid.UUID) error
 	return nil
 }
 func (s *Store) lockActivePerson(ctx context.Context, scope Scope, id uuid.UUID) error {
+	if s != nil && s.writer != nil {
+		if err := s.prepareWriter(ctx, scope, aw.P, writerRow{mutable: true, table: aw.Persons, id: id}); err != nil {
+			return err
+		}
+	}
 	var state string
 	err := s.tx.QueryRowContext(ctx, `SELECT state FROM identity_persons WHERE id=$1 AND installation_id=$2 AND application_id=$3 FOR SHARE`, id, scope.InstallationID, scope.ApplicationID).Scan(&state)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -370,6 +401,11 @@ func (s *Store) lockActivePerson(ctx context.Context, scope Scope, id uuid.UUID)
 	return nil
 }
 func (s *Store) lockActiveOrganization(ctx context.Context, scope Scope, id uuid.UUID) error {
+	if s != nil && s.writer != nil {
+		if err := s.prepareWriter(ctx, scope, aw.W, writerRow{mutable: true, table: aw.Workspaces, id: id}); err != nil {
+			return err
+		}
+	}
 	var found uuid.UUID
 	err := s.tx.QueryRowContext(ctx, `SELECT id FROM workspaces WHERE id=$1 AND installation_id=$2 AND application_id=$3 AND kind='organization' AND state='active' FOR UPDATE`, id, scope.InstallationID, scope.ApplicationID).Scan(&found)
 	if errors.Is(err, sql.ErrNoRows) {
