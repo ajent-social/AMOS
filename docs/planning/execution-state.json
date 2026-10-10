@@ -677,5 +677,15 @@
       "Rebase merge PR #82 landed at e413e8371f3334eff5ba53df6691424dd89ddcf8. Detached landed package test, vet and schema meta-validation passed.",
       "Accepted design and fixture contract only. Runtime tool generation and authorization enforcement are not implemented or qualified; PR had no hosted check statuses."
     ]
+  },
+  "T15.6": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "PR #85 merged by rebase at 3ab55209cff2de6aa54c7fcdd33870062dfa9b2f; merged source contains independently reviewed candidate tree 94c4e91e7ff784d36c9ea791b6f0dffb7e745a17.",
+      "Independent exact-tree review cleared the Build L2 profile and explicit rejection tests for unapproved builder IDs and workflow identities.",
+      "Landed-source checks on an isolated Linux host with Go 1.27.1 passed: named contract test (valid baseline plus seven negative subtests), package race test, vet, gofmt check, diff check, and Go 1.27-compatible golangci-lint with zero issues.",
+      "Accepted the evidence schema and policy helper only. Cryptographic signature verification, release workflow, hosted CI, provider qualification, and deployment are not established; release acceptance remains separate."
+    ]
   }
 }
