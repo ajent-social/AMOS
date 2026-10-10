@@ -731,7 +731,7 @@
       "Object service and S3 adapter merged in PR #98 as cc043d1104447b9b4b60354f2e69497345b01979; independent exact-head source review cleared commit 494cfb5745cacc8258ebd79ea72b7dbdd883b7e6 and tree bd660ad4cb7414d2a9a70147e7f6478075f1babb.",
       "Go 1.27.1 focused tests, race tests, vet, formatting, diff checks, and scoped public-artifact scan passed for ./objects and ./objects/s3.",
       "Production transaction-bound authorization and executable lifecycle wiring remain open under issue #96; no live S3 qualification is claimed.",
-      "Safe recovery for successful Put responses without a usable VersionId remains open under issue #97."
+      "PR #103 merged as 5715db595ef402ea546b10aa50b2cd4b9809fd90; per-operation S3 write attribution and cleanup reconciliation signals independently reviewed at exact tree 870104465f39cd31a6c17900055ad4cab4a5c0f9. Focused normal/race tests, vet, scoped lint, formatting, diff checks, and public-artifact scan passed; no live S3/provider qualification is claimed."
     ]
   },
   "T8.3": {
