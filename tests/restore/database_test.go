@@ -313,6 +313,69 @@ func TestDatabaseRestore(t *testing.T) {
 	if err = prepared.Activate(ctx, &checkState{}); !errors.Is(err, restore.ErrActivation) {
 		t.Fatalf("activation after discard was not rejected: %v", err)
 	}
+
+	// Model a rename that committed before its response was lost: the Prepared
+	// value still names the private stage while PostgreSQL has the target name.
+	stageBefore, err := restoreStageNames(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ambiguousTarget := targetName + "_ambiguous"
+	ambiguousRequest := restoreRequest
+	ambiguousRequest.Target = ambiguousTarget
+	ambiguousPrepared, err := restore.Restore(ctx, ambiguousRequest)
+	if err != nil {
+		t.Fatalf("prepare ambiguous-rename restore: %v", err)
+	}
+	t.Cleanup(func() {
+		if discardErr := ambiguousPrepared.Discard(context.Background()); discardErr != nil {
+			t.Errorf("discard ambiguous-rename restore: %v", discardErr)
+		}
+	})
+	stageAfter, err := restoreStageNames(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stage string
+	for name := range stageAfter {
+		if !stageBefore[name] {
+			if stage != "" {
+				t.Fatal("more than one new restore stage was created")
+			}
+			stage = name
+		}
+	}
+	if stage == "" {
+		t.Fatal("restore stage was not discoverable before simulated ambiguous rename")
+	}
+	if _, err = admin.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{stage}.Sanitize()+" RENAME TO "+pgx.Identifier{ambiguousTarget}.Sanitize()); err != nil {
+		t.Fatalf("simulate committed rename with lost response: %v", err)
+	}
+	if err = ambiguousPrepared.Activate(ctx, &checkState{}); err != nil {
+		t.Fatalf("retry after committed rename response loss: %v", err)
+	}
+	assertDatabaseConnectable(t, ctx, admin, ambiguousTarget)
+	if err = ambiguousPrepared.Discard(ctx); err != nil {
+		t.Fatalf("discard renamed restore: %v", err)
+	}
+	assertAbsent(t, ctx, admin, ambiguousTarget)
+}
+
+func restoreStageNames(ctx context.Context, admin *pgx.Conn) (map[string]bool, error) {
+	rows, err := admin.Query(ctx, "SELECT datname FROM pg_database WHERE datname LIKE 'amos_restore_%' AND NOT datallowconn")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	names := make(map[string]bool)
+	for rows.Next() {
+		var name string
+		if err = rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names[name] = true
+	}
+	return names, rows.Err()
 }
 
 func seedRegisteredRecords(t *testing.T, ctx context.Context, source *pgx.Conn) {
