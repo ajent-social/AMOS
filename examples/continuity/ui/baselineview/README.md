@@ -2,8 +2,8 @@
 
 Pure server-rendered HTML for supplied properties, cases, applications,
 procedures, activity and deterministic guide results. The caller owns retrieval,
-authority, CSRF verification, HTTP behavior and committed publication. Rendered
-forms name later host binding targets; this package exposes no handler or effect.
+authority, CSRF verification, HTTP behavior and committed publication. The current read-only baseline renders no edit actions. This package exposes no
+handler or effect; mutation routes and persistence remain unqualified.
 
 Every renderer returns newly owned bytes or nil with exact `ErrInvalid`.
 Complete raw bounds precede record copying and guide composition. All supplied
@@ -15,8 +15,9 @@ an explicit warning. No sending or human-decision form is exposed.
 
 The final boolean chooses a full document or the sole
 `continuity-baseline-content` section. Full pages reuse `/assets/base.css`.
-Ordinary forms and links require no JavaScript. Authentication, routes, mutation
-services, persistence, browser policy and actual host journeys remain unqualified.
+Property search, guide selection and all links require no JavaScript.
+Authentication, routes, mutation services, persistence, browser policy and actual
+host journeys remain unqualified.
 
 ```sh
 go test ./examples/continuity/ui/baselineview

@@ -189,44 +189,47 @@ func TestEveryViewFullAndFragment(t *testing.T) {
 	}
 }
 
-func TestOrdinaryFormsAndHumanDecisionUnavailable(t *testing.T) {
+func TestReadOnlyBaselineExposesNoWriteForms(t *testing.T) {
 	a := testApplication()
-	b, e := RenderApplication(ApplicationPage{Application: a, CSRFToken: testToken()}, false)
-	if e != nil {
-		t.Fatal(e)
+	b, err := RenderApplication(ApplicationPage{Application: a, CSRFToken: testToken()}, false)
+	if err != nil {
+		t.Fatal(err)
 	}
 	n := document(t, b, false)
-	forms := elements(n, "form")
-	if len(forms) != 1 || attribute(forms[0], "action") != "/continuity/applications/"+a.ID+"/checklist" {
-		t.Fatal("supporting form missing or human decision became actionable")
+	if len(elements(n, "form")) != 0 || len(fields(n, "item_id")) != 0 {
+		t.Fatal("read-only application exposes a write action")
 	}
-	if len(fields(n, "item_id")) != 1 || attribute(fields(n, "item_id")[0], "value") != a.Items[0].ID {
-		t.Fatal("human-decision ID exposed as mutable input")
+	applicationText := textContent(n)
+	if !strings.Contains(applicationText, "Editing is unavailable in this read-only baseline") || !strings.Contains(applicationText, "Recorded complete status: not recorded complete") || !strings.Contains(applicationText, "Final human decision is disabled") {
+		t.Fatal("application snapshot or read-only boundaries missing")
 	}
-	if !strings.Contains(textContent(n), "Final human decision is disabled") {
-		t.Fatal("disabled decision explanation missing")
-	}
+
 	c := testCase()
 	d := testDraft()
-	b, e = RenderCase(CasePage{Case: c, Draft: &d, CSRFToken: testToken()}, true)
-	if e != nil {
-		t.Fatal(e)
+	b, err = RenderCase(CasePage{Case: c, Draft: &d, CSRFToken: testToken()}, true)
+	if err != nil {
+		t.Fatal(err)
 	}
 	n = document(t, b, true)
-	if len(elements(n, "form")) != 2 || !strings.Contains(textContent(n), "The case changed after this draft was saved") {
-		t.Fatal("ordinary forms or stale draft warning missing")
+	caseText := textContent(n)
+	if len(elements(n, "form")) != 0 || len(fields(n, "status")) != 0 || len(fields(n, "body")) != 0 {
+		t.Fatal("read-only case exposes a write action")
 	}
-	for _, f := range elements(n, "form") {
-		if attribute(fields(f, "expected")[0], "value") != "7" {
-			t.Fatal("stale draft reused an old expected revision")
-		}
+	if !strings.Contains(caseText, "Recorded status: awaiting_owner") || !strings.Contains(caseText, "Saving draft edits is unavailable in this read-only baseline") || !strings.Contains(caseText, "The case changed after this draft was saved") || !strings.Contains(caseText, d.Body) {
+		t.Fatal("case or draft snapshot missing")
 	}
 	if len(fields(n, "recipient")) != 0 || strings.Contains(string(b), "/send") {
 		t.Fatal("draft exposed sending")
 	}
-	statuses := fields(n, "status")
-	if len(statuses) != 1 || len(elements(statuses[0], "option")) != 5 {
-		t.Fatal("finite status choices missing")
+
+	procedure := testProcedure()
+	b, err = RenderProcedure(ProcedurePage{Procedure: procedure, CSRFToken: testToken()}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n = document(t, b, false)
+	if len(elements(n, "form")) != 0 || len(elements(n, "textarea")) != 0 || !strings.Contains(textContent(n), procedure.Body) || !strings.Contains(textContent(n), "Editing is unavailable in this read-only baseline") {
+		t.Fatal("read-only procedure snapshot missing or actionable")
 	}
 }
 
@@ -240,9 +243,9 @@ func TestEscapedValuesAndOwnedOutput(t *testing.T) {
 		t.Fatal(e)
 	}
 	n := document(t, b, false)
-	area := elements(n, "textarea")
-	if len(area) != 1 || strings.TrimPrefix(textContent(area[0]), "\n") != attack {
-		t.Fatal("procedure text altered or escaped markup executed")
+	pre := elements(n, "pre")
+	if len(pre) != 1 || textContent(pre[0]) != attack || len(elements(n, "textarea")) != 0 {
+		t.Fatal("read-only procedure text altered or escaped markup executed")
 	}
 	c := testCase()
 	c.Title = attack
