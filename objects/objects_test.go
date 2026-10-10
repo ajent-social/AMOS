@@ -264,3 +264,9 @@ func TestOpenResolvesPrincipalBeforeObjectLookup(t *testing.T) {
 		t.Fatalf("unauthenticated request reached object lookup: calls=%d", store.headCalls)
 	}
 }
+
+func TestNormalizeStoreErrorPreservesReconciliationRequired(t *testing.T) {
+	if got := normalizeStoreError(ErrReconciliationRequired); got != ErrReconciliationRequired {
+		t.Fatalf("reconciliation signal normalized to %v", got)
+	}
+}

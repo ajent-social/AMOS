@@ -53,13 +53,14 @@ func (s *Store) Put(ctx context.Context, ref objects.Reference, body io.Reader) 
 		return objects.ErrInvalid
 	}
 	counter := &countingReader{reader: body}
+	writeNonce := uuid.NewString()
 	out, err := s.client.PutObject(ctx, &awss3.PutObjectInput{
 		Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)),
 		Body: counter, ContentLength: aws.Int64(ref.Size), ContentType: aws.String(ref.ContentType),
 		ExpectedBucketOwner:  aws.String(s.owner),
 		ServerSideEncryption: types.ServerSideEncryptionAwsKms, SSEKMSKeyId: aws.String(s.kmsKey),
 		BucketKeyEnabled: aws.Bool(true), IfNoneMatch: aws.String("*"),
-		Metadata: metadata(ref),
+		Metadata: writeMetadata(ref, writeNonce),
 	})
 	if err != nil {
 		return normalizeAWSError(err)
@@ -68,18 +69,16 @@ func (s *Store) Put(ctx context.Context, ref objects.Reference, body io.Reader) 
 	if out != nil && out.VersionId != nil {
 		versionID = *out.VersionId
 	}
-	if versionID == "" || versionID == "null" {
-		// A known version can be removed exactly, including S3's literal null
-		// version. With no returned version ID, cleanup cannot safely target
-		// this write; fail closed and leave reconciliation to the caller.
-		if versionID != "" {
-			_, cleanupErr := s.client.DeleteObject(ctx, &awss3.DeleteObjectInput{
-				Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), VersionId: aws.String(versionID),
-				ExpectedBucketOwner: aws.String(s.owner),
-			})
-			if cleanupErr != nil {
-				return objects.ErrStorageUnavailable
-			}
+	if versionID == "" {
+		return s.reconcileMissingVersion(ctx, ref, writeNonce)
+	}
+	if versionID == "null" {
+		_, cleanupErr := s.client.DeleteObject(ctx, &awss3.DeleteObjectInput{
+			Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), VersionId: aws.String(versionID),
+			ExpectedBucketOwner: aws.String(s.owner),
+		})
+		if cleanupErr != nil {
+			return objects.ErrReconciliationRequired
 		}
 		return objects.ErrStorageUnavailable
 	}
@@ -89,11 +88,47 @@ func (s *Store) Put(ctx context.Context, ref objects.Reference, body io.Reader) 
 			ExpectedBucketOwner: aws.String(s.owner),
 		})
 		if cleanupErr != nil {
-			return objects.ErrStorageUnavailable
+			return objects.ErrReconciliationRequired
 		}
 		return objects.ErrInvalid
 	}
 	return nil
+}
+
+func (s *Store) reconcileMissingVersion(ctx context.Context, ref objects.Reference, writeNonce string) error {
+	head, err := s.client.HeadObject(ctx, &awss3.HeadObjectInput{
+		Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), ExpectedBucketOwner: aws.String(s.owner),
+	})
+	if err != nil || !provesWrittenReference(ref, head, s.kmsKey, writeNonce) {
+		return objects.ErrReconciliationRequired
+	}
+	_, err = s.client.DeleteObject(ctx, &awss3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), VersionId: aws.String(*head.VersionId),
+		ExpectedBucketOwner: aws.String(s.owner),
+	})
+	if err != nil {
+		return objects.ErrReconciliationRequired
+	}
+	return objects.ErrStorageUnavailable
+}
+
+func provesWrittenReference(ref objects.Reference, head *awss3.HeadObjectOutput, kmsKey, writeNonce string) bool {
+	if head == nil || head.VersionId == nil || *head.VersionId == "" ||
+		head.ContentLength == nil || *head.ContentLength != ref.Size ||
+		head.ServerSideEncryption != types.ServerSideEncryptionAwsKms ||
+		head.SSEKMSKeyId == nil || *head.SSEKMSKeyId != kmsKey {
+		return false
+	}
+	want := writeMetadata(ref, writeNonce)
+	if len(head.Metadata) != len(want) {
+		return false
+	}
+	for key, value := range want {
+		if head.Metadata[key] != value {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Store) Head(ctx context.Context, id uuid.UUID) (objects.Reference, error) {
@@ -168,6 +203,14 @@ func normalizeAWSError(err error) error {
 }
 
 func (s *Store) key(id uuid.UUID) string { return s.prefix + "/" + id.String() }
+
+const writeNonceMetadataKey = "amos-write-id"
+
+func writeMetadata(ref objects.Reference, writeNonce string) map[string]string {
+	values := metadata(ref)
+	values[writeNonceMetadataKey] = writeNonce
+	return values
+}
 
 func metadata(ref objects.Reference) map[string]string {
 	return map[string]string{

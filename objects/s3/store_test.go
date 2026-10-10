@@ -16,18 +16,29 @@ import (
 )
 
 type fakeClient struct {
-	putInput    *awss3.PutObjectInput
-	headInput   *awss3.HeadObjectInput
-	headOutput  *awss3.HeadObjectOutput
-	getInput    *awss3.GetObjectInput
-	deleteInput *awss3.DeleteObjectInput
-	putErr      error
-	putOutput   *awss3.PutObjectOutput
-	putOverride bool
+	putInput            *awss3.PutObjectInput
+	headInput           *awss3.HeadObjectInput
+	headOutput          *awss3.HeadObjectOutput
+	getInput            *awss3.GetObjectInput
+	deleteInput         *awss3.DeleteObjectInput
+	putErr              error
+	headErr             error
+	deleteErr           error
+	deleteCalls         []*awss3.DeleteObjectInput
+	putOutput           *awss3.PutObjectOutput
+	putOverride         bool
+	headMetadataFromPut bool
+	headNonceMismatch   bool
 }
 
 func (f *fakeClient) PutObject(_ context.Context, in *awss3.PutObjectInput, _ ...func(*awss3.Options)) (*awss3.PutObjectOutput, error) {
 	f.putInput = in
+	if f.headMetadataFromPut && f.headOutput != nil {
+		f.headOutput.Metadata = cloneMetadata(in.Metadata)
+		if f.headNonceMismatch {
+			f.headOutput.Metadata[writeNonceMetadataKey] = uuid.NewString()
+		}
+	}
 	_, err := io.Copy(io.Discard, in.Body)
 	if err != nil {
 		return nil, err
@@ -42,7 +53,7 @@ func (f *fakeClient) PutObject(_ context.Context, in *awss3.PutObjectInput, _ ..
 }
 func (f *fakeClient) HeadObject(_ context.Context, in *awss3.HeadObjectInput, _ ...func(*awss3.Options)) (*awss3.HeadObjectOutput, error) {
 	f.headInput = in
-	return f.headOutput, nil
+	return f.headOutput, f.headErr
 }
 func (f *fakeClient) GetObject(_ context.Context, in *awss3.GetObjectInput, _ ...func(*awss3.Options)) (*awss3.GetObjectOutput, error) {
 	f.getInput = in
@@ -50,6 +61,10 @@ func (f *fakeClient) GetObject(_ context.Context, in *awss3.GetObjectInput, _ ..
 }
 func (f *fakeClient) DeleteObject(_ context.Context, in *awss3.DeleteObjectInput, _ ...func(*awss3.Options)) (*awss3.DeleteObjectOutput, error) {
 	f.deleteInput = in
+	f.deleteCalls = append(f.deleteCalls, in)
+	if f.deleteErr != nil {
+		return nil, f.deleteErr
+	}
 	return &awss3.DeleteObjectOutput{}, nil
 }
 
@@ -75,6 +90,10 @@ func TestStorePinsOwnerEncryptionAndObjectVersion(t *testing.T) {
 	}
 	if got := aws.ToString(client.putInput.Key); got != "amos/lifecycle/"+ref.ID.String() {
 		t.Fatalf("object key is not opaque ID only: %q", got)
+	}
+	writeNonce := client.putInput.Metadata[writeNonceMetadataKey]
+	if _, err := uuid.Parse(writeNonce); err != nil || writeNonce == "" || len(client.putInput.Metadata) != len(metadata(ref))+1 {
+		t.Fatalf("put metadata lacks unique operation nonce: %v", client.putInput.Metadata)
 	}
 	if client.putInput.Metadata["amos-workspace"] != workspace.String() ||
 		client.putInput.Metadata["amos-request"] != request.String() {
@@ -147,6 +166,41 @@ func TestStoreRejectsShortBodyAndRemovesPartialObject(t *testing.T) {
 	}
 }
 
+func TestStoreRequiresReconciliationWhenNullVersionCleanupFails(t *testing.T) {
+	ref := objects.Reference{ID: testID(t), WorkspaceID: testID(t), RequestID: testID(t),
+		ContentType: "application/json", Size: 6, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(time.Hour)}
+	client := &fakeClient{putOverride: true, putOutput: &awss3.PutObjectOutput{VersionId: aws.String("null")},
+		deleteErr: errors.New("null cleanup response lost")}
+	store, err := New(client, Config{Bucket: "private", Prefix: "exports", ExpectedBucketOwner: "123456789012", KMSKeyID: "key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = store.Put(context.Background(), ref, bytes.NewReader([]byte("export"))); err != objects.ErrReconciliationRequired {
+		t.Fatalf("null cleanup failure returned %v, want reconciliation signal", err)
+	}
+	if client.deleteInput == nil || aws.ToString(client.deleteInput.VersionId) != "null" ||
+		aws.ToString(client.deleteInput.Key) != "exports/"+ref.ID.String() {
+		t.Fatalf("null cleanup did not target exact returned version: %+v", client.deleteInput)
+	}
+}
+
+func TestStoreRequiresReconciliationWhenShortBodyCleanupFails(t *testing.T) {
+	ref := objects.Reference{ID: testID(t), WorkspaceID: testID(t), RequestID: testID(t),
+		ContentType: "application/json", Size: 10, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(time.Hour)}
+	client := &fakeClient{deleteErr: errors.New("partial cleanup response lost")}
+	store, err := New(client, Config{Bucket: "private", Prefix: "exports", ExpectedBucketOwner: "123456789012", KMSKeyID: "key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = store.Put(context.Background(), ref, bytes.NewReader([]byte("short"))); err != objects.ErrReconciliationRequired {
+		t.Fatalf("short-body cleanup failure returned %v, want reconciliation signal", err)
+	}
+	if client.deleteInput == nil || aws.ToString(client.deleteInput.VersionId) != "version-1" ||
+		aws.ToString(client.deleteInput.Key) != "exports/"+ref.ID.String() {
+		t.Fatalf("partial cleanup did not target exact returned version: %+v", client.deleteInput)
+	}
+}
+
 func testID(t *testing.T) uuid.UUID {
 	t.Helper()
 	id, err := uuid.NewV7()
@@ -161,30 +215,119 @@ func TestStoreRejectsMissingOrNullVersionOnPut(t *testing.T) {
 	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
 	ref := objects.Reference{ID: testID(t), WorkspaceID: workspace, RequestID: request,
 		ContentType: "application/json", Size: 6, CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
-	for _, tc := range []struct {
+	tests := []struct {
 		name              string
 		output            *awss3.PutObjectOutput
+		headVersion       *string
 		wantDeleteVersion string
-	}{{"nil output", nil, ""}, {"missing version", &awss3.PutObjectOutput{}, ""}, {"empty version", &awss3.PutObjectOutput{VersionId: aws.String("")}, ""}, {"null version", &awss3.PutObjectOutput{VersionId: aws.String("null")}, "null"}} {
+		wantHead          bool
+	}{
+		{name: "nil output", headVersion: aws.String("created-version"), wantDeleteVersion: "created-version", wantHead: true},
+		{name: "missing version", output: &awss3.PutObjectOutput{}, headVersion: aws.String("created-version"), wantDeleteVersion: "created-version", wantHead: true},
+		{name: "empty version", output: &awss3.PutObjectOutput{VersionId: aws.String("")}, headVersion: aws.String("created-version"), wantDeleteVersion: "created-version", wantHead: true},
+		{name: "null version", output: &awss3.PutObjectOutput{VersionId: aws.String("null")}, wantDeleteVersion: "null"},
+	}
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			client := &fakeClient{putOverride: true, putOutput: tc.output}
+			client := &fakeClient{putOverride: true, putOutput: tc.output, headMetadataFromPut: tc.wantHead}
+			if tc.wantHead {
+				client.headOutput = headFor(ref, tc.headVersion, "key")
+			}
 			store, err := New(client, Config{Bucket: "private", Prefix: "exports", ExpectedBucketOwner: "123456789012", KMSKeyID: "key"})
 			if err != nil {
 				t.Fatal(err)
 			}
 			if err = store.Put(context.Background(), ref, bytes.NewReader([]byte("export"))); !errors.Is(err, objects.ErrStorageUnavailable) {
-				t.Fatalf("unversioned put accepted: %v", err)
+				t.Fatalf("unversioned put accepted or reconciliation signal was unstable: %v", err)
 			}
-			if tc.wantDeleteVersion == "" {
-				if client.deleteInput != nil {
-					t.Fatalf("unexpected cleanup request: %+v", client.deleteInput)
-				}
-				return
+			if (client.headInput != nil) != tc.wantHead {
+				t.Fatalf("head request presence = %t, want %t", client.headInput != nil, tc.wantHead)
 			}
-			if client.deleteInput == nil || aws.ToString(client.deleteInput.VersionId) != tc.wantDeleteVersion {
-				t.Fatalf("cleanup request = %+v, want version %q", client.deleteInput, tc.wantDeleteVersion)
+			if tc.wantHead && (aws.ToString(client.headInput.ExpectedBucketOwner) != "123456789012" ||
+				aws.ToString(client.headInput.Key) != "exports/"+ref.ID.String()) {
+				t.Fatalf("unsafe proof request: %+v", client.headInput)
+			}
+			if client.deleteInput == nil || aws.ToString(client.deleteInput.VersionId) != tc.wantDeleteVersion ||
+				aws.ToString(client.deleteInput.ExpectedBucketOwner) != "123456789012" {
+				t.Fatalf("cleanup request = %+v, want exact version %q", client.deleteInput, tc.wantDeleteVersion)
 			}
 		})
+	}
+}
+
+func TestStoreRequiresReconciliationWhenMissingVersionCannotBeProven(t *testing.T) {
+	workspace, request := testID(t), testID(t)
+	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
+	ref := objects.Reference{ID: testID(t), WorkspaceID: workspace, RequestID: request,
+		ContentType: "application/json", Size: 6, CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	other := ref
+	other.RequestID = testID(t)
+	tests := []struct {
+		name                string
+		head                *awss3.HeadObjectOutput
+		headErr             error
+		headMetadataFromPut bool
+		headNonceMismatch   bool
+	}{
+		{name: "head unavailable", headErr: errors.New("temporary head failure")},
+		{name: "head missing", head: nil},
+		{name: "concurrent object metadata mismatch", head: headFor(other, aws.String("concurrent-version"), "key")},
+		{name: "same-reference prior operation nonce mismatch", head: headFor(ref, aws.String("prior-operation-version"), "key"), headMetadataFromPut: true, headNonceMismatch: true},
+		{name: "version unavailable", head: headFor(ref, nil, "key")},
+		{name: "empty version", head: headFor(ref, aws.String(""), "key")},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &fakeClient{putOverride: true, putOutput: &awss3.PutObjectOutput{}, headOutput: tc.head, headErr: tc.headErr,
+				headMetadataFromPut: tc.headMetadataFromPut, headNonceMismatch: tc.headNonceMismatch}
+			store, err := New(client, Config{Bucket: "private", Prefix: "exports", ExpectedBucketOwner: "123456789012", KMSKeyID: "key"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = store.Put(context.Background(), ref, bytes.NewReader([]byte("export"))); !errors.Is(err, objects.ErrReconciliationRequired) ||
+				err != objects.ErrReconciliationRequired {
+				t.Fatalf("unsafe or unavailable proof returned %v, want stable reconciliation signal", err)
+			}
+			if client.deleteInput != nil || len(client.deleteCalls) != 0 {
+				t.Fatalf("unproven object version was deleted: %+v", client.deleteCalls)
+			}
+		})
+	}
+}
+
+func TestStoreRequiresReconciliationWhenExactCleanupFails(t *testing.T) {
+	ref := objects.Reference{ID: testID(t), WorkspaceID: testID(t), RequestID: testID(t),
+		ContentType: "application/json", Size: 6, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(time.Hour)}
+	client := &fakeClient{
+		putOverride: true, putOutput: &awss3.PutObjectOutput{}, headMetadataFromPut: true,
+		headOutput: headFor(ref, aws.String("just-written-version"), "key"),
+		deleteErr:  errors.New("cleanup response lost"),
+	}
+	store, err := New(client, Config{Bucket: "private", Prefix: "exports", ExpectedBucketOwner: "123456789012", KMSKeyID: "key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = store.Put(context.Background(), ref, bytes.NewReader([]byte("export"))); err != objects.ErrReconciliationRequired {
+		t.Fatalf("cleanup failure returned %v, want stable reconciliation signal", err)
+	}
+	if client.deleteInput == nil || aws.ToString(client.deleteInput.VersionId) != "just-written-version" ||
+		aws.ToString(client.deleteInput.Key) != "exports/"+ref.ID.String() {
+		t.Fatalf("cleanup did not pin exact proven version: %+v", client.deleteInput)
+	}
+}
+
+func cloneMetadata(values map[string]string) map[string]string {
+	cloned := make(map[string]string, len(values))
+	for key, value := range values {
+		cloned[key] = value
+	}
+	return cloned
+}
+
+func headFor(ref objects.Reference, versionID *string, key string) *awss3.HeadObjectOutput {
+	return &awss3.HeadObjectOutput{
+		Metadata: metadata(ref), VersionId: versionID, ContentLength: aws.Int64(ref.Size),
+		ServerSideEncryption: types.ServerSideEncryptionAwsKms, SSEKMSKeyId: aws.String(key),
 	}
 }
 
