@@ -703,9 +703,10 @@
     "status": "IN_PROGRESS",
     "certification": "REVIEWED",
     "evidence": [
-      "Checkout UI merged in PR #95 as 34434e6c007c1617dfd4923c5671957689e9bdef; independent exact-head review cleared 2828ca49da88478e07fc1ddfcaf1bf4cdfbb7677.",
-      "Scoped normal and race tests, vet, lint, browser fixture, Prettier, formatting, diff checks, and public-artifact scan passed on the reviewed source.",
-      "Executable application composition and production checkout-service adapter remain open under issue #99; provider and production behavior are not qualified."
+      "Checkout UI merged in PR #95; executable host adapter and reserved billing route merged and independently reviewed in PR #109 at 241c80c21183eea4682e5b08da37fb9daee113d6.",
+      "Candidate head f3383042396297fb4f442279932994d1fb42eafd passed PostgreSQL-backed apphost HTTP coverage for anonymous denial, configured catalog choices, AAL1 denial, same-key provider recovery after a test-only persisted AAL2 fixture, and unknown-to-paid scoped projection polling.",
+      "Targeted runtime tests, apphost vet, public-artifact scan, and diff checks passed. The billing UI Playwright fixture passed; it does not exercise the generated local app host.",
+      "Issue #99 remains open for a local-host browser journey and provider qualification. The test provider and AAL2 fixture do not qualify live provider or TOTP behavior."
     ]
   },
   "T9.4": {
@@ -771,6 +772,16 @@
       "This is a design-profile fixture only. No live DNS, TLS, identity, forwarding or provider qualification is claimed; no hosted CI result is claimed.",
       "PR #106 merged at d760da601bdff288e385dbc6efec662374a86a47; landed tree ae49b25d6731b58613b106de97cba635a268e41c is identical to the exact-head reviewed candidate 135fff13ee7a824cf50d0047098ff22e45d94ef8. Landed ledger/projection checks confirm T12.4 accepted and T11.1 still in progress. Package-scoped normal/race tests, vet, lint, formatting and diff checks were run on the identical source tree. No hosted CI status is claimed.",
       "Acceptance is limited to the design profile and rejecting fixture. Live DNS, TLS, identity, forwarding or provider qualification remains separate and unclaimed."
+    ]
+  },
+  "T12.5": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "PR #108 merged at 593b3e3c38f5cfe2e70dc479bbf3f737f4b1ae23 after independent exact-head review of 2d70b6705defafa0d42cad6b335d31356957f1f0.",
+      "Review found the missing reserved UpstreamPrefix guard; the fix uses isReservedPath and adds negative cases for admin, billing, internal, and identity prefixes before merge.",
+      "Focused and full package tests, race test, vet, golangci-lint (0 issues), gofmt, diff check, and scoped public-artifact scan passed in the task worktree.",
+      "Live proxy wiring, private DNS/TLS/mTLS, and provider qualification remain separate."
     ]
   }
 }
