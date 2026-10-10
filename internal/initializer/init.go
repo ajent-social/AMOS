@@ -27,6 +27,9 @@ import (
 const SchemaVersion = 1
 const TemplateVersion = "1.1"
 
+// MaxGeneratedFiles bounds initializer work while supporting the reviewed runtime closure.
+const MaxGeneratedFiles = 192
+
 var (
 	ErrInvalidInput              = errors.New("invalid initializer input")
 	ErrGeneratorUnavailable      = errors.New("initializer generator unavailable")
@@ -408,7 +411,7 @@ func (f *Files) writeFile(ctx context.Context, name string, data []byte, mode os
 		}
 		return nil
 	}
-	if len(f.journal.Files) >= 128 {
+	if len(f.journal.Files) >= MaxGeneratedFiles {
 		return ErrInvalidInput
 	}
 	total := int64(len(data))

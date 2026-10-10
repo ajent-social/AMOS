@@ -8,9 +8,19 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
+
+func secureTempDir(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
 
 func testInput(t *testing.T) Input {
 	t.Helper()
@@ -18,7 +28,7 @@ func testInput(t *testing.T) Input {
 		SchemaVersion: SchemaVersion,
 		AppSlug:       "todo-demo",
 		ModulePath:    "example.test/todo-demo",
-		ParentDir:     t.TempDir(),
+		ParentDir:     secureTempDir(t),
 		Target:        "todo-demo",
 		Modules:       []string{"billing", "workspace", "identity"},
 		PublicOrigin:  "http://127.0.0.1:8080",
@@ -35,6 +45,25 @@ func sampleGenerator(ctx context.Context, config Config, files *Files) error {
 		return err
 	}
 	return files.WriteFile(ctx, "cmd/app/main.go", []byte("package main\nfunc main() {}\n"), 0644)
+}
+
+func TestInitEnforcesGeneratedFileCountLimit(t *testing.T) {
+	input := testInput(t)
+	generator := GeneratorFunc(func(ctx context.Context, _ Config, files *Files) error {
+		for index := 0; index <= MaxGeneratedFiles; index++ {
+			if err := files.WriteFile(ctx, "generated/"+strconv.Itoa(index)+".txt", []byte("x"), 0o600); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	result, err := Initialize(context.Background(), input, generator)
+	if !errors.Is(err, ErrGeneration) || result.Finalized {
+		t.Fatalf("oversized file set result=%#v err=%v", result, err)
+	}
+	if _, err := os.Lstat(filepath.Join(input.ParentDir, input.Target)); !os.IsNotExist(err) {
+		t.Fatalf("oversized file set published a target: %v", err)
+	}
 }
 
 func TestInitCreatesFilesManifestAndNormalizedConfig(t *testing.T) {
@@ -316,7 +345,7 @@ func TestInitResumeRecordIsBoundToItsTargetParent(t *testing.T) {
 	if !errors.Is(err, ErrGeneration) {
 		t.Fatalf("partial generation error=%v", err)
 	}
-	parent2 := t.TempDir()
+	parent2 := secureTempDir(t)
 	source := filepath.Join(input.ParentDir, partial.StagingName)
 	destination := filepath.Join(parent2, partial.StagingName)
 	if err := os.Mkdir(destination, 0700); err != nil {

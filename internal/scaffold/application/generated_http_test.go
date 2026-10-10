@@ -58,7 +58,7 @@ func testGeneratedPasswordBrowser(t *testing.T, useRunner bool) {
 	if err := listener.Close(); err != nil {
 		t.Fatal(err)
 	}
-	parent := t.TempDir()
+	parent := ownerTempDir(t)
 	slug := "native-todo"
 	if useRunner {
 		id, err := uuid.NewV7()
