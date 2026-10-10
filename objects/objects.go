@@ -14,6 +14,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// ErrReconciliationRequired signals that an object write succeeded but its exact
+// immutable version could not be verified or safely removed. The caller must
+// surface this stable signal for owner-controlled reconciliation; blind retries
+// can encounter an orphaned object.
+var ErrReconciliationRequired = errors.New("object write requires reconciliation")
+
 var (
 	ErrInvalid            = errors.New("invalid object request")
 	ErrUnauthenticated    = errors.New("authentication required")
@@ -237,6 +243,9 @@ func validContentType(value string) bool {
 }
 
 func normalizeStoreError(err error) error {
+	if errors.Is(err, ErrReconciliationRequired) {
+		return ErrReconciliationRequired
+	}
 	if errors.Is(err, ErrNotFound) {
 		return ErrNotFound
 	}
