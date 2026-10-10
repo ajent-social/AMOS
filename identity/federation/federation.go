@@ -20,6 +20,7 @@ import (
 	"github.com/ajent-social/amos/identity"
 	"github.com/ajent-social/amos/identity/internal/authproof"
 	"github.com/ajent-social/amos/identity/session"
+	aw "github.com/ajent-social/amos/internal/authoritywriter"
 	"github.com/ajent-social/amos/storage"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -119,6 +120,12 @@ func New(cfg Config) (*Service, error) {
 			!validID(connection.ProviderConnectionID) || !validIssuer(connection.Issuer) {
 			return nil, ErrInvalidInput
 		}
+	}
+	// This constructor retains the legacy transaction owner and cannot join
+	// W1. Select the process profile here so a legacy federation service cannot
+	// be composed with a writer-bound session service or survive W1 activation.
+	if err := aw.SelectLegacy(); err != nil {
+		return nil, ErrInvalidInput
 	}
 	providers := make(map[string]Provider, len(cfg.Providers))
 	for key, value := range cfg.Providers {
