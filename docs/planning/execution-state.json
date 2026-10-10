@@ -743,5 +743,14 @@
       "Disposable negative mutation set all four public-access-block controls false; TestBootstrapPulumiMocksEnforceRetentionAndSeparation failed on expected assertions; source was restored byte-for-byte and the named suite passed.",
       "Live AWS bootstrap, locking/recovery exercise, and production qualification remain unrun under the separate E16 gate."
     ]
+  },
+  "T8.8": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "PR #101 merged at 72eb0d95cea42f29ed2452468f6caea2a46b0bcd; immutable DNS-only AliasOptions are delivered.",
+      "Independent exact-head review cleared 2206b8a6ea76a7704d784be29e2f6566bf24a31c (tree 44342a43f2c43597d708399c6cdc4db131f999f9). Focused package tests, race tests, vet, golangci-lint, formatting, and diff checks passed locally on DGX; hosted CI and live Cloudflare qualification are not claimed.",
+      "Actual upstream AMSL dnsalias selection/pinning and adapter wiring remain outstanding; follow-up issue #102 tracks the remaining acceptance."
+    ]
   }
 }
