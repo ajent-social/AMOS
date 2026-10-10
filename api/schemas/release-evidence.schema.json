@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ajent.social/amos/schemas/release-evidence/v1",
+  "title": "AMOS release build evidence",
+  "description": "A bounded evidence record for a verified AMOS release artifact; it is not itself a signature or runtime enforcement.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "artifact", "source", "builder", "toolchain", "policy", "attestation", "verification"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "digest"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "commit", "ref"],
+      "properties": {
+        "repository": {"type": "string", "format": "uri", "maxLength": 500},
+        "commit": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "ref": {"type": "string", "pattern": "^refs/(?:heads|tags)/[^\\s]{1,240}$"}
+      }
+    },
+    "builder": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "workflow_identity", "workflow_revision", "run_id", "runner_environment"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 500},
+        "workflow_identity": {"type": "string", "minLength": 1, "maxLength": 500},
+        "workflow_revision": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "run_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$"},
+        "runner_environment": {"enum": ["github-hosted", "self-hosted", "other"]}
+      }
+    },
+    "toolchain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["go_version", "attest_action_version", "inputs"],
+      "properties": {
+        "go_version": {"type": "string", "pattern": "^go[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"},
+        "attest_action_version": {"type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "inputs": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/input"}}
+      }
+    },
+    "policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "digest", "required_checks"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 200},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "required_checks": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 200}}
+      }
+    },
+    "attestation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["format", "predicate_type", "predicate_digest", "bundle_version", "signer_identity", "issuer", "audience", "transparency_log_inclusion"],
+      "properties": {
+        "format": {"const": "in-toto-statement-v1"},
+        "predicate_type": {"const": "https://slsa.dev/provenance/v1"},
+        "predicate_digest": {"$ref": "#/$defs/sha256"},
+        "bundle_version": {"const": "0.3"},
+        "signer_identity": {"type": "string", "minLength": 1, "maxLength": 500},
+        "issuer": {"type": "string", "format": "uri", "maxLength": 500},
+        "audience": {"type": "string", "minLength": 1, "maxLength": 500},
+        "transparency_log_inclusion": {"type": "boolean"}
+      }
+    },
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tool", "version", "trusted_root", "trusted_root_digest", "mode", "checks"],
+      "properties": {
+        "tool": {"const": "gh-attestation"},
+        "version": {"type": "string", "pattern": "^v?[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "trusted_root": {"const": "sigstore-public-good"},
+        "trusted_root_digest": {"$ref": "#/$defs/sha256"},
+        "mode": {"enum": ["online", "offline"]},
+        "checks": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["artifact_digest", "attestation_signature", "certificate_identity", "certificate_issuer", "provenance_predicate", "source_binding", "builder_policy", "workflow_revision", "policy_digest", "transparency_log_inclusion", "toolchain_inputs"]}}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "input": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version", "digest"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "version": {"type": "string", "minLength": 1, "maxLength": 200},
+        "digest": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
