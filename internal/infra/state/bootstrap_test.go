@@ -79,6 +79,8 @@ func TestBootstrapRequiresExplicitIsolatedInputs(t *testing.T) {
 		{"path traversal", func(a *BootstrapArgs) { a.StatePrefix = "amos/../shared" }},
 		{"query prefix", func(a *BootstrapArgs) { a.StatePrefix = "amos/state?redirect=other" }},
 		{"same writer and recovery", func(a *BootstrapArgs) { a.RecoveryPrincipal = a.StateWriterPrincipal }},
+		{"administrator overlaps state writer", func(a *BootstrapArgs) { a.KeyAdministrator = a.StateWriterPrincipal }},
+		{"administrator overlaps recovery", func(a *BootstrapArgs) { a.KeyAdministrator = a.RecoveryPrincipal }},
 		{"wildcard administrator", func(a *BootstrapArgs) { a.KeyAdministrator = "arn:aws:iam::123456789012:role/*" }},
 		{"wrong partition principal", func(a *BootstrapArgs) { a.KeyAdministrator = "arn:aws-cn:iam::123456789012:role/key-admin" }},
 	}
@@ -306,17 +308,45 @@ func TestBootstrapWriterAndRecoveryPoliciesAreSeparated(t *testing.T) {
 		if !ok || len(allowed) != 2 {
 			t.Fatalf("allowed PrincipalArn set = %#v", condition["aws:PrincipalArn"])
 		}
-		isDenied := func(arn string) bool { return arn != allowed[0].(string) && arn != allowed[1].(string) }
-		for _, tc := range []struct {
-			name, arn string
-			want      bool
-		}{
-			{"state writer, including boundary-bearing role", "arn:aws:iam::123456789012:role/state", false},
-			{"recovery role", "arn:aws:iam::123456789012:role/recovery", false},
-			{"unlisted role", "arn:aws:iam::123456789012:role/other", true},
-		} {
-			if got := isDenied(tc.arn); got != tc.want {
-				t.Errorf("%s denied = %t, want %t", tc.name, got, tc.want)
+		var required []string
+		resourceARN := "arn:aws:s3:::state/amos/staging/installation/*"
+		if statement["Sid"] == "DenyListingByOtherPrincipals" {
+			required = []string{"s3:ListBucket", "s3:ListBucketVersions"}
+			resourceARN = "arn:aws:s3:::state"
+		} else {
+			required = []string{"s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject", "s3:DeleteObjectVersion"}
+		}
+		if statement["Resource"] != resourceARN {
+			t.Errorf("%s resource = %#v, want %s", statement["Sid"], statement["Resource"], resourceARN)
+		}
+		actions, ok := statement["Action"].([]any)
+		if !ok {
+			t.Fatalf("%s action shape = %#v", statement["Sid"], statement["Action"])
+		}
+		hasAction := func(want string) bool {
+			for _, got := range actions {
+				if got == want {
+					return true
+				}
+			}
+			return false
+		}
+		for _, action := range required {
+			if !hasAction(action) {
+				t.Errorf("%s does not deny %s", statement["Sid"], action)
+			}
+			for _, tc := range []struct {
+				name, arn string
+				want      bool
+			}{
+				{"state writer", "arn:aws:iam::123456789012:role/state", false},
+				{"recovery role", "arn:aws:iam::123456789012:role/recovery", false},
+				{"unlisted role", "arn:aws:iam::123456789012:role/other", true},
+			} {
+				got := tc.arn != allowed[0].(string) && tc.arn != allowed[1].(string)
+				if got != tc.want {
+					t.Errorf("%s %s denied = %t, want %t", action, tc.name, got, tc.want)
+				}
 			}
 		}
 	}
