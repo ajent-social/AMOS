@@ -50,11 +50,41 @@ type AliasRequest struct {
 	Proxy    ProxyMode
 }
 
-// AliasOptions is the validated DNS-only input for an upstream alias adapter.
+// AliasOptions is an immutable, validated DNS-only input for an upstream
+// alias adapter. Its private fields prevent callers from enabling proxying or
+// changing the selected zone and hostname after validation.
 type AliasOptions struct {
-	ZoneID   string
-	Hostname string
-	Proxied  bool
+	zoneID   string
+	hostname string
+}
+
+// ZoneID returns the selected DNS zone identifier.
+func (o AliasOptions) ZoneID() string { return o.zoneID }
+
+// Hostname returns the selected application hostname in canonical form.
+func (o AliasOptions) Hostname() string { return o.hostname }
+
+// Proxied reports whether the alias adapter may proxy application traffic.
+// DNS-only options always return false.
+func (o AliasOptions) Proxied() bool { return false }
+
+// Validate rejects a zero value or options that do not contain a canonical
+// zone identifier and hostname.
+func (o AliasOptions) Validate() error {
+	if strings.TrimSpace(o.zoneID) != o.zoneID {
+		return errors.New("alias zone ID must not contain surrounding whitespace")
+	}
+	if o.zoneID == "" {
+		return errors.New("alias zone ID is required")
+	}
+	host, err := normalizeHostname(o.hostname)
+	if err != nil {
+		return fmt.Errorf("invalid alias hostname: %w", err)
+	}
+	if host != o.hostname {
+		return errors.New("alias hostname must be canonical")
+	}
+	return nil
 }
 
 // Validate rejects incomplete, out-of-zone, or proxied configurations.
@@ -117,7 +147,7 @@ func (m Mode) AliasOptions(request AliasRequest) (AliasOptions, error) {
 	if name != selected {
 		return AliasOptions{}, errors.New("alias hostname does not match selected application hostname")
 	}
-	return AliasOptions{ZoneID: m.ZoneID, Hostname: selected, Proxied: false}, nil
+	return AliasOptions{zoneID: m.ZoneID, hostname: selected}, nil
 }
 
 func normalizeHostname(host string) (string, error) {
