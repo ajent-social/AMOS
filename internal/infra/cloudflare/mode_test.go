@@ -69,8 +69,14 @@ func TestModeAliasOptionsRestrictZoneHostnameAndProxy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AliasOptions() error = %v", err)
 	}
-	if got != (AliasOptions{ZoneID: "zone-123", Hostname: "app.example.com", Proxied: false}) {
-		t.Fatalf("AliasOptions() = %+v", got)
+	if got.ZoneID() != "zone-123" || got.Hostname() != "app.example.com" || got.Proxied() {
+		t.Fatalf("AliasOptions() = zone %q, hostname %q, proxied %t", got.ZoneID(), got.Hostname(), got.Proxied())
+	}
+	if err := got.Validate(); err != nil {
+		t.Fatalf("AliasOptions.Validate() error = %v", err)
+	}
+	if err := (AliasOptions{}).Validate(); err == nil {
+		t.Fatal("zero-value AliasOptions.Validate() succeeded")
 	}
 
 	cases := []struct {
