@@ -68,9 +68,18 @@ func (ContextPrincipalResolver) ResolvePrincipal(ctx context.Context) (identity.
 	return principal, nil
 }
 
+// CurrentAuthorizer performs a fresh current-state authorization for every
+// object operation. Implementations bind owner, workspace, lifecycle-request,
+// credential and policy-expiry checks to authoritative transaction time; callers
+// must not cache policy decisions. Immediate revocation of an already-open body
+// remains an integration responsibility.
+type CurrentAuthorizer interface {
+	AuthorizeCurrent(context.Context, identity.Principal, policy.Resource, policy.Requirements) error
+}
+
 type Service struct {
 	store       Store
-	evaluator   policy.Evaluator
+	authorizer  CurrentAuthorizer
 	principals  PrincipalResolver
 	maxBytes    int64
 	maxLifetime time.Duration
@@ -79,7 +88,7 @@ type Service struct {
 
 type Config struct {
 	Store       Store
-	Evaluator   policy.Evaluator
+	Authorizer  CurrentAuthorizer
 	Principals  PrincipalResolver
 	MaxBytes    int64
 	MaxLifetime time.Duration
@@ -87,7 +96,7 @@ type Config struct {
 }
 
 func New(config Config) (*Service, error) {
-	if config.Store == nil || config.Evaluator == nil || config.MaxBytes <= 0 || config.MaxLifetime <= 0 {
+	if config.Store == nil || config.Authorizer == nil || config.MaxBytes <= 0 || config.MaxLifetime <= 0 {
 		return nil, ErrInvalid
 	}
 	if config.Principals == nil {
@@ -97,7 +106,7 @@ func New(config Config) (*Service, error) {
 		config.Now = time.Now
 	}
 	return &Service{
-		store: config.Store, evaluator: config.Evaluator, principals: config.Principals,
+		store: config.Store, authorizer: config.Authorizer, principals: config.Principals,
 		maxBytes: config.MaxBytes, maxLifetime: config.MaxLifetime, now: config.Now,
 	}, nil
 }
@@ -140,6 +149,10 @@ func (s *Service) Open(ctx context.Context, id identity.ID) (Reference, io.ReadC
 	if s == nil || !validID(id) {
 		return Reference{}, nil, ErrInvalid
 	}
+	principal, err := s.principals.ResolvePrincipal(ctx)
+	if err != nil {
+		return Reference{}, nil, err
+	}
 	ref, err := s.store.Head(ctx, id)
 	if err != nil {
 		return Reference{}, nil, normalizeStoreError(err)
@@ -147,15 +160,14 @@ func (s *Service) Open(ctx context.Context, id identity.ID) (Reference, io.ReadC
 	if ref.ID != id || !validID(ref.RequestID) || !validID(ref.WorkspaceID) {
 		return Reference{}, nil, ErrNotFound
 	}
+	if err = s.authorize(ctx, principal, ref, "lifecycle.export.download"); err != nil {
+		if errors.Is(err, ErrForbidden) {
+			return Reference{}, nil, ErrNotFound
+		}
+		return Reference{}, nil, err
+	}
 	if !s.now().Before(ref.ExpiresAt) {
 		return Reference{}, nil, ErrExpired
-	}
-	principal, err := s.principals.ResolvePrincipal(ctx)
-	if err != nil {
-		return Reference{}, nil, err
-	}
-	if err = s.authorize(ctx, principal, ref, "lifecycle.export.download"); err != nil {
-		return Reference{}, nil, err
 	}
 	body, err := s.store.Open(ctx, ref)
 	if err != nil {
@@ -168,15 +180,18 @@ func (s *Service) Delete(ctx context.Context, id identity.ID) error {
 	if s == nil || !validID(id) {
 		return ErrInvalid
 	}
-	ref, err := s.store.Head(ctx, id)
-	if err != nil {
-		return normalizeStoreError(err)
-	}
 	principal, err := s.principals.ResolvePrincipal(ctx)
 	if err != nil {
 		return err
 	}
+	ref, err := s.store.Head(ctx, id)
+	if err != nil {
+		return normalizeStoreError(err)
+	}
 	if err = s.authorize(ctx, principal, ref, "lifecycle.export.delete"); err != nil {
+		if errors.Is(err, ErrForbidden) {
+			return ErrNotFound
+		}
 		return err
 	}
 	if err = s.store.Delete(ctx, ref); err != nil {
@@ -186,14 +201,16 @@ func (s *Service) Delete(ctx context.Context, id identity.ID) error {
 }
 
 func (s *Service) authorize(ctx context.Context, principal identity.Principal, ref Reference, permission string) error {
-	decision := s.evaluator.Evaluate(ctx, principal, policy.Resource{
+	err := s.authorizer.AuthorizeCurrent(ctx, principal, policy.Resource{
 		Type: resourceType, ID: ref.RequestID, WorkspaceID: ref.WorkspaceID,
 	}, policy.Requirements{Permissions: []string{permission}})
-	switch decision.(type) {
-	case policy.Allowed:
+	switch {
+	case err == nil:
 		return nil
-	case policy.Denied:
+	case errors.Is(err, ErrForbidden):
 		return ErrForbidden
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return err
 	default:
 		return ErrPolicyUnavailable
 	}

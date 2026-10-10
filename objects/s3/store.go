@@ -3,6 +3,7 @@ package s3
 
 import (
 	"context"
+	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 	"github.com/google/uuid"
 )
 
@@ -60,14 +62,35 @@ func (s *Store) Put(ctx context.Context, ref objects.Reference, body io.Reader) 
 		Metadata: metadata(ref),
 	})
 	if err != nil {
+		return normalizeAWSError(err)
+	}
+	versionID := ""
+	if out != nil && out.VersionId != nil {
+		versionID = *out.VersionId
+	}
+	if versionID == "" || versionID == "null" {
+		// A known version can be removed exactly, including S3's literal null
+		// version. With no returned version ID, cleanup cannot safely target
+		// this write; fail closed and leave reconciliation to the caller.
+		if versionID != "" {
+			_, cleanupErr := s.client.DeleteObject(ctx, &awss3.DeleteObjectInput{
+				Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), VersionId: aws.String(versionID),
+				ExpectedBucketOwner: aws.String(s.owner),
+			})
+			if cleanupErr != nil {
+				return objects.ErrStorageUnavailable
+			}
+		}
 		return objects.ErrStorageUnavailable
 	}
 	if counter.read != ref.Size {
-		input := &awss3.DeleteObjectInput{Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), ExpectedBucketOwner: aws.String(s.owner)}
-		if out != nil {
-			input.VersionId = out.VersionId
+		_, cleanupErr := s.client.DeleteObject(ctx, &awss3.DeleteObjectInput{
+			Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), VersionId: aws.String(versionID),
+			ExpectedBucketOwner: aws.String(s.owner),
+		})
+		if cleanupErr != nil {
+			return objects.ErrStorageUnavailable
 		}
-		_, _ = s.client.DeleteObject(ctx, input)
 		return objects.ErrInvalid
 	}
 	return nil
@@ -80,11 +103,14 @@ func (s *Store) Head(ctx context.Context, id uuid.UUID) (objects.Reference, erro
 	out, err := s.client.HeadObject(ctx, &awss3.HeadObjectInput{
 		Bucket: aws.String(s.bucket), Key: aws.String(s.key(id)), ExpectedBucketOwner: aws.String(s.owner),
 	})
-	if err != nil || out == nil {
-		return objects.Reference{}, objects.ErrNotFound
+	if err != nil {
+		return objects.Reference{}, normalizeAWSError(err)
+	}
+	if out == nil {
+		return objects.Reference{}, objects.ErrStorageUnavailable
 	}
 	ref, err := decodeMetadata(id, out.Metadata)
-	if err != nil || out.VersionId == nil || *out.VersionId == "" || out.ContentLength == nil || *out.ContentLength != ref.Size ||
+	if err != nil || out.VersionId == nil || *out.VersionId == "" || *out.VersionId == "null" || out.ContentLength == nil || *out.ContentLength != ref.Size ||
 		out.ServerSideEncryption != types.ServerSideEncryptionAwsKms ||
 		out.SSEKMSKeyId == nil || *out.SSEKMSKeyId != s.kmsKey {
 		return objects.Reference{}, objects.ErrNotFound
@@ -101,8 +127,11 @@ func (s *Store) Open(ctx context.Context, ref objects.Reference) (io.ReadCloser,
 		Bucket: aws.String(s.bucket), Key: aws.String(s.key(ref.ID)), VersionId: aws.String(ref.VersionID),
 		ExpectedBucketOwner: aws.String(s.owner),
 	})
-	if err != nil || out == nil || out.Body == nil {
-		return nil, objects.ErrNotFound
+	if err != nil {
+		return nil, normalizeAWSError(err)
+	}
+	if out == nil || out.Body == nil {
+		return nil, objects.ErrStorageUnavailable
 	}
 	return out.Body, nil
 }
@@ -116,9 +145,26 @@ func (s *Store) Delete(ctx context.Context, ref objects.Reference) error {
 		ExpectedBucketOwner: aws.String(s.owner),
 	})
 	if err != nil {
-		return objects.ErrStorageUnavailable
+		return normalizeAWSError(err)
 	}
 	return nil
+}
+
+func normalizeAWSError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	var apiError smithy.APIError
+	if errors.As(err, &apiError) {
+		switch apiError.ErrorCode() {
+		case "NoSuchKey", "NoSuchVersion", "NotFound":
+			return objects.ErrNotFound
+		}
+	}
+	return objects.ErrStorageUnavailable
 }
 
 func (s *Store) key(id uuid.UUID) string { return s.prefix + "/" + id.String() }
