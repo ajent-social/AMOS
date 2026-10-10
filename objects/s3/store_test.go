@@ -22,6 +22,8 @@ type fakeClient struct {
 	getInput    *awss3.GetObjectInput
 	deleteInput *awss3.DeleteObjectInput
 	putErr      error
+	putOutput   *awss3.PutObjectOutput
+	putOverride bool
 }
 
 func (f *fakeClient) PutObject(_ context.Context, in *awss3.PutObjectInput, _ ...func(*awss3.Options)) (*awss3.PutObjectOutput, error) {
@@ -32,6 +34,9 @@ func (f *fakeClient) PutObject(_ context.Context, in *awss3.PutObjectInput, _ ..
 	}
 	if f.putErr != nil {
 		return nil, f.putErr
+	}
+	if f.putOverride {
+		return f.putOutput, nil
 	}
 	return &awss3.PutObjectOutput{VersionId: aws.String("version-1")}, nil
 }
@@ -149,4 +154,56 @@ func testID(t *testing.T) uuid.UUID {
 		t.Fatal(err)
 	}
 	return id
+}
+
+func TestStoreRejectsMissingOrNullVersionOnPut(t *testing.T) {
+	workspace, request := testID(t), testID(t)
+	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
+	ref := objects.Reference{ID: testID(t), WorkspaceID: workspace, RequestID: request,
+		ContentType: "application/json", Size: 6, CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	for _, tc := range []struct {
+		name              string
+		output            *awss3.PutObjectOutput
+		wantDeleteVersion string
+	}{{"nil output", nil, ""}, {"missing version", &awss3.PutObjectOutput{}, ""}, {"empty version", &awss3.PutObjectOutput{VersionId: aws.String("")}, ""}, {"null version", &awss3.PutObjectOutput{VersionId: aws.String("null")}, "null"}} {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &fakeClient{putOverride: true, putOutput: tc.output}
+			store, err := New(client, Config{Bucket: "private", Prefix: "exports", ExpectedBucketOwner: "123456789012", KMSKeyID: "key"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = store.Put(context.Background(), ref, bytes.NewReader([]byte("export"))); !errors.Is(err, objects.ErrStorageUnavailable) {
+				t.Fatalf("unversioned put accepted: %v", err)
+			}
+			if tc.wantDeleteVersion == "" {
+				if client.deleteInput != nil {
+					t.Fatalf("unexpected cleanup request: %+v", client.deleteInput)
+				}
+				return
+			}
+			if client.deleteInput == nil || aws.ToString(client.deleteInput.VersionId) != tc.wantDeleteVersion {
+				t.Fatalf("cleanup request = %+v, want version %q", client.deleteInput, tc.wantDeleteVersion)
+			}
+		})
+	}
+}
+
+func TestStoreRejectsMissingOrNullHeadVersion(t *testing.T) {
+	workspace, request := testID(t), testID(t)
+	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
+	ref := objects.Reference{ID: testID(t), WorkspaceID: workspace, RequestID: request,
+		ContentType: "application/json", Size: 6, CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	for _, versionID := range []*string{nil, aws.String(""), aws.String("null")} {
+		client := &fakeClient{headOutput: &awss3.HeadObjectOutput{
+			Metadata: metadata(ref), ContentLength: aws.Int64(ref.Size), VersionId: versionID,
+			ServerSideEncryption: types.ServerSideEncryptionAwsKms, SSEKMSKeyId: aws.String("key"),
+		}}
+		store, err := New(client, Config{Bucket: "private", Prefix: "exports", ExpectedBucketOwner: "123456789012", KMSKeyID: "key"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = store.Head(context.Background(), ref.ID); !errors.Is(err, objects.ErrNotFound) {
+			t.Fatalf("version %v accepted: %v", versionID, err)
+		}
+	}
 }

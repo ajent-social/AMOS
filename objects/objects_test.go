@@ -19,25 +19,24 @@ func (r testPrincipalResolver) ResolvePrincipal(context.Context) (identity.Princ
 	return identity.Principal{}, r.err
 }
 
-type testEvaluator struct {
+type testAuthorizer struct {
 	workspace  identity.ID
-	decision   policy.Decision
 	last       policy.Resource
 	permission string
+	calls      int
+	err        error
 }
 
-func (e *testEvaluator) Evaluate(_ context.Context, _ identity.Principal, resource policy.Resource, req policy.Requirements) policy.Decision {
-	e.last = resource
+func (a *testAuthorizer) AuthorizeCurrent(_ context.Context, _ identity.Principal, resource policy.Resource, req policy.Requirements) error {
+	a.calls++
+	a.last = resource
 	if len(req.Permissions) > 0 {
-		e.permission = req.Permissions[0]
+		a.permission = req.Permissions[0]
 	}
-	if e.decision != nil {
-		return e.decision
+	if resource.WorkspaceID != a.workspace {
+		return ErrForbidden
 	}
-	if resource.WorkspaceID != e.workspace {
-		return policy.Denied{Code: "workspace.denied"}
-	}
-	return policy.Allowed{PolicyRevision: "current", EvaluatedAt: time.Now().UTC(), ExpiresAt: time.Now().Add(time.Minute).UTC()}
+	return a.err
 }
 
 type storedObject struct {
@@ -46,8 +45,9 @@ type storedObject struct {
 }
 
 type memoryStore struct {
-	objects map[identity.ID]storedObject
-	opens   int
+	objects   map[identity.ID]storedObject
+	opens     int
+	headCalls int
 }
 
 func newMemoryStore() *memoryStore { return &memoryStore{objects: make(map[identity.ID]storedObject)} }
@@ -91,9 +91,9 @@ func TestCreateAndOpenRequireCurrentWorkspaceAndRequestState(t *testing.T) {
 	workspace := testID(t)
 	requestID := testID(t)
 	store := newMemoryStore()
-	evaluator := &testEvaluator{workspace: workspace}
+	evaluator := &testAuthorizer{workspace: workspace}
 	service, err := New(Config{
-		Store: store, Evaluator: evaluator, Principals: testPrincipalResolver{},
+		Store: store, Authorizer: evaluator, Principals: testPrincipalResolver{},
 		MaxBytes: 1024, MaxLifetime: 2 * time.Hour, Now: func() time.Time { return now },
 	})
 	if err != nil {
@@ -129,7 +129,7 @@ func TestCreateAndOpenRequireCurrentWorkspaceAndRequestState(t *testing.T) {
 
 	otherWorkspace := testID(t)
 	evaluator.workspace = otherWorkspace
-	if _, body, err = service.Open(context.Background(), ref.ID); !errors.Is(err, ErrForbidden) || body != nil {
+	if _, body, err = service.Open(context.Background(), ref.ID); !errors.Is(err, ErrNotFound) || body != nil {
 		t.Fatalf("cross-workspace object access: body=%v err=%v", body, err)
 	}
 	if store.opens != 1 {
@@ -149,9 +149,9 @@ func TestCreateAndOpenRequireCurrentWorkspaceAndRequestState(t *testing.T) {
 func TestCreateAndOpenFailClosedWhenAuthorityOrStorageIsUnavailable(t *testing.T) {
 	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
 	workspace, requestID := testID(t), testID(t)
-	evaluator := &testEvaluator{workspace: workspace, decision: policy.Unavailable{Code: "policy.current_state_unavailable"}}
+	evaluator := &testAuthorizer{workspace: workspace, err: ErrPolicyUnavailable}
 	store := newMemoryStore()
-	service, err := New(Config{Store: store, Evaluator: evaluator, Principals: testPrincipalResolver{},
+	service, err := New(Config{Store: store, Authorizer: evaluator, Principals: testPrincipalResolver{},
 		MaxBytes: 1024, MaxLifetime: time.Hour, Now: func() time.Time { return now }})
 	if err != nil {
 		t.Fatal(err)
@@ -165,7 +165,7 @@ func TestCreateAndOpenFailClosedWhenAuthorityOrStorageIsUnavailable(t *testing.T
 		t.Fatal("export persisted while authorization was unavailable")
 	}
 
-	defaultResolverService, err := New(Config{Store: store, Evaluator: &testEvaluator{workspace: workspace},
+	defaultResolverService, err := New(Config{Store: store, Authorizer: &testAuthorizer{workspace: workspace},
 		MaxBytes: 1024, MaxLifetime: time.Hour, Now: func() time.Time { return now }})
 	if err != nil {
 		t.Fatal(err)
@@ -181,7 +181,7 @@ func TestCreateRejectsOversizeAndOutOfPolicyExpiry(t *testing.T) {
 	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
 	workspace, requestID := testID(t), testID(t)
 	store := newMemoryStore()
-	service, err := New(Config{Store: store, Evaluator: &testEvaluator{workspace: workspace}, Principals: testPrincipalResolver{},
+	service, err := New(Config{Store: store, Authorizer: &testAuthorizer{workspace: workspace}, Principals: testPrincipalResolver{},
 		MaxBytes: 2, MaxLifetime: time.Hour, Now: func() time.Time { return now }})
 	if err != nil {
 		t.Fatal(err)
@@ -213,8 +213,8 @@ func TestOpenMissingObjectAndDeleteRecheckWorkspace(t *testing.T) {
 	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
 	workspace, requestID := testID(t), testID(t)
 	store := newMemoryStore()
-	evaluator := &testEvaluator{workspace: workspace}
-	service, err := New(Config{Store: store, Evaluator: evaluator, Principals: testPrincipalResolver{},
+	evaluator := &testAuthorizer{workspace: workspace}
+	service, err := New(Config{Store: store, Authorizer: evaluator, Principals: testPrincipalResolver{},
 		MaxBytes: 1024, MaxLifetime: time.Hour, Now: func() time.Time { return now }})
 	if err != nil {
 		t.Fatal(err)
@@ -231,7 +231,7 @@ func TestOpenMissingObjectAndDeleteRecheckWorkspace(t *testing.T) {
 		t.Fatal(err)
 	}
 	evaluator.workspace = testID(t)
-	if err = service.Delete(context.Background(), ref.ID); !errors.Is(err, ErrForbidden) {
+	if err = service.Delete(context.Background(), ref.ID); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("cross-workspace delete: %v", err)
 	}
 	if _, err = store.Head(context.Background(), ref.ID); err != nil {
@@ -247,5 +247,20 @@ func TestOpenMissingObjectAndDeleteRecheckWorkspace(t *testing.T) {
 	}
 	if _, err = store.Head(context.Background(), ref.ID); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("deleted export remains available: %v", err)
+	}
+}
+
+func TestOpenResolvesPrincipalBeforeObjectLookup(t *testing.T) {
+	store := newMemoryStore()
+	service, err := New(Config{Store: store, Authorizer: &testAuthorizer{}, Principals: testPrincipalResolver{err: errors.New("missing principal")},
+		MaxBytes: 1024, MaxLifetime: time.Hour})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, body, err := service.Open(context.Background(), testID(t)); err == nil || body != nil {
+		t.Fatalf("unauthenticated open: body=%v err=%v", body, err)
+	}
+	if store.headCalls != 0 {
+		t.Fatalf("unauthenticated request reached object lookup: calls=%d", store.headCalls)
 	}
 }
