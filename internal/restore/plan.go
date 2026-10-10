@@ -46,13 +46,14 @@ type Plan struct {
 	ArchivePath string
 }
 type Prepared struct {
-	request   Request
-	manifest  backup.Manifest
-	stage     string
-	elapsed   time.Duration
-	mu        sync.Mutex
-	active    bool
-	discarded bool
+	request     Request
+	manifest    backup.Manifest
+	stage       string
+	databaseOID uint32
+	elapsed     time.Duration
+	mu          sync.Mutex
+	active      bool
+	discarded   bool
 }
 type ProviderChecker interface{ CheckCurrentProviderState(context.Context) error }
 
@@ -284,8 +285,12 @@ func Restore(ctx context.Context, r Request) (prepared *Prepared, resultErr erro
 	if _, e = admin.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{stage}.Sanitize()+" WITH ALLOW_CONNECTIONS false"); e != nil {
 		return nil, ErrInvalid
 	}
+	var databaseOID uint32
+	if e = admin.QueryRow(ctx, "SELECT oid FROM pg_database WHERE datname=$1", stage).Scan(&databaseOID); e != nil || databaseOID == 0 {
+		return nil, ErrInvalid
+	}
 	keep = true
-	return &Prepared{request: r, manifest: p.Manifest, stage: stage, elapsed: time.Since(start)}, nil
+	return &Prepared{request: r, manifest: p.Manifest, stage: stage, databaseOID: databaseOID, elapsed: time.Since(start)}, nil
 }
 func fenceDatabaseIfExists(ctx context.Context, admin *pgx.Conn, name string) error {
 	var exists bool
@@ -300,21 +305,24 @@ func fenceDatabaseIfExists(ctx context.Context, admin *pgx.Conn, name string) er
 	}
 	return nil
 }
-func resolveStageName(ctx context.Context, admin *pgx.Conn, stage, target string) (string, error) {
-	if stage == target {
-		return target, nil
-	}
-	var exists bool
-	if err := admin.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", stage).Scan(&exists); err != nil {
+func resolveStageName(ctx context.Context, admin *pgx.Conn, stage, target string, expectedOID uint32) (string, error) {
+	if expectedOID == 0 {
 		return "", ErrActivation
 	}
-	if exists {
-		return stage, nil
+	for _, name := range []string{stage, target} {
+		var oid uint32
+		err := admin.QueryRow(ctx, "SELECT oid FROM pg_database WHERE datname=$1", name).Scan(&oid)
+		if errors.Is(err, pgx.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return "", ErrActivation
+		}
+		if oid == expectedOID {
+			return name, nil
+		}
 	}
-	if err := admin.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname=$1)", target).Scan(&exists); err != nil || !exists {
-		return "", ErrActivation
-	}
-	return target, nil
+	return "", ErrActivation
 }
 func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resultErr error) {
 	if p == nil || checker == nil {
@@ -343,7 +351,7 @@ func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resul
 			resultErr = errors.Join(resultErr, ErrCleanup)
 		}
 	}()
-	resolvedStage, resolveErr := resolveStageName(ctx, admin, p.stage, p.request.Target)
+	resolvedStage, resolveErr := resolveStageName(ctx, admin, p.stage, p.request.Target, p.databaseOID)
 	if resolveErr != nil {
 		return ErrActivation
 	}
@@ -394,7 +402,7 @@ func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resul
 			defer cancel()
 			probe, connectErr := pgx.Connect(resolveCtx, p.request.AdminURL)
 			if connectErr == nil {
-				if resolved, inspectErr := resolveStageName(resolveCtx, probe, p.stage, p.request.Target); inspectErr == nil {
+				if resolved, inspectErr := resolveStageName(resolveCtx, probe, p.stage, p.request.Target, p.databaseOID); inspectErr == nil {
 					p.stage = resolved
 					activeName = resolved
 				}
@@ -435,7 +443,7 @@ func (p *Prepared) Discard(ctx context.Context) (resultErr error) {
 			resultErr = errors.Join(resultErr, ErrCleanup)
 		}
 	}()
-	resolvedStage, resolveErr := resolveStageName(ctx, c, p.stage, p.request.Target)
+	resolvedStage, resolveErr := resolveStageName(ctx, c, p.stage, p.request.Target, p.databaseOID)
 	if resolveErr != nil {
 		return ErrCleanup
 	}

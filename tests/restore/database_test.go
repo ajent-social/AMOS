@@ -359,6 +359,62 @@ func TestDatabaseRestore(t *testing.T) {
 		t.Fatalf("discard renamed restore: %v", err)
 	}
 	assertAbsent(t, ctx, admin, ambiguousTarget)
+
+	// A stale Prepared must never adopt or drop an unrelated database that
+	// later reuses the target name after its private stage disappears.
+	ownedBefore, err := restoreStageNames(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unrelatedTarget := targetName + "_unrelated"
+	unrelatedRequest := restoreRequest
+	unrelatedRequest.Target = unrelatedTarget
+	unrelatedPrepared, err := restore.Restore(ctx, unrelatedRequest)
+	if err != nil {
+		t.Fatalf("prepare unrelated-target restore: %v", err)
+	}
+	ownedAfter, err := restoreStageNames(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ownedStage string
+	for name := range ownedAfter {
+		if !ownedBefore[name] {
+			if ownedStage != "" {
+				t.Fatal("more than one new restore stage was created")
+			}
+			ownedStage = name
+		}
+	}
+	if ownedStage == "" {
+		t.Fatal("unrelated-target restore stage was not discoverable")
+	}
+	if _, err = admin.Exec(ctx, "DROP DATABASE "+pgx.Identifier{ownedStage}.Sanitize()); err != nil {
+		t.Fatalf("remove private stage before target substitution: %v", err)
+	}
+	if _, err = admin.Exec(ctx, "CREATE DATABASE "+pgx.Identifier{unrelatedTarget}.Sanitize()); err != nil {
+		t.Fatalf("create unrelated target: %v", err)
+	}
+	var unrelatedOID uint32
+	if err = admin.QueryRow(ctx, "SELECT oid FROM pg_database WHERE datname=$1", unrelatedTarget).Scan(&unrelatedOID); err != nil {
+		t.Fatal(err)
+	}
+	if err = unrelatedPrepared.Activate(ctx, &checkState{}); !errors.Is(err, restore.ErrActivation) {
+		t.Fatalf("activation adopted unrelated target: %v", err)
+	}
+	if err = unrelatedPrepared.Discard(ctx); !errors.Is(err, restore.ErrCleanup) {
+		t.Fatalf("discard adopted unrelated target: %v", err)
+	}
+	var remainsOID uint32
+	if err = admin.QueryRow(ctx, "SELECT oid FROM pg_database WHERE datname=$1", unrelatedTarget).Scan(&remainsOID); err != nil {
+		t.Fatalf("unrelated target was removed: %v", err)
+	}
+	if remainsOID != unrelatedOID {
+		t.Fatalf("unrelated target identity changed: got OID %d want %d", remainsOID, unrelatedOID)
+	}
+	if _, err = admin.Exec(ctx, "DROP DATABASE "+pgx.Identifier{unrelatedTarget}.Sanitize()); err != nil {
+		t.Fatalf("drop test-owned unrelated target: %v", err)
+	}
 }
 
 func restoreStageNames(ctx context.Context, admin *pgx.Conn) (map[string]bool, error) {
