@@ -34,6 +34,7 @@ import (
 	"github.com/ajent-social/amos/storage"
 	"github.com/ajent-social/amos/ui/authpassword"
 	"github.com/ajent-social/amos/ui/workspaceswitch"
+	workspacectx "github.com/ajent-social/amos/workspace/context"
 	"github.com/google/uuid"
 	"mime"
 )
@@ -54,6 +55,7 @@ type LocalConfig struct {
 	Origin, DatabaseURL, MailDirectory           string
 	MaterialKey, RateKey                         []byte
 	Business                                     func(*storage.DB, *session.Service) ([]Route, error)
+	Billing                                      *LocalBillingConfig
 }
 type Host struct {
 	app       *app.App
@@ -232,6 +234,19 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
+	workspaceResolver, err := workspacectx.New(db, workspacectx.Config{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID})
+	if err != nil {
+		return nil, ErrLocalDependency
+	}
+	billingHandler := unavailableBillingHandler()
+	if cfg.Billing != nil {
+		configuredBilling, err := newLocalBillingHandler(db, pool, sessions, cfg.Billing, cfg)
+		if err != nil {
+			return nil, ErrLocalConfiguration
+		}
+		billingHandler = configuredBilling
+	}
+	billingHandler = sessions.Middleware(workspaceResolver.Middleware(billingHandler))
 	healthHandler, err := health.NewHandler(health.Options{
 		Database:         pool,
 		MigrationCheck:   h.schemaReady,
@@ -240,7 +255,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	shared, err := app.New(app.Options{Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, HealthHandler: healthHandler})
+	shared, err := app.New(app.Options{Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, HealthHandler: healthHandler, Billing: billingHandler})
 	if err != nil {
 		return nil, err
 	}

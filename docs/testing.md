@@ -1,8 +1,11 @@
 # Test harnesses
 
-The current tree has no composed AMOS application routes or product UI. These
-test suites provide real HTTP/browser boundaries through test-only fixtures;
-they do not claim that product endpoints or provider adapters exist.
+The generated application composes identity, workspace, health, and reserved
+billing routes. Billing UI requires explicit server-owned catalog and provider
+configuration; without it, the billing route fails closed as unavailable.
+PostgreSQL-backed HTTP tests exercise the authenticated billing page and
+workspace-scoped subscription projection. These checks do not qualify a live
+provider or deployment.
 
 ## API and database
 
@@ -26,7 +29,13 @@ It fails explicitly if the URL/service is missing.
 ```sh
 psql "$AMOS_TEST_DATABASE_URL" -c 'SELECT version()'
 ./scripts/test-api.sh integration
+go test ./apphost -run '^TestLocalBillingUsesRealSessionAndScopedApplicationCatalog$'
 ```
+
+The billing integration test signs up and verifies a real session, renders
+server-configured catalog choices, and checks that only a fresh confirmed
+subscription projection reveals the configured action. Its provider is a test
+stub; it does not qualify provider behavior.
 
 `./scripts/test-api.sh providers` is a separate opt-in gate. It first requires
 `AMOS_RUN_PROVIDER_TESTS=1`, then fails with an explicit unavailable-suite
@@ -55,9 +64,10 @@ Playwright run and serves a server-rendered synthetic page on loopback.
 
 The wrapper lists the selected tests before execution and fails if the
 selection is empty. `reference`, `initializer`, `generated-app`, `upgrade`,
-and `personal-billing` are reserved suite names from task contracts; each
-exits nonzero until its real product UI and tests exist. Unknown names also
-fail instead of passing an empty suite.
+and `personal-billing` remain reserved browser-suite names; each exits
+nonzero until its dedicated browser journey exists. Billing currently has
+PostgreSQL-backed HTTP session coverage, not a dedicated Playwright journey.
+Unknown names also fail instead of passing an empty suite.
 
 See the [official Playwright installation guide](https://playwright.dev/docs/intro),
 [browser configuration guide](https://playwright.dev/docs/browsers), and

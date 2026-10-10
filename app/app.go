@@ -58,6 +58,7 @@ type BusinessRoutesV1 = runtime.BusinessRoutesV1
 type Options struct {
 	Identity         IdentityHandlers
 	Workspaces       http.Handler
+	Billing          http.Handler
 	Protocol         *ProtocolHandlersV1
 	Business         *BusinessRoutesV1
 	HealthHandler    http.Handler
@@ -95,6 +96,7 @@ func New(options Options) (*App, error) {
 	composed, err := runtime.New(runtime.Options{
 		Identity:         options.Identity,
 		Workspaces:       options.Workspaces,
+		Billing:          options.Billing,
 		Protocol:         options.Protocol,
 		Business:         options.Business,
 		HealthHandler:    options.HealthHandler,
