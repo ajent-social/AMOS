@@ -1,7 +1,7 @@
-# The AMSL build integration currently targets Docker Buildx, which does not match the required Podman reference runner.
+# The accepted T8.1 profile reference maps aws_managed to Fargate x86 and aws_vm to ARM64.
+# The AMSL build integration currently targets Docker Buildx, not this Podman runner.
 # Keep this job composition explicit until a separately qualified upstream alternative exists.
-# Generated job fragment only. Root workflow owns triggers, trusted-ref guards,
-# required-check wiring, release authority, and publication permissions.
+# Root workflow owns triggers, trusted-ref guards, required checks, and release authority.
 jobs:
   build-artifact:
     name: Build and scan OCI artifact
@@ -10,41 +10,63 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout reviewed source
-        run: git checkout --detach "$GITHUB_SHA"
-      - name: Validate build tools and target
+      - name: Fetch exact reviewed source
         env:
-          AMOS_TARGET_PLATFORM: ${{ inputs.artifact_platform }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          case "$AMOS_TARGET_PLATFORM" in linux/amd64|linux/arm64) ;; *) echo "unsupported single target platform" >&2; exit 2 ;; esac
+          source_dir="$(mktemp -d "$RUNNER_TEMP/amos-artifact-source-XXXXXX")"
+          cd "$source_dir"
+          git init
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          git -c protocol.version=2 fetch --depth=1 origin "$GITHUB_SHA"
+          git checkout --detach FETCH_HEAD
+          printf 'AMOS_SOURCE_DIR=%s\n' "$source_dir" >> "$GITHUB_ENV"
+      - name: Build and verify artifact
+        env:
+          AMOS_ARTIFACT_PROFILE: ${{ inputs.artifact_profile }}
+          AMOS_BUILDER_IMAGE: ${{ inputs.artifact_builder_image }}
+          AMOS_RUNTIME_IMAGE: ${{ inputs.artifact_runtime_image }}
+          AMOS_PACKAGE: ${{ inputs.artifact_package }}
+          AMOS_IMAGE_TAG: amos:ci-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          cd "$AMOS_SOURCE_DIR"
+          command -v go >/dev/null
           command -v podman >/dev/null
           command -v syft >/dev/null
           command -v grype >/dev/null
           command -v trivy >/dev/null
-          printf '%s\n' "$AMOS_TARGET_PLATFORM" > .amos-target-platform
-      - name: Build single-platform OCI image
-        env:
-          AMOS_TARGET_PLATFORM: ${{ inputs.artifact_platform }}
-          AMOS_IMAGE_TAG: amos:ci-${{ github.sha }}
-        run: |
-          set -euo pipefail
-          podman build --pull=always --format=oci --platform "$AMOS_TARGET_PLATFORM" \
-            --file .amos/Containerfile --tag "$AMOS_IMAGE_TAG" .
-          test "$(podman image inspect --format '{{.Os}}/{{.Architecture}}' "$AMOS_IMAGE_TAG")" = "$AMOS_TARGET_PLATFORM"
-          test "$(podman image inspect --format '{{.Config.User}}' "$AMOS_IMAGE_TAG")" = "65532:65532"
-      - name: Record image history
-        env:
-          AMOS_IMAGE_TAG: amos:ci-${{ github.sha }}
-        run: podman image history --no-trunc "$AMOS_IMAGE_TAG" > image-history.txt
-      - name: Generate SBOM
-        env:
-          AMOS_IMAGE_TAG: amos:ci-${{ github.sha }}
-        run: syft "$AMOS_IMAGE_TAG" --output cyclonedx-json=sbom.cdx.json
-      - name: Block vulnerable or secret-bearing images
-        env:
-          AMOS_IMAGE_TAG: amos:ci-${{ github.sha }}
-        run: |
-          set -euo pipefail
-          grype "$AMOS_IMAGE_TAG" --fail-on high
-          trivy image --scanners secret --severity HIGH,CRITICAL --exit-code 1 "$AMOS_IMAGE_TAG"
+          runner_dir="$(mktemp -d internal/.artifact-runner-XXXXXX)"
+          trap 'rm -rf "$runner_dir" "$AMOS_SOURCE_DIR"' EXIT
+          cat > "$runner_dir/main.go" <<'GO'
+          package main
+
+          import (
+            "context"
+            "fmt"
+            "os"
+
+            "github.com/ajent-social/amos/internal/artifact"
+          )
+
+          func main() {
+            plan, err := artifact.NewPlan(artifact.Options{
+              Profile: os.Getenv("AMOS_ARTIFACT_PROFILE"),
+              BuilderImage: os.Getenv("AMOS_BUILDER_IMAGE"),
+              RuntimeImage: os.Getenv("AMOS_RUNTIME_IMAGE"),
+              Package: os.Getenv("AMOS_PACKAGE"),
+              Tag: os.Getenv("AMOS_IMAGE_TAG"),
+            })
+            if err == nil {
+              err = plan.BuildAndScan(context.Background(), ".", artifact.ExecRunner{})
+            }
+            if err != nil {
+              fmt.Fprintln(os.Stderr, "artifact build or scan failed")
+              os.Exit(1)
+            }
+          }
+          GO
+          go run "./$runner_dir/main.go"
