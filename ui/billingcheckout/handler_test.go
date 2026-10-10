@@ -3,6 +3,7 @@ package billingcheckout
 import (
 	"context"
 	"errors"
+	checkoutapi "github.com/ajent-social/amos/billing/checkout"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -122,7 +123,7 @@ func TestReturnQueryCannotForgePaidProjection(t *testing.T) {
 func TestStartRejectsPriceOutsideCurrentCatalog(t *testing.T) {
 	service := &fixtureService{payment: PaymentView{State: StatePending}}
 	handler := newFixtureHandler(t, service)
-	request := httptest.NewRequest(http.MethodPost, "/billing/checkout/start", strings.NewReader("_csrf=csrf-fixture&price_key=forged& idempotency_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+	request := httptest.NewRequest(http.MethodPost, "/billing/start-checkout", strings.NewReader("_csrf=csrf-fixture&price_key=forged& idempotency_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
@@ -138,7 +139,7 @@ func TestStartRedirectStoresScopedIntentAndRequiresAllowedHTTPSHost(t *testing.T
 	}
 	handler := newFixtureHandler(t, service)
 	body := "_csrf=csrf-fixture&price_key=basic-month&idempotency_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-	request := httptest.NewRequest(http.MethodPost, "/billing/checkout/start", strings.NewReader(body))
+	request := httptest.NewRequest(http.MethodPost, "/billing/start-checkout", strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
@@ -151,7 +152,7 @@ func TestStartRedirectStoresScopedIntentAndRequiresAllowedHTTPSHost(t *testing.T
 	}
 
 	service.start.RedirectURL = "https://evil.example.test/session"
-	request = httptest.NewRequest(http.MethodPost, "/billing/checkout/start", strings.NewReader(body))
+	request = httptest.NewRequest(http.MethodPost, "/billing/start-checkout", strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recorder = httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
@@ -171,12 +172,12 @@ func TestCheckoutRetryFormReusesCSRFAndIdempotencyAfterAmbiguousOrInvalidResult(
 			handler := newFixtureHandler(t, service)
 			key := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 			body := "_csrf=csrf-fixture&price_key=basic-month&idempotency_key=" + key
-			request := httptest.NewRequest(http.MethodPost, "/billing/checkout/start", strings.NewReader(body))
+			request := httptest.NewRequest(http.MethodPost, "/billing/start-checkout", strings.NewReader(body))
 			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			recorder := httptest.NewRecorder()
 			handler.ServeHTTP(recorder, request)
 			if recorder.Code != http.StatusServiceUnavailable ||
-				!strings.Contains(recorder.Body.String(), "/billing/checkout/start") ||
+				!strings.Contains(recorder.Body.String(), "/billing/start-checkout") ||
 				!strings.Contains(recorder.Body.String(), "Check payment status again") {
 				t.Fatalf("retry form did not retain checkout and return actions: status %d body %s", recorder.Code, recorder.Body.String())
 			}
@@ -191,7 +192,7 @@ func TestCheckoutRetryFormReusesCSRFAndIdempotencyAfterAmbiguousOrInvalidResult(
 				t.Fatalf("ambiguous return intent was not retained: %#v", cookies)
 			}
 			retryBody := "_csrf=" + retryCSRF + "&price_key=" + retryPrice + "&idempotency_key=" + retryKey
-			retry := httptest.NewRequest(http.MethodPost, "/billing/checkout/start", strings.NewReader(retryBody))
+			retry := httptest.NewRequest(http.MethodPost, "/billing/start-checkout", strings.NewReader(retryBody))
 			retry.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			retry.AddCookie(cookies[0])
 			retried := httptest.NewRecorder()
@@ -204,15 +205,32 @@ func TestCheckoutRetryFormReusesCSRFAndIdempotencyAfterAmbiguousOrInvalidResult(
 	}
 }
 
-func TestLegacyCheckoutJSONRouteDoesNotCaptureFormUIAction(t *testing.T) {
-	service := &fixtureService{}
-	handler := newFixtureHandler(t, service)
-	request := httptest.NewRequest(http.MethodPost, "/billing/checkout", strings.NewReader("_csrf=csrf-fixture&price_key=basic-month&idempotency_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
+func TestCheckoutStartUsesNonCollidingRouteOnIntegratedMux(t *testing.T) {
+	service := &fixtureService{start: CheckoutResult{State: "redirect", IntentID: fixtureIntent, RedirectURL: "https://checkout.example.test/session"}}
+	uiHandler := newFixtureHandler(t, service)
+	mux := http.NewServeMux()
+	mux.Handle("/billing/checkout/", &checkoutapi.Handler{})
+	mux.Handle("/", uiHandler)
+
+	page := httptest.NewRecorder()
+	mux.ServeHTTP(page, httptest.NewRequest(http.MethodGet, "/billing", nil))
+	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), "/billing/start-checkout") {
+		t.Fatalf("billing form did not use a route outside the JSON API prefix: status %d body %s", page.Code, page.Body.String())
+	}
+
+	body := "_csrf=csrf-fixture&price_key=basic-month&idempotency_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	request := httptest.NewRequest(http.MethodPost, "/billing/start-checkout", strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusNotFound || service.starts != 0 {
-		t.Fatalf("legacy route unexpectedly consumed UI form: status %d starts %d", recorder.Code, service.starts)
+	mux.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusSeeOther || recorder.Header().Get("Location") != service.start.RedirectURL || service.starts != 1 {
+		t.Fatalf("integrated mux did not route form POST to UI: status %d location %q starts %d", recorder.Code, recorder.Header().Get("Location"), service.starts)
+	}
+
+	colliding := httptest.NewRecorder()
+	mux.ServeHTTP(colliding, httptest.NewRequest(http.MethodPost, "/billing/checkout/start", strings.NewReader(body)))
+	if colliding.Code != http.StatusMethodNotAllowed || service.starts != 1 {
+		t.Fatalf("JSON API prefix unexpectedly routed to UI: status %d starts %d", colliding.Code, service.starts)
 	}
 }
 
@@ -220,7 +238,7 @@ func TestUnknownCheckoutOutcomeCanBeManuallyReconciled(t *testing.T) {
 	service := &fixtureService{start: CheckoutResult{State: "unknown", IntentID: fixtureIntent}, payment: PaymentView{State: StateUnknown}}
 	handler := newFixtureHandler(t, service)
 	body := "_csrf=csrf-fixture&price_key=basic-month&idempotency_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-	request := httptest.NewRequest(http.MethodPost, "/billing/checkout/start", strings.NewReader(body))
+	request := httptest.NewRequest(http.MethodPost, "/billing/start-checkout", strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
