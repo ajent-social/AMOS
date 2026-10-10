@@ -699,6 +699,41 @@
       "Evidence is limited to memory storage and Pulumi mocks. Live S3, KMS/IAM, lifecycle, host-loss durability, hosted CI, deployment, and remote-to-local restore integration are not established."
     ]
   },
+  "T6.5": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Checkout UI merged in PR #95 as 34434e6c007c1617dfd4923c5671957689e9bdef; independent exact-head review cleared 2828ca49da88478e07fc1ddfcaf1bf4cdfbb7677.",
+      "Scoped normal and race tests, vet, lint, browser fixture, Prettier, formatting, diff checks, and public-artifact scan passed on the reviewed source.",
+      "Executable application composition and production checkout-service adapter remain open under issue #99; provider and production behavior are not qualified."
+    ]
+  },
+  "T9.4": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Podman build and scan source merged in PR #92 as c1801d75c6ccde6de7790c9d872a4ecc2e8a3431 after independent review; focused tests, race, vet, and public-artifact scan passed.",
+      "Required artifact runtime/scanner evidence remains open under issue #91. Available Podman is linux/arm64, while the frozen profile requires linux/amd64; cross-architecture emulation is not qualified."
+    ]
+  },
+  "T10.10": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Restore component source merged in PR #90 as c0641ef72c38bb9fc0798fab21b27f65d39ca4d1 after independent review; focused tests, race, and PostgreSQL integration passed.",
+      "Typed recovery-secret inventory and fail-closed availability validation before target creation remain open under issue #89; no approved provider contract or live secret availability check is claimed."
+    ]
+  },
+  "T1.13": {
+    "status": "IN_PROGRESS",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Object service and S3 adapter merged in PR #98 as cc043d1104447b9b4b60354f2e69497345b01979; independent exact-head source review cleared commit 494cfb5745cacc8258ebd79ea72b7dbdd883b7e6 and tree bd660ad4cb7414d2a9a70147e7f6478075f1babb.",
+      "Go 1.27.1 focused tests, race tests, vet, formatting, diff checks, and scoped public-artifact scan passed for ./objects and ./objects/s3.",
+      "Production transaction-bound authorization and executable lifecycle wiring remain open under issue #96; no live S3 qualification is claimed.",
+      "Safe recovery for successful Put responses without a usable VersionId remains open under issue #97."
+    ]
+  },
   "T8.3": {
     "status": "ACCEPTED",
     "certification": "REVIEWED",
