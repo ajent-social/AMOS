@@ -38,6 +38,7 @@ var reservedRoots = []string{"/signin", "/signout", "/signup", "/auth", "/verify
 type Options struct {
 	Identity         IdentityHandlers
 	Workspaces       http.Handler
+	Billing          http.Handler
 	Protocol         *ProtocolHandlersV1
 	Business         *BusinessRoutesV1
 	HealthHandler    http.Handler
@@ -101,6 +102,7 @@ type Runtime struct {
 	business         []pathRoute
 	businessExact    map[string]http.Handler
 	protocol         map[string]http.Handler
+	billing          http.Handler
 	home             http.Handler
 	routesFrozen     bool
 	healthHandler    http.Handler
@@ -131,7 +133,7 @@ func New(opts Options) (*Runtime, error) {
 	if err != nil {
 		return nil, err
 	}
-	runtime := &Runtime{identity: routes, business: business, home: home, businessExact: make(map[string]http.Handler), protocol: protocol, healthHandler: opts.HealthHandler, checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}
+	runtime := &Runtime{identity: routes, business: business, home: home, businessExact: make(map[string]http.Handler), protocol: protocol, billing: opts.Billing, healthHandler: opts.HealthHandler, checks: append([]func(context.Context) error(nil), opts.ReadinessChecks...), readinessTimeout: opts.ReadinessTimeout, shutdownTimeout: opts.ShutdownTimeout}
 	for _, candidate := range business {
 		if candidate.wildcard {
 			continue
@@ -367,8 +369,15 @@ func normalizePath(raw string, registration bool) (string, error) {
 	return decoded, nil
 }
 
+func isBillingPath(path string) bool {
+	return path == "/billing" || strings.HasPrefix(path, "/billing/")
+}
+
 func isReserved(path string) bool {
 	lower := strings.ToLower(path)
+	if isBillingPath(lower) {
+		return true
+	}
 	for _, root := range reservedRoots {
 		if lower == root || strings.HasPrefix(lower, root+"/") {
 			return true
@@ -451,13 +460,21 @@ func (r *Runtime) selectRoute(req *http.Request) selectedRoute {
 		return selected
 	}
 	selected.path = path
-	if raw != path && (isProtocolPath(path) || r.matchesBusinessPath(path)) {
+	if raw != path && (isProtocolPath(path) || isBillingPath(path) || r.matchesBusinessPath(path)) {
 		selected.aliasError = true
 		return selected
 	}
 	if path == "/healthz" || path == "/readyz" {
 		selected.health = true
 		selected.template = path
+		return selected
+	}
+	if isBillingPath(path) {
+		r.mu.RLock()
+		selected.handler = r.billing
+		r.mu.RUnlock()
+		selected.template = path
+		selected.reserved = selected.handler == nil
 		return selected
 	}
 	if isReserved(path) {

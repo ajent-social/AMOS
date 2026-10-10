@@ -56,3 +56,43 @@ func TestFiniteFederationCallbackComposition(t *testing.T) {
 		}
 	}
 }
+
+func TestBillingRoutesAreReservedFromBusinessRegistration(t *testing.T) {
+	runtime, err := New(Options{ReadinessTimeout: time.Second, ShutdownTimeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+	for _, path := range []string{"/billing", "/billing/start-checkout", "/BILLING/portal", "/billing/*"} {
+		if err := runtime.Register(http.MethodPost, path, handler); err != ErrReservedRoute {
+			t.Errorf("Register(%q) error=%v want %v", path, err, ErrReservedRoute)
+		}
+	}
+}
+
+func TestReservedBillingHandlerComposition(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Billing-Test-Path", r.URL.Path)
+		w.WriteHeader(http.StatusNoContent)
+	})
+	runtime, err := New(Options{Billing: handler, ReadinessTimeout: time.Second, ShutdownTimeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"/billing", "/billing/checkout", "/billing/start-checkout"} {
+		response := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodPost, "http://example.test"+path, nil)
+		request.RequestURI = path
+		runtime.ServeHTTP(response, request)
+		if response.Code != http.StatusNoContent || response.Header().Get("X-Billing-Test-Path") != path {
+			t.Fatalf("%s: status=%d handler_path=%q", path, response.Code, response.Header().Get("X-Billing-Test-Path"))
+		}
+	}
+	response := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "http://example.test/billing", nil)
+	req.RequestURI = "/%62illing"
+	runtime.ServeHTTP(response, req)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("encoded reserved billing path status=%d want 400", response.Code)
+	}
+}
