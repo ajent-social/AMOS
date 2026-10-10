@@ -96,8 +96,8 @@ func NewRequestBuilder(config Config) (*RequestBuilder, error) {
 			return nil, fmt.Errorf("invalid or reserved public route prefix %q: %w", candidate.PublicPrefix, ErrInvalidRequest)
 		}
 		upstreamPrefix, err := canonicalConfiguredPrefix(candidate.UpstreamPrefix)
-		if err != nil {
-			return nil, fmt.Errorf("invalid upstream route prefix %q: %w", candidate.UpstreamPrefix, ErrInvalidRequest)
+		if err != nil || isReservedPath(upstreamPrefix) {
+			return nil, fmt.Errorf("invalid or reserved upstream route prefix %q: %w", candidate.UpstreamPrefix, ErrInvalidRequest)
 		}
 		if len(candidate.Methods) == 0 {
 			return nil, fmt.Errorf("route %q has no allowed methods: %w", publicPrefix, ErrInvalidRequest)

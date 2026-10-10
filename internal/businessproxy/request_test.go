@@ -390,6 +390,11 @@ func TestNewRequestBuilderRejectsUnsafeOrAmbiguousConfiguration(t *testing.T) {
 		{"empty origin query marker", func(c *Config) { c.Origin = "https://business.invalid?" }},
 		{"no routes", func(c *Config) { c.Routes = nil }},
 		{"reserved public route", func(c *Config) { c.Routes[0].PublicPrefix = "/billing" }},
+		{"reserved upstream root", func(c *Config) { c.Routes[0].UpstreamPrefix = "/admin" }},
+		{"reserved upstream billing root", func(c *Config) { c.Routes[0].UpstreamPrefix = "/billing" }},
+		{"case-insensitive reserved upstream root", func(c *Config) { c.Routes[0].UpstreamPrefix = "/v1/ADMIN" }},
+		{"sensitive upstream segment", func(c *Config) { c.Routes[0].UpstreamPrefix = "/v1/internal/keys" }},
+		{"identity upstream segment", func(c *Config) { c.Routes[0].UpstreamPrefix = "/v1/identity/tokens" }},
 		{"overlapping route prefixes", func(c *Config) {
 			c.Routes = append(c.Routes, Route{PublicPrefix: "/business/people", UpstreamPrefix: "/v2/people", Methods: []string{http.MethodGet}})
 		}},
