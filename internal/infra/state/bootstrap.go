@@ -240,6 +240,9 @@ func validateBootstrapArgs(args BootstrapArgs) error {
 	if args.StateWriterPrincipal == args.RecoveryPrincipal {
 		return fmt.Errorf("state writer and recovery principals must be distinct")
 	}
+	if args.KeyAdministrator == args.StateWriterPrincipal || args.KeyAdministrator == args.RecoveryPrincipal {
+		return fmt.Errorf("key administrator must be distinct from state writer and recovery principals")
+	}
 	return nil
 }
 
@@ -452,8 +455,8 @@ func bucketPolicy(bucketARN, stateRoleARN, recoveryRoleARN, prefix string) (stri
 		"Version": "2012-10-17",
 		"Statement": []map[string]any{
 			{"Sid": "DenyInsecureTransport", "Effect": "Deny", "Principal": "*", "Action": "s3:*", "Resource": []string{bucketARN, bucketARN + "/*"}, "Condition": map[string]any{"Bool": map[string]string{"aws:SecureTransport": "false"}}},
-			{"Sid": "DenyListingByOtherPrincipals", "Effect": "Deny", "Principal": "*", "Action": "s3:ListBucket", "Resource": bucketARN, "Condition": outsideRoles},
-			{"Sid": "DenyStateObjectsByOtherPrincipals", "Effect": "Deny", "Principal": "*", "Action": []string{"s3:GetObject", "s3:PutObject", "s3:DeleteObject"}, "Resource": bucketARN + "/" + prefix + "/*", "Condition": outsideRoles},
+			{"Sid": "DenyListingByOtherPrincipals", "Effect": "Deny", "Principal": "*", "Action": []string{"s3:ListBucket", "s3:ListBucketVersions"}, "Resource": bucketARN, "Condition": outsideRoles},
+			{"Sid": "DenyStateObjectsByOtherPrincipals", "Effect": "Deny", "Principal": "*", "Action": []string{"s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject", "s3:DeleteObjectVersion"}, "Resource": bucketARN + "/" + prefix + "/*", "Condition": outsideRoles},
 		},
 	})
 }
