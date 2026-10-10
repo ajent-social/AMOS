@@ -3,7 +3,6 @@ package proxycontract
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -48,9 +47,8 @@ func readProxyProfile(t *testing.T) proxyProfile {
 }
 
 func validateProxyProfile(p proxyProfile) error {
-	u, err := url.Parse(p.Origin)
-	if err != nil || u.Scheme != "https" || u.Hostname() != "business.internal.invalid" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
-		return fmt.Errorf("origin must be the fixed HTTPS private profile origin")
+	if p.Origin != "https://business.internal.invalid" {
+		return fmt.Errorf("origin must exactly match the fixed HTTPS private profile origin")
 	}
 	if p.Reachability != "private-only" || p.TLS != "verified-mutual-tls" || p.TrustBootstrap != "deployment-pinned-private-ca-reference" || p.ClientIdentity != "deployment-bound-reference" {
 		return fmt.Errorf("private reachability and authenticated TLS identity are required")
@@ -86,6 +84,8 @@ func TestProxyProfile(t *testing.T) {
 			p.TargetSource = "request"
 			p.RequestTargetOverride = true
 		},
+		"alternate origin path":       func(p *proxyProfile) { p.Origin = "https://business.internal.invalid/other" },
+		"alternate origin port":       func(p *proxyProfile) { p.Origin = "https://business.internal.invalid:8443" },
 		"missing audience binding":    func(p *proxyProfile) { p.Audience = "" },
 		"unsigned client identity":    func(p *proxyProfile) { p.Identity = "client-provided-unsigned" },
 		"unbounded identity lifetime": func(p *proxyProfile) { p.MaxTokenSeconds = 61 },
