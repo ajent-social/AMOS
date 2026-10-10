@@ -413,7 +413,7 @@ func TestGuideFiniteTopicsReferencesAndRawPreflight(t *testing.T) {
 		if len(elements(n, "form")) != 1 || attribute(elements(n, "form")[0], "method") != "get" || len(elements(fields(n, "topic")[0], "option")) != 5 {
 			t.Fatal("guide ordinary finite selection form missing")
 		}
-		if topic == guide.OwnerDraft && (!strings.Contains(textContent(n), "not been saved or sent") || !strings.Contains(textContent(n), "Saving is unavailable in this read-only baseline")) {
+		if topic == guide.OwnerDraft && (!strings.Contains(textContent(n), "This preview has not been saved or sent.") || !strings.Contains(textContent(n), "Saving is unavailable in this read-only baseline") || strings.Contains(textContent(n), "explicitly save a draft after review")) {
 			t.Fatal("guide preview did not clearly state that it is unsaved and cannot be saved here")
 		}
 	}
