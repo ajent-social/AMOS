@@ -128,7 +128,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.URL.Path == "/billing" && r.Method == http.MethodGet:
 		h.showBilling(w, r)
-	case r.URL.Path == "/billing/checkout" && r.Method == http.MethodPost:
+	case r.URL.Path == "/billing/checkout/start" && r.Method == http.MethodPost:
 		h.start(w, r)
 	case r.URL.Path == "/billing/return" && r.Method == http.MethodGet:
 		h.showReturn(w, r)
@@ -164,7 +164,7 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 	}
 	view, err := h.service.Page(r.Context(), r)
 	if err != nil || validatePage(view) != nil {
-		h.render(w, http.StatusServiceUnavailable, model{Title: "Billing unavailable", Heading: "Billing is temporarily unavailable", Notice: "Your billing details could not be loaded. Please try again shortly.", Unavailable: true})
+		h.renderStartRetry(w, r, http.StatusServiceUnavailable, "Your billing details could not be loaded. Retry checkout with the same request key.", fields, checkoutIntent(r))
 		return
 	}
 	choice, found := findChoice(view.Choices, fields["price_key"])
@@ -173,11 +173,15 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := h.service.StartCheckout(r.Context(), r, choice.PriceKey, fields["idempotency_key"])
+	intentID := checkoutIntent(r)
+	if validIntentID(result.IntentID) {
+		intentID = result.IntentID
+		h.setIntent(w, intentID)
+	}
 	if err != nil || !validCheckoutResult(result, h.hosts) {
-		h.render(w, http.StatusServiceUnavailable, model{Title: "Checkout status unknown", Heading: "Checkout status needs checking", Notice: stateMessage(StateUnknown), State: StateUnknown})
+		h.renderStartRetry(w, r, http.StatusServiceUnavailable, "Checkout status is unknown. Retry with the same request key to safely recover the result.", fields, intentID)
 		return
 	}
-	h.setIntent(w, result.IntentID)
 	if result.State == "redirect" {
 		http.Redirect(w, r, result.RedirectURL, http.StatusSeeOther)
 		return
@@ -189,7 +193,26 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 	if result.State == "failed" {
 		state = StateFailed
 	}
-	h.render(w, http.StatusAccepted, model{Title: "Checkout status", Heading: "Checkout status", Notice: stateMessage(state), State: state, HasRetry: state == StateUnknown || state == StatePending})
+	h.render(w, http.StatusAccepted, model{
+		Title: "Checkout status", Heading: "Checkout status", Notice: stateMessage(state), State: state,
+		CSRF: fields["_csrf"], HasRetry: state == StateUnknown || state == StatePending,
+	})
+}
+
+func (h *Handler) renderStartRetry(w http.ResponseWriter, r *http.Request, status int, notice string, fields map[string]string, intentID string) {
+	// Reuse the submitted CSRF token and idempotency key after an ambiguous
+	// outcome so a retry recovers the original provider operation.
+	csrf := fields["_csrf"]
+	if csrf == "" {
+		csrf, _ = h.check.Token(r)
+	}
+	hasIntent := validIntentID(intentID)
+	h.render(w, status, model{
+		Title: "Checkout status unknown", Heading: "Checkout status needs checking", Notice: notice,
+		State: StateUnknown, CSRF: csrf, HasRetry: hasIntent && csrf != "",
+		HasStartRetry: csrf != "" && idempotencyPattern.MatchString(fields["idempotency_key"]),
+		RetryPriceKey: fields["price_key"], RetryKey: fields["idempotency_key"],
+	})
 }
 
 func (h *Handler) showReturn(w http.ResponseWriter, r *http.Request) {
@@ -480,6 +503,9 @@ type model struct {
 	IdempotencyKey string
 	HasChoices     bool
 	HasRetry       bool
+	HasStartRetry  bool
+	RetryPriceKey  string
+	RetryKey       string
 	Unavailable    bool
 	ActionPath     string
 }
@@ -490,8 +516,9 @@ const pageHTML = `<!doctype html>
 <main id="main-content"><h1>{{.Heading}}</h1>{{if .Payer}}<p>Active workspace payer: <strong>{{.Payer}}</strong></p>{{end}}{{if .Notice}}<p id="payment-notice" role="{{if .Unavailable}}alert{{else}}status{{end}}" aria-live="polite">{{.Notice}}</p>{{end}}
 {{if and .Current.Plan (eq .Current.State "paid")}}<section aria-labelledby="current-plan"><h2 id="current-plan">Current plan</h2><p>{{.Current.Plan}} &middot; {{.Current.Currency}} {{price .Current.AmountMinor}} / {{if eq .Current.State "paid"}}active{{else}}checking{{end}}</p></section>{{end}}
 {{if .ActionPath}}<p><a class="button" href="{{.ActionPath}}">Continue to your paid workspace</a></p>{{end}}
-{{if .HasChoices}}<form action="/billing/checkout" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="idempotency_key" value="{{.IdempotencyKey}}"><fieldset><legend>Available plans</legend>{{range .Choices}}<label><input type="radio" name="price_key" value="{{.PriceKey}}" required>{{.Plan}} &middot; {{.Currency}} {{price .AmountMinor}} / {{.Interval}}</label>{{end}}</fieldset><button type="submit">Continue to secure checkout</button></form>{{end}}
+{{if .HasChoices}}<form action="/billing/checkout/start" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="idempotency_key" value="{{.IdempotencyKey}}"><fieldset><legend>Available plans</legend>{{range .Choices}}<label><input type="radio" name="price_key" value="{{.PriceKey}}" required>{{.Plan}} &middot; {{.Currency}} {{price .AmountMinor}} / {{.Interval}}</label>{{end}}</fieldset><button type="submit">Continue to secure checkout</button></form>{{end}}
 {{if .HasRetry}}<form action="/billing/return/retry" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><button type="submit">Check payment status again</button></form>{{end}}
+{{if .HasStartRetry}}<form action="/billing/checkout/start" method="post"><input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="price_key" value="{{.RetryPriceKey}}"><input type="hidden" name="idempotency_key" value="{{.RetryKey}}"><button type="submit">Retry checkout safely</button></form>{{end}}
 {{if .State}}<p id="payment-state" data-state="{{.State}}">{{.State}}</p><p id="payment-details" aria-live="polite"></p>{{if .HasRetry}}<section id="payment-poll" data-url="/billing/return/status" data-attempts="6" aria-live="polite"></section>{{end}}{{end}}
 </main><script>
 (() => {
