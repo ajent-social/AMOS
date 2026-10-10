@@ -237,20 +237,34 @@ func Restore(ctx context.Context, r Request) (prepared *Prepared, resultErr erro
 		return nil, ErrInvalid
 	}
 	stage := "amos_restore_" + hex.EncodeToString(rb[:])
-	if _, e = admin.Exec(ctx, "CREATE DATABASE "+pgx.Identifier{stage}.Sanitize()); e != nil {
-		return nil, ErrInvalid
-	}
-	if _, e = admin.Exec(ctx, "REVOKE CONNECT ON DATABASE "+pgx.Identifier{stage}.Sanitize()+" FROM PUBLIC"); e != nil {
-		return nil, ErrInvalid
-	}
 	keep := false
 	defer func() {
 		if !keep {
 			cc, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			_, _ = admin.Exec(cc, "DROP DATABASE IF EXISTS "+pgx.Identifier{stage}.Sanitize())
+			stageName := pgx.Identifier{stage}.Sanitize()
+			if _, fenceErr := admin.Exec(cc, "ALTER DATABASE "+stageName+" WITH ALLOW_CONNECTIONS false"); fenceErr != nil {
+				resultErr = errors.Join(resultErr, ErrCleanup)
+			}
+			if _, cleanupErr := admin.Exec(cc, "DROP DATABASE IF EXISTS "+stageName); cleanupErr != nil {
+				resultErr = errors.Join(resultErr, ErrCleanup)
+			}
 		}
 	}()
+	// Keep the stage unreachable from the instant PostgreSQL creates it. The
+	// cleanup defer is already armed in case CREATE DATABASE commits but its
+	// response is lost or the request context is canceled.
+	if _, e = admin.Exec(ctx, "CREATE DATABASE "+pgx.Identifier{stage}.Sanitize()+" WITH ALLOW_CONNECTIONS false"); e != nil {
+		return nil, ErrInvalid
+	}
+	if _, e = admin.Exec(ctx, "REVOKE CONNECT ON DATABASE "+pgx.Identifier{stage}.Sanitize()+" FROM PUBLIC"); e != nil {
+		return nil, ErrInvalid
+	}
+	// The restore connection is the database owner. Re-enable connections only
+	// after public access is revoked; cleanup fences and drops this private stage.
+	if _, e = admin.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{stage}.Sanitize()+" WITH ALLOW_CONNECTIONS true"); e != nil {
+		return nil, ErrInvalid
+	}
 	if e = runRestore(ctx, r, stage, archive, dir); e != nil {
 		return nil, errors.Join(ErrIncompatible, errors.New("pg_restore execution failed"))
 	}
@@ -300,9 +314,6 @@ func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resul
 			resultErr = errors.Join(resultErr, ErrCleanup)
 		}
 	}()
-	if _, e = admin.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{p.stage}.Sanitize()+" WITH ALLOW_CONNECTIONS true"); e != nil {
-		return ErrActivation
-	}
 	activeName := p.stage
 	activated := false
 	defer func() {
@@ -315,6 +326,11 @@ func (p *Prepared) Activate(ctx context.Context, checker ProviderChecker) (resul
 			resultErr = errors.Join(resultErr, ErrCleanup)
 		}
 	}()
+	// Arm the fence cleanup before enabling connections. An ambiguous DDL
+	// response must leave the restored database inaccessible on return.
+	if _, e = admin.Exec(ctx, "ALTER DATABASE "+pgx.Identifier{p.stage}.Sanitize()+" WITH ALLOW_CONNECTIONS true"); e != nil {
+		return ErrActivation
+	}
 	u, e := dbURL(p.request.AdminURL, p.stage)
 	if e != nil {
 		return ErrActivation

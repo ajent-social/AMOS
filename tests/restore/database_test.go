@@ -50,7 +50,7 @@ func TestDatabaseRestore(t *testing.T) {
 	if _, err = admin.Exec(ctx, "CREATE DATABASE "+pgx.Identifier{sourceName}.Sanitize()); err != nil {
 		t.Fatal(err)
 	}
-	defer dropDB(sourceName)
+	t.Cleanup(func() { dropDB(sourceName) })
 	sourceURL := databaseURL(t, raw, sourceName)
 
 	registry, err := migrations.Core()
