@@ -413,8 +413,8 @@ func TestGuideFiniteTopicsReferencesAndRawPreflight(t *testing.T) {
 		if len(elements(n, "form")) != 1 || attribute(elements(n, "form")[0], "method") != "get" || len(elements(fields(n, "topic")[0], "option")) != 5 {
 			t.Fatal("guide ordinary finite selection form missing")
 		}
-		if topic == guide.OwnerDraft && !strings.Contains(textContent(n), "not been saved or sent") {
-			t.Fatal("guide preview claimed a send/save")
+		if topic == guide.OwnerDraft && (!strings.Contains(textContent(n), "not been saved or sent") || !strings.Contains(textContent(n), "Saving is unavailable in this read-only baseline")) {
+			t.Fatal("guide preview did not clearly state that it is unsaved and cannot be saved here")
 		}
 	}
 	for _, change := range []func(*guide.Selection){func(s *guide.Selection) { s.Sources[0].SHA256 = strings.Repeat("0", 64) }, func(s *guide.Selection) { s.Sources = nil }, func(s *guide.Selection) { s.Sources[0].Body = strings.Repeat("a", 65537) }, func(s *guide.Selection) { s.Cases[0].Title = "\xff" }, func(s *guide.Selection) { s.Sources = append(s.Sources, s.Sources[0]) }} {
