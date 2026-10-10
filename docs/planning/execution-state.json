@@ -687,5 +687,16 @@
       "Landed-source checks on an isolated Linux host with Go 1.27.1 passed: named contract test (valid baseline plus seven negative subtests), package race test, vet, gofmt check, diff check, and Go 1.27-compatible golangci-lint with zero issues.",
       "Accepted the evidence schema and policy helper only. Cryptographic signature verification, release workflow, hosted CI, provider qualification, and deployment are not established; release acceptance remains separate."
     ]
+  },
+  "T10.8": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "PR #87 merged by rebase at eb97198ba294812316f1d8d988d9198339c1b4c2; merged source contains independently reviewed candidate tree b3302548e53ddea1000c4dd8bfb22b94d0ee6bdc.",
+      "Independent exact-tree review cleared the scoped runtime/restore S3 and KMS permissions, returned checksum/version checks, manifest-last publication, and backup format/scope contract.",
+      "Landed-source local checks with Go 1.27.1 passed for both owned packages: normal and race tests, vet, gofmt, diff check, and compatible golangci-lint with zero issues.",
+      "A disposable IAM mutation replacing kms:GenerateDataKey with kms:Decrypt failed as expected; restored source matched byte-for-byte and the test passed.",
+      "Evidence is limited to memory storage and Pulumi mocks. Live S3, KMS/IAM, lifecycle, host-loss durability, hosted CI, deployment, and remote-to-local restore integration are not established."
+    ]
   }
 }
