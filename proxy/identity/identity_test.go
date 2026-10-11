@@ -408,9 +408,13 @@ func tamperSignature(t *testing.T, token string) string {
 	return strings.Join(parts, ".")
 }
 
-func mustSigner(t *testing.T, keyID string, key ed25519.PrivateKey, now func() time.Time) *Signer {
+func mustSigner(t *testing.T, keyID string, example ed25519.PrivateKey, now func() time.Time) *Signer {
 	t.Helper()
-	signer, err := NewSigner(SignerConfig{Key: SigningKey{ID: keyID, PrivateKey: key}, Now: now})
+	signingKey := SigningKey{
+		ID:         keyID,
+		PrivateKey: example,
+	}
+	signer, err := NewSigner(SignerConfig{Key: signingKey, Now: now})
 	if err != nil {
 		t.Fatal(err)
 	}

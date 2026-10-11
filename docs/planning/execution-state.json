@@ -794,7 +794,8 @@
       "Disposable negative mutation removed the method/path path-equality guard; TestVerifierRejectsWrongAudienceRequestAndSignature failed on the wrong-path assertion as expected. The source was restored byte-for-byte and the focused package, race and vet checks passed afterward.",
       "Independent exact-head review and landed verification are pending. Component boundary only: application route wiring, key distribution/storage, mutual-TLS identity, intended-origin resolution/pinning and live-service qualification remain separate and unclaimed.",
       "golangci-lint was unavailable in the environment; no lint success is claimed.",
-      "The first independent exact-head review found P2 gaps for nested percent-encoded paths and user-ID identity-header aliases. Both were fixed with regression cases; disposable mutations disabling each fix caused its regression test to fail, then source was restored byte-for-byte. The updated candidate passed scoped normal/race tests, vet, module verification and diff checks. Follow-up exact-head review is pending."
+      "The first independent exact-head review found P2 gaps for nested percent-encoded paths and user-ID identity-header aliases. Both were fixed with regression cases; disposable mutations disabling each fix caused its regression test to fail, then source was restored byte-for-byte. The updated candidate passed scoped normal/race tests, vet, module verification and diff checks. Follow-up exact-head review is pending.",
+      "The repository public-artifact checker passed for all changed files after the ephemeral test-key helper was made explicit to its heuristic; no credentials or private locators are present."
     ]
   }
 }
