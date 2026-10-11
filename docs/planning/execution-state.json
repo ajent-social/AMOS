@@ -783,5 +783,17 @@
       "Focused and full package tests, race test, vet, golangci-lint (0 issues), gofmt, diff check, and scoped public-artifact scan passed in the task worktree.",
       "Live proxy wiring, private DNS/TLS/mTLS, and provider qualification remain separate."
     ]
+  },
+  "T2.9": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "The isolated signer/verifier adapter binds EdDSA assertions to the fixed issuer/audience, identity and authorization references, key ID, HTTP method/path, 60-second lifetime and mandatory atomic replay store. Caller identity headers are stripped before verified identity reaches the handler.",
+      "Scoped go test ./proxy/identity -count=1, go test -race ./proxy/identity -count=1, go vet ./proxy/identity, go mod verify, gofmt and git diff --check passed. A local HTTP transport test rejects forged and wrong-path assertions before the handler.",
+      "Key-rotation tests accept an old key only within the configured overlap, accept the new key, reject post-retirement assertions and enforce the overlap cutoff. Stale, future, overlong, wrong-audience and replayed assertions are rejected.",
+      "Disposable negative mutation removed the method/path path-equality guard; TestVerifierRejectsWrongAudienceRequestAndSignature failed on the wrong-path assertion as expected. The source was restored byte-for-byte and the focused package, race and vet checks passed afterward.",
+      "Independent exact-head review and landed verification are pending. Component boundary only: application route wiring, key distribution/storage, mutual-TLS identity, intended-origin resolution/pinning and live-service qualification remain separate and unclaimed.",
+      "golangci-lint was unavailable in the environment; no lint success is claimed."
+    ]
   }
 }
