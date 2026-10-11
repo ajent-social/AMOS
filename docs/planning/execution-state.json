@@ -786,16 +786,17 @@
   },
   "T2.9": {
     "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "certification": "REVIEWED",
     "evidence": [
       "The isolated signer/verifier adapter binds EdDSA assertions to the fixed issuer/audience, identity and authorization references, key ID, HTTP method/path, 60-second lifetime and mandatory atomic replay store. Caller identity headers are stripped before verified identity reaches the handler.",
       "Scoped go test ./proxy/identity -count=1, go test -race ./proxy/identity -count=1, go vet ./proxy/identity, go mod verify, gofmt and git diff --check passed. A local HTTP transport test rejects forged and wrong-path assertions before the handler.",
       "Key-rotation tests accept an old key only within the configured overlap, accept the new key, reject post-retirement assertions and enforce the overlap cutoff. Stale, future, overlong, wrong-audience and replayed assertions are rejected.",
       "Disposable negative mutation removed the method/path path-equality guard; TestVerifierRejectsWrongAudienceRequestAndSignature failed on the wrong-path assertion as expected. The source was restored byte-for-byte and the focused package, race and vet checks passed afterward.",
-      "Independent exact-head review and landed verification are pending. Component boundary only: application route wiring, key distribution/storage, mutual-TLS identity, intended-origin resolution/pinning and live-service qualification remain separate and unclaimed.",
+      "The reviewed signer/verifier adapter is merged as PR #111. Application-route wiring, key distribution/storage, a production atomic replay-store implementation, mutual-TLS identity, intended-origin resolution/pinning and live-service qualification remain separate; T2.9 remains in progress until its integration acceptance gates are met.",
       "golangci-lint was unavailable in the environment; no lint success is claimed.",
-      "The first independent exact-head review found P2 gaps for nested percent-encoded paths and user-ID identity-header aliases. Both were fixed with regression cases; disposable mutations disabling each fix caused its regression test to fail, then source was restored byte-for-byte. The updated candidate passed scoped normal/race tests, vet, module verification and diff checks. Follow-up exact-head review is pending.",
-      "The repository public-artifact checker passed for all changed files after the ephemeral test-key helper was made explicit to its heuristic; no credentials or private locators are present."
+      "Independent exact-head review passed at base 7b98181c1ca7d1cad7a8bb659dc110e81cf2c384 and head ead2be02e8e3b92043d314153c94567ac17e082e. The reviewer found and verified fixes for nested percent-encoded paths and identity-header aliases; disposable mutations made both regression checks fail as expected, then source was restored byte-for-byte.",
+      "The repository public-artifact checker passed for all changed files after the ephemeral test-key helper was made explicit to its heuristic; no credentials or private locators are present.",
+      "PR #111 merged by rebase as commit 741f6def876c9f21b0f8ac2c31319843747460ec with tree b72174545ad63d460b21658b8427e03a69b79f52. The changed files match the reviewed head. Fresh landed go test/race for proxy/identity, vet, go mod verify, gofmt, diff check and changed-path public-artifact scan passed. GitHub reported no checks and main was unprotected; local verification was the gate."
     ]
   }
 }
