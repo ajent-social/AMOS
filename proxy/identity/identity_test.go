@@ -267,7 +267,7 @@ func TestMiddlewareDeniesBeforeHandlerAndRemovesCallerIdentityHeaders(t *testing
 	called := false
 	handler := verifier.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
-		if r.Header.Get(AssertionHeader) != "" || r.Header.Get("X-AMOS-Subject") != "" || r.Header.Get("X-Forwarded-User") != "" {
+		if r.Header.Get(AssertionHeader) != "" || r.Header.Get("X-AMOS-Subject") != "" || r.Header.Get("X-Forwarded-User") != "" || r.Header.Get("X-Authenticated-User-ID") != "" || r.Header.Get("X-Remote-User-ID") != "" {
 			t.Error("identity headers reached the private handler")
 		}
 		identity, ok := IdentityFromContext(r.Context())
@@ -280,6 +280,8 @@ func TestMiddlewareDeniesBeforeHandlerAndRemovesCallerIdentityHeaders(t *testing
 	request.Header.Set(AssertionHeader, assertion)
 	request.Header.Set("X-AMOS-Subject", "forged-person")
 	request.Header.Set("X-Forwarded-User", "forged@example.invalid")
+	request.Header.Set("X-Authenticated-User-ID", "forged-admin")
+	request.Header.Set("X-Remote-User-ID", "forged-admin")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	if response.Code != http.StatusNoContent || !called {
@@ -305,6 +307,8 @@ func TestSetAssertionHeaderReplacesCallerSuppliedIdentity(t *testing.T) {
 		"X-Forwarded-Groups":        []string{"caller-groups"},
 		"X-Authenticated-Email":     []string{"caller-email"},
 		"X-Remote-Groups":           []string{"caller-remote-groups"},
+		"X-Authenticated-User-ID":   []string{"caller-admin"},
+		"X-Remote-User-ID":          []string{"caller-admin"},
 		"X-Other":                   []string{"preserved"},
 	}
 	if err := SetAssertionHeader(headers, "server-token"); err != nil {
@@ -313,7 +317,7 @@ func TestSetAssertionHeaderReplacesCallerSuppliedIdentity(t *testing.T) {
 	if got := headers.Get(AssertionHeader); got != "server-token" {
 		t.Fatalf("assertion header = %q", got)
 	}
-	for _, name := range []string{"X-AMOS-Subject", "X-Forwarded-User", "X-Auth-Request-User", "X-Forwarded-Groups", "X-Authenticated-Email", "X-Remote-Groups"} {
+	for _, name := range []string{"X-AMOS-Subject", "X-Forwarded-User", "X-Auth-Request-User", "X-Forwarded-Groups", "X-Authenticated-Email", "X-Remote-Groups", "X-Authenticated-User-ID", "X-Remote-User-ID"} {
 		if got := headers.Get(name); got != "" {
 			t.Errorf("caller identity header %s remains: %q", name, got)
 		}
@@ -324,7 +328,7 @@ func TestSetAssertionHeaderReplacesCallerSuppliedIdentity(t *testing.T) {
 }
 
 func TestRequestBindingRejectsAmbiguousPaths(t *testing.T) {
-	for _, value := range []string{"relative", "/a/../b", "/a/%2f/b", "/a//b", "/a?query=1", "/a\\b", "/a/%zz"} {
+	for _, value := range []string{"relative", "/a/../b", "/a/%2f/b", "/a%252fb", "/a%252e%252e/b", "/a%255cb", "/a//b", "/a?query=1", "/a\\b", "/a/%zz"} {
 		if validBinding(RequestBinding{Method: http.MethodGet, Path: value}) {
 			t.Errorf("ambiguous path accepted: %q", value)
 		}

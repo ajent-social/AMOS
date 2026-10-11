@@ -342,18 +342,33 @@ func StripCallerIdentityHeaders(headers http.Header) {
 		"x-amos-scopes":                  {},
 		"x-amos-authorization-decision":  {},
 		"x-authenticated-user":           {},
+		"x-authenticated-user-id":        {},
 		"x-authenticated-email":          {},
 		"x-authenticated-groups":         {},
 		"x-auth-request-user":            {},
+		"x-auth-request-user-id":         {},
 		"x-auth-request-email":           {},
 		"x-auth-request-groups":          {},
 		"x-forwarded-user":               {},
+		"x-forwarded-user-id":            {},
+		"x-forwarded-remote-user":        {},
 		"x-forwarded-email":              {},
 		"x-forwarded-preferred-username": {},
 		"x-forwarded-groups":             {},
 		"x-remote-user":                  {},
+		"x-remote-user-id":               {},
 		"x-remote-email":                 {},
 		"x-remote-groups":                {},
+		"x-original-user":                {},
+		"x-original-user-id":             {},
+		"x-original-email":               {},
+		"x-original-groups":              {},
+		"x-user":                         {},
+		"x-user-id":                      {},
+		"x-user-email":                   {},
+		"x-user-groups":                  {},
+		"x-email":                        {},
+		"x-groups":                       {},
 		"remote-user":                    {},
 	}
 	for name := range headers {
@@ -451,7 +466,7 @@ func validPath(value string) bool {
 		return false
 	}
 	decoded, err := url.PathUnescape(value)
-	if err != nil || !utf8.ValidString(decoded) || strings.ContainsAny(decoded, "?#\\") || strings.Contains(decoded, "//") {
+	if err != nil || !utf8.ValidString(decoded) || strings.ContainsAny(decoded, "?#\\") || strings.Contains(decoded, "//") || containsEscapedOctet(decoded) {
 		return false
 	}
 	for _, segment := range strings.Split(decoded, "/") {
@@ -460,6 +475,19 @@ func validPath(value string) bool {
 		}
 	}
 	return (&url.URL{Path: decoded}).EscapedPath() == value
+}
+
+func containsEscapedOctet(value string) bool {
+	for i := 0; i+2 < len(value); i++ {
+		if value[i] == '%' && isHexDigit(value[i+1]) && isHexDigit(value[i+2]) {
+			return true
+		}
+	}
+	return false
+}
+
+func isHexDigit(value byte) bool {
+	return value >= '0' && value <= '9' || value >= 'a' && value <= 'f' || value >= 'A' && value <= 'F'
 }
 
 func isHTTPTokenRune(r rune) bool {

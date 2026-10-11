@@ -19,8 +19,8 @@ production implementation. Replay-store errors fail closed. During rotation,
 old public keys may remain trusted for at most 24 hours after retirement; the
 private key and public-key distribution remain deployment responsibilities.
 
-`StripCallerIdentityHeaders` removes the identity headers AMOS recognizes at the
-external boundary. `SetAssertionHeader` replaces them with the server-generated
+`StripCallerIdentityHeaders` removes the recognized proxy identity names and common
+identity aliases supplied at the external boundary. `SetAssertionHeader` replaces them with the server-generated
 assertion. `Middleware` consumes the assertion, removes it before the handler,
 and exposes verified claims through `IdentityFromContext`.
 
