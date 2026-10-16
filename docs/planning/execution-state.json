@@ -515,7 +515,8 @@
       "Browser flow covers signup, explicit email confirmation, invalid-link guidance, sign-in, personal todos, sign-out, reset, Back navigation, spent-link revisit and native stale-form proof resubmission rejection. Original and reset password outcomes verify the stale request did not change the password.",
       "The browser resubmission case reconstructs the previously rendered form after Back; it does not claim the browser restored that form from history. Original origin/referrer failures and worker guard mutations were observed before corrected passing checks.",
       "Accepted as a UI component. Native host/generator shipping is a separate batch; live mail, subscriptions, organizations, cloud deployment and complete release qualification remain separate.",
-      "Supplemental consumer sign-in return-policy repair: design PR #116 adopted; actual PostgreSQL/race/browser and validation evidence in docs/evidence/auth-return-policy-20261016.md. Independent source review/merge/landed checks pending. Historical password UI acceptance and broader product qualification unchanged."
+      "Supplemental consumer sign-in return-policy repair: design PR #116 adopted; actual PostgreSQL/race/browser and validation evidence in docs/evidence/auth-return-policy-20261016.md. Independent source review approved; PR #117 landed at 97679c97983993f5fdb500481702f6bdf62e1aa9 with reviewed-tree equality, fresh 75-check scoped race/vet and two browser checks passing. Historical password UI acceptance and broader product qualification unchanged.",
+      "Supplemental safe signup/signin HEAD dispatch: independent exact-head source review approved the bounded page-binding repair; seven actual App/NewLocal PostgreSQL checks and affected vet/changed-code lint passed. Delivery evidence in docs/tasks/T6.3-HEAD-ROUTES.md; merge/landed verification pending. No callback or mutation policy change."
     ]
   },
   "T5.8": {
