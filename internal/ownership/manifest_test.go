@@ -121,6 +121,21 @@ func TestManifestRejectReclassification(t *testing.T) {
 	}
 }
 
+func TestManifestFrozenBusinessAuthoredRoots(t *testing.T) {
+	for _, p := range []string{"business/operations/handler.go", "business/types/domain.go", "BUSINESS/OPERATIONS/handler.go", "Business/Types/domain.go"} {
+		for _, class := range []Class{Generated, CopiedOnce} {
+			t.Run(p+"/"+string(class), func(t *testing.T) {
+				in := fixture()
+				in.Files[0].Path = p
+				in.Files[0].Class = class
+				if got, err := Render(in); !errors.Is(err, ErrAuthored) || got != nil {
+					t.Fatalf("frozen authored root reclassified: %v", err)
+				}
+			})
+		}
+	}
+}
+
 func TestManifestBaselineResolution(t *testing.T) {
 	tests := map[string]func(*Input){
 		"missing template":         func(in *Input) { in.TemplateBaselineSHA256 = strings.Repeat("b", 64) },
