@@ -55,3 +55,13 @@ Requested batch ceiling10; one coherent local component delivered alongside
 independent disjoint work. Inherited model/settings preserved; exact cost/token
 telemetry unavailable. Final independent source review, guarded merge and fresh
 landed checks remain required; no hosted CI or acceleration claim.
+
+## Component landing
+
+Independent exact-head review approvedd5ca5cecda12869ca3386353ce42710e9a2d60c4
+againstf6c3f40bc211865d5132fe09551161cb0db10392, including all seven files and
+continued IN_PROGRESS task status. PR #125 rebased to
+0f48cd28b44f0257b2b10715f188b9821f0711e5; entire reviewed/landed trees match
+and main reachability is verified. Fresh landed full scoped race/vet passed11
+named checks with zero skips. Own task claim released after this bounded
+component handoff; full source/aggregate admission and task acceptance remain open.

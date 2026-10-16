@@ -458,3 +458,13 @@ parameterized local generator/evaluator, closed finite artifacts, missing/stale
 semantics and disabled notification boundary. Explicit owner input does not
 prove collection, authorization or deployed service targets. Independent design
 landing precedes scoped generator/CLI source; no external sends or deployment.
+
+## Proposed amendment v1.31: separate upstream deployment configuration
+
+[ADR045](../adr/045-isolated-upstream-configuration.md) and the
+[upstream service contract](../contracts/upstream-service.md) freeze T14.13's
+closed declared account/identity/storage/budget configuration and exact-key
+validator. The first supported profile rejects declared consumer-account reuse
+and public/raw quarantine; actual isolation and inventory completeness remain
+separate. Independent design/schema landing precedes dependent intake source.
+No deployment, credential access, collection, provenance or transmission added.
