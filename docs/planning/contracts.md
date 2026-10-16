@@ -411,3 +411,13 @@ source. Original T3.5 acceptance and its retained ownership are unchanged.
 The move to `IssueForRequestTx` explicitly adopts its duplicate configured-cookie
 rejection, mapped through existing generic503/no-output handling; the previous
 first-cookie selection is not promised for this bounded repair.
+
+## Proposed amendment v1.26: optional native auth presentation
+
+[ADR 040](../adr/040-native-auth-presentation.md) and the
+[auth presentation contract](../contracts/auth-presentation.md) add optional
+copied brand text and validated application-local assets to the native password
+pages and local host. Native credential, challenge, Origin/CSRF, redirect and
+nil-theme behavior remain intact. Independent design review and landing precede
+the scoped T6.14 supplemental source repair. This grants no production host,
+workspace authority or replacement-renderer qualification.
