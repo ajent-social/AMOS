@@ -861,7 +861,16 @@
       "Proposed v1.33/ADR047 freezes finite private SDK, inherited local sampling, actual verified-mTLS continuation and one-attempt authenticated binary OTLP/HTTP over TLS1.3 HTTP/1.1. Original two-file ownership expanded explicitly by integrator. Independent design landing precedes source; full acceptance requires actual restricted TLS RuntimeDB fixture and complete App/database/backend/collector proof.",
       "Optional bounded source and public composition independently approved at ea18777eeb792bdca29444fe036f47da072eb893 against design780d91b. Fresh exact-candidate DGX race checks passed257 named tests/subtests, zero failures/skips: full telemetry/observability, App/runtime/storage, focused host ownership and full external consumer.",
       "Actual development DB and TLS/restricted-role RuntimeDB, verified mTLS backend and authenticated decoded OTLP/HTTP collector prove the finite graph and privacy boundary locally. Both compiled queue-backpressure and missing-storage-span mutations produced RED; exact restored source passed GREEN. Scoped vet/lint passed with zero issues.",
-      "All changed public paths pass unchanged artifact scanner. Whole-checkout scan remains red with61 exactly unchanged baseline findings; follow-up135 and independent scoped exception recorded. No full apphost/browser, external provider, collector deployment, hosted CI, production or release qualification. See docs/evidence/bounded-tracing-20261016.md."
+      "All changed public paths pass unchanged artifact scanner. Whole-checkout scan remains red with61 exactly unchanged baseline findings; follow-up135 and independent scoped exception recorded. No full apphost/browser, external provider, collector deployment, hosted CI, production or release qualification. See docs/evidence/bounded-tracing-20261016.md.",
+      "PR136 guarded-rebase merged a5a91377bc26c14750782f9643a662ba3eb87ae5; full landed tree equals independently approved a592672c2f5d0a3faef20c30211318c62e338487. Fresh isolated landed exact257-check race selection passed with zero failures/skips and clean checkout. Original owned claim released; existing LAN trial unchanged and tracing not enabled on it."
+    ]
+  },
+  "T10.9": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependencies T10.8/T10.4 accepted; integrator won original T10.9 claim. Readiness audit found missing durable schedule/freshness and executable storage adapter contract. Design review and landing precede source.",
+      "No production backup.ObjectWriter implementation or schedule-wide durable lease/publication ledger exists. Archive-only/duplicate/uncertain upload must never advance freshness; snapshot age and remote publication time are distinct. Existing source/mocks do not qualify live S3/KMS/IAM, deployment or recovery."
     ]
   }
 }

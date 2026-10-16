@@ -120,3 +120,15 @@ exact restoration must pass. Preserve actual source/race/vet/lint and public-saf
 checks, independent final review, guarded merge and fresh landed CLI verification.
 Synthetic measurements do not qualify live providers, real collection, delivery,
 SLO/RPO achievement, production deployment or E16 release.
+
+
+## v1.34 scheduled-backup adapter clarification
+
+For the actual durable scheduler adapter, a successfully completed backup timestamp
+is the original data snapshot time of a backup whose remote archive and manifest
+were acknowledged and whose success was committed under the current database
+fence. Publication completion time is retained separately and must never replace
+the snapshot time in the RPO age calculation. A recently uploaded old snapshot
+therefore remains old. Existing rule IDs, measurement names and hold semantics
+are preserved; caller-supplied sample files remain evaluator inputs, not proof of
+a genuine backup. Source wiring follows independently landed v1.34 design.

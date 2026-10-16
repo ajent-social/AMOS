@@ -489,3 +489,18 @@ continuation requires actual verified mTLS and cannot establish application
 authority. Real PostgreSQL, restricted TLS runtime role, backend and decoded
 collector wire proof precede source acceptance. Independent design landing
 precedes delegated source. No default collector, deployment or provider selected.
+
+
+## Proposed amendment v1.34: scheduled backup publication and data freshness
+
+[ADR048](../adr/048-backup-scheduling.md) and the
+[backup scheduling contract](../contracts/backup-scheduling.md) freeze a standalone
+owner-configured runner, separate operational PostgreSQL ledger, distinct database
+credential authorities and actual manifest-last publication through a dedicated
+write-only AWS adapter. Only current fenced database completion after verified
+archive/manifest acknowledgements records success. Fresh attempts never reuse IDs;
+partial, duplicate, late or uncertain effects cannot advance freshness. The backup
+alert uses the successfully published snapshot's data timestamp, retaining remote
+acknowledgement time separately. Generated VM/ECS invocation assets do not activate
+scheduling or qualify providers. Independent design landing precedes source; root
+retains opt-in migration ordering, module files and aggregate ownership.
