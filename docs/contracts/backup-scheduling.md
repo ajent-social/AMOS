@@ -1,7 +1,8 @@
 # Scheduled backup publication and freshness
 
-Proposed amendment v1.34, T10.9. Independent design review and landing precede
-source dispatch. This composes accepted T10.7/T10.8 backup source with actual
+Adopted amendment v1.35, T10.9. Initial source dispatch followed the independently
+landed v1.34 design in PR137. The v1.35 service-compatibility correction is adopted
+separately before final source integration; source acceptance remains pending. This composes accepted T10.7/T10.8 backup source with actual
 PostgreSQL scheduling and the separate T10.6 backup signal. It does not qualify
 AWS operation, install a scheduler, deliver notifications or establish an RPO.
 
@@ -150,7 +151,10 @@ syntax and unsupported versions before typed decoding can silently discard them.
 Durations use explicit strings, not implicit nanoseconds. BackupInterval is an
 integer number of minutes, between1minute and7days; it must satisfy existing
 opsconfig validation. An explicit total attempt deadline is positive and at most
-1hour. Dump/upload limits are positive and their sum plus15seconds cleanup reserve
+1hour. Structural validity does not guarantee runtime credential admission: the
+pinned IMDS credential provider caps returned expiry at one hour, so a one-hour
+attempt plus cleanup cannot pass that provider's remaining-lifetime check. This
+fails closed; shorter budgets and actual captured expiry remain mandatory. Dump/upload limits are positive and their sum plus15seconds cleanup reserve
 must fit that deadline. MaxBytes is positive and at most the existing Store5GiB
 limit. Bound modules to64 entries with128-byte versions. Require an explicit
 MaxRetainedAttempts between1 and4096 per stream, as described below. Require
@@ -591,7 +595,12 @@ Scheduler-role permission artifacts scope `ecs:RunTask` to the exact correspondi
 task-definition revision with exact `ecs:cluster` condition, and `iam:PassRole`
 to only that task's explicit task/execution roles with
 `iam:PassedToService=ecs-tasks.amazonaws.com`. Their scheduler trust is limited
-to the Scheduler service with the selected source account and exact schedule ARN.
+to the Scheduler service with the selected source account and exact declared
+schedule-group ARN. The owner must reserve and qualify that group for the selected
+backup schedules and restrict who can create schedules/pass these roles there.
+AWS supplies a group ARN, not an individual schedule ARN, in this trust condition;
+see [Scheduler confused-deputy guidance](https://docs.aws.amazon.com/scheduler/latest/UserGuide/cross-service-confused-deputy-prevention.html).
+Individual invocation permissions remain scoped to each exact task definition.
 Deployment pass-role for these scheduler roles is a separate owner deploy grant,
 never runtime runner authority. Do not add broad resource/pass-role patterns,
 role assumption, task-definition registration, bucket creation or deploy privilege.

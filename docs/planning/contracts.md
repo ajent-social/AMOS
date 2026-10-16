@@ -504,3 +504,17 @@ alert uses the successfully published snapshot's data timestamp, retaining remot
 acknowledgement time separately. Generated VM/ECS invocation assets do not activate
 scheduling or qualify providers. Independent design landing precedes source; root
 retains opt-in migration ordering, module files and aggregate ownership.
+
+
+## Adopted amendment v1.35: compatible backup trigger declarations
+
+T10.9 retains v1.34's separate operational database, fenced publication and
+explicit runtime identities. Scheduler execution-role trust uses the exact
+selected schedule-group ARN and source account, rather than a schedule ARN,
+following [AWS's service-specific guidance](https://docs.aws.amazon.com/scheduler/latest/UserGuide/cross-service-confused-deputy-prevention.html).
+The owner must reserve/qualify the group and its creation/pass-role controls.
+Exact task-definition invocation and task/execution pass-role permissions remain
+unchanged. No wildcard trust, deployment or provider qualification is added.
+The scheduled-only Go Request.IsolatedClientEnvironment option isolates dump
+child HOME/authentication files while preserving legacy default/object formats.
+Root explicitly delegates this minimal Create change to the scheduling author.
