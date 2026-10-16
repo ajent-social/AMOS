@@ -190,8 +190,10 @@ App server→outbound client→private backend server, all with one trace ID. A
 transaction's private child context stays inside WithTx; no new transaction API
 is required.
 
-`Transport(i)` returns only the owned HTTPS RoundTripper for a configured index;
-invalid/unlisted destinations fail before any network operation. Clone the request
+`Transport(i)` returns the same cached owned HTTPS RoundTripper for a configured
+index, with at most16 destination transports per tracer; repeated calls share
+its connection/admission limits rather than allocating independent pools.
+Invalid/unlisted destinations fail before any network operation. Clone the request
 and header map. Require HTTPS, exact configured URL authority, matching/empty
 Request.Host, no userinfo, fragment or opaque URL; caller data cannot select the
 dial target. Strip every case variant/value of traceparent/tracestate/baggage, then
