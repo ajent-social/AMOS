@@ -870,7 +870,9 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Dependencies T10.8/T10.4 accepted; integrator won original T10.9 claim. Readiness audit found missing durable schedule/freshness and executable storage adapter contract. Design review and landing precede source.",
-      "No production backup.ObjectWriter implementation or schedule-wide durable lease/publication ledger exists. Archive-only/duplicate/uncertain upload must never advance freshness; snapshot age and remote publication time are distinct. Existing source/mocks do not qualify live S3/KMS/IAM, deployment or recovery."
+      "No production backup.ObjectWriter implementation or schedule-wide durable lease/publication ledger exists. Archive-only/duplicate/uncertain upload must never advance freshness; snapshot age and remote publication time are distinct. Existing source/mocks do not qualify live S3/KMS/IAM, deployment or recovery.",
+      "Design PR137 landed e2022cc. Source remains in progress: root operational migration/grants, read-only snapshot-to-alert input and offline VM/managed trigger graph passed84 named local race checks, zero failures/skips. Exact-group Scheduler trust correction reviewed against AWS requirements. Actual Create/publication/CLI graph, final exact-head independent approval and landed verification remain pending; no task acceptance, provider qualification, scheduling activation or deployment inferred.",
+      "Source independently approved52c6640f952519aba5a2da2b811232f12cf1e641. Full affected five-package integrated210 named local race checks0fail0skip; host readiness1 and final boundary regressions2 pass; scoped vet/lint pass. Actual TLS dump-to-SDK fixture-to-reader graph, real next-slot partial failure preservation, compiled CLI read-only checks and offline external public-recipe compilation proved. Both compiled negative mutations RED/exactrestoreGREEN. PR138 adopted compatible v1.35 at728f309 before final integration. Source merge/fresh landed verification pending, so status stays IN_PROGRESS; no provider/install/restore/release qualification. See docs/evidence/backup-scheduling-20261016.md and explicit scanner exceptions."
     ]
   }
 }

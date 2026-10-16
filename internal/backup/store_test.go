@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 type memoryObject struct {
@@ -362,5 +363,43 @@ func TestStoreRejectsUnsafeConfigurationAndIdentifier(t *testing.T) {
 	store := newTestStore(t, client)
 	if _, err := store.VerifyComplete(context.Background(), client, "../other"); !errors.Is(err, ErrInvalidStoreRequest) {
 		t.Fatalf("unsafe ID error = %v", err)
+	}
+}
+
+// Real regular-file pre-upload hashing must observe cancellation before any PUT.
+func TestStoreCancellationDuringArchiveHash(t *testing.T) {
+	client := newMemoryObjectClient()
+	store, err := NewStore(client, "private-backups", "installations/test", "arn:aws:kms:us-east-1:123456789012:key/test", 128<<20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir, m := makeStoreFixture(t, "hash-cancel")
+	f, err := os.OpenFile(filepath.Join(dir, "database.dump"), os.O_WRONLY, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = f.Truncate(64 << 20); err != nil {
+		t.Fatal(err)
+	}
+	if err = f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	m.ArchiveBytes = 64 << 20
+	data, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(filepath.Join(dir, "manifest.json"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() { defer close(done); time.Sleep(time.Millisecond); cancel() }()
+	started := time.Now()
+	_, err = store.Upload(ctx, dir, m)
+	<-done
+	if !errors.Is(err, context.Canceled) || len(client.putKeys) != 0 || time.Since(started) > 3*time.Second {
+		t.Fatal("pre-upload hashing failed bounded cancellation")
 	}
 }
