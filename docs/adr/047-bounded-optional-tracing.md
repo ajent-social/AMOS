@@ -17,10 +17,15 @@ A private root sampling decision is inherited by all local children. Trusted
 unsampled parents may narrow it; incoming sampled bits cannot increase it. The outbound transport
 uses copied explicit trust/client identity and pinned-IP authority binding.
 
-The worker uses a direct pinned OTLP protobuf/gRPC client, one deadline-bounded
-connection per batch, closed after the attempt, with bounded response size and
-no ambient exporter or idle reconnect activity. A standalone OTLP/gRPC collector
-fixture proves authenticated wire behavior;
+The worker sends pinned binary OTLP protobuf by explicit TLS1.3 HTTP/1.1
+`POST /v1/traces`, with a dedicated bearer header. A fresh one-dial transport per
+batch disables keep-alive, HTTP/2, compression, redirects and retries; request and
+response sizes and the complete attempt deadline are bounded. Close every attempt
+rather than retaining idle reconnect state. Only a complete200/protobuf success
+acknowledgement counts as exported; ambiguous/partial responses are dropped, with
+no durable or exactly-once claim. The business outbound channel retains mTLS.
+This uses existing pinned protobuf1.11.0 and no ambient SDK exporter or dependency
+upgrade. An actual authenticated TLS HTTP collector fixture proves wire behavior;
 collector operation and production retention/deployment remain separate. Immediate
 queue admission, one-attempt bounded export and bounded shutdown make exporter
 outage a numeric diagnostic failure instead of an application dependency. These

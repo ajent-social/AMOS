@@ -68,8 +68,8 @@ or unsupported configuration with generic errors that omit supplied values.
 
 ## Private SDK and fixed observation vocabulary
 
-Use the already pinned OpenTelemetry Go SDK1.45.0, gRPC1.83.2 and OTLP protobuf
-1.11.0. No version change or auto-instrumentation dependency. Construct a private
+Use the already pinned OpenTelemetry Go SDK1.45.0 and OTLP protobuf1.11.0.
+The existing gRPC1.83.2 pin is unchanged but is not used for collector transport. No version change or auto-instrumentation dependency. Construct a private
 SDK provider with explicit fixed resource and span limits, never global setters,
 global providers, global propagators, default detectors or an SDK batch exporter.
 The owned nonblocking processor/worker described below is the sole export path.
@@ -216,7 +216,12 @@ never buffer arbitrary response bodies for tracing. Do not claim streaming suppo
 
 ## Authenticated collector and bounded failure behavior
 
-Initial wire protocol is OTLP/gRPC ExportTraceServiceRequest, not OTLP/HTTP.
+Initial wire protocol is binary OTLP/HTTP over explicit TLS1.3 HTTP/1.1:
+`POST /v1/traces`, `Content-Type: application/x-protobuf`, using the pinned
+ExportTraceServiceRequest/ExportTraceServiceResponse protobuf messages. The
+[official OTLP/HTTP specification](https://opentelemetry.io/docs/specs/otlp/#otlphttp)
+permits HTTP/1.1 and this binary encoding. Do not change the pinned protobuf1.11.0
+version or infer a protocol-version upgrade from the current specification.
 Authority is a canonical lowercase TLS DNS name or canonical literal IP with an
 explicit numeric port1–65535, maximum253 hostname bytes; no scheme, userinfo,
 path, query, fragment, zone, ambiguous spelling or control/whitespace. DialIP is
@@ -225,23 +230,41 @@ this authority only. These same authority/dial rules apply to outbound destinati
 No default target or permission to deploy/provision follows from accepting config.
 
 The collector connection is private, TLS minimum1.3, copied explicit CA roots,
-normal configured-authority validation, exact pinned-IP context dialer, no DNS,
-proxy or system trust. Supply exactly the dedicated bearer authorization metadata
-from config, never application credentials. No ambient metadata, forwarded caller
-headers, resolver fallback, credential callback, global error handler or raw error
-log. Use a private direct OTLP protobuf/gRPC client, never an ambient-configured SDK
-exporter. Each batch owns one fresh connection and one fail-fast Export invocation
-under its complete2s dial/TLS/RPC deadline, with no wait-for-ready. Disable gRPC
-service configuration and configured retries/hedging. The pinned dialer admits at
-most one dial for that attempt; reconnect cannot select another endpoint. Close
-the connection and cancel its dial/RPC context on every completion/failure/deadline,
-including collector rejection. No connection/retry activity survives into idle
-queue time. Bound both outbound and decoded inbound messages to64KiB and response
-header metadata to8KiB; do not retain/log status descriptions, partial-success
-messages, unknown fields or server metadata. Check pinned gRPC transparent-retry
-semantics during implementation: prevent multiple wire Export deliveries, or stop
-and report a contract gap rather than assuming WithDisableRetry disables them.
-The private SDK still owns spans; only this fresh finite OTLP projection is sent.
+normal configured-authority validation and an exact pinned-IP context dialer.
+Server-authenticated TLS plus the dedicated bearer token authenticates this
+collector path; no collector client certificate is required or accepted by this
+initial config. The business outbound transport remains mutually authenticated.
+Supply exactly `Authorization: Bearer <configured token>`, never application
+credentials. No DNS, system trust, proxy, environment fallback, caller headers,
+credential callback, global error handler or raw diagnostic log.
+
+Use a fresh owned standard HTTP/1.1 transport/client per batch, never an
+ambient-configured SDK exporter. Disable HTTP/2 negotiation, keep-alives, automatic
+compression and redirects; do not install HTTP/2 alternate transports. Set explicit
+HTTP/1.1-only ALPN, `DisableKeepAlives`, `DisableCompression`,8KiB maximum response
+headers and a dialer admitting at most one TCP dial for the batch. Exactly one POST
+invocation uses the fixed configured authority and `/v1/traces`, no query, fragment,
+userinfo, caller-selected path or method. Use a finite body without GetBody,
+idempotency/retry headers or application-level retry logic. No redirected request,
+connection retry or second HTTP POST is permitted, including after ambiguous
+transport failure or authentication/overload/server responses. The complete
+per-batch dial/TLS/write/read deadline is at most2s. On every exit cancel the batch
+context, close response body and close the transport's connections; no exporter
+connection/reconnect activity survives into idle queue time.
+
+Bound the actual serialized request and decoded response bodies to64KiB each,
+using limit+one detection for responses. Compression is disabled: request body is
+identity encoded and responses must have absent/identity Content-Encoding. Require
+HTTP200, exactly the expected protobuf media type (normal MIME parsing without
+unsupported parameters), and a valid bounded ExportTraceServiceResponse. Unknown
+protobuf fields, malformed messages, partial-success presence or rejection fail the
+whole batch; no status description, partial-success message, header metadata or
+raw response is retained/logged. An empty protobuf body is a valid default complete
+success response only when status/content type meet these rules. Count Exported
+only for all records in a completely accepted batch acknowledgement. Ambiguous or
+partial results are discarded with finite failure/drop counters, never retried;
+there is no durable delivery or exactly-once claim. The private SDK still owns
+spans; only the fresh finite OTLP projection is sent.
 
 On span end, offer the immutable finite record to a queue of at most256 records
 using an immediate nonblocking admission operation; never await exporter, worker,
@@ -259,7 +282,7 @@ failure, invalid response or collector rejection/partial rejection. Saturating
 numeric stats expose attempted/exported/dropped/failed records and active/queued
 counts; no last-error text, destination, request identifier or private labels.
 Attempted counts ended observations presented for projection; Exported counts
-collector-accepted records. Dropped counts discarded observation records, including
+records in fully accepted complete batch acknowledgements. Dropped counts discarded observation records, including
 admission/projection/queue/close losses and records discarded after export failure;
 Failed counts attempted records whose export was not accepted. These counters
 intentionally overlap and do not form an accounting identity. Unsampled work is
@@ -286,10 +309,11 @@ version, migration, generated initializer/devrunner, provider or deployment chan
 Independent source review, guarded landing and fresh scoped checks remain required.
 
 Required evidence is actual App HTTP→actual PostgreSQL transaction→separate
-verified mutual-TLS backend→authenticated TLS OTLP/gRPC collector. Use owned local
+verified mutual-TLS backend→authenticated TLS HTTP/1.1 OTLP collector. Use owned local
 fixtures, dedicated copied trust/client identity/token, standard verified server
-TLS state, finite allowlisted peers and a collector that decodes real protobuf
-requests. Assert explicit parent edges above under100% sampling, ratio0/partial sampling
+TLS state, finite allowlisted peers and an actual Go TLS HTTP collector that
+checks the dedicated authorization header and decodes raw binary protobuf POST
+requests at the exact path. Assert explicit parent edges above under100% sampling, ratio0/partial sampling
 and capacity limits, public forgery isolation, consistent inherited child decisions,
 and trusted continuation with unsampled narrowing but no incoming escalation.
 No handcrafted TLS state or in-process fake exporter qualifies these boundaries.
@@ -301,9 +325,11 @@ visibly and blocks this source acceptance; a mock or the development trust fixtu
 cannot substitute. An isolated fresh fixture may be provided under existing
 approved capacity after design landing, preserving all other test services. Exercise
 outbound success/failure/cancellation and unknown destination denial before dial.
-Assert no post-attempt dial/reconnect activity after the queue drains, response
-message/header limits and no duplicate wire delivery under retry-provoking collector
-behavior. Reject wrong CA, authority/IP SAN, client identity, collector authentication,
+Assert HTTP/1.1, identity encoding, response message/header limits and no
+post-attempt export connection/dial activity after the queue drains. Redirect,
+retry-provoking status and ambiguous connection-failure fixtures must observe no
+second HTTP POST. Reject malformed/unknown/partial-success protobuf, wrong media
+type, compressed response and oversized bodies/headers without retaining details. Reject wrong CA, authority/IP SAN, client identity, collector authentication,
 poisoned OTEL environment and caller proxy/propagation attempts. Mutate input
 config after construction to prove copied isolation. Try public SDK span mutation,
 events, links, bogus resource/scope data and credential/SQL/body/query/base64
