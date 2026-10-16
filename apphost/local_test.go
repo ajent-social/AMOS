@@ -199,6 +199,20 @@ func testLocalSignupLifecycle(t *testing.T, theme *authpassword.Theme) {
 	origin := "http://" + listener.Addr().String()
 	cfg := localConfig(t, dsn, origin)
 	cfg.AuthTheme = theme
+	if theme != nil {
+		cfg.AuthReturnPolicy = &authpassword.ReturnPolicy{Default: "/consumer/account", Allowed: []string{"/consumer/account"}}
+		original := cfg.Business
+		cfg.Business = func(db *storage.DB, sessions *session.Service) ([]Route, error) {
+			routes, err := original(db, sessions)
+			if err != nil {
+				return nil, err
+			}
+			return append(routes, Route{Method: "GET", Pattern: "/consumer/account", Handler: sessions.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Cache-Control", "no-store")
+				w.WriteHeader(204)
+			}))}), nil
+		}
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	host, err := NewLocal(ctx, cfg)
@@ -233,8 +247,10 @@ func testLocalSignupLifecycle(t *testing.T, theme *authpassword.Theme) {
 	}
 	if theme != nil {
 		theme.BrandName = "Changed after construction"
+		cfg.AuthReturnPolicy.Default = "/changed"
+		cfg.AuthReturnPolicy.Allowed[0] = "/changed"
 		status, signinPage = response(t, client, "GET", origin+"/signin", "", nil)
-		if status != 200 || !strings.Contains(signinPage, `href="/assets/auth.css"`) || !strings.Contains(signinPage, "Sign in · Example") || strings.Contains(signinPage, "Changed after construction") {
+		if status != 200 || !strings.Contains(signinPage, `href="/assets/auth.css"`) || !strings.Contains(signinPage, "Sign in · Example") || strings.Contains(signinPage, "Changed after construction") || !strings.Contains(signinPage, `name="next" value="/consumer/account"`) {
 			t.Fatal("host did not retain copied auth theme")
 		}
 	} else if strings.Contains(signinPage, "amos-auth") {
@@ -286,7 +302,28 @@ func testLocalSignupLifecycle(t *testing.T, theme *authpassword.Theme) {
 	if status != 200 {
 		t.Fatalf("verification status=%d", status)
 	}
-	status, _ = response(t, client, "POST", origin+"/auth", origin, url.Values{"email": {email}, "password": {phrase}})
+	signinRequest, err := http.NewRequest("POST", origin+"/auth", strings.NewReader(url.Values{"email": {email}, "password": {phrase}}.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	signinRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	signinRequest.Header.Set("Origin", origin)
+	signinResponse, err := client.Do(signinRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	status = signinResponse.StatusCode
+	if err := signinResponse.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if theme != nil {
+		if signinResponse.Header.Get("Location") != "/consumer/account" {
+			t.Fatal("consumer return policy was not propagated/copied")
+		}
+		if code, _ := response(t, client, "GET", origin+"/consumer/account", "", nil); code != 204 {
+			t.Fatal("configured consumer destination did not admit native session")
+		}
+	}
 	if status != 303 {
 		t.Fatalf("sign-in status=%d", status)
 	}
@@ -383,6 +420,11 @@ func testLocalSignupLifecycle(t *testing.T, theme *authpassword.Theme) {
 	if status != 401 {
 		t.Fatal("revoked session retained business access")
 	}
+	if theme != nil {
+		if code, _ := response(t, client, "GET", origin+"/consumer/account", "", nil); code != 401 {
+			t.Fatal("revoked session retained consumer destination access")
+		}
+	}
 }
 
 func TestLocalDatabaseBindingRejectsDifferentEnvironment(t *testing.T) {
@@ -476,5 +518,19 @@ func TestLocalRejectsInvalidAuthThemeBeforeDependencies(t *testing.T) {
 	cfg := LocalConfig{InstallationID: id(), ApplicationID: id(), EnvironmentID: id(), Origin: "http://127.0.0.1:18765", DatabaseURL: "test", MaterialKey: make([]byte, 32), RateKey: make([]byte, 32), Business: func(*storage.DB, *session.Service) ([]Route, error) { return nil, nil }, AuthTheme: &authpassword.Theme{BrandName: "Example", StylesheetURL: "//foreign.example/a.css"}}
 	if host, err := NewLocal(context.Background(), cfg); host != nil || !errors.Is(err, ErrLocalConfiguration) {
 		t.Fatalf("invalid theme reached dependencies: host=%v err=%v", host, err)
+	}
+}
+
+func TestLocalRejectsInvalidAuthReturnPolicyBeforeDependencies(t *testing.T) {
+	id := func() uuid.UUID {
+		v, err := uuid.NewV7()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	cfg := LocalConfig{InstallationID: id(), ApplicationID: id(), EnvironmentID: id(), Origin: "http://127.0.0.1:18765", DatabaseURL: "test", MaterialKey: make([]byte, 32), RateKey: make([]byte, 32), Business: func(*storage.DB, *session.Service) ([]Route, error) { return nil, nil }, AuthReturnPolicy: &authpassword.ReturnPolicy{Default: "https://foreign.example", Allowed: []string{"https://foreign.example"}}}
+	if host, err := NewLocal(context.Background(), cfg); host != nil || !errors.Is(err, ErrLocalConfiguration) {
+		t.Fatalf("invalid return policy reached dependencies: host=%v err=%v", host, err)
 	}
 }

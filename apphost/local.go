@@ -57,6 +57,7 @@ type LocalConfig struct {
 	Business                                     func(*storage.DB, *session.Service) ([]Route, error)
 	Billing                                      *LocalBillingConfig
 	AuthTheme                                    *authpassword.Theme
+	AuthReturnPolicy                             *authpassword.ReturnPolicy
 }
 type Host struct {
 	app       *app.App
@@ -78,6 +79,14 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 			return nil, ErrLocalConfiguration
 		}
 		cfg.AuthTheme = &theme
+	}
+	if cfg.AuthReturnPolicy != nil {
+		policy := *cfg.AuthReturnPolicy
+		policy.Allowed = append([]string(nil), policy.Allowed...)
+		if err := policy.Validate(); err != nil {
+			return nil, ErrLocalConfiguration
+		}
+		cfg.AuthReturnPolicy = &policy
 	}
 	origin, err := delivery.ParseApplicationOrigin(cfg.Origin, true)
 	if ctx == nil || err != nil || origin.Scheme != "http" || cfg.Business == nil || len(cfg.MaterialKey) != 32 || len(cfg.RateKey) != 32 || !localID(cfg.InstallationID) || !localID(cfg.ApplicationID) || !localID(cfg.EnvironmentID) {
@@ -184,7 +193,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	forms, err := authpassword.New(authpassword.Config{Theme: cfg.AuthTheme, Signup: signup, Signin: signin, RecoveryRequest: recoveryRequest, RecoveryComplete: recoveryComplete, Verification: verification, VerificationConfirm: verificationComplete, Reset: recoveries, AllowsOrigin: sessions.AllowsOrigin})
+	forms, err := authpassword.New(authpassword.Config{Theme: cfg.AuthTheme, ReturnPolicy: cfg.AuthReturnPolicy, Signup: signup, Signin: signin, RecoveryRequest: recoveryRequest, RecoveryComplete: recoveryComplete, Verification: verification, VerificationConfirm: verificationComplete, Reset: recoveries, AllowsOrigin: sessions.AllowsOrigin})
 	if err != nil {
 		return nil, err
 	}
