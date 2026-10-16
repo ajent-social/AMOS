@@ -1,0 +1,30 @@
+{
+  "schema": "amos-public-diagnostic-v1",
+  "registry": "amos-public-diagnostic-registry-v1",
+  "window": "24h",
+  "components": [
+    {
+      "id": "amos.core",
+      "source_revision": "0208b87c7bc24d058d327a08d5634c6ef77af4ee"
+    }
+  ],
+  "metrics": [
+    {
+      "name": "http.requests",
+      "bucket": "5-15"
+    }
+  ],
+  "errors": [
+    {
+      "code": "dependency.unavailable",
+      "signature": "http.required_dependency_unavailable.v1",
+      "bucket": "1",
+      "frames": [
+        {
+          "symbol": "example.test/business.(*PrivateAccount).Execute",
+          "file": "/ho\u006de/example/private/account.go"
+        }
+      ]
+    }
+  ]
+}
