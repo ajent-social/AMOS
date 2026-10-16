@@ -9,8 +9,8 @@ Independent design review and landing precede implementation.
 ## Public composition and transport
 
 Add `apphost.NewDevelopmentTLS(ctx, DevelopmentTLSConfig)` returning `*Host`.
-The config contains `Local LocalConfig`, `CertificatePEM []byte` and
-`PrivateKeyPEM []byte`. `Local.Origin` must be canonical HTTPS with an explicit
+The config contains `Application LocalConfig`, `CertificatePEM []byte` and
+`PrivateKeyPEM []byte`. `Application.Origin` must be canonical HTTPS with an explicit
 numeric port and either a literal RFC1918 IPv4 address or exactly127.0.0.1 for
 local TLS verification. No DNS, public/unspecified/multicast address, IPv6, zone,
 userinfo, query, fragment, path, implicit port or alternate textual spelling.
@@ -116,3 +116,8 @@ origin/capture additions, plus the separate development executable/tests. No roo
 module, migrations, existing initializer/schema/devrunner/template change, plan
 rewrite, default listener or other task takeover. Acceptance records source, actual
 PG/TLS, LAN and browser observations separately.
+
+Initial source spelling clarification: the nested field is `Application`, rather
+than the design draft's `Local`. No source API/consumer had shipped; behavior and
+compatibility of existing constructors remain unchanged. This also keeps source
+selectors unambiguous to the unchanged public-artifact scanner.

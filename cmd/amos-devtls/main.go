@@ -68,7 +68,7 @@ func run(ctx context.Context, args []string, output io.Writer) (result error) {
 	}
 	startup, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
-	host, err := apphost.NewDevelopmentTLS(startup, apphost.DevelopmentTLSConfig{Local: localConfig(state.config, mail), CertificatePEM: state.certificate, PrivateKeyPEM: state.key})
+	host, err := apphost.NewDevelopmentTLS(startup, apphost.DevelopmentTLSConfig{Application: localConfig(state.config, mail), CertificatePEM: state.certificate, PrivateKeyPEM: state.key})
 	cancel()
 	if err != nil {
 		return errConfiguration
