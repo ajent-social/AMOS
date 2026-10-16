@@ -107,7 +107,7 @@ Five native auth HEAD responses returned200, empty bodies and no cookies. Precis
 certificate-verification failures proved ordinary trust and wrong-IP rejection;
 wrong Host with forwarded spoof, plaintext, missing CSRF and foreign Origin were
 denied. No insecure verification, environment proxy or browser trust change.
-Only the public certificate crossed hosts; private TLS keys and database credentials
+The public certificate was copied; private TLS keys and database credentials
 stayed with the runtime. Verified test-account details and exact-owned stop/restart
 instructions are in private owner-only handoff files, not public artifacts.
 
