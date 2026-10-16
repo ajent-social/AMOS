@@ -319,8 +319,10 @@ and ordering-negative/restored checks; fresh landed4PASS and three files match. 
 provider qualification. See [component evidence](evidence/login-recovery-constructors-20261007.md).
 
 
-T14.7 initial local restricted-hold core is in progress under an original claim.
-[v1.36](security/vulnerability-routing.md) freezes finite immutable hold decisions
-without a sender, public-release capability or assumed private channel. Independent
-design landing precedes source; private handling, downstream publication wiring
-and external intake remain unqualified. No actual recipient/channel is selected.
+T14.7's initial local restricted-hold core landed in PR142 at83199575ff11a313f6960be8e8058d1be75bfc2d,
+full-tree equal independently approved703d8c4. Fresh landed29 named race checks
+pass with zero failures/skips. [v1.36](security/vulnerability-routing.md) preserves
+finite immutable hold decisions without a sender/public-release capability or
+assumed private channel. Full T14.7 stays IN_PROGRESS; [issue143](https://github.com/ajent-social/AMOS/issues/143)
+tracks private handling and actual downstream publication enforcement. External
+intake/sending remain disabled; no actual recipient/channel is selected.
