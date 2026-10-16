@@ -96,8 +96,11 @@ database attributes contain only `amos.outcome`. Outcomes are `ok`, `error`,
 
 No individual SQL, driver diagnostic or application error string affects labels.
 Database outcomes reflect actual completion, not intended work. No error value/string or status description is attached.
-Status code is UNSET for successful outcomes and ERROR otherwise, with empty
-message. The wire contains IDs, parent ID, local timestamps, kind, fixed name,
+Status code is UNSET for `ok`, `commit` and `rollback`, and ERROR for all
+other allowed outcomes, with an empty message. Here `rollback` means successful
+transaction cleanup after a callback error; it does not mean that the business
+operation succeeded. A rollback failure is `error`. The original callback error
+and existing transaction return behavior remain unchanged. The wire contains IDs, parent ID, local timestamps, kind, fixed name,
 these finite attributes and local sampling flag only (wire flags0 or1). No HTTP method/URL/path,
 SQL text/parameter, row, session, billing, workspace, user, provider, credential,
 header, body, exception, event, link, baggage, process, host or environment data.
