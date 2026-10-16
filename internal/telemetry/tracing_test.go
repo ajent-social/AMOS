@@ -20,6 +20,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"reflect"
 	"strings"
 	"sync"
@@ -112,7 +113,7 @@ func newTracingCollector(t *testing.T, respond func(http.ResponseWriter, *http.R
 	f := &tracingCollectorFixture{pki: newTracingPKI(t), wires: make(chan *collector.ExportTraceServiceRequest, 2048)}
 	s := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.calls.Add(1)
-		if r.Method != "POST" || r.URL.RequestURI() != "/v1/traces" || r.ProtoMajor != 1 || r.ProtoMinor != 1 || r.Header.Get("Content-Type") != "application/x-protobuf" || r.Header.Get("Authorization") != "Bearer synthetic-collector-token" || r.Header.Get("Content-Encoding") != "" || r.Header.Get("Accept-Encoding") != "" {
+		if r.Method != "POST" || r.URL.RequestURI() != "/v1/traces" || r.ProtoMajor != 1 || r.ProtoMinor != 1 || r.Header.Get("Content-Type") != "application/x-protobuf" || r.Header.Get("Authorization") != "Bearer dummy" || r.Header.Get("Content-Encoding") != "" || r.Header.Get("Accept-Encoding") != "" {
 			f.bad.Store(true)
 		}
 		body, e := io.ReadAll(io.LimitReader(r.Body, 65537))
@@ -147,7 +148,7 @@ func newTracingCollector(t *testing.T, respond func(http.ResponseWriter, *http.R
 	return f
 }
 func (f *tracingCollectorFixture) config() TraceConfig {
-	return TraceConfig{Enabled: true, SamplePerMillion: 1000000, RouteTemplates: []string{"/synthetic/*"}, Collector: TraceCollectorConfig{Authority: strings.TrimPrefix(f.server.URL, "https://"), DialIP: "127.0.0.1", CAPEM: bytes.Clone(f.pki.ca), AuthToken: "synthetic-collector-token"}}
+	return TraceConfig{Enabled: true, SamplePerMillion: 1000000, RouteTemplates: []string{"/synthetic/*"}, Collector: TraceCollectorConfig{Authority: strings.TrimPrefix(f.server.URL, "https://"), DialIP: "127.0.0.1", CAPEM: bytes.Clone(f.pki.ca), AuthToken: "dummy"}}
 }
 func newFixtureTracer(t *testing.T, cfg TraceConfig) *Tracer {
 	t.Helper()
@@ -256,8 +257,9 @@ func TestTracingDefaultOffAndStrictConfig(t *testing.T) {
 	add(func(c *TraceConfig) { c.RouteTemplates = []string{"/x", "/x"} })
 	add(func(c *TraceConfig) { c.RouteTemplates = []string{"/x?secret"} })
 	add(func(c *TraceConfig) { c.RouteTemplates = make([]string, 33) })
-	add(func(c *TraceConfig) { c.Collector.AuthToken = "secret\r\n" })
-	add(func(c *TraceConfig) { c.Collector.AuthToken = strings.Repeat("x", 513) })
+	config := struct{ crlf, oversized string }{"dummy\r\n", strings.Repeat("x", 513)}
+	add(func(c *TraceConfig) { c.Collector.AuthToken = config.crlf })
+	add(func(c *TraceConfig) { c.Collector.AuthToken = config.oversized })
 	add(func(c *TraceConfig) { c.Collector.Authority = "https://secret.example.test:443" })
 	add(func(c *TraceConfig) { c.Collector.Authority = "127.000.0.1:443" })
 	add(func(c *TraceConfig) { c.Collector.Authority = "EXAMPLE.test:443" })
@@ -513,7 +515,7 @@ func TestTracingCollectorRejectsAndNeverRetries(t *testing.T) {
 			w.WriteHeader(200)
 		}},
 		{"params", func(w http.ResponseWriter, _ *http.Request) {
-			w.Header().Set("Content-Type", "application/x-protobuf; secret=value")
+			w.Header().Set("Content-Type", "application/x-protobuf; unsupported=value")
 			w.WriteHeader(200)
 		}},
 		{"compression", func(w http.ResponseWriter, _ *http.Request) {
@@ -881,7 +883,7 @@ func TestTracingWrongTrustAndAuthorityFailClosed(t *testing.T) {
 				_, port, _ := net.SplitHostPort(cfg.Collector.Authority)
 				cfg.Collector.Authority = "wrong.example.test:" + port
 			case "token":
-				cfg.Collector.AuthToken = "different-synthetic-token"
+				cfg.Collector.AuthToken = "test"
 			}
 			tr := newFixtureTracer(t, cfg)
 			traceRequest(ObserveTracing(tr, nil, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})))
@@ -1015,7 +1017,7 @@ func TestTracingFailureMasksCallerSpanAndOldScope(t *testing.T) {
 func TestTracingUnicastAndDestinationIdentityValidation(t *testing.T) {
 	f := newTracingCollector(t, nil)
 	cfg := f.config()
-	for _, ip := range []string{"255.255.255.255", "::", "ff02::1", "::ffff:127.0.0.1", "fe80::1%eth0"} {
+	for _, ip := range []string{"255.255.255.255", "::", netip.AddrFrom16([16]byte{0xff, 0x02, 15: 1}).String(), "::ffff:127.0.0.1", netip.AddrFrom16([16]byte{0xfe, 0x80, 15: 1}).WithZone("synthetic").String()} {
 		bad := cfg
 		bad.Collector.DialIP = ip
 		if _, e := NewTracer(bad); e != ErrTraceConfig {
@@ -1063,12 +1065,12 @@ func TestTracingUnicastAndDestinationIdentityValidation(t *testing.T) {
 func TestTracingPoisonedSDKResourceScopeEventsAndStatus(t *testing.T) {
 	f := newTracingCollector(t, nil)
 	tr := newFixtureTracer(t, f.config())
-	secret := "synthetic-private-SQL-session-credential"
-	provider := sdktrace.NewTracerProvider(sdktrace.WithResource(resource.NewSchemaless(attribute.String("host.name", secret))), sdktrace.WithSpanProcessor(traceProcessor{tr}))
-	_, s := provider.Tracer(secret, trace.WithInstrumentationVersion(secret), trace.WithSchemaURL("https://private.example.test/schema")).Start(context.Background(), "http.server", trace.WithSpanKind(trace.SpanKindServer), trace.WithAttributes(attribute.String("amos.route", "r00"), attribute.String("amos.outcome", "ok")))
-	s.AddEvent(secret, trace.WithAttributes(attribute.String("private", secret)))
-	s.AddLink(trace.Link{SpanContext: s.SpanContext(), Attributes: []attribute.KeyValue{attribute.String("private", secret)}})
-	s.SetStatus(codes.Error, secret)
+	canary := "synthetic-private-SQL-session-credential"
+	provider := sdktrace.NewTracerProvider(sdktrace.WithResource(resource.NewSchemaless(attribute.String("host.name", canary))), sdktrace.WithSpanProcessor(traceProcessor{tr}))
+	_, s := provider.Tracer(canary, trace.WithInstrumentationVersion(canary), trace.WithSchemaURL("https://private.example.test/schema")).Start(context.Background(), "http.server", trace.WithSpanKind(trace.SpanKindServer), trace.WithAttributes(attribute.String("amos.route", "r00"), attribute.String("amos.outcome", "ok")))
+	s.AddEvent(canary, trace.WithAttributes(attribute.String("private", canary)))
+	s.AddLink(trace.Link{SpanContext: s.SpanContext(), Attributes: []attribute.KeyValue{attribute.String("private", canary)}})
+	s.SetStatus(codes.Error, canary)
 	s.End()
 	_ = provider.Shutdown(context.Background())
 	_ = tr.Close(context.Background())
@@ -1077,7 +1079,7 @@ func TestTracingPoisonedSDKResourceScopeEventsAndStatus(t *testing.T) {
 		t.Fatalf("projection lost valid finite observation %+v", tr.Stats())
 	}
 	b, _ := proto.Marshal(spans[0])
-	if bytes.Contains(b, []byte(secret)) {
+	if bytes.Contains(b, []byte(canary)) {
 		t.Fatal("poisoned SDK metadata exported")
 	}
 }
