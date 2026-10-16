@@ -1,0 +1,85 @@
+{
+  "schema": "amos-upstream-config-v1",
+  "profile": "aws_managed",
+  "upstream": {
+    "account_id": "000000000001",
+    "domain": "upstream",
+    "identity_namespace": "amos-upstream-operators",
+    "region": "us-east-1"
+  },
+  "consumers": [
+    {
+      "account_id": "000000000001",
+      "domain": "consumer",
+      "deployment_arn": "arn:aws:iam::000000000001:role/amos-consumer/deploy/different"
+    }
+  ],
+  "identities": {
+    "operator": {
+      "arn": "arn:aws:iam::000000000001:role/amos-upstream/operator/example",
+      "account_id": "000000000001",
+      "domain": "upstream",
+      "purpose": "operator"
+    },
+    "intake": {
+      "arn": "arn:aws:iam::000000000001:role/amos-upstream/intake/example",
+      "account_id": "000000000001",
+      "domain": "upstream",
+      "purpose": "intake"
+    },
+    "storage": {
+      "arn": "arn:aws:iam::000000000001:role/amos-upstream/storage/example",
+      "account_id": "000000000001",
+      "domain": "upstream",
+      "purpose": "storage"
+    },
+    "deployment": {
+      "arn": "arn:aws:iam::000000000001:role/amos-upstream/deploy/example",
+      "account_id": "000000000001",
+      "domain": "upstream",
+      "purpose": "deploy"
+    }
+  },
+  "storage": {
+    "bucket_name": "amos-upstream-example",
+    "kms_key_arn": "arn:aws:kms:us-east-1:000000000001:key/00000000-0000-0000-0000-000000000000",
+    "account_id": "000000000001",
+    "namespace": "amos-upstream-diagnostics",
+    "access": "operator-only",
+    "record_format": "normalized-quarantine-v1",
+    "raw_payload_policy": "discard",
+    "encryption": "aws:kms",
+    "retention_hours": 168,
+    "max_records": 128,
+    "max_bytes": 1048576
+  },
+  "collection": {
+    "mode": "disabled",
+    "diagnostic_profile": "amos-public-diagnostic-v1",
+    "max_payload_bytes": 8192,
+    "max_compressed_bytes": 8192,
+    "timeout_seconds": 5,
+    "max_concurrent": 2,
+    "daily_reports": 32,
+    "anonymous": {
+      "per_principal_24h": 1,
+      "global_24h": 8,
+      "max_principals": 128
+    },
+    "enrolled": {
+      "per_principal_24h": 1,
+      "global_24h": 24,
+      "max_principals": 1024
+    }
+  },
+  "abuse": {
+    "key_reference": {
+      "provider": "aws_secrets_manager",
+      "account_id": "000000000001",
+      "name": "amos-upstream/abuse-key"
+    },
+    "source_key_mode": "daily-hmac",
+    "clock_policy": "deny-on-unknown",
+    "invalid_content": "discard-before-storage"
+  }
+}

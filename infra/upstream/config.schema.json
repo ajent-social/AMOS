@@ -1,0 +1,421 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://amos.dev/schemas/upstream-config-v1.json",
+  "title": "Declared AMOS upstream deployment profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "upstream",
+    "consumers",
+    "identities",
+    "storage",
+    "collection",
+    "abuse"
+  ],
+  "properties": {
+    "schema": {
+      "const": "amos-upstream-config-v1"
+    },
+    "profile": {
+      "enum": [
+        "aws_managed",
+        "aws_vm"
+      ]
+    },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "region",
+        "account_id",
+        "domain",
+        "identity_namespace"
+      ],
+      "properties": {
+        "region": {
+          "type": "string",
+          "pattern": "^[a-z]{2}-[a-z]+-[1-9]$",
+          "maxLength": 256
+        },
+        "account_id": {
+          "type": "string",
+          "pattern": "^[0-9]{12}$",
+          "maxLength": 256
+        },
+        "domain": {
+          "const": "upstream"
+        },
+        "identity_namespace": {
+          "const": "amos-upstream-operators"
+        }
+      }
+    },
+    "consumers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_id",
+          "domain",
+          "deployment_arn"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "pattern": "^[0-9]{12}$",
+            "maxLength": 256
+          },
+          "domain": {
+            "const": "consumer"
+          },
+          "deployment_arn": {
+            "type": "string",
+            "pattern": "^arn:aws:iam::[0-9]{12}:role/amos-consumer/deploy/[a-z][a-z0-9-]{0,31}$",
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "identities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operator",
+        "intake",
+        "storage",
+        "deployment"
+      ],
+      "properties": {
+        "operator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "arn",
+            "account_id",
+            "domain",
+            "purpose"
+          ],
+          "properties": {
+            "arn": {
+              "type": "string",
+              "pattern": "^arn:aws:iam::[0-9]{12}:role/amos-upstream/operator/[a-z][a-z0-9-]{0,31}$",
+              "maxLength": 256
+            },
+            "account_id": {
+              "type": "string",
+              "pattern": "^[0-9]{12}$",
+              "maxLength": 256
+            },
+            "domain": {
+              "const": "upstream"
+            },
+            "purpose": {
+              "const": "operator"
+            }
+          }
+        },
+        "intake": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "arn",
+            "account_id",
+            "domain",
+            "purpose"
+          ],
+          "properties": {
+            "arn": {
+              "type": "string",
+              "pattern": "^arn:aws:iam::[0-9]{12}:role/amos-upstream/intake/[a-z][a-z0-9-]{0,31}$",
+              "maxLength": 256
+            },
+            "account_id": {
+              "type": "string",
+              "pattern": "^[0-9]{12}$",
+              "maxLength": 256
+            },
+            "domain": {
+              "const": "upstream"
+            },
+            "purpose": {
+              "const": "intake"
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "arn",
+            "account_id",
+            "domain",
+            "purpose"
+          ],
+          "properties": {
+            "arn": {
+              "type": "string",
+              "pattern": "^arn:aws:iam::[0-9]{12}:role/amos-upstream/storage/[a-z][a-z0-9-]{0,31}$",
+              "maxLength": 256
+            },
+            "account_id": {
+              "type": "string",
+              "pattern": "^[0-9]{12}$",
+              "maxLength": 256
+            },
+            "domain": {
+              "const": "upstream"
+            },
+            "purpose": {
+              "const": "storage"
+            }
+          }
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "arn",
+            "account_id",
+            "domain",
+            "purpose"
+          ],
+          "properties": {
+            "arn": {
+              "type": "string",
+              "pattern": "^arn:aws:iam::[0-9]{12}:role/amos-upstream/deploy/[a-z][a-z0-9-]{0,31}$",
+              "maxLength": 256
+            },
+            "account_id": {
+              "type": "string",
+              "pattern": "^[0-9]{12}$",
+              "maxLength": 256
+            },
+            "domain": {
+              "const": "upstream"
+            },
+            "purpose": {
+              "const": "deploy"
+            }
+          }
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bucket_name",
+        "kms_key_arn",
+        "account_id",
+        "namespace",
+        "access",
+        "record_format",
+        "raw_payload_policy",
+        "encryption",
+        "retention_hours",
+        "max_records",
+        "max_bytes"
+      ],
+      "properties": {
+        "bucket_name": {
+          "type": "string",
+          "pattern": "^amos-upstream-[a-z0-9][a-z0-9-]{2,38}$",
+          "maxLength": 256
+        },
+        "kms_key_arn": {
+          "type": "string",
+          "pattern": "^arn:aws:kms:[a-z]{2}-[a-z]+-[1-9]:[0-9]{12}:key/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
+          "maxLength": 256
+        },
+        "account_id": {
+          "type": "string",
+          "pattern": "^[0-9]{12}$",
+          "maxLength": 256
+        },
+        "namespace": {
+          "const": "amos-upstream-diagnostics"
+        },
+        "access": {
+          "const": "operator-only"
+        },
+        "record_format": {
+          "const": "normalized-quarantine-v1"
+        },
+        "raw_payload_policy": {
+          "const": "discard"
+        },
+        "encryption": {
+          "const": "aws:kms"
+        },
+        "retention_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 168
+        },
+        "max_records": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 8192,
+          "maximum": 8388608
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "diagnostic_profile",
+        "max_payload_bytes",
+        "max_compressed_bytes",
+        "timeout_seconds",
+        "max_concurrent",
+        "daily_reports",
+        "anonymous",
+        "enrolled"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "disabled",
+            "enabled"
+          ],
+          "default": "disabled"
+        },
+        "diagnostic_profile": {
+          "const": "amos-public-diagnostic-v1"
+        },
+        "max_payload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8192
+        },
+        "max_compressed_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8192
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "max_concurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "daily_reports": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "anonymous": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "per_principal_24h",
+            "global_24h",
+            "max_principals"
+          ],
+          "properties": {
+            "per_principal_24h": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "global_24h": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 16
+            },
+            "max_principals": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256
+            }
+          }
+        },
+        "enrolled": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "per_principal_24h",
+            "global_24h",
+            "max_principals"
+          ],
+          "properties": {
+            "per_principal_24h": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "global_24h": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64
+            },
+            "max_principals": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1024
+            }
+          }
+        }
+      }
+    },
+    "abuse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key_reference",
+        "source_key_mode",
+        "clock_policy",
+        "invalid_content"
+      ],
+      "properties": {
+        "key_reference": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "account_id",
+            "name"
+          ],
+          "properties": {
+            "provider": {
+              "const": "aws_secrets_manager"
+            },
+            "account_id": {
+              "type": "string",
+              "pattern": "^[0-9]{12}$",
+              "maxLength": 256
+            },
+            "name": {
+              "const": "amos-upstream/abuse-key"
+            }
+          }
+        },
+        "source_key_mode": {
+          "const": "daily-hmac"
+        },
+        "clock_policy": {
+          "const": "deny-on-unknown"
+        },
+        "invalid_content": {
+          "const": "discard-before-storage"
+        }
+      }
+    }
+  }
+}
