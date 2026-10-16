@@ -1,6 +1,7 @@
 # ADR 041: configure native sign-in return destinations explicitly
 
-Status: proposed; independently reviewed design landing precedes source.
+Status: independently reviewed; adopted on landing. Source retains separate
+review, guarded merge and landed verification gates.
 
 The native UI hardcodes a reference-business default and allowlist. A consumer
 with its own protected account route must currently introduce a todos redirect
