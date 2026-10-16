@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://amos.dev/schemas/upstream-diagnostic-v1.json",
+  "title": "AMOS public diagnostic v1 (design-only)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "registry",
+    "window",
+    "components",
+    "metrics",
+    "errors"
+  ],
+  "properties": {
+    "schema": {
+      "const": "amos-public-diagnostic-v1"
+    },
+    "registry": {
+      "const": "amos-public-diagnostic-registry-v1"
+    },
+    "window": {
+      "const": "24h"
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source_revision"
+        ],
+        "properties": {
+          "id": {
+            "const": "amos.core"
+          },
+          "source_revision": {
+            "const": "0208b87c7bc24d058d327a08d5634c6ef77af4ee"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "bucket"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "http.requests",
+              "http.server_errors",
+              "readiness.failures"
+            ]
+          },
+          "bucket": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1",
+              "2-4",
+              "5-15",
+              "16-63",
+              "64+"
+            ]
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "signature",
+              "bucket",
+              "frames"
+            ],
+            "properties": {
+              "code": {
+                "const": "dependency.unavailable"
+              },
+              "signature": {
+                "const": "http.required_dependency_unavailable.v1"
+              },
+              "bucket": {
+                "type": "string",
+                "enum": [
+                  "0",
+                  "1",
+                  "2-4",
+                  "5-15",
+                  "16-63",
+                  "64+"
+                ]
+              },
+              "frames": {
+                "type": "array",
+                "maxItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "const": "amos.health.serve_http.v1"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "signature",
+              "bucket",
+              "frames"
+            ],
+            "properties": {
+              "code": {
+                "const": "handler.panic"
+              },
+              "signature": {
+                "const": "http.handler_panic.v1"
+              },
+              "bucket": {
+                "type": "string",
+                "enum": [
+                  "0",
+                  "1",
+                  "2-4",
+                  "5-15",
+                  "16-63",
+                  "64+"
+                ]
+              },
+              "frames": {
+                "type": "array",
+                "maxItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "const": "amos.health.serve_http.v1"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
