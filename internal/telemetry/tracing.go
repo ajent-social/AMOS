@@ -48,6 +48,7 @@ type TraceStats struct {
 // after stopping hosts; tracing is never an application readiness dependency.
 type Tracer struct {
 	mu                                   sync.Mutex
+	shutdownTimer                        *time.Timer
 	closed                               bool
 	provider                             *sdktrace.TracerProvider
 	sdk                                  trace.Tracer
@@ -62,6 +63,7 @@ type Tracer struct {
 	done                                 chan struct{}
 	workerCtx                            context.Context
 	cancel                               context.CancelFunc
+	entropy                              func(bool, uint32) (trace.TraceID, trace.SpanID, bool, error)
 	active                               atomic.Uint32
 	attempted, exported, dropped, failed atomic.Uint64
 }
@@ -120,6 +122,7 @@ func NewTracer(cfg TraceConfig) (*Tracer, error) {
 		}
 		t.destinations = append(t.destinations, newTraceTransport(t, ep, i))
 	}
+	t.entropy = traceEntropy
 	t.workerCtx, t.cancel = context.WithCancel(context.Background())
 	t.provider = sdktrace.NewTracerProvider(sdktrace.WithResource(resource.NewSchemaless(attribute.String("service.name", "amos"))), sdktrace.WithIDGenerator(traceIDGenerator{}), sdktrace.WithSampler(traceSampler{}), sdktrace.WithoutPanicRecording(), sdktrace.WithRawSpanLimits(sdktrace.SpanLimits{AttributeValueLengthLimit: 16, AttributeCountLimit: 2, EventCountLimit: 0, LinkCountLimit: 0, AttributePerEventCountLimit: 0, AttributePerLinkCountLimit: 0}), sdktrace.WithSpanProcessor(traceProcessor{t}))
 	t.sdk = t.provider.Tracer("amos.tracing.v1")
@@ -178,9 +181,17 @@ func (t *Tracer) Close(ctx context.Context) error {
 		if deadline, ok := ctx.Deadline(); ok {
 			budget = min(budget, time.Until(deadline))
 		}
-		time.AfterFunc(max(budget, 0), t.cancel)
+		t.shutdownTimer = time.AfterFunc(max(budget, 0), t.cancel)
 	}
 	t.mu.Unlock()
+	if ctx.Err() != nil {
+		select {
+		case <-t.done:
+			return nil
+		default:
+			t.cancel()
+		}
+	}
 	for _, d := range t.destinations {
 		d.CloseIdleConnections()
 	}
@@ -288,16 +299,23 @@ func ownedTraceScope(ctx context.Context) *traceScope {
 	return p
 }
 
+func inertTraceContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		return nil
+	}
+	return context.WithValue(trace.ContextWithSpanContext(ctx, trace.SpanContext{}), traceScopeKey{}, (*traceScope)(nil))
+}
+
 func (t *Tracer) startTrace(ctx context.Context, name string, kind trace.SpanKind, parent trace.SpanContext, decision *bool, labels ...attribute.KeyValue) (context.Context, *traceScope, func(string)) {
 	noop := func(string) {}
 	if ctx == nil || t == nil || t.sdk == nil {
-		return ctx, nil, noop
+		return inertTraceContext(ctx), nil, noop
 	}
 	root := decision == nil
-	tid, sid, sampled, err := traceEntropy(root, t.ratio)
+	tid, sid, sampled, err := t.entropy(root, t.ratio)
 	if err != nil {
 		traceAdd(&t.dropped, 1)
-		return ctx, nil, noop
+		return inertTraceContext(ctx), nil, noop
 	}
 	if decision != nil {
 		sampled = *decision
@@ -312,12 +330,12 @@ func (t *Tracer) startTrace(ctx context.Context, name string, kind trace.SpanKin
 	if t.closed {
 		t.mu.Unlock()
 		traceAdd(&t.dropped, 1)
-		return ctx, nil, noop
+		return inertTraceContext(ctx), nil, noop
 	}
 	if sampled && t.active.Load() >= 256 {
 		t.mu.Unlock()
 		traceAdd(&t.dropped, 1)
-		return ctx, nil, noop
+		return inertTraceContext(ctx), nil, noop
 	}
 	if sampled {
 		t.active.Add(1)
@@ -335,7 +353,7 @@ func (t *Tracer) startTrace(ctx context.Context, name string, kind trace.SpanKin
 			t.active.Add(^uint32(0))
 		}
 		traceAdd(&t.dropped, 1)
-		return ctx, nil, noop
+		return inertTraceContext(ctx), nil, noop
 	}
 	scope := &traceScope{owner: t, sc: sc, sampled: sampled}
 	scope.live.Store(true)
