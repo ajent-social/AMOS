@@ -41,3 +41,9 @@ after that failure. A reviewed follow-up renames the fixture key to `unexpected`
 without weakening the scanner or changing the rejection test. It contained no
 real credential. Fresh landed execution and scanner results are recorded in
 the follow-up integration record.
+
+The correction independently reviewed and landed in PR #129 at
+`d706903cfc7a99822dbb7ee59b041f94ffabadfe`; full reviewed-tree equality was
+verified. Fresh landed two-package race checks passed50 named checks with zero
+skips. The public-artifact scan across the original changed scope passed.
+The original T10.6 claim was released by exact owned compare-and-swap token.

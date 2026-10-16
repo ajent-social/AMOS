@@ -16,8 +16,12 @@ construction, consent, sending and collector behavior remain future tasks. PR #1
 landed the metrics design; T10.4 bounded source/local composition is accepted through its actual scoped checks and separate metrics receipt. T14.2 local projection component is in progress with an explicitly unqualified
 preview; truthful source/aggregate admission and export remain open. PR #124
 landed bounded metrics with fresh real database and generated-consumer checks.
-PR #126 landed the alert design; T10.6 generator/CLI source is independently
-reviewed for integration, with local-only qualification and notifications disabled.
+PRs #128/#129 landed T10.6 generator/CLI source with fresh50 named scoped race
+checks, zero skips, and corrected public-safe test fixture. Local generation and
+evaluation only; notifications remain disabled. PR #130 landed an additive
+development HTTPS testing design; its host/reference executable implementation
+is in progress, with no runnable LAN or browser-trust claim yet. See the
+[qualification record](evidence/development-tls-20261016.md).
 T14.13 is accepted only as the closed upstream declaration/schema/validator;
 actual isolation, collection and deployment remain unqualified. T14.2 local-only
 component landed in PR #125 while full task acceptance remains open. Neither
