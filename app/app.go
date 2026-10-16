@@ -65,6 +65,7 @@ type Options struct {
 	HealthHandler    http.Handler
 	Logger           *slog.Logger
 	Metrics          *observability.Collector
+	Tracing          *observability.Tracer // Optional and caller-owned; App never closes it.
 	ReadinessChecks  []ReadinessCheck
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -104,6 +105,7 @@ func New(options Options) (*App, error) {
 		HealthHandler:    options.HealthHandler,
 		Logger:           options.Logger,
 		Metrics:          options.Metrics,
+		Tracing:          options.Tracing,
 		ReadinessChecks:  checks,
 		ReadinessTimeout: readinessTimeout,
 		ShutdownTimeout:  shutdownTimeout,
