@@ -478,3 +478,14 @@ Exact private IPv4 binding, mandatory TLS, secure sessions and private captured
 mail preserve auth boundaries. Existing initializer/generated/loopback/production
 profiles stay unchanged. Independent design landing precedes source; no provider,
 production, browser-trust or E16 admission is inferred.
+
+## Proposed amendment v1.33: bounded optional tracing
+
+[ADR047](../adr/047-bounded-optional-tracing.md) and the
+[tracing contract](../contracts/bounded-tracing.md) freeze a nil/default-off
+private SDK, local sampling, finite ordinal metadata, owned bounded nonblocking
+queue and authenticated TLS OTLP/HTTP export. Public ingress gets fresh IDs;
+continuation requires actual verified mTLS and cannot establish application
+authority. Real PostgreSQL, restricted TLS runtime role, backend and decoded
+collector wire proof precede source acceptance. Independent design landing
+precedes delegated source. No default collector, deployment or provider selected.

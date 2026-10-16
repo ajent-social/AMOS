@@ -347,3 +347,19 @@ Required PG/TLS/collector absence is an explicit failure, never a skipped pass.
 Local verified wire tests qualify only these fixtures; production credentials,
 collector access/retention, network deployment, operator consent and E16 remain
 separate unqualified gates.
+
+## Explicit integrator source delegation
+
+After independent design landing, the integrator delegates directly necessary
+`internal/telemetry/tracing*.go`, `observability/tracing.go` and tests, minimal
+`app/app.go`, `internal/runtime/runtime.go`, `apphost/local.go` optional composition
+and focused tracing tests, and `storage/db.go`/`storage/runtime.go` transaction
+hooks plus tracing tests. The existing logger/metrics behavior must stay intact;
+minimal shared middleware changes, if needed, require final integrator review.
+Public-consumer proof belongs in `tests/telemetryconsumer/tracing*.go`; root owns
+its module bookkeeping and any necessary clarification to the existing correlation
+file comment. All tests import public application/storage/observability interfaces
+when proving the external consumer. No test-only authority injection qualifies
+TLS/role/trace continuation. Module manifests/sums, amendments, task/registry
+progress, fixture provisioning and integration evidence remain integrator-owned.
+No dependency version changes or new migrations are delegated.

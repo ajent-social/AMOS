@@ -857,7 +857,8 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Dependencies T10.3/T10.4 accepted; integrator won original T10.5 claim. Readiness audit found the task-referenced propagation/export contract missing; versioned design review and landing precede implementation.",
-      "Existing pinned SDK/OTLP/gRPC dependencies are available. Planned boundary is default-off private finite tracing, explicit TLS collector and trusted-mTLS propagation, real SQL transaction/outbound/collector qualification. No exporter/provider/source/runtime acceptance yet."
+      "Existing pinned SDK/OTLP/gRPC dependencies are available. Planned boundary is default-off private finite tracing, explicit TLS collector and trusted-mTLS propagation, real SQL transaction/outbound/collector qualification. No exporter/provider/source/runtime acceptance yet.",
+      "Proposed v1.33/ADR047 freezes finite private SDK, inherited local sampling, actual verified-mTLS continuation and one-attempt authenticated binary OTLP/HTTP over TLS1.3 HTTP/1.1. Original two-file ownership expanded explicitly by integrator. Independent design landing precedes source; full acceptance requires actual restricted TLS RuntimeDB fixture and complete App/database/backend/collector proof."
     ]
   }
 }
