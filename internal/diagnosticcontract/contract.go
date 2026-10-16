@@ -67,7 +67,7 @@ func DecodeAndValidate(data []byte) error {
 		return ErrInvalid
 	}
 	tokens := json.NewDecoder(bytes.NewReader(data))
-	if !closedValue(tokens, 0) {
+	if !exactValue(tokens, rootObject) {
 		return ErrInvalid
 	}
 	if _, err := tokens.Token(); err != io.EOF {
@@ -123,47 +123,116 @@ func bucket(v string) bool {
 	return false
 }
 
-// Detect duplicate object keys before the typed decoder, at every nesting level.
-// This is deliberately finite JSON syntax checking, not schema interpretation.
-func closedValue(d *json.Decoder, depth int) bool {
-	if depth > 12 {
-		return false
+// Every JSON object is checked against exact decoded property names before
+// encoding/json reaches the typed structs: its case-insensitive field matching
+// must never turn an unknown secret-bearing alias into an ignored overwrite.
+// This fixed profile grammar is not a general JSON Schema interpreter.
+type wireNode uint8
+
+const (
+	rootObject wireNode = iota
+	componentObject
+	metricObject
+	errorObject
+	frameObject
+	stringValue
+	componentsArray
+	metricsArray
+	errorsArray
+	framesArray
+)
+
+func fieldNode(object wireNode, key string) (wireNode, bool) {
+	switch object {
+	case rootObject:
+		switch key {
+		case "schema", "registry", "window":
+			return stringValue, true
+		case "components":
+			return componentsArray, true
+		case "metrics":
+			return metricsArray, true
+		case "errors":
+			return errorsArray, true
+		}
+	case componentObject:
+		switch key {
+		case "id", "public_baseline", "source_manifest_sha256":
+			return stringValue, true
+		}
+	case metricObject:
+		switch key {
+		case "name", "bucket":
+			return stringValue, true
+		}
+	case errorObject:
+		switch key {
+		case "code", "signature", "bucket":
+			return stringValue, true
+		case "frames":
+			return framesArray, true
+		}
+	case frameObject:
+		if key == "id" {
+			return stringValue, true
+		}
 	}
-	t, err := d.Token()
+	return 0, false
+}
+
+func exactValue(d *json.Decoder, node wireNode) bool {
+	token, err := d.Token()
 	if err != nil {
 		return false
 	}
-	delimiter, ok := t.(json.Delim)
-	if !ok {
-		return true
+	if node == stringValue {
+		_, ok := token.(string)
+		return ok
 	}
-	switch delimiter {
-	case '{':
+	var element wireNode
+	switch node {
+	case componentsArray:
+		element = componentObject
+	case metricsArray:
+		element = metricObject
+	case errorsArray:
+		element = errorObject
+	case framesArray:
+		element = frameObject
+	default:
+		if token != json.Delim('{') {
+			return false
+		}
 		seen := map[string]bool{}
 		for d.More() {
 			key, err := d.Token()
 			if err != nil {
 				return false
 			}
-			s, ok := key.(string)
-			if !ok || seen[s] {
+			name, ok := key.(string)
+			if !ok || seen[name] {
 				return false
 			}
-			seen[s] = true
-			if !closedValue(d, depth+1) {
+			child, allowed := fieldNode(node, name)
+			if !allowed {
+				return false
+			}
+			seen[name] = true
+			if !exactValue(d, child) {
 				return false
 			}
 		}
 		end, err := d.Token()
 		return err == nil && end == json.Delim('}')
-	case '[':
-		for d.More() {
-			if !closedValue(d, depth+1) {
-				return false
-			}
-		}
-		end, err := d.Token()
-		return err == nil && end == json.Delim(']')
 	}
-	return false
+	if token != json.Delim('[') {
+		return false
+	}
+	for d.More() {
+		if !exactValue(d, element) {
+			return false
+		}
+	}
+	end, err := d.Token()
+	return err == nil && end == json.Delim(']')
 }
