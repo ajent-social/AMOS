@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -11,11 +11,101 @@ Product `S0`-`S5` milestones remain `product-milestone` metadata; their display 
 Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
-Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:82dc4e7d6e1cdeffb3ae62d8e7e8ea5d7c85f460510f9cd60db6ee80800028ac`.
 Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:ed9b3a22f48508562889d3d1a82a438f96ada66e9a804f85cc3b3c2e4897b5ca`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
+
+- [ ] T-SDLC-8-10.3 [Verify changed behavior and required checks T8.10 — Small-VM: configure origin TLS and reverse proxy]
+  Stage: verify
+  canonical-id: T-SDLC-8-10.3
+  authored-stage: verify
+  deps: [T-SDLC-8-10.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
+
+- [ ] T-SDLC-8-10.4 [Independently review T8.10 — Small-VM: configure origin TLS and reverse proxy]
+  Stage: review
+  canonical-id: T-SDLC-8-10.4
+  authored-stage: review
+  deps: [T-SDLC-8-10.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Independent reviewer is named for T8.10 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
+
+- [ ] T-SDLC-8-10.5 [Rebase merge T8.10 — Small-VM: configure origin TLS and reverse proxy]
+  Stage: merge
+  canonical-id: T-SDLC-8-10.5
+  authored-stage: merge
+  deps: [T-SDLC-8-10.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
+
+- [ ] T-SDLC-8-10.6 [Verify landed T8.10 — Small-VM: configure origin TLS and reverse proxy]
+  Stage: verify-landed
+  canonical-id: T-SDLC-8-10.6
+  authored-stage: verify-landed
+  deps: [T-SDLC-8-10.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
+
+- [ ] T-SDLC-8-11.1 [Preflight T8.11 — Propose upstream infrastructure and workflow gaps]
+  Stage: preflight
+  canonical-id: T-SDLC-8-11.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T8.1, T-SDLC-8-8.6, T1.4, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T8.1, T8.8, T1.4 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
+
+- [ ] T-SDLC-8-11.2 [Implement T8.11 — Propose upstream infrastructure and workflow gaps]
+  Stage: implement
+  canonical-id: T-SDLC-8-11.2
+  authored-stage: implement
+  deps: [T-SDLC-8-11.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Each proposed upstream change is tied to observed source behavior and a concrete AMOS consumer boundary. No capability maturity is promoted and no upstream edit/publication is implied. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
+
+- [ ] T-SDLC-8-11.3 [Verify changed behavior and required checks T8.11 — Propose upstream infrastructure and workflow gaps]
+  Stage: verify
+  canonical-id: T-SDLC-8-11.3
+  authored-stage: verify
+  deps: [T-SDLC-8-11.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
+
+- [ ] T-SDLC-8-11.4 [Independently review T8.11 — Propose upstream infrastructure and workflow gaps]
+  Stage: review
+  canonical-id: T-SDLC-8-11.4
+  authored-stage: review
+  deps: [T-SDLC-8-11.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Independent reviewer is named for T8.11 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
+
+- [ ] T-SDLC-8-11.5 [Rebase merge T8.11 — Propose upstream infrastructure and workflow gaps]
+  Stage: merge
+  canonical-id: T-SDLC-8-11.5
+  authored-stage: merge
+  deps: [T-SDLC-8-11.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
 
 - [ ] T-SDLC-8-11.6 [Verify landed T8.11 — Propose upstream infrastructure and workflow gaps]
   Stage: verify-landed
@@ -926,93 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-8-27.1 [Preflight T8.27 — Provision transactional email identity and scoped delivery permissions]
-  Stage: preflight
-  canonical-id: T-SDLC-8-27.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T8.2, T-SDLC-8-8.6, T1.11, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T8.2, T8.8, T1.11 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-
-- [ ] T-SDLC-8-27.2 [Implement T8.27 — Provision transactional email identity and scoped delivery permissions]
-  Stage: implement
-  canonical-id: T-SDLC-8-27.2
-  authored-stage: implement
-  deps: [T-SDLC-8-27.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Sender identity, DNS records and runtime send scope are explicit without exposing token values. No existing domain-wide mail policy is overwritten and no real message is sent by default tests. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-
-- [ ] T-SDLC-8-27.3 [Verify changed behavior and required checks T8.27 — Provision transactional email identity and scoped delivery permissions]
-  Stage: verify
-  canonical-id: T-SDLC-8-27.3
-  authored-stage: verify
-  deps: [T-SDLC-8-27.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
-
-- [ ] T-SDLC-8-27.4 [Independently review T8.27 — Provision transactional email identity and scoped delivery permissions]
-  Stage: review
-  canonical-id: T-SDLC-8-27.4
-  authored-stage: review
-  deps: [T-SDLC-8-27.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Independent reviewer is named for T8.27 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-8-27.5 [Rebase merge T8.27 — Provision transactional email identity and scoped delivery permissions]
-  Stage: merge
-  canonical-id: T-SDLC-8-27.5
-  authored-stage: merge
-  deps: [T-SDLC-8-27.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-8-27.6 [Verify landed T8.27 — Provision transactional email identity and scoped delivery permissions]
-  Stage: verify-landed
-  canonical-id: T-SDLC-8-27.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-8-27.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-8-28.1 [Preflight T8.28 — Qualify email sandbox, delivery and sender readiness]
-  Stage: preflight
-  canonical-id: T-SDLC-8-28.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T-SDLC-8-27.6, T1.11, T1.10, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T8.27, T1.11, T1.10 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-
-- [ ] T-SDLC-8-28.2 [Implement T8.28 — Qualify email sandbox, delivery and sender readiness]
-  Stage: implement
-  canonical-id: T-SDLC-8-28.2
-  authored-stage: implement
-  deps: [T-SDLC-8-28.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Identity qualification can depend on this gate without depending on combined E16, avoiding a release dependency cycle. Qualification report distinguishes mocked checks, sandbox send, actual authorized receipt and production-account readiness. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-
-- [ ] T-SDLC-8-28.3 [Verify changed behavior and required checks T8.28 — Qualify email sandbox, delivery and sender readiness]
-  Stage: verify
-  canonical-id: T-SDLC-8-28.3
-  authored-stage: verify
-  deps: [T-SDLC-8-28.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]

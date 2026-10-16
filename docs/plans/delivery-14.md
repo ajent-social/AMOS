@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -11,11 +11,101 @@ Product `S0`-`S5` milestones remain `product-milestone` metadata; their display 
 Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
-Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:82dc4e7d6e1cdeffb3ae62d8e7e8ea5d7c85f460510f9cd60db6ee80800028ac`.
 Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:ed9b3a22f48508562889d3d1a82a438f96ada66e9a804f85cc3b3c2e4897b5ca`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
+
+- [ ] T-SDLC-9-17.5 [Rebase merge T9.17 — Format, lint and verify delivery lane artifacts]
+  Stage: merge
+  canonical-id: T-SDLC-9-17.5
+  authored-stage: merge
+  deps: [T-SDLC-9-17.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
+
+- [ ] T-SDLC-9-17.6 [Verify landed T9.17 — Format, lint and verify delivery lane artifacts]
+  Stage: verify-landed
+  canonical-id: T-SDLC-9-17.6
+  authored-stage: verify-landed
+  deps: [T-SDLC-9-17.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
+
+- [ ] T-SDLC-9-2.1 [Preflight T9.2 — Generate credential-free Go validation workflow]
+  Stage: preflight
+  canonical-id: T-SDLC-9-2.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T9.1, T1.4, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T9.1, T1.4 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
+
+- [ ] T-SDLC-9-2.2 [Implement T9.2 — Generate credential-free Go validation workflow]
+  Stage: implement
+  canonical-id: T-SDLC-9-2.2
+  authored-stage: implement
+  deps: [T-SDLC-9-2.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Generated workflow validates both PR and merge-group events. A failing child job makes the required aggregate check fail. Named scoped checks pass and the specified negative case is demonstrated; live/production qualification remains a separate explicitly authorized E16 gate where applicable. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
+
+- [ ] T-SDLC-9-2.3 [Verify changed behavior and required checks T9.2 — Generate credential-free Go validation workflow]
+  Stage: verify
+  canonical-id: T-SDLC-9-2.3
+  authored-stage: verify
+  deps: [T-SDLC-9-2.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
+
+- [ ] T-SDLC-9-2.4 [Independently review T9.2 — Generate credential-free Go validation workflow]
+  Stage: review
+  canonical-id: T-SDLC-9-2.4
+  authored-stage: review
+  deps: [T-SDLC-9-2.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Independent reviewer is named for T9.2 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
+
+- [ ] T-SDLC-9-2.5 [Rebase merge T9.2 — Generate credential-free Go validation workflow]
+  Stage: merge
+  canonical-id: T-SDLC-9-2.5
+  authored-stage: merge
+  deps: [T-SDLC-9-2.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
+
+- [ ] T-SDLC-9-2.6 [Verify landed T9.2 — Generate credential-free Go validation workflow]
+  Stage: verify-landed
+  canonical-id: T-SDLC-9-2.6
+  authored-stage: verify-landed
+  deps: [T-SDLC-9-2.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
+
+- [ ] T-SDLC-9-3.1 [Preflight T9.3 — Generate application and browser fixture CI]
+  Stage: preflight
+  canonical-id: T-SDLC-9-3.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T-SDLC-9-2.6, T-SDLC-7-13.6, T6.3, T-SDLC-6-5.6, T-SDLC-6-18.6, T1.5, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T9.2, T7.13, T6.3, T6.5, T6.18, T1.5 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
 
 - [ ] T-SDLC-9-3.2 [Implement T9.3 — Generate application and browser fixture CI]
   Stage: implement

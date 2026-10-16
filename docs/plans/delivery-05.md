@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -11,11 +11,101 @@ Product `S0`-`S5` milestones remain `product-milestone` metadata; their display 
 Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
-Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:82dc4e7d6e1cdeffb3ae62d8e7e8ea5d7c85f460510f9cd60db6ee80800028ac`.
 Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:ed9b3a22f48508562889d3d1a82a438f96ada66e9a804f85cc3b3c2e4897b5ca`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
+
+- [ ] T-SDLC-12-9.5 [Rebase merge T12.9 — Qualify business mutation retry and error semantics]
+  Stage: merge
+  canonical-id: T-SDLC-12-9.5
+  authored-stage: merge
+  deps: [T-SDLC-12-9.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
+
+- [ ] T-SDLC-12-9.6 [Verify landed T12.9 — Qualify business mutation retry and error semantics]
+  Stage: verify-landed
+  canonical-id: T-SDLC-12-9.6
+  authored-stage: verify-landed
+  deps: [T-SDLC-12-9.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
+
+- [ ] T-SDLC-13-1.1 [Preflight T13.1 — Freeze maintenance job, evidence and authority contracts]
+  Stage: preflight
+  canonical-id: T-SDLC-13-1.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T1.2, T-SDLC-10-15.6, T-SDLC-9-12.6, T-SDLC-9-5.6, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T1.2, T10.15, T9.12, T9.5 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
+
+- [ ] T-SDLC-13-1.2 [Implement T13.1 — Freeze maintenance job, evidence and authority contracts]
+  Stage: implement
+  canonical-id: T-SDLC-13-1.2
+  authored-stage: implement
+  deps: [T-SDLC-13-1.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Every transition has a caller identity, compare-and-swap precondition and recovery outcome. Coding identity cannot transition directly to approved/released or replace protected policy. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
+
+- [ ] T-SDLC-13-1.3 [Verify changed behavior and required checks T13.1 — Freeze maintenance job, evidence and authority contracts]
+  Stage: verify
+  canonical-id: T-SDLC-13-1.3
+  authored-stage: verify
+  deps: [T-SDLC-13-1.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
+
+- [ ] T-SDLC-13-1.4 [Independently review T13.1 — Freeze maintenance job, evidence and authority contracts]
+  Stage: review
+  canonical-id: T-SDLC-13-1.4
+  authored-stage: review
+  deps: [T-SDLC-13-1.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Independent reviewer is named for T13.1 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
+
+- [ ] T-SDLC-13-1.5 [Rebase merge T13.1 — Freeze maintenance job, evidence and authority contracts]
+  Stage: merge
+  canonical-id: T-SDLC-13-1.5
+  authored-stage: merge
+  deps: [T-SDLC-13-1.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
+
+- [ ] T-SDLC-13-1.6 [Verify landed T13.1 — Freeze maintenance job, evidence and authority contracts]
+  Stage: verify-landed
+  canonical-id: T-SDLC-13-1.6
+  authored-stage: verify-landed
+  deps: [T-SDLC-13-1.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
+
+- [ ] T-SDLC-13-10.1 [Preflight T13.10 — Separate release identity and idempotent artifact promotion]
+  Stage: preflight
+  canonical-id: T-SDLC-13-10.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T-SDLC-13-9.6, T-SDLC-7-11.6, T-SDLC-9-5.6, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T13.9, T7.11, T9.5 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
 
 - [ ] T-SDLC-13-10.2 [Implement T13.10 — Separate release identity and idempotent artifact promotion]
   Stage: implement
@@ -926,93 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [Only safe shared defect yields public synthetic evidence and eligible repair; private/vulnerability cases remain correctly restricted. Owner disablement and upstream outage leave application service healthy. Scoped checks, formatting and configured lint pass; E16 separately records any required deployed/live verification before this behavior is advertised. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-
-- [ ] T-SDLC-14-12.3 [Verify changed behavior and required checks T14.12 — Qualify reporting-to-upgrade loop and privacy failures]
-  Stage: verify
-  canonical-id: T-SDLC-14-12.3
-  authored-stage: verify
-  deps: [T-SDLC-14-12.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
-
-- [ ] T-SDLC-14-12.4 [Independently review T14.12 — Qualify reporting-to-upgrade loop and privacy failures]
-  Stage: review
-  canonical-id: T-SDLC-14-12.4
-  authored-stage: review
-  deps: [T-SDLC-14-12.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Independent reviewer is named for T14.12 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-14-12.5 [Rebase merge T14.12 — Qualify reporting-to-upgrade loop and privacy failures]
-  Stage: merge
-  canonical-id: T-SDLC-14-12.5
-  authored-stage: merge
-  deps: [T-SDLC-14-12.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-14-12.6 [Verify landed T14.12 — Qualify reporting-to-upgrade loop and privacy failures]
-  Stage: verify-landed
-  canonical-id: T-SDLC-14-12.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-14-12.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-14-13.1 [Preflight T14.13 — Define isolated upstream service and deployment manifest]
-  Stage: preflight
-  canonical-id: T-SDLC-14-13.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T1.2, T8.1, T-SDLC-14-1.6, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T1.2, T8.1, T14.1 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-
-- [ ] T-SDLC-14-13.2 [Implement T14.13 — Define isolated upstream service and deployment manifest]
-  Stage: implement
-  canonical-id: T-SDLC-14-13.2
-  authored-stage: implement
-  deps: [T-SDLC-14-13.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Upstream configuration rejects consumer credentials and public raw diagnostic storage. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-
-- [ ] T-SDLC-14-13.3 [Verify changed behavior and required checks T14.13 — Define isolated upstream service and deployment manifest]
-  Stage: verify
-  canonical-id: T-SDLC-14-13.3
-  authored-stage: verify
-  deps: [T-SDLC-14-13.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
-
-- [ ] T-SDLC-14-13.4 [Independently review T14.13 — Define isolated upstream service and deployment manifest]
-  Stage: review
-  canonical-id: T-SDLC-14-13.4
-  authored-stage: review
-  deps: [T-SDLC-14-13.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Independent reviewer is named for T14.13 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-14-13.5 [Rebase merge T14.13 — Define isolated upstream service and deployment manifest]
-  Stage: merge
-  canonical-id: T-SDLC-14-13.5
-  authored-stage: merge
-  deps: [T-SDLC-14-13.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]

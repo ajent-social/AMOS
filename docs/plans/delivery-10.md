@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -11,11 +11,101 @@ Product `S0`-`S5` milestones remain `product-milestone` metadata; their display 
 Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
-Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:82dc4e7d6e1cdeffb3ae62d8e7e8ea5d7c85f460510f9cd60db6ee80800028ac`.
 Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:ed9b3a22f48508562889d3d1a82a438f96ada66e9a804f85cc3b3c2e4897b5ca`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
+
+- [ ] T-SDLC-5-14.1 [Preflight T5.14 — Implement transactional seat reservations for membership changes]
+  Stage: preflight
+  canonical-id: T-SDLC-5-14.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T-SDLC-5-13.6, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T5.13 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
+
+- [ ] T-SDLC-5-14.2 [Implement T5.14 — Implement transactional seat reservations for membership changes]
+  Stage: implement
+  canonical-id: T-SDLC-5-14.2
+  authored-stage: implement
+  deps: [T-SDLC-5-14.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Seat-limited model cannot oversubscribe accepted members under concurrent invite acceptance. Rolled-back membership does not leave permanent seat reservation or duplicate charge. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
+
+- [ ] T-SDLC-5-14.3 [Verify changed behavior and required checks T5.14 — Implement transactional seat reservations for membership changes]
+  Stage: verify
+  canonical-id: T-SDLC-5-14.3
+  authored-stage: verify
+  deps: [T-SDLC-5-14.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
+
+- [ ] T-SDLC-5-14.4 [Independently review T5.14 — Implement transactional seat reservations for membership changes]
+  Stage: review
+  canonical-id: T-SDLC-5-14.4
+  authored-stage: review
+  deps: [T-SDLC-5-14.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Independent reviewer is named for T5.14 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
+
+- [ ] T-SDLC-5-14.5 [Rebase merge T5.14 — Implement transactional seat reservations for membership changes]
+  Stage: merge
+  canonical-id: T-SDLC-5-14.5
+  authored-stage: merge
+  deps: [T-SDLC-5-14.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
+
+- [ ] T-SDLC-5-14.6 [Verify landed T5.14 — Implement transactional seat reservations for membership changes]
+  Stage: verify-landed
+  canonical-id: T-SDLC-5-14.6
+  authored-stage: verify-landed
+  deps: [T-SDLC-5-14.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
+
+- [ ] T-SDLC-5-15.1 [Preflight T5.15 — Create immutable usage event ledger]
+  Stage: preflight
+  canonical-id: T-SDLC-5-15.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T5.1, T5.3, T-SDLC-4-8.6, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T5.1, T5.3, T4.8 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
+
+- [ ] T-SDLC-5-15.2 [Implement T5.15 — Create immutable usage event ledger]
+  Stage: implement
+  canonical-id: T-SDLC-5-15.2
+  authored-stage: implement
+  deps: [T-SDLC-5-15.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Same usage identity contributes once; differing payload under same identity conflicts. Failed rolled-back business operation cannot create finalized billable usage. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
+
+- [ ] T-SDLC-5-15.3 [Verify changed behavior and required checks T5.15 — Create immutable usage event ledger]
+  Stage: verify
+  canonical-id: T-SDLC-5-15.3
+  authored-stage: verify
+  deps: [T-SDLC-5-15.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
 
 - [ ] T-SDLC-5-15.4 [Independently review T5.15 — Create immutable usage event ledger]
   Stage: review
@@ -926,93 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [Independent reviewer is named for T6.17 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-6-17.5 [Rebase merge T6.17 — Add UI upgrade compatibility and authored override protection]
-  Stage: merge
-  canonical-id: T-SDLC-6-17.5
-  authored-stage: merge
-  deps: [T-SDLC-6-17.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-6-17.6 [Verify landed T6.17 — Add UI upgrade compatibility and authored override protection]
-  Stage: verify-landed
-  canonical-id: T-SDLC-6-17.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-6-17.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-6-18.1 [Preflight T6.18 — Build baseline personal subscription management page]
-  Stage: preflight
-  canonical-id: T-SDLC-6-18.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T-SDLC-6-5.6, T-SDLC-5-22.6, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T6.5, T5.22 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-
-- [ ] T-SDLC-6-18.2 [Implement T6.18 — Build baseline personal subscription management page]
-  Stage: implement
-  canonical-id: T-SDLC-6-18.2
-  authored-stage: implement
-  deps: [T-SDLC-6-18.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Personal owner can reach and return from configured management flow; tampering and expired proof fail at backend. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-
-- [ ] T-SDLC-6-18.3 [Verify changed behavior and required checks T6.18 — Build baseline personal subscription management page]
-  Stage: verify
-  canonical-id: T-SDLC-6-18.3
-  authored-stage: verify
-  deps: [T-SDLC-6-18.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
-
-- [ ] T-SDLC-6-18.4 [Independently review T6.18 — Build baseline personal subscription management page]
-  Stage: review
-  canonical-id: T-SDLC-6-18.4
-  authored-stage: review
-  deps: [T-SDLC-6-18.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Independent reviewer is named for T6.18 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-6-18.5 [Rebase merge T6.18 — Build baseline personal subscription management page]
-  Stage: merge
-  canonical-id: T-SDLC-6-18.5
-  authored-stage: merge
-  deps: [T-SDLC-6-18.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-6-18.6 [Verify landed T6.18 — Build baseline personal subscription management page]
-  Stage: verify-landed
-  canonical-id: T-SDLC-6-18.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-6-18.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-6-5.1 [Preflight T6.5 — Build plan selection, checkout return and payment state pages]
-  Stage: preflight
-  canonical-id: T-SDLC-6-5.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T6.2, T6.4, T5.6, T5.8, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T6.2, T6.4, T5.6, T5.8 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]

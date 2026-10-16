@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -11,11 +11,101 @@ Product `S0`-`S5` milestones remain `product-milestone` metadata; their display 
 Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
-Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:82dc4e7d6e1cdeffb3ae62d8e7e8ea5d7c85f460510f9cd60db6ee80800028ac`.
 Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:ed9b3a22f48508562889d3d1a82a438f96ada66e9a804f85cc3b3c2e4897b5ca`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
+
+- [ ] T-SDLC-15-2.1 [Preflight T15.2 — Qualify tenant, role and entitlement policy consistency]
+  Stage: preflight
+  canonical-id: T-SDLC-15-2.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T15.1, T-SDLC-11-13.6, T-SDLC-12-10.6, T-SDLC-4-14.6, T-SDLC-5-20.6, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T15.1, T11.13, T12.10, T4.14, T5.20 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
+
+- [ ] T-SDLC-15-2.2 [Implement T15.2 — Qualify tenant, role and entitlement policy consistency]
+  Stage: implement
+  canonical-id: T-SDLC-15-2.2
+  authored-stage: implement
+  deps: [T-SDLC-15-2.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [No credential mode grants broader authority than current application policy. Every advertised sensitive operation has a cross-tenant and privilege-escalation denial assertion. Scoped checks, formatting and configured lint pass; E16 separately records any required deployed/live verification before this behavior is advertised. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
+
+- [ ] T-SDLC-15-2.3 [Verify changed behavior and required checks T15.2 — Qualify tenant, role and entitlement policy consistency]
+  Stage: verify
+  canonical-id: T-SDLC-15-2.3
+  authored-stage: verify
+  deps: [T-SDLC-15-2.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
+
+- [ ] T-SDLC-15-2.4 [Independently review T15.2 — Qualify tenant, role and entitlement policy consistency]
+  Stage: review
+  canonical-id: T-SDLC-15-2.4
+  authored-stage: review
+  deps: [T-SDLC-15-2.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Independent reviewer is named for T15.2 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
+
+- [ ] T-SDLC-15-2.5 [Rebase merge T15.2 — Qualify tenant, role and entitlement policy consistency]
+  Stage: merge
+  canonical-id: T-SDLC-15-2.5
+  authored-stage: merge
+  deps: [T-SDLC-15-2.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
+
+- [ ] T-SDLC-15-2.6 [Verify landed T15.2 — Qualify tenant, role and entitlement policy consistency]
+  Stage: verify-landed
+  canonical-id: T-SDLC-15-2.6
+  authored-stage: verify-landed
+  deps: [T-SDLC-15-2.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
+
+- [ ] T-SDLC-15-3.1 [Preflight T15.3 — Qualify public HTTP hardening and abuse bounds]
+  Stage: preflight
+  canonical-id: T-SDLC-15-3.1
+  authored-stage: preflight
+  deps: [T-PROD.1, T15.1, T2.2, T3.7, T-SDLC-8-21.6, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Current task contract, owned paths, source changes and T15.1, T2.2, T3.7, T8.21 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
+
+- [ ] T-SDLC-15-3.2 [Implement T15.3 — Qualify public HTTP hardening and abuse bounds]
+  Stage: implement
+  canonical-id: T-SDLC-15-3.2
+  authored-stage: implement
+  deps: [T-SDLC-15-3.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Oversized/host-forged/CSRF-invalid requests fail with documented status and no side effects. Anonymous endpoint abuse does not exhaust unbounded durable storage or leak credentials. Scoped checks, formatting and configured lint pass; E16 separately records any required deployed/live verification before this behavior is advertised. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
+
+- [ ] T-SDLC-15-3.3 [Verify changed behavior and required checks T15.3 — Qualify public HTTP hardening and abuse bounds]
+  Stage: verify
+  canonical-id: T-SDLC-15-3.3
+  authored-stage: verify
+  deps: [T-SDLC-15-3.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
 
 - [ ] T-SDLC-15-3.4 [Independently review T15.3 — Qualify public HTTP hardening and abuse bounds]
   Stage: review
@@ -926,93 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [Independent reviewer is named for T16.6 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-16-6.5 [Rebase merge T16.6 — Accept complete authentication and workspace matrix]
-  Stage: merge
-  canonical-id: T-SDLC-16-6.5
-  authored-stage: merge
-  deps: [T-SDLC-16-6.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-16-6.6 [Verify landed T16.6 — Accept complete authentication and workspace matrix]
-  Stage: verify-landed
-  canonical-id: T-SDLC-16-6.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-16-6.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-16-7.1 [Preflight T16.7 — Accept flat seat and usage billing matrix]
-  Stage: preflight
-  canonical-id: T-SDLC-16-7.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T-SDLC-5-20.6, T-SDLC-6-12.6, T-SDLC-16-1.6, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T5.20, T6.12, T16.1 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-
-- [ ] T-SDLC-16-7.2 [Implement T16.7 — Accept flat seat and usage billing matrix]
-  Stage: implement
-  canonical-id: T-SDLC-16-7.2
-  authored-stage: implement
-  deps: [T-SDLC-16-7.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [All three pricing models converge to documented entitlement and invoice expectations under retries. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-
-- [ ] T-SDLC-16-7.3 [Verify changed behavior and required checks T16.7 — Accept flat seat and usage billing matrix]
-  Stage: verify
-  canonical-id: T-SDLC-16-7.3
-  authored-stage: verify
-  deps: [T-SDLC-16-7.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
-
-- [ ] T-SDLC-16-7.4 [Independently review T16.7 — Accept flat seat and usage billing matrix]
-  Stage: review
-  canonical-id: T-SDLC-16-7.4
-  authored-stage: review
-  deps: [T-SDLC-16-7.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Independent reviewer is named for T16.7 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-16-7.5 [Rebase merge T16.7 — Accept flat seat and usage billing matrix]
-  Stage: merge
-  canonical-id: T-SDLC-16-7.5
-  authored-stage: merge
-  deps: [T-SDLC-16-7.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-16-7.6 [Verify landed T16.7 — Accept flat seat and usage billing matrix]
-  Stage: verify-landed
-  canonical-id: T-SDLC-16-7.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-16-7.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-16-8.1 [Preflight T16.8 — Accept REST MCP and separate-service equivalence]
-  Stage: preflight
-  canonical-id: T-SDLC-16-8.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T-SDLC-11-14.6, T-SDLC-12-9.6, T-SDLC-12-11.6, T-SDLC-7-8.6, T-SDLC-16-6.6, T-SDLC-16-7.6, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T11.14, T12.9, T12.11, T7.8, T16.6, T16.7 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
