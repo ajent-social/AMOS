@@ -369,3 +369,19 @@ func TestAlertsMaximumArtifactAndInclusivePressureBounds(t *testing.T) {
 		}
 	}
 }
+
+func TestAlertsQueueComparisonPreservesLargeIntegerBoundary(t *testing.T) {
+	c := fixtureConfig()
+	c.Options.QueuedDepth = 1 << 53
+	c.Options.FailureHold = 0
+	b, err := Generate(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := healthySample(fixtureAt, 1)
+	s.Queue.Queued = 1<<53 + 1
+	out := evaluateFixture(t, b, s)
+	if out.Evaluations[0].Results[4].State != "firing" {
+		t.Fatal("integer queue threshold crossing rounded into healthy state")
+	}
+}

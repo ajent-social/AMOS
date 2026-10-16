@@ -491,7 +491,7 @@ func Evaluate(b Bundle, input Samples) (Output, error) {
 			}
 			st.lastEval = s.At
 			st.lastObservation = observed
-			adverse := compare(r, values)
+			adverse := compare(r, values, s.Queue.Queued)
 			if adverse {
 				st.recovery = time.Time{}
 				if st.active {
@@ -530,14 +530,16 @@ func Evaluate(b Bundle, input Samples) (Output, error) {
 	}
 	return result, nil
 }
-func compare(r Rule, v [3]float64) bool {
+func compare(r Rule, v [3]float64, queued uint64) bool {
 	switch r.Comparison {
 	case "greater":
 		return v[0] > r.Threshold
 	case "greater_or_equal":
 		return v[0] >= r.Threshold
 	case "greater_or_age":
-		return v[0] > r.Threshold || v[1] > r.SecondaryThreshold
+		// The generated depth threshold is validated as an exact uint64 integer.
+		// Compare the source count before any float conversion used for display.
+		return queued > uint64(r.Threshold) || v[1] > r.SecondaryThreshold
 	case "less_or_equal":
 		return v[0] <= r.Threshold
 	}
