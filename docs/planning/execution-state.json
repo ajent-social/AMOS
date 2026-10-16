@@ -835,11 +835,13 @@
     ]
   },
   "T10.6": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dependencies accepted; integrator holds original task claim. Proposed v1.30/ADR044 defines real local dashboard/alert render/evaluate path with explicit owner parameters, finite generated rules and disabled notifications. Independent design review/landing precedes source; no external sends or activation selected.",
-      "Independent design review fixed observation-gap continuity (fresh samples separated beyond freshness cannot accrue failure/recovery holds). Exact design head5d2ce70 reviewed against0f48cd2; PR126 landed5b8c7c18f21f36daae4d5dd2c6a8ebfe07c43f73 with entire reviewed-tree equality. Source generator/CLI implementation in progress; no task or notification qualification."
+      "Seven finite generated panels/rules/runbooks and actual local CLI render/evaluate; docs/evidence/generated-alerts-20261016.md.",
+      "Fifty scoped named checks passed with zero skips, including existing actual PostgreSQL CLI regression; vet and lint passed.",
+      "RPO comparison reversal and uint64 queue threshold regression demonstrated RED; exact restored source GREEN.",
+      "Independent final review and guarded landing required; no deployed collection, notification, live provider or production qualification."
     ]
   },
   "T14.13": {

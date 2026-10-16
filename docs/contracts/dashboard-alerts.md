@@ -17,6 +17,9 @@ zero. Certificate lead may be at most90days. Do not invent/activate these values
 for a real owner. Synthetic fixtures use explicitly selected fictional roles.
 Use the selected RPO and disk threshold from the validated operations targets.
 
+The CLI config uses canonical snake_case target names and duration strings such
+as `"24h"` and `"5m"`. Generated numeric duration fields explicitly end in `_ns`.
+
 Produce deterministic closed JSON `amos-dashboard-alerts-v1`, with seven fixed
 panel/rule IDs: `service_errors`, `service_latency`, `disk_pressure`,
 `database_pool`, `queue_backlog`, `backup_freshness`, `certificate_expiry`.
