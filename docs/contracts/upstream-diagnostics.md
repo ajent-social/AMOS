@@ -39,9 +39,25 @@ not relabel its entire installed build as the old audit commit. Caller labels,
 self-asserted payload fields, a matching symbol name, or arbitrary semver are not
 provenance. Unknown/modified component code stays local until a reviewed new
 registry baseline admits it. Runtime provenance verification is future work and
-is not established by the schema decoder. The source-manifest test checks current
-repository bytes against the proposed public baseline only; it does not attest
-an installed binary. No AMSL revision or frame is approved by this profile.
+is not established by the schema decoder. The source-manifest test checks the immutable approved manifest definition and
+digest only. It does not require current repository files to match that old
+baseline: new source may exist while diagnostic export for the changed component
+remains unsupported. A different current file hash is not permission to change
+the frozen baseline, auto-admit the new component or relabel it as approved.
+Actual source comparisons are explicit qualification evidence; installed-binary
+provenance remains separately required. No AMSL revision or frame is approved by
+this profile.
+
+For source qualification only, run in the exact candidate checkout:
+
+```sh
+sha256sum app/app.go internal/health/handler.go internal/runtime/runtime.go internal/telemetry/logging.go
+```
+
+Compare each result with the immutable manifest above. Record the source revision and whether
+it matches or is unsupported. This command is not a persistent repository test,
+a runtime provenance verifier or proof of an installed binary. A later source
+mismatch is expected until a separate registry review admits that component.
 
 | Field | Exact approved vocabulary |
 | --- | --- |
