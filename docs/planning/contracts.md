@@ -468,3 +468,13 @@ validator. The first supported profile rejects declared consumer-account reuse
 and public/raw quarantine; actual isolation and inventory completeness remain
 separate. Independent design/schema landing precedes dependent intake source.
 No deployment, credential access, collection, provenance or transmission added.
+
+## Proposed amendment v1.32: explicit development HTTPS testing
+
+[ADR046](../adr/046-explicit-development-tls.md) and the
+[development TLS contract](../contracts/development-tls.md) add a separate typed
+host constructor and reference executable for owner-authorized LAN testing.
+Exact private IPv4 binding, mandatory TLS, secure sessions and private captured
+mail preserve auth boundaries. Existing initializer/generated/loopback/production
+profiles stay unchanged. Independent design landing precedes source; no provider,
+production, browser-trust or E16 admission is inferred.
