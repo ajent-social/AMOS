@@ -827,24 +827,27 @@
   },
   "T14.2": {
     "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "certification": "REVIEWED",
     "evidence": [
       "Original dependency T14.1 design accepted/landed; integrator holds original T14.2 claim. Fresh typed pure-local projection/preview under implementation, with non-exportable unqualified receipt. No source/build provenance adapter, public-frame admission, consent, exporter or full task acceptance is claimed.",
-      "Pure-local source component adds bounded exact fresh projection, canonical bucket/count output, all-frame omission without provenance, copied preview and hash/version receipt explicitlyunqualified. Full scoped race/vet/lint pass0skips/issues; boundedfuzz48163; gzip/decompression canaries pass; unsafe-placeholder mutation RED/restoredGREEN. Full task remains IN_PROGRESS: no truthful runtime aggregate/source admission, public-frame authority, consent or export qualification. Receipt docs/evidence/diagnostic-local-projection-20261016.md; independent source review/guarded component landing required."
+      "Pure-local source component adds bounded exact fresh projection, canonical bucket/count output, all-frame omission without provenance, copied preview and hash/version receipt explicitlyunqualified. Full scoped race/vet/lint pass0skips/issues; boundedfuzz48163; gzip/decompression canaries pass; unsafe-placeholder mutation RED/restoredGREEN. Full task remains IN_PROGRESS: no truthful runtime aggregate/source admission, public-frame authority, consent or export qualification. Receipt docs/evidence/diagnostic-local-projection-20261016.md; independent source review/guarded component landing required.",
+      "Independent exact-head component review approvedd5ca5ce, keeping full task IN_PROGRESS. PR125 landed0f48cd28b44f0257b2b10715f188b9821f0711e5; entire reviewed-tree equality/main reachability and fresh11 scoped race/vet checks0skips verified. Own claim released after component handoff. No source/aggregate/public-frame/export admission accepted."
     ]
   },
   "T10.6": {
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Dependencies accepted; integrator holds original task claim. Proposed v1.30/ADR044 defines real local dashboard/alert render/evaluate path with explicit owner parameters, finite generated rules and disabled notifications. Independent design review/landing precedes source; no external sends or activation selected."
+      "Dependencies accepted; integrator holds original task claim. Proposed v1.30/ADR044 defines real local dashboard/alert render/evaluate path with explicit owner parameters, finite generated rules and disabled notifications. Independent design review/landing precedes source; no external sends or activation selected.",
+      "Independent design review fixed observation-gap continuity (fresh samples separated beyond freshness cannot accrue failure/recovery holds). Exact design head5d2ce70 reviewed against0f48cd2; PR126 landed5b8c7c18f21f36daae4d5dd2c6a8ebfe07c43f73 with entire reviewed-tree equality. Source generator/CLI implementation in progress; no task or notification qualification."
     ]
   },
   "T14.13": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Dependencies accepted; integrator holds original task claim. Isolated upstream closed configuration schema/validator design under implementation. Declared identity-domain separation is not effective IAM/account/bucket isolation; no deployment, credentials or collection enabled. Independent review/versioned design integration required."
+      "Dependencies accepted; integrator holds original task claim. Isolated upstream closed configuration schema/validator design under implementation. Declared identity-domain separation is not effective IAM/account/bucket isolation; no deployment, credentials or collection enabled. Independent review/versioned design integration required.",
+      "Closed configuration schema/exact recursive checker and synthetic fixtures pass3top/34sub race tests0skips, scoped vet/lint0 and independent Draft2020-12 meta/fixture validation. Declared consumer operator/account/purpose reuse and public/raw quarantine rejected. ADR045/v1.31 retain authoritative inventory and actual IAM/account/storage/network/MFA/retention enforcement as separate gates. No deployment/credentials/collection enabled. Receipt docs/evidence/upstream-config-design-20261016.md; final independent review/guarded landing required."
     ]
   }
 }
