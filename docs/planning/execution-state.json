@@ -851,5 +851,13 @@
       "Dependencies accepted; integrator holds original task claim. Isolated upstream closed configuration schema/validator design under implementation. Declared identity-domain separation is not effective IAM/account/bucket isolation; no deployment, credentials or collection enabled. Independent review/versioned design integration required.",
       "Closed configuration schema/exact recursive checker and synthetic fixtures pass3top/34sub race tests0skips, scoped vet/lint0 and independent Draft2020-12 meta/fixture validation. Declared consumer operator/account/purpose reuse and public/raw quarantine rejected. ADR045/v1.31 retain authoritative inventory and actual IAM/account/storage/network/MFA/retention enforcement as separate gates. No deployment/credentials/collection enabled. Receipt docs/evidence/upstream-config-design-20261016.md; final independent review/guarded landing required."
     ]
+  },
+  "T10.5": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependencies T10.3/T10.4 accepted; integrator won original T10.5 claim. Readiness audit found the task-referenced propagation/export contract missing; versioned design review and landing precede implementation.",
+      "Existing pinned SDK/OTLP/gRPC dependencies are available. Planned boundary is default-off private finite tracing, explicit TLS collector and trusted-mTLS propagation, real SQL transaction/outbound/collector qualification. No exporter/provider/source/runtime acceptance yet."
+    ]
   }
 }
