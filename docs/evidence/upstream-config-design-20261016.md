@@ -39,3 +39,8 @@ Requested batch ceiling10; one coherent design/config-validator member alongside
 disjoint source work. Inherited model/settings preserved; exact cost/token
 telemetry unavailable. Independent review, guarded merge and fresh landed checks
 remain required; no hosted CI, acceleration or production claim.
+
+Landed in PR #127 at `72319109ce26e8f4966ee3963406dda87ef15534`,
+with full reviewed-tree equality verified. Fresh landed race checks passed all
+37 named checks with zero skips; vet passed. These checks qualify only the
+declaration validator, not effective account or provider isolation.
