@@ -139,11 +139,11 @@ func TestAlertsCLIGenericErrorsAndClosedInputs(t *testing.T) {
 	cfg := opsConfigFixture()
 	valid, _ := json.Marshal(cfg)
 	good := opsWriteFixture(t, "good.json", valid)
-	secret := opsWriteFixture(t, "private-CANARY.json", []byte(`{"secret":"PRIVATE-CANARY"}`))
+	invalidFile := opsWriteFixture(t, "private-CANARY.json", []byte(`{"unexpected":"PRIVATE-CANARY"}`))
 	b, _ := ops.Generate(cfg)
 	definition, _ := ops.Encode(b)
 	def := opsWriteFixture(t, "definition.json", definition)
-	for _, args := range [][]string{{}, {"unknown"}, {"render", "--config", secret}, {"render", "--config", good, "--secret-CANARY", "credential"}, {"render", "--config", good, "unexpected-CANARY"}, {"evaluate", "--definition", def, "--samples", secret}, {"evaluate", "--definition", def}, {"render", "--config", "missing-CANARY"}, {"render", "--config", good, "--definition", def}} {
+	for _, args := range [][]string{{}, {"unknown"}, {"render", "--config", invalidFile}, {"render", "--config", good, "--secret-CANARY", "credential"}, {"render", "--config", good, "unexpected-CANARY"}, {"evaluate", "--definition", def, "--samples", invalidFile}, {"evaluate", "--definition", def}, {"render", "--config", "missing-CANARY"}, {"render", "--config", good, "--definition", def}} {
 		output.Reset()
 		diagnostics.Reset()
 		if code := runOpsIO(args, &output, &diagnostics); code == 0 || output.Len() != 0 || diagnostics.String() != "amos ops: invalid input or operation unavailable\n" {

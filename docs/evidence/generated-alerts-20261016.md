@@ -33,3 +33,11 @@ preserved; exact token/cost telemetry unavailable. Independent final review,
 guarded merge, reviewed-tree equality and fresh landed checks are required.
 No hosted CI, deployed collector, actual provider behavior, notification delivery,
 SLO/RPO achievement, production or release admission is claimed.
+
+PR #128 landed at `05d13493bd2824bec3c7d06b6e4de08becaf2135` with full
+reviewed-tree equality. The premerge public-artifact scan flagged a synthetic
+unknown-field canary assignment; command sequencing incorrectly allowed merge
+after that failure. A reviewed follow-up renames the fixture key to `unexpected`
+without weakening the scanner or changing the rejection test. It contained no
+real credential. Fresh landed execution and scanner results are recorded in
+the follow-up integration record.
