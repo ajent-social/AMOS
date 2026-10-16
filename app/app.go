@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"github.com/ajent-social/amos/observability"
 	"log/slog"
 	"net"
 	"net/http"
@@ -63,6 +64,7 @@ type Options struct {
 	Business         *BusinessRoutesV1
 	HealthHandler    http.Handler
 	Logger           *slog.Logger
+	Metrics          *observability.Collector
 	ReadinessChecks  []ReadinessCheck
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -101,6 +103,7 @@ func New(options Options) (*App, error) {
 		Business:         options.Business,
 		HealthHandler:    options.HealthHandler,
 		Logger:           options.Logger,
+		Metrics:          options.Metrics,
 		ReadinessChecks:  checks,
 		ReadinessTimeout: readinessTimeout,
 		ShutdownTimeout:  shutdownTimeout,

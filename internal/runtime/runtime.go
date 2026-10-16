@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ajent-social/amos/observability"
 	"log/slog"
 	"net"
 	"net/http"
@@ -43,6 +44,7 @@ type Options struct {
 	Business         *BusinessRoutesV1
 	HealthHandler    http.Handler
 	Logger           *slog.Logger
+	Metrics          *observability.Collector
 	ReadinessChecks  []func(context.Context) error
 	ReadinessTimeout time.Duration
 	ShutdownTimeout  time.Duration
@@ -146,7 +148,7 @@ func New(opts Options) (*Runtime, error) {
 		}
 		return len(runtime.business[i].base) > len(runtime.business[j].base)
 	})
-	runtime.handler = telemetry.Logging(opts.Logger, runtime.routeTemplate, http.HandlerFunc(runtime.serveHTTP))
+	runtime.handler = telemetry.LoggingWithMetrics(opts.Logger, runtime.routeTemplate, opts.Metrics, http.HandlerFunc(runtime.serveHTTP))
 	return runtime, nil
 }
 

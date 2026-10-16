@@ -26,16 +26,33 @@ type Worker struct {
 	Consumer   Consumer
 	Owner      string
 	Lease      time.Duration
+	Observer   Observer
 }
 
 // RunOne processes one available job. A lost response must return
 // ResolutionUnknown so a later lease invokes Reconcile instead of Execute.
-func (w Worker) RunOne(ctx context.Context) (bool, error) {
+func (w Worker) RunOne(ctx context.Context) (processed bool, result error) {
+	started := time.Now()
+	event := OutcomeInvalid
+	defer func() {
+		if p := recover(); p != nil {
+			observe(w.Observer, Event{Outcome: OutcomePanic, Elapsed: time.Since(started)})
+			panic(p)
+		}
+		if ctx != nil && ctx.Err() != nil {
+			event = OutcomeCanceled
+		}
+		observe(w.Observer, Event{Outcome: event, Elapsed: time.Since(started)})
+	}()
 	if ctx == nil || w.Repository == nil || w.Consumer == nil || w.Owner == "" || w.Lease <= 0 {
 		return false, ErrInvalidIntent
 	}
 	job, ok, err := w.Repository.Claim(ctx, w.Owner, w.Lease)
 	if err != nil || !ok {
+		event = OutcomeIdle
+		if err != nil {
+			event = OutcomeClaimFailed
+		}
 		return ok, err
 	}
 	var outcome Resolution
@@ -56,5 +73,22 @@ func (w Worker) RunOne(ctx context.Context) (bool, error) {
 	if outcome.Kind == ResolutionUnknown && !job.ExternalEffect {
 		return true, errors.Join(ErrInvalidResolution, errors.New("non-external job cannot have an unknown remote outcome"))
 	}
-	return true, w.Repository.Resolve(ctx, job, w.Owner, outcome)
+	if err := w.Repository.Resolve(ctx, job, w.Owner, outcome); err != nil {
+		event = OutcomeResolveFailed
+		return true, err
+	}
+	switch outcome.Kind {
+	case ResolutionSucceeded:
+		event = OutcomeSucceeded
+	case ResolutionTerminal:
+		event = OutcomeDead
+	case ResolutionUnknown:
+		event = OutcomeUnknown
+	default:
+		event = OutcomeRetry
+		if job.Attempt >= job.MaxAttempts {
+			event = OutcomeDead
+		}
+	}
+	return true, nil
 }
