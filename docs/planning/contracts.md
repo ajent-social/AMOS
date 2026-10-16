@@ -430,3 +430,12 @@ consumer destination allowlist/default, with constructor-owned copies and exact
 selection. Nil configuration preserves the existing navigation contract.
 Independent design landing precedes the scoped T6.3 supplemental source repair.
 No identity/resource authority or reserved-route registration is granted.
+
+## Proposed amendment v1.28: finite private operational metrics
+
+[ADR042](../adr/042-bounded-private-metrics.md) and the
+[bounded metrics contract](../contracts/bounded-metrics.md) freeze T10.4's optional
+public collector composition, finite ordinal labels, private loopback operator
+output and numeric storage/job observation seams. Independent design landing
+precedes explicitly bounded integrator source delegation. No automatic exporter,
+public metric route, provider qualification or deployment authority is added.
