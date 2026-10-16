@@ -3618,10 +3618,10 @@
     "T-OWNERSHIP-01.4.R1": {
       "task_id": "T-OWNERSHIP-01.4.R1",
       "status": "COMPLETE",
-      "owner": "Coordinator",
+      "owner": "ownership_review (independent reviewer)",
       "claim": {
-        "resource": "T9.8",
-        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+        "resource": "T-OWNERSHIP-01.4.R1",
+        "tip": "2411794529a203d822587451d63f9f499aa50332"
       },
       "source_or_artifact_identity": {
         "reviewed_head": "03f5ef24253bcb6c8a61bd08fecc0e40cb742d37",
@@ -3649,7 +3649,8 @@
         "T-OWNERSHIP-01.3.F1"
       ],
       "commands_and_results": [
-        "Independent exact-head approval; no remaining actionable findings. Fresh independent native1607-task display check passed."
+        "Independent exact-head approval; no remaining actionable findings. Fresh independent native1607-task display check passed.",
+        "Exact independent reviewer reservation was released after the approval receipt. OM-002 corrected this claim attribution from the coordinator reservation; source verification is unchanged."
       ],
       "next_action": "Preserve original T9.8 IN_PROGRESS until reviewed generator/baseline integration; no dependent task admission."
     },

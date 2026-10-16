@@ -107,3 +107,9 @@ separate independent reviewer. Stage token/cost and exact duration telemetry
 were unavailable; no throughput or acceleration claim is made. The data-only
 library has no required database or provider service. No hosted CI is configured
 for this candidate; only the explicitly recorded local/remote checks passed.
+
+
+Closeout review correction OM-002 records the actual independent review
+reservation on T-OWNERSHIP-01.4.R1 rather than the coordinator's task reservation.
+The reviewer released its exact token after the approval receipt. Application
+source and its verification evidence are unchanged.
