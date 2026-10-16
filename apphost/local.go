@@ -322,8 +322,9 @@ func newHost(ctx context.Context, cfg LocalConfig, identity *developmentTLSIdent
 }
 func localID(id uuid.UUID) bool { return id.Version() == 7 && id.Variant() == uuid.RFC4122 }
 
-// Serve verifies the actual listener is the configured loopback origin before
-// serving insecure development cookies, and owns the mail worker's lifetime.
+// Serve enforces the selected constructor's listener boundary and owns the mail
+// worker lifetime. Development TLS accepts only an exact plain TCP listener and
+// owns TLS wrapping; the original local profile remains HTTP loopback-only.
 func (h *Host) Serve(ctx context.Context, listener net.Listener) error {
 	if h == nil || h.app == nil || ctx == nil || listener == nil {
 		return ErrLocalConfiguration
