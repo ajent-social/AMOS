@@ -124,7 +124,8 @@ aggregate window and thresholds; arbitrary caller aggregates are not evidence.
 
 `api/schemas/upstream-diagnostic.schema.json` is JSON Schema Draft 2020-12.
 `internal/diagnosticcontract.DecodeAndValidate` strictly checks this exact finite
-profile, rejects duplicate/unknown JSON keys, enforces byte/count/registry limits
+profile, rejects duplicate/unknown JSON keys using exact decoded, case-sensitive property
+names at every object boundary before Go typed decoding, enforces byte/count/registry limits
 and canonical uniqueness/order, and returns a generic rejection without echoing
 input. It is **not** a general JSON Schema validator. Meta-validation and fixture
 validation through an independent standards implementation remain separate checks;

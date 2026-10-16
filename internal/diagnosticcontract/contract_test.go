@@ -220,3 +220,48 @@ func TestPublicDiagnosticSchemaCanonicalProfileIsStricter(t *testing.T) {
 		}
 	}
 }
+
+func TestPublicDiagnosticSchemaRejectsCaseAliases(t *testing.T) {
+	valid := fixture(t, "valid.json")
+	for _, tc := range []struct{ name, key, alias, value string }{
+		{"root", "schema", "Schema", "amos-public-diagnostic-v1"},
+		{"component", "source_manifest_sha256", "Source_Manifest_SHA256", SourceManifestSHA256},
+		{"metric", "name", "Name", "http.requests"},
+		{"error", "signature", "Signature", "http.required_dependency_unavailable.v1"},
+		{"frame", "id", "ID", "amos.health.serve_http.v1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			original := []byte(`"` + tc.key + `": "` + tc.value + `"`)
+			if bytes.Count(valid, original) != 1 {
+				t.Fatal("ambiguous regression fixture")
+			}
+			for _, replacement := range []string{
+				`"` + tc.alias + `": "` + tc.value + `"`,
+				`"` + tc.alias + `": "CANARY_SECRET", ` + string(original),
+				string(original) + `, "` + tc.alias + `": "` + tc.value + `"`,
+			} {
+				bad := bytes.Replace(valid, original, []byte(replacement), 1)
+				if !errors.Is(DecodeAndValidate(bad), ErrInvalid) {
+					t.Fatal("case alias or overwritten unknown canary accepted")
+				}
+			}
+		})
+	}
+	for _, replacement := range []string{
+		`"\u0053chema":"CANARY_SECRET", "schema":`,
+		`"\u0073chema":"CANARY_SECRET", "schema":`,
+		`"\u0000schema":"CANARY_SECRET", "schema":`,
+		`"metaDATA":"CANARY_SECRET", "schema":`,
+	} {
+		bad := bytes.Replace(valid, []byte(`"schema":`), []byte(replacement), 1)
+		if !errors.Is(DecodeAndValidate(bad), ErrInvalid) {
+			t.Fatal("escaped alias, control key or mixed-case unknown accepted")
+		}
+	}
+	// JSON escapes decode to actual member names. An escaped exact lowercase key
+	// is still the same permitted schema property, not a case alias.
+	exact := bytes.Replace(valid, []byte(`"schema":`), []byte(`"\u0073chema":`), 1)
+	if err := DecodeAndValidate(exact); err != nil {
+		t.Fatal("exact decoded lowercase member rejected", err)
+	}
+}
