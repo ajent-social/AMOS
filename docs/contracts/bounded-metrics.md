@@ -105,3 +105,27 @@ mutation by snapshot reads. Exercise host wiring and stale/unavailable states.
 A disposable mutation using raw request paths as metric labels must fail the
 cardinality/privacy regression; restore exact source and pass. Independent
 source review, guarded merge and fresh landed checks precede task acceptance.
+
+## Source composition clarifications
+
+The implemented local worker has the fixed configuration name `local-email`.
+An explicitly nonnil LocalConfig.Metrics must have that WorkerNames entry;
+NewLocal rejects its absence before opening dependencies. A nil collector remains
+compatible. Freshness is five seconds; collection happens on the existing worker
+cycle under a one-second snapshot deadline. No scrape performs collection.
+
+The JSON snapshot includes fixed ordered vocabulary arrays for status classes,
+safe error codes (including `none` and `http.error`), worker outcomes and histogram
+bounds. Metric rows contain numeric arrays indexed by these vocabularies, plus
+ordinal route/worker labels. Queued, unknown and leased backlog are separately
+visible. Counts are retained-row gauges where specified, and unset last success
+has an explicit known flag. The snapshot getter copies slices; callers cannot
+mutate collector state through returned values.
+
+Trusted outer request logging retains its request ID, log and panic authority.
+If it observes the same collector, inner dispatch does not count twice; a normal
+outer logger without that collector does not suppress App metrics. Worker
+observers must be in-memory/nonblocking and perform no external I/O; observer
+panics are isolated, while consumer panic identity and job results are preserved.
+These clarifications describe the frozen finite-metrics behavior; they do not
+extend production operator access, listener or export authority.
