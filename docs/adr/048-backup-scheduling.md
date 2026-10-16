@@ -1,8 +1,10 @@
 # ADR048: durable backup publication scheduling and truthful freshness
 
-Status: proposed; independent design review and landing precede source dispatch.
+Status: adopted. Initial v1.34 design landed independently in PR137 before source
+dispatch; this v1.35 compatibility correction is adopted separately before source
+integration. This is design adoption, not source or provider acceptance.
 
-Adopt [backup scheduling v1.34](../contracts/backup-scheduling.md) for T10.9.
+Adopt [backup scheduling v1.35](../contracts/backup-scheduling.md) for T10.9.
 Compose the actual pinned PostgreSQL dump and existing manifest-last backup Store
 with a dedicated PutObject-only AWS adapter, PostgreSQL schedule/attempt ledger,
 executable one-shot commands and profile-specific invocation assets. Distinct scheduler
