@@ -75,3 +75,12 @@ candidate: all package completions passed, zero failures/skips. The reviewer
 reconciled its JSON results, exact restored source hashes and scoped scanner
 exception. This source acceptance remains bounded as described above; guarded
 merge and fresh landed verification are recorded separately after they occur.
+
+
+PR136 merged by guarded rebase to
+`a5a91377bc26c14750782f9643a662ba3eb87ae5`. The complete landed tree equals
+independently approved `a592672c2f5d0a3faef20c30211318c62e338487`, and the
+previous main is an ancestor. Fresh isolated landed checks repeated the same
+257-check selection with zero failures/skips and all package completions passing.
+The landed checkout remained clean. Only the owned T10.5 claim was released.
+The existing development LAN service was preserved; tracing was not enabled on it.

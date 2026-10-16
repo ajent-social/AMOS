@@ -163,8 +163,12 @@ or database access. Status remains a read-only explicitly authorized operation.
 Secret-bearing database URLs are resolved only from named bounded `env://NAME`
 references selected in protected config; resolved values are never emitted or
 stored in schedule/job payloads. AWS key values, bearer values and private key
-values are not configuration fields. Protect config/staging ownership and reject
-symlink staging directories. Reuse existing Create protection and cancellation
+values are not configuration fields. The nonsecret config must be a regular
+non-symlink file controlled by the current user or root, with no group/other write
+permission and a parent chain protected against untrusted replacement. A shared
+root-owned read-only0644 config is permitted for distinct runner/reader users;
+resolved credentials remain exclusively in separately protected private environment
+files. Staging remains owner-private and rejects symlink directories. Reuse existing Create protection and cancellation
 rather than introducing shell interpolation, arbitrary hooks or inherited tool
 authentication. Synthetic examples contain placeholders, never selected real
 accounts, roles, profiles, buckets, keys, hosts or credentials.
@@ -600,6 +604,15 @@ before installation. No verified/image/private-network boolean input is accepted
 Actual metadata/STS identity checks remain mandatory at runtime regardless of
 asset declarations. Source/Pulumi mock tests qualify generated references/argv/
 policy only, never trigger delivery or the selected remote task's identity.
+
+The initial managed invocation uses Linux Fargate platform1.4.0 explicitly.
+Require environment-file S3 object references ending in `.env`; actual task OS,
+image, secret-file contents and execution-role access remain provider checks.
+
+Each serialized ECS task override is at most8192 ASCII characters, including
+JSON punctuation, and must also satisfy the total bundle limit. Reject oversized
+overrides before generation. This follows the [AWS RunTask override limit](https://docs.aws.amazon.com/cli/latest/reference/ecs/run-task.html); it is not
+provider execution evidence.
 
 Both profiles wake runner/check every minute; the database gate owns the actual
 backup interval. Output is at most64KiB total, includes version/profile/activation
