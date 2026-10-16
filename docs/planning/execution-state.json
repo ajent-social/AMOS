@@ -875,5 +875,12 @@
       "Source independently approved52c6640f952519aba5a2da2b811232f12cf1e641. Full affected five-package integrated210 named local race checks0fail0skip; host readiness1 and final boundary regressions2 pass; scoped vet/lint pass. Actual TLS dump-to-SDK fixture-to-reader graph, real next-slot partial failure preservation, compiled CLI read-only checks and offline external public-recipe compilation proved. Both compiled negative mutations RED/exactrestoreGREEN. PR138 adopted compatible v1.35 at728f309 before final integration. Source merge/fresh landed verification pending, so status stays IN_PROGRESS; no provider/install/restore/release qualification. See docs/evidence/backup-scheduling-20261016.md and explicit scanner exceptions.",
       "PR139 guarded-rebase merged6e46bbc38e111a16d5f69cec989b3a0cdd245342, entiretree equals independently approvedb76d7f7f4e314d0a15f67a70be8389407d86b12b. Fresh isolated landed211 named affected-package race checks and host readiness1 passed0fail0skip, cleancheckout. T10.9 source/local acceptance recorded; originalclaim retained until acceptance record lands. Redscanner scopedexceptions/issue135, actualAWS/installation/remote-restore/production/release gates remainexplicit."
     ]
+  },
+  "T14.7": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependencies T14.1/T15.1 accepted; original atomic claim acquired. v1.36/ADR049 freezes initial pure local restricted-hold core only, with no public-release/private-channel/sender capability. Independent design landing precedes source. Full downstream and verified private-channel gates remain open; external intake stays disabled."
+    ]
   }
 }
