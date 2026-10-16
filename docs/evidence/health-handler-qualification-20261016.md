@@ -59,5 +59,11 @@ session verifies immutable source; independent reviewer evaluates this audit,
 original acceptance and final diff before guarded merge. No author-source claim
 is released or changed. Inherited session selection is preserved; exact model,
 token/cost telemetry and review duration are unavailable. No acceleration claim.
-Independent review and landed acceptance-provenance checks are still required
-before this candidate becomes authoritative on main.
+Independent exact-head review approved `9621a0a3271405443fbc4a4618a1de3085be0250`
+against source `4029237931315345492d73785b789e4d43151132`; the reviewer independently
+reran the required-PostgreSQL full health race suite with zero skips. PR #119
+rebased to `8d00b54b326efa234c4b3aeb6627c797538f0848`; the entire landed tree
+matches the reviewed candidate and is reachable from main. A fresh landed
+required-PostgreSQL full health race run passed, zero skips (1.044 seconds).
+No hosted CI checks were configured. The supplemental qualification claim was
+released; the retained original author claim was not altered.
