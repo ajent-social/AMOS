@@ -807,10 +807,11 @@
     ]
   },
   "T10.4": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Original task dependencies accepted; integrator holds original task claim. Independently reviewed design PR122 landed65ceb3e31491b5563f75643d8b0cf52d69bf69bb, full reviewed-tree equality verified. Finite private metrics contract v1.28 delegates bounded source/actual-database checks. Source implementation in progress; no source acceptance, exporter, provider or deployment qualification."
+      "Original task dependencies accepted; integrator holds original task claim. Independently reviewed design PR122 landed65ceb3e31491b5563f75643d8b0cf52d69bf69bb, full reviewed-tree equality verified. Finite private metrics contract v1.28 delegates bounded source/actual-database checks. Source implementation in progress; no source acceptance, exporter, provider or deployment qualification.",
+      "Complete bounded source/local composition: copied fixed ordinal collector, private actual-peer loopback handler, App/outer logger exactly-once observation, safe storage stats, isolated job observer and same-scope read-only PostgreSQL aggregates plus local worker snapshots.30 focused race checks and104 full eligible-package checks pass with zero skips; eight-package vet/lint0. Raw-label mutation RED8003/want3 then exact restoration GREEN. Full SQLstore TLS runtime test missing requiredconfig remains explicitly failed/unqualified; no policy bypass. Receipt docs/evidence/bounded-metrics-20261016.md; final independent exact-head review and guarded landing required."
     ]
   },
   "T14.1": {
@@ -819,7 +820,15 @@
     "evidence": [
       "Closed public diagnostic schema/profile and rejected-fixture design checks implement T14.1 only. Scoped Go race/vet/lint and independent Draft2020-12 meta/fixture checks passed; source-manifest definition and actual baseline files checked. Whole private frame rejection/expected omission is a design fixture, not a sanitizer.",
       "ADR043/amendmentv1.29 document finite reviewed public component provenance vocabulary, fixed codes/signatures/frame IDs, bucketed counts, hard proposed downstream privacy budget and default-off owner controls. No AMSL source admission, automatic export, trusted installed-binary provenance or production qualification. Independent final review/guarded design landing required.",
-      "Independent review rejected a case-insensitive Go JSON alias bypass. New root/component/metric/error/frame canary-overwrite regressions failed before the fix; exact decoded-key/type grammar fixed all object boundaries. Scoped race/vet/lint passed, zero skips/issues; final independent re-review required before landing."
+      "Independent review rejected a case-insensitive Go JSON alias bypass. New root/component/metric/error/frame canary-overwrite regressions failed before the fix; exact decoded-key/type grammar fixed all object boundaries. Scoped race/vet/lint passed, zero skips/issues; final independent re-review required before landing.",
+      "Independent final re-review approvedc2c90ba against65ceb3e after exact-key fix. PR123 landedc41a0669cd07ad8f5228caa4bb02fa5d6a83f608 with entire reviewed-tree equality and main reachability. Fresh landed race/vet plus independent Draft2020-12 meta/three fixtures pass, zero skips. Original own T14.1 claim released."
+    ]
+  },
+  "T14.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Original dependency T14.1 design accepted/landed; integrator holds original T14.2 claim. Fresh typed pure-local projection/preview under implementation, with non-exportable unqualified receipt. No source/build provenance adapter, public-frame admission, consent, exporter or full task acceptance is claimed."
     ]
   }
 }
