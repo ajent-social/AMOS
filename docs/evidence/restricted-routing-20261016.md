@@ -33,7 +33,10 @@ Tests also cover all15 label/analysis combinations, all9 signals, duplicate/unkn
 oversized input, canonical output bounds, unknown internal reasons, zero values,
 no input retention and concurrent decisions.
 
-Final exact-head review, guarded source merge and fresh landed checks are pending.
+Independent final review approved703d8c46d2dfc62a0eeef63771b48e48229bbffc.
+PR142 guarded-rebase merged83199575ff11a313f6960be8e8058d1be75bfc2d; its complete
+tree equals that reviewed head. Fresh isolated landed race checks passed29 named
+checks with zero failures/skips and clean checkout.
 No task acceptance follows from this local core; the verified private-channel
 prerequisite and downstream wiring are separate. Retained plan semantics cover
 all1,598 tasks; generated projections are in-memory checks only.
@@ -42,5 +45,6 @@ Requested batch ceiling10; actual member1, T14.7 partial local source with accep
 T14.1/T15.1 dependencies. Root implements the bounded component and a separate
 inherited-session reviewer supplies independent assessment. No model/effort
 change was requested; cost/token totals are unavailable. The original claim stays
-owned until reviewed source handoff, then is released without accepting the full
-task. Existing LAN preview, persistent data and private configuration are unchanged.
+owned until this reviewed source handoff lands, then is released without accepting
+the full task. [Follow-up143](https://github.com/ajent-social/AMOS/issues/143) tracks
+private handling and actual downstream integration. Existing LAN preview, persistent data and private configuration are unchanged.
