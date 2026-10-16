@@ -1,8 +1,11 @@
 # Scheduled backup publication source checks
 
-T10.9, adopted contract v1.35. Source is independently approved; guarded source
-landing and fresh landed verification remain pending. Task acceptance stays in
-progress until those gates complete. No scheduler installation, live AWS behavior,
+T10.9, adopted contract v1.35. Source PR139 guarded-rebase merged at
+`6e46bbc38e111a16d5f69cec989b3a0cdd245342`; its entire tree equals independently
+approved `b76d7f7f4e314d0a15f67a70be8389407d86b12b`. Fresh isolated landed checks
+passed211 named affected-package race checks plus one host readiness/schema
+regression, zero failures/skips, with a clean checkout. T10.9 is accepted at this
+source/local-test boundary. No scheduler installation, live AWS behavior,
 production operation, remote restore or advertised RPO is qualified here.
 
 The standalone `amos backup run/status/check/render` path composes the existing
@@ -118,4 +121,4 @@ claimed or padded into this delivery. The integrator owns shared seams; two
 inherited-session authors own disjoint core and runtime/CLI paths and a separate
 reviewer supplies independent assessment. No model/effort overrides were supplied;
 runtime token/cost totals are unavailable, so no acceleration/cost claim is made.
-Original task authority remains held pending reviewed landing and task acceptance.
+Original task authority is released only after this acceptance record lands.
