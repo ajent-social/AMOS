@@ -890,7 +890,8 @@
     "certification": "NOT_RUN",
     "evidence": [
       "Admitted bounded internal ownership-manifest renderer and baseline-validation component after reconciling current initializer ownership.",
-      "Generated initializer emission/schema migration, durable baseline storage and upgrade integration remain separate unqualified gates; this component does not replace the current initializer manifest."
+      "Generated initializer emission/schema migration, durable baseline storage and upgrade integration remain separate unqualified gates; this component does not replace the current initializer manifest.",
+      "Bounded library component independently reviewed and landed via PR146 at18643232165bff247c448bfe92da1b47f48739d9, full-tree equal reviewed03f5ef24253bcb6c8a61bd08fecc0e40cb742d37. Fresh landed62 named scoped race checks pass with zero failures/skips and native1607-task freshness passes. Full initializer/upgrade/durable baseline integration remains open; no product descendants released."
     ]
   }
 }

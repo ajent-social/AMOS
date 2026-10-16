@@ -12,8 +12,8 @@ Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-land
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:293e23b9b055ab8bfae1258064ea7f0303ed360e00d3324d06d16311c88eb594`.
-Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
+Registry: `docs/planning/execution-state.json`; `sha256:9cd94c97ad934f1c847bcd804a382cb2dabcab33a307382665e6cfe3a42031f5`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:196bba22a71e1b636f8ca4e1ae60fb618e7fc14f5d96a3a750857948fbbff3e4`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
@@ -577,33 +577,33 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   authority: reported-display-only
   Acceptance: [Different author reviews full exact-base/head candidate including records and generated displays. Blocking findings remain recorded; fixes and re-review are required.]
 
-- [ ] T-OWNERSHIP-01.4.R1 [Bounded ownership manifest component: review OM-001]
+- [x] T-OWNERSHIP-01.4.R1 [Bounded ownership manifest component: review OM-001]
   Stage: review
   canonical-id: T-OWNERSHIP-01.4.R1
   authored-stage: review
   deps: [T-OWNERSHIP-01.3.F1]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Independent exact-head re-review confirms OM-001 fixed and full candidate remains correct, public-safe and explicitly partial.]
 
-- [ ] T-OWNERSHIP-01.5 [Bounded ownership manifest component: merge]
+- [x] T-OWNERSHIP-01.5 [Bounded ownership manifest component: merge]
   Stage: merge
   canonical-id: T-OWNERSHIP-01.5
   authored-stage: merge
   deps: [T-OWNERSHIP-01.4.R1]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Read exact head/base, required checks and independent approval; guarded GitHub rebase merge respects repository protections.]
 
-- [ ] T-OWNERSHIP-01.6 [Bounded ownership manifest component: verify-landed]
+- [x] T-OWNERSHIP-01.6 [Bounded ownership manifest component: verify-landed]
   Stage: verify-landed
   canonical-id: T-OWNERSHIP-01.6
   authored-stage: verify-landed
   deps: [T-OWNERSHIP-01.5]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Compare reviewed and landed trees, verify main reachability and fresh scoped landed checks, then release exact owned claims. T9.8 remains IN_PROGRESS; no product descendants or deployments are authorized.]
 

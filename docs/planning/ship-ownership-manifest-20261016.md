@@ -49,7 +49,7 @@ SHA-256 input verification for both source files, root module/sums and lint conf
 checksum-verified golangci-lint2.13.2, zero issues. This is scoped remote lint,
 not hosted CI. The disposable container was bounded to2CPUs/4GiB with a600second
 hard command timeout; no model/provider or credential access was used.
-Independent review and landing are pending.
+Initial independent review and landing were pending at that verification checkpoint; see final delivery below.
 
 
 ## Independent review and fix obligations
@@ -78,8 +78,32 @@ with zero findings; all60 owning verifier fixtures pass. Export SHA-256:
 `5ef1236e6f71a411e27779e72e605f2f56584364ce62431d86bbfe9ef69c8640`.
 Transferred verifier/exporter/input hashes are retained in the private operating
 receipt. This is plan conformance only, not authenticated execution/admission.
-Exact-head independent re-review and guarded landing remain pending.
+Exact-head re-review and guarded landing were pending at that checkpoint; see final delivery below.
 
 The full-checkout scanner's62 diagnostics are byte-equal between unchanged
 main and this candidate. Changed-file scans pass. No scanner exception or
 branch-protection setting was added or weakened.
+
+
+## Verified component landing
+
+Independent reviewer `ownership_review` approved full candidate
+`03f5ef24253bcb6c8a61bd08fecc0e40cb742d37` against
+`90c8ec3249562ce5e753f0fa594a3a5123ea2026`, with OM-001 resolved and no
+remaining actionable findings. [PR146](https://github.com/ajent-social/AMOS/pull/146)
+landed by guarded rebase at `18643232165bff247c448bfe92da1b47f48739d9`.
+Remote main reachability and whole-tree equality with the reviewed candidate
+pass. Fresh landed Mac scoped race checks pass62 named cases with zero
+failures/skips; current1607-task native display freshness passes.
+
+The component delivery rows are complete; original T9.8 remains IN_PROGRESS.
+No initializer emission, durable storage, upgrade or product acceptance follows.
+All62 abandoned reservations were retired after owner confirmation; all122 prior
+worktrees, including10 with uncommitted material, were preserved. Only fresh
+owned delivery claims are eligible for release after recording this handoff.
+
+Actual member count is1 under requested ceiling10, with one implementer and a
+separate independent reviewer. Stage token/cost and exact duration telemetry
+were unavailable; no throughput or acceleration claim is made. The data-only
+library has no required database or provider service. No hosted CI is configured
+for this candidate; only the explicitly recorded local/remote checks passed.

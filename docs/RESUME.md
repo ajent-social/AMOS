@@ -326,3 +326,17 @@ finite immutable hold decisions without a sender/public-release capability or
 assumed private channel. Full T14.7 stays IN_PROGRESS; [issue143](https://github.com/ajent-social/AMOS/issues/143)
 tracks private handling and actual downstream publication enforcement. External
 intake/sending remain disabled; no actual recipient/channel is selected.
+
+
+## Ownership manifest component checkpoint (2026-10-16)
+
+T9.8's bounded internal ownership renderer landed in PR146 at
+`18643232165bff247c448bfe92da1b47f48739d9`, full-tree equal to independent
+approval. It records four ownership classes and verifies actual supplied baseline
+bytes; frozen owner-authored roots are protected after OM-001 correction.
+Fresh landed62 named scoped race checks and native-plan freshness pass;
+source vet and pinned Linux lint passed. See the
+[component receipt](planning/ship-ownership-manifest-20261016.md).
+T9.8 remains IN_PROGRESS: current initializer schema/emission, durable baseline
+retention/retrieval and upgrade composition remain unqualified. Existing product
+scope/acceptance and dependency gates are unchanged.

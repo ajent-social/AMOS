@@ -3614,6 +3614,120 @@
         ]
       },
       "next_action": "Independent exact-head OM-001 re-review and full candidate review before guarded merge."
+    },
+    "T-OWNERSHIP-01.4.R1": {
+      "task_id": "T-OWNERSHIP-01.4.R1",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "reviewed_head": "03f5ef24253bcb6c8a61bd08fecc0e40cb742d37",
+        "reviewed_base": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "landed": "18643232165bff247c448bfe92da1b47f48739d9",
+        "pull_request": "https://github.com/ajent-social/AMOS/pull/146"
+      },
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "ownership_review; independent of implementer ready_queue",
+        "reviewed_revision": "03f5ef24253bcb6c8a61bd08fecc0e40cb742d37",
+        "reviewed_base": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "scope": "Full bounded component, source amendments, receipts and native display; OM-001 fixed.",
+        "findings": [
+          {
+            "id": "OM-001",
+            "status": "RESOLVED",
+            "fix": "ca11e953338a7dc5eb661d9fb4772ff341599366",
+            "verification": "Eight new compiled failing-before/passing-after cases;62 named scoped race passes; vet and corrected pinned Linux lint pass."
+          }
+        ]
+      },
+      "external_blockers": [],
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.3.F1"
+      ],
+      "commands_and_results": [
+        "Independent exact-head approval; no remaining actionable findings. Fresh independent native1607-task display check passed."
+      ],
+      "next_action": "Preserve original T9.8 IN_PROGRESS until reviewed generator/baseline integration; no dependent task admission."
+    },
+    "T-OWNERSHIP-01.5": {
+      "task_id": "T-OWNERSHIP-01.5",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "reviewed_head": "03f5ef24253bcb6c8a61bd08fecc0e40cb742d37",
+        "reviewed_base": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "landed": "18643232165bff247c448bfe92da1b47f48739d9",
+        "pull_request": "https://github.com/ajent-social/AMOS/pull/146"
+      },
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "ownership_review; independent of implementer ready_queue",
+        "reviewed_revision": "03f5ef24253bcb6c8a61bd08fecc0e40cb742d37",
+        "reviewed_base": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "scope": "Full bounded component, source amendments, receipts and native display; OM-001 fixed.",
+        "findings": [
+          {
+            "id": "OM-001",
+            "status": "RESOLVED",
+            "fix": "ca11e953338a7dc5eb661d9fb4772ff341599366",
+            "verification": "Eight new compiled failing-before/passing-after cases;62 named scoped race passes; vet and corrected pinned Linux lint pass."
+          }
+        ]
+      },
+      "external_blockers": [],
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.4.R1"
+      ],
+      "commands_and_results": [
+        "Re-read exact PR/base/target, clean mergeability, absent required checks and unresolved review threads; guarded GitHub REBASE merge completed at recorded source SHA. No hosted CI success claimed."
+      ],
+      "next_action": "Preserve original T9.8 IN_PROGRESS until reviewed generator/baseline integration; no dependent task admission."
+    },
+    "T-OWNERSHIP-01.6": {
+      "task_id": "T-OWNERSHIP-01.6",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "reviewed_head": "03f5ef24253bcb6c8a61bd08fecc0e40cb742d37",
+        "reviewed_base": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "landed": "18643232165bff247c448bfe92da1b47f48739d9",
+        "pull_request": "https://github.com/ajent-social/AMOS/pull/146"
+      },
+      "independent_review_and_findings": {
+        "status": "CLEAR",
+        "reviewer": "ownership_review; independent of implementer ready_queue",
+        "reviewed_revision": "03f5ef24253bcb6c8a61bd08fecc0e40cb742d37",
+        "reviewed_base": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "scope": "Full bounded component, source amendments, receipts and native display; OM-001 fixed.",
+        "findings": [
+          {
+            "id": "OM-001",
+            "status": "RESOLVED",
+            "fix": "ca11e953338a7dc5eb661d9fb4772ff341599366",
+            "verification": "Eight new compiled failing-before/passing-after cases;62 named scoped race passes; vet and corrected pinned Linux lint pass."
+          }
+        ]
+      },
+      "external_blockers": [],
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.5"
+      ],
+      "commands_and_results": [
+        "Fetched main contains landed source; complete reviewed and landed trees compare equal. Fresh landed62 named scoped race checks pass with zero failures/skips; current native1607-task freshness passes."
+      ],
+      "next_action": "Preserve original T9.8 IN_PROGRESS until reviewed generator/baseline integration; no dependent task admission."
     }
   },
   "receipt_requirements": [
