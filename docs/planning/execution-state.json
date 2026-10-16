@@ -514,7 +514,8 @@
       "Actual generated Go executable and real PostgreSQL Chromium full lifecycle passed repeatedly, including a fresh run after the reviewed TOTP supporting batch merged. UI and browser sources match the isolated batch byte-for-byte.",
       "Browser flow covers signup, explicit email confirmation, invalid-link guidance, sign-in, personal todos, sign-out, reset, Back navigation, spent-link revisit and native stale-form proof resubmission rejection. Original and reset password outcomes verify the stale request did not change the password.",
       "The browser resubmission case reconstructs the previously rendered form after Back; it does not claim the browser restored that form from history. Original origin/referrer failures and worker guard mutations were observed before corrected passing checks.",
-      "Accepted as a UI component. Native host/generator shipping is a separate batch; live mail, subscriptions, organizations, cloud deployment and complete release qualification remain separate."
+      "Accepted as a UI component. Native host/generator shipping is a separate batch; live mail, subscriptions, organizations, cloud deployment and complete release qualification remain separate.",
+      "Supplemental consumer sign-in return-policy repair: design PR #116 adopted; actual PostgreSQL/race/browser and validation evidence in docs/evidence/auth-return-policy-20261016.md. Independent source review/merge/landed checks pending. Historical password UI acceptance and broader product qualification unchanged."
     ]
   },
   "T5.8": {

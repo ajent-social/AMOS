@@ -32,6 +32,8 @@ type Reset interface {
 }
 
 type Config struct {
+	// ReturnPolicy optionally selects fixed application-owned destinations.
+	ReturnPolicy *ReturnPolicy
 	// Theme adds optional owner-authored presentation without changing actions.
 	Theme                                             *Theme
 	Signup, Signin, RecoveryRequest, RecoveryComplete http.Handler
@@ -56,6 +58,14 @@ func New(cfg Config) (*Pages, error) {
 		}
 		cfg.Theme = &theme
 	}
+	if cfg.ReturnPolicy != nil {
+		policy := *cfg.ReturnPolicy
+		policy.Allowed = append([]string(nil), policy.Allowed...)
+		if err := policy.Validate(); err != nil {
+			return nil, err
+		}
+		cfg.ReturnPolicy = &policy
+	}
 	return &Pages{cfg: cfg}, nil
 }
 
@@ -71,7 +81,7 @@ func (p *Pages) serve(w http.ResponseWriter, r *http.Request) {
 		p.credentialPost(w, r, p.cfg.Signup, "signup")
 	case "/signin", "/auth":
 		if r.Method == http.MethodGet || r.Method == http.MethodHead {
-			next := safeReturn(r.URL.Query().Get("next"))
+			next := p.returnPath(r.URL.Query().Get("next"))
 			p.page(w, r, http.StatusOK, model{Title: "Sign in", Heading: "Sign in", Action: "/auth", Submit: "Sign in", Email: true, Password: true, EmailAuto: "username", PasswordAuto: "current-password", Next: next, Message: safeMessage(r.URL.Query().Get("message"))})
 			return
 		}
@@ -107,7 +117,11 @@ func (p *Pages) credentialPost(w http.ResponseWriter, r *http.Request, action ht
 	}
 	if kind == "signin" || kind == "signup" {
 		if strings.TrimSpace(fields["email"]) == "" || fields["password"] == "" {
-			p.page(w, r, http.StatusOK, model{Title: "Check your form", Heading: "Check your form", Action: formAction(kind), Submit: submitLabel(kind), Email: true, Password: true, EmailAuto: emailAuto(kind), PasswordAuto: passwordAuto(kind), Message: "Enter your email and password."})
+			m := model{Title: "Check your form", Heading: "Check your form", Action: formAction(kind), Submit: submitLabel(kind), Email: true, Password: true, EmailAuto: emailAuto(kind), PasswordAuto: passwordAuto(kind), Message: "Enter your email and password."}
+			if kind == "signin" && p.cfg.ReturnPolicy != nil {
+				m.Next = p.returnPath(fields["next"])
+			}
+			p.page(w, r, http.StatusOK, m)
 			return
 		}
 	}
@@ -130,7 +144,7 @@ func (p *Pages) credentialPost(w http.ResponseWriter, r *http.Request, action ht
 			copySetCookies(w.Header(), recorder.header)
 			w.Header().Set("Cache-Control", "no-store")
 			w.Header().Set("Referrer-Policy", "strict-origin")
-			http.Redirect(w, r, safeReturn(fields["next"]), http.StatusSeeOther)
+			http.Redirect(w, r, p.returnPath(fields["next"]), http.StatusSeeOther)
 			return
 		}
 		if status >= 500 {
@@ -141,7 +155,7 @@ func (p *Pages) credentialPost(w http.ResponseWriter, r *http.Request, action ht
 			p.page(w, r, status, model{Title: "Sign in", Heading: "Request could not be accepted", Message: messageFor(status)})
 			return
 		}
-		p.page(w, r, http.StatusOK, model{Title: "Sign in", Heading: "Sign in", Action: "/auth", Submit: "Sign in", Email: true, Password: true, EmailAuto: "username", PasswordAuto: "current-password", Next: safeReturn(fields["next"]), Message: "Email or password was not accepted."})
+		p.page(w, r, http.StatusOK, model{Title: "Sign in", Heading: "Sign in", Action: "/auth", Submit: "Sign in", Email: true, Password: true, EmailAuto: "username", PasswordAuto: "current-password", Next: p.returnPath(fields["next"]), Message: "Email or password was not accepted."})
 	case "signup":
 		if status == http.StatusAccepted {
 			p.page(w, r, http.StatusAccepted, model{Title: "Check your email", Heading: "Check your email", Message: "If registration can be completed, instructions will be sent to the address provided.", Link: "/signin", LinkText: "Return to sign in"})
