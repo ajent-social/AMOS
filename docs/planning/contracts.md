@@ -449,3 +449,12 @@ ceilings. The component fingerprint is independent of registry/schema updates;
 its wire decoder is not runtime provenance, consent, sanitation or transport.
 Independent design/schema review and landing precede T14.2 construction. No
 AMSL admission, automatic export, external destination or E16 qualification.
+
+## Proposed amendment v1.30: executable finite dashboard and alert generation
+
+[ADR044](../adr/044-generated-actionable-alerts.md) and the
+[dashboard/alert contract](../contracts/dashboard-alerts.md) define T10.6's owner
+parameterized local generator/evaluator, closed finite artifacts, missing/stale
+semantics and disabled notification boundary. Explicit owner input does not
+prove collection, authorization or deployed service targets. Independent design
+landing precedes scoped generator/CLI source; no external sends or deployment.
