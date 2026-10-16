@@ -884,5 +884,13 @@
       "Initial local Decision core source07173af independently reviewed, test-only319dda4 unchangedproduction. Scoped29namedracechecks0fail0skip,vet/lint0issues andchangedsourcepublicscanPASS; compiledroutine-label public-release mutationRED/exactrestoreGREEN. Sourcefinalreview/landing pending; fulltaskprivatechannel/downstreamintegration gates remainunqualified andexternalintakedisabled. See docs/evidence/restricted-routing-20261016.md.",
       "Local-core PR142 guarded-rebase merged83199575ff11a313f6960be8e8058d1be75bfc2d, fulltree equal independently approved703d8c46d2dfc62a0eeef63771b48e48229bbffc. Fresh isolated landed29 namedracechecks0fail0skip, cleancheckout. Full T14.7 remains IN_PROGRESS/NOT_RUN: issue143 tracks verifiedprivatehandling andactualdownstreampublicationdenial, externalintake/sendingdisabled. Originalclaimreleasedonlyafterreviewedhandoff."
     ]
+  },
+  "T9.8": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Admitted bounded internal ownership-manifest renderer and baseline-validation component after reconciling current initializer ownership.",
+      "Generated initializer emission/schema migration, durable baseline storage and upgrade integration remain separate unqualified gates; this component does not replace the current initializer manifest."
+    ]
   }
 }

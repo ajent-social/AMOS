@@ -3422,6 +3422,35 @@
       },
       "external_blockers": [],
       "next_action": "Continue complete writer/current-session/workspace/resource and host batch; no broader identity or product acceptance."
+    },
+    "T-SDLC-9-8.1": {
+      "task_id": "T-SDLC-9-8.1",
+      "status": "IN_PROGRESS",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "dependency_receipts": [
+        "T2.1",
+        "T1.2",
+        "T-PROD.15"
+      ],
+      "source_or_artifact_identity": {
+        "baseline": "90c8ec3249562ce5e753f0fa594a3a5123ea2026"
+      },
+      "commands_and_results": [
+        "Reconciled task, current initializer manifest and accepted dependencies; scope is explicitly limited to an internal renderer/baseline-validation component.",
+        "Canonical claims recovered following owner confirmation that no prior workers remain; existing work preserved."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING",
+        "scope": "Complete candidate and component qualification; original generator integration admission remains open."
+      },
+      "external_blockers": [
+        "Full-task generator schema compatibility and durable baseline integration require a separately reviewed admission."
+      ],
+      "next_action": "Independently review and land bounded component without accepting T9.8 or releasing descendants."
     }
   },
   "receipt_requirements": [
