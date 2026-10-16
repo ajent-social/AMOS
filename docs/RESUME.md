@@ -20,7 +20,8 @@ PRs #128/#129 landed T10.6 generator/CLI source with fresh50 named scoped race
 checks, zero skips, and corrected public-safe test fixture. Local generation and
 evaluation only; notifications remain disabled. PR #130 landed an additive
 development HTTPS testing design; its host/reference executable implementation
-is in progress, with no runnable LAN or browser-trust claim yet. See the
+has81 named integrated scoped checks passing with zero skips and is undergoing
+final independent source review. No runnable LAN or browser-trust claim yet. See the
 [qualification record](evidence/development-tls-20261016.md).
 T14.13 is accepted only as the closed upstream declaration/schema/validator;
 actual isolation, collection and deployment remain unqualified. T14.2 local-only
