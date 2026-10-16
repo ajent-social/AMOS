@@ -62,6 +62,8 @@ type LocalConfig struct {
 	// Metrics optionally observes App and the local email worker. Non-nil collectors
 	// must configure WorkerNames with the fixed name "local-email". No listener is opened.
 	Metrics *observability.Collector
+	// Tracing is caller-owned; Host.Close never closes a shared tracer.
+	Tracing *observability.Tracer
 }
 type Host struct {
 	app         *app.App
@@ -301,7 +303,7 @@ func newHost(ctx context.Context, cfg LocalConfig, identity *developmentTLSIdent
 	if err != nil {
 		return nil, err
 	}
-	shared, err := app.New(app.Options{Metrics: cfg.Metrics, Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, HealthHandler: healthHandler, Billing: billingHandler})
+	shared, err := app.New(app.Options{Metrics: cfg.Metrics, Tracing: cfg.Tracing, Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, HealthHandler: healthHandler, Billing: billingHandler})
 	if err != nil {
 		return nil, err
 	}

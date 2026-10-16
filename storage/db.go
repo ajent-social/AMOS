@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/ajent-social/amos/internal/telemetry"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 )
@@ -114,13 +115,26 @@ func (db *DB) Close() error {
 // WithTx runs fn in a context-bound transaction and commits only if fn
 // succeeds. A failed callback is returned unchanged after rollback.
 func (db *DB) WithTx(ctx context.Context, options *sql.TxOptions, fn func(*sql.Tx) error) (result error) {
+	traceContext, endTrace := telemetry.BeginTransactionTrace(ctx)
+	outcome := telemetry.TransactionTraceUnavailable
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			endTrace(telemetry.TransactionTracePanic)
+			panic(recovered)
+		}
+		if ctx != nil && ctx.Err() != nil {
+			outcome = telemetry.TransactionTraceCancelled
+		}
+		endTrace(outcome)
+	}()
+
 	if db == nil || db.pool == nil || db.migrationPool == nil || db.closed.Load() {
 		return ErrClosed
 	}
 	if ctx == nil || fn == nil {
 		return ErrInvalidConfig
 	}
-	tx, err := db.pool.BeginTx(ctx, options)
+	tx, err := db.pool.BeginTx(traceContext, options)
 	if err != nil {
 		if db.closed.Load() {
 			return ErrClosed
@@ -135,20 +149,27 @@ func (db *DB) WithTx(ctx context.Context, options *sql.TxOptions, fn func(*sql.T
 		if committed {
 			return
 		}
-		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
-			result = errors.Join(result, ErrTransaction)
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			// ErrTxDone preserves the legacy result, but does not prove rollback.
+			outcome = telemetry.TransactionTraceError
+			if !errors.Is(rollbackErr, sql.ErrTxDone) {
+				result = errors.Join(result, ErrTransaction)
+			}
 		}
 	}()
 	if err := fn(tx); err != nil {
+		outcome = telemetry.TransactionTraceRollback
 		return err
 	}
 	if err := tx.Commit(); err != nil {
+		outcome = telemetry.TransactionTraceError
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 		return fmt.Errorf("commit transaction: %w", ErrTransaction)
 	}
 	committed = true
+	outcome = telemetry.TransactionTraceCommit
 	return nil
 }
 

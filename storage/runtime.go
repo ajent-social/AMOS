@@ -18,6 +18,7 @@ import (
 
 	"golang.org/x/net/idna"
 
+	"github.com/ajent-social/amos/internal/telemetry"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 )
@@ -239,6 +240,19 @@ func (db *RuntimeDB) admit() (*sql.DB, error) {
 
 // WithTx runs fn in one context-bound transaction.
 func (db *RuntimeDB) WithTx(ctx context.Context, options *sql.TxOptions, fn func(*sql.Tx) error) (result error) {
+	traceContext, endTrace := telemetry.BeginTransactionTrace(ctx)
+	outcome := telemetry.TransactionTraceUnavailable
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			endTrace(telemetry.TransactionTracePanic)
+			panic(recovered)
+		}
+		if ctx != nil && ctx.Err() != nil {
+			outcome = telemetry.TransactionTraceCancelled
+		}
+		endTrace(outcome)
+	}()
+
 	pool, err := db.admit()
 	if err != nil {
 		return err
@@ -246,7 +260,7 @@ func (db *RuntimeDB) WithTx(ctx context.Context, options *sql.TxOptions, fn func
 	if ctx == nil || fn == nil {
 		return ErrInvalidConfig
 	}
-	tx, err := pool.BeginTx(ctx, options)
+	tx, err := pool.BeginTx(traceContext, options)
 	if err != nil {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -262,20 +276,27 @@ func (db *RuntimeDB) WithTx(ctx context.Context, options *sql.TxOptions, fn func
 			_ = tx.Rollback()
 			panic(recovered)
 		}
-		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
-			result = errors.Join(result, ErrTransaction)
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			// ErrTxDone preserves the legacy result, but does not prove rollback.
+			outcome = telemetry.TransactionTraceError
+			if !errors.Is(rollbackErr, sql.ErrTxDone) {
+				result = errors.Join(result, ErrTransaction)
+			}
 		}
 	}()
 	if err := fn(tx); err != nil {
+		outcome = telemetry.TransactionTraceRollback
 		return err
 	}
 	if err := tx.Commit(); err != nil {
+		outcome = telemetry.TransactionTraceError
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 		return ErrTransaction
 	}
 	finished = true
+	outcome = telemetry.TransactionTraceCommit
 	return nil
 }
 
