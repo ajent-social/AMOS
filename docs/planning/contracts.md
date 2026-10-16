@@ -439,3 +439,13 @@ public collector composition, finite ordinal labels, private loopback operator
 output and numeric storage/job observation seams. Independent design landing
 precedes explicitly bounded integrator source delegation. No automatic exporter,
 public metric route, provider qualification or deployment authority is added.
+
+## Proposed amendment v1.29: closed public diagnostic privacy profile
+
+[ADR043](../adr/043-public-diagnostic-privacy-profile.md), the
+[diagnostic contract](../contracts/upstream-diagnostics.md) and closed schema
+freeze T14.1's finite component/code/frame/count vocabulary and hard privacy
+ceilings. The component fingerprint is independent of registry/schema updates;
+its wire decoder is not runtime provenance, consent, sanitation or transport.
+Independent design/schema review and landing precede T14.2 construction. No
+AMSL admission, automatic export, external destination or E16 qualification.
