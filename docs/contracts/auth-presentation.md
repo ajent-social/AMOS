@@ -13,6 +13,7 @@ type Theme struct {
     LogoURL string
     StylesheetURL string
 }
+func (Theme) Validate() error // pure configuration validation; constructors also validate
 // Config adds Theme *Theme.
 // apphost.LocalConfig adds AuthTheme *authpassword.Theme.
 ```
