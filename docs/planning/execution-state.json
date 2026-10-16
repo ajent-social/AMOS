@@ -597,16 +597,18 @@
       "Reviewed health component landed through PR6 and PR8; host database/schema composition landed through PR9 at 3377e4a9d33e45fbfc87eb839090054c637a4331. Reviewed source matches landed files.",
       "Scoped real PostgreSQL normal/race tests, vet and lint passed. Controlled database stop/restart produced readiness 200/503/200 and liveness 200/200/200 on the same handler and pool. Actual schema incompatibility separately produced readiness 503.",
       "Provider and deployed supervision acceptance remain separate. This entry records bounded source and local runtime evidence; no production acceptance.",
-      "Current immutable source 4029237931315345492d73785b789e4d43151132 requalified against all original T10.2 handler criteria: 19 scoped real PostgreSQL/HTTP race checks, zero skips, health vet/lint, actual pool disconnect/schema mismatch/restoration, and wrong-status mutation RED/restored GREEN. Requirement matrix: docs/evidence/health-handler-qualification-20261016.md. No application source or retained author claim changed; independent acceptance review/guarded landing required. Complete migration-ledger and production supervision qualification remain separate E16 gates."
+      "Current immutable source 4029237931315345492d73785b789e4d43151132 requalified against all original T10.2 handler criteria: 19 scoped real PostgreSQL/HTTP race checks, zero skips, health vet/lint, actual pool disconnect/schema mismatch/restoration, and wrong-status mutation RED/restored GREEN. Requirement matrix: docs/evidence/health-handler-qualification-20261016.md. No application source or retained author claim changed; independent acceptance review/guarded landing required. Complete migration-ledger and production supervision qualification remain separate E16 gates.",
+      "Independent exact-head acceptance review and reviewer-run required-PostgreSQL health race passed. PR119 landed at 8d00b54b326efa234c4b3aeb6627c797538f0848, full tree equal to reviewed9621a0a; fresh landed required-PostgreSQL fullhealth race passed, zero skips. Original author claim preserved; supplemental qualification claim released."
     ]
   },
   "T10.3": {
-    "status": "IN_PROGRESS",
+    "status": "ACCEPTED",
     "certification": "REVIEWED",
     "evidence": [
       "Reviewed telemetry and trusted request-ID bridge landed through PR5. Automatic app/runtime logger composition landed through PR11 at 956ca5d5411f1d36854444756d025a0b3a7e818c; all four reviewed files match landing.",
       "Independent exact-head review cleared a307c450369c02b168def1d67ccd0a6dcfdb7e65 against eeda2c35b247c94897ebeac7ee931ddcac449efd. Scoped app/runtime normal/race/vet/lint checks passed on identical implementation source; final runtime race and public-artifact checks passed at the reviewed head.",
-      "Registered route templates and unmatched labels exclude raw paths and request material. Generated executable configuration, complete task acceptance and production qualification remain separate."
+      "Registered route templates and unmatched labels exclude raw paths and request material. Generated executable configuration, complete task acceptance and production qualification remain separate.",
+      "Bounded integrator acceptance adds external-module public App proof across actual separate loopback HTTP services: server-generated response ID correlates handler/backend/response/JSON logs, caller IDs never trusted, credential/body/query/diagnostic redaction asserted on success and failure. Six named race checks zero skips, vet/lint0; compiled ID-reuse and bearer-leak mutations RED and exact restoration GREEN. Original author claim preserved. See docs/evidence/request-logging-qualification-20261016.md; independent final acceptance review and guarded landing required, no private-proxy identity/network/mTLS or E16 qualification."
     ]
   },
   "T5.22": {
