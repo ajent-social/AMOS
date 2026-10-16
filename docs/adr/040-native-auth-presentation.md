@@ -1,6 +1,7 @@
 # ADR 040: expose optional native password-page presentation
 
-Status: proposed; independent design review and landing precede source.
+Status: independently reviewed; adopted on landing. Source requires a separate
+implementation review and landed verification.
 
 The generic renderer/override packages are accepted components, but the composed
 native password pages do not consume them. Consumers currently cannot brand the
