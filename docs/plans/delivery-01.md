@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -11,9 +11,9 @@ Product `S0`-`S5` milestones remain `product-milestone` metadata; their display 
 Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
-Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:82dc4e7d6e1cdeffb3ae62d8e7e8ea5d7c85f460510f9cd60db6ee80800028ac`.
 Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:ed9b3a22f48508562889d3d1a82a438f96ada66e9a804f85cc3b3c2e4897b5ca`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
@@ -517,6 +517,96 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   authority: reported-display-only
   Acceptance: [Independent standalone operation, exact scoped disclosure, separately owned development/review/release, installation-specific bridge retirement, at most one effect dispatcher and reconciliation of unknown outcomes are explicit reviewed contracts; no private endpoints. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.]
 
+- [x] T-OWNERSHIP-01.1 [Bounded ownership manifest component: preflight]
+  Stage: preflight
+  canonical-id: T-OWNERSHIP-01.1
+  authored-stage: preflight
+  deps: [T2.1, T1.2, T-PROD.15]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: COMPLETE
+  authority: reported-display-only
+  Acceptance: [Reconcile bounded ownership renderer scope, existing initializer schema and claim/worktree ownership. Preserve original T9.8 acceptance and all prior work.]
+
+- [x] T-OWNERSHIP-01.2 [Bounded ownership manifest component: implement]
+  Stage: implement
+  canonical-id: T-OWNERSHIP-01.2
+  authored-stage: implement
+  deps: [T-OWNERSHIP-01.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: COMPLETE
+  authority: reported-display-only
+  Acceptance: [Implement only internal ownership manifest rendering and actual supplied-byte baseline checks; no initializer migration, persistence or upgrade authority.]
+
+- [x] T-OWNERSHIP-01.2.F1 [Bounded ownership manifest component: implement OM-001]
+  Stage: implement
+  canonical-id: T-OWNERSHIP-01.2.F1
+  authored-stage: implement
+  deps: [T-OWNERSHIP-01.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: COMPLETE
+  authority: reported-display-only
+  Acceptance: [Resolve OM-001: protect frozen business/operations and business/types owner-authored roots against generated/copied-once classification, including case aliases.]
+
+- [x] T-OWNERSHIP-01.3 [Bounded ownership manifest component: verify]
+  Stage: verify
+  canonical-id: T-OWNERSHIP-01.3
+  authored-stage: verify
+  deps: [T-OWNERSHIP-01.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: COMPLETE
+  authority: reported-display-only
+  Acceptance: [Scoped race, vet, pinned lint, escaping-path negative/restoration, finite errors and deterministic output pass at exact source revision; distinguish remote/local evidence from hosted CI.]
+
+- [x] T-OWNERSHIP-01.3.F1 [Bounded ownership manifest component: verify OM-001]
+  Stage: verify
+  canonical-id: T-OWNERSHIP-01.3.F1
+  authored-stage: verify
+  deps: [T-OWNERSHIP-01.2.F1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: COMPLETE
+  authority: reported-display-only
+  Acceptance: [New regression fails against original code; restored corrected source passes affected scoped race, vet and pinned lint checks.]
+
+- [-] T-OWNERSHIP-01.4 [Bounded ownership manifest component: review]
+  Stage: review
+  canonical-id: T-OWNERSHIP-01.4
+  authored-stage: review
+  deps: [T-OWNERSHIP-01.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: BLOCKED
+  authority: reported-display-only
+  Acceptance: [Different author reviews full exact-base/head candidate including records and generated displays. Blocking findings remain recorded; fixes and re-review are required.]
+
+- [ ] T-OWNERSHIP-01.4.R1 [Bounded ownership manifest component: review OM-001]
+  Stage: review
+  canonical-id: T-OWNERSHIP-01.4.R1
+  authored-stage: review
+  deps: [T-OWNERSHIP-01.3.F1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Independent exact-head re-review confirms OM-001 fixed and full candidate remains correct, public-safe and explicitly partial.]
+
+- [ ] T-OWNERSHIP-01.5 [Bounded ownership manifest component: merge]
+  Stage: merge
+  canonical-id: T-OWNERSHIP-01.5
+  authored-stage: merge
+  deps: [T-OWNERSHIP-01.4.R1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Read exact head/base, required checks and independent approval; guarded GitHub rebase merge respects repository protections.]
+
+- [ ] T-OWNERSHIP-01.6 [Bounded ownership manifest component: verify-landed]
+  Stage: verify-landed
+  canonical-id: T-OWNERSHIP-01.6
+  authored-stage: verify-landed
+  deps: [T-OWNERSHIP-01.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Compare reviewed and landed trees, verify main reachability and fresh scoped landed checks, then release exact owned claims. T9.8 remains IN_PROGRESS; no product descendants or deployments are authorized.]
+
 - [x] T-PROD.1 [Reconcile source, task authority, ownership and runtime capacity]
   Stage: preflight
   canonical-id: T-PROD.1
@@ -926,93 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.]
-
-- [ ] T-RPL-HOST-CONTRACT.2 [Adopt local continuity persistence and host authority contract: author]
-  Stage: implement
-  canonical-id: T-RPL-HOST-CONTRACT.2
-  authored-stage: author
-  deps: [T-RPL-HOST-CONTRACT.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Author the bounded deliverable and documentation without modifying sibling-owned paths.]
-
-- [ ] T-RPL-HOST-CONTRACT.3 [Adopt local continuity persistence and host authority contract: verify]
-  Stage: verify
-  canonical-id: T-RPL-HOST-CONTRACT.3
-  authored-stage: verify
-  deps: [T-RPL-HOST-CONTRACT.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.]
-
-- [ ] T-RPL-HOST-CONTRACT.4 [Adopt local continuity persistence and host authority contract: review]
-  Stage: review
-  canonical-id: T-RPL-HOST-CONTRACT.4
-  authored-stage: review
-  deps: [T-RPL-HOST-CONTRACT.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.]
-
-- [ ] T-RPL-HOST-CONTRACT.5 [Adopt local continuity persistence and host authority contract: merge]
-  Stage: merge
-  canonical-id: T-RPL-HOST-CONTRACT.5
-  authored-stage: merge
-  deps: [T-RPL-HOST-CONTRACT.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.]
-
-- [ ] T-RPL-HOST-CONTRACT.6 [Adopt local continuity persistence and host authority contract: landed]
-  Stage: verify-landed
-  canonical-id: T-RPL-HOST-CONTRACT.6
-  authored-stage: landed
-  deps: [T-RPL-HOST-CONTRACT.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.]
-
-- [ ] T-RPL-HOST.1 [Compose independently runnable local continuity app: preflight]
-  Stage: preflight
-  canonical-id: T-RPL-HOST.1
-  authored-stage: preflight
-  deps: [T-RPL-WEB.6, T-RPL-HOST-CONTRACT.6]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.]
-
-- [ ] T-RPL-HOST.2 [Compose independently runnable local continuity app: author]
-  Stage: implement
-  canonical-id: T-RPL-HOST.2
-  authored-stage: author
-  deps: [T-RPL-HOST.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Author the bounded deliverable and documentation without modifying sibling-owned paths.]
-
-- [ ] T-RPL-HOST.3 [Compose independently runnable local continuity app: verify]
-  Stage: verify
-  canonical-id: T-RPL-HOST.3
-  authored-stage: verify
-  deps: [T-RPL-HOST.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.]
-
-- [ ] T-RPL-HOST.4 [Compose independently runnable local continuity app: review]
-  Stage: review
-  canonical-id: T-RPL-HOST.4
-  authored-stage: review
-  deps: [T-RPL-HOST.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.]

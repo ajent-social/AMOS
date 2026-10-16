@@ -50,3 +50,36 @@ checksum-verified golangci-lint2.13.2, zero issues. This is scoped remote lint,
 not hosted CI. The disposable container was bounded to2CPUs/4GiB with a600second
 hard command timeout; no model/provider or credential access was used.
 Independent review and landing are pending.
+
+
+## Independent review and fix obligations
+
+Review at `0298d38f082403266badb9c47636ce801b82c003` against
+`90c8ec3249562ce5e753f0fa594a3a5123ea2026` found OM-001: frozen
+owner-authored `business/operations` and `business/types` roots were omitted.
+The finding is accepted and blocks merge. Canonical component stages
+T-OWNERSHIP-01.1 through .6 and explicit .2.F1, .3.F1 and .4.R1 retain
+implementation, negative verification and independent re-review obligations.
+These supplement, rather than complete, the original T9.8 stages.
+
+All changed files pass the public-artifact scanner. The whole checkout still
+reports62 findings in unchanged files; they match the existing issue135 class.
+A clean whole-checkout scan is not claimed; scanner/protection policy is unchanged.
+
+
+OM-001 correction commit `ca11e953338a7dc5eb661d9fb4772ff341599366` adds
+both frozen authored roots. Eight new compiled cases failed before the correction,
+then the full62 named scoped race checks and vet passed with zero failures/skips.
+Affected exact-source remote lint now passes zero issues. The owning Wazi
+validator at revision `eb90e4b25cce0c2b3d5dcd31d2207a643c6db2f5` validates the
+1607-task export against frozen contract
+`sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d`
+with zero findings; all60 owning verifier fixtures pass. Export SHA-256:
+`e19ca6e5dae95bea07500b53bf005bb55d8a9f4b35265d4b02e361f31a029e80`.
+Transferred verifier/exporter/input hashes are retained in the private operating
+receipt. This is plan conformance only, not authenticated execution/admission.
+Exact-head independent re-review and guarded landing remain pending.
+
+The full-checkout scanner's62 diagnostics are byte-equal between unchanged
+main and this candidate. Changed-file scans pass. No scanner exception or
+branch-protection setting was added or weakened.

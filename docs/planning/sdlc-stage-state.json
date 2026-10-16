@@ -3451,6 +3451,169 @@
         "Full-task generator schema compatibility and durable baseline integration require a separately reviewed admission."
       ],
       "next_action": "Independently review and land bounded component without accepting T9.8 or releasing descendants."
+    },
+    "T-OWNERSHIP-01.1": {
+      "task_id": "T-OWNERSHIP-01.1",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "baseline": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "source": "39a828321ac7fa3973d13c0b8fd6ecefb26d1dd0"
+      },
+      "dependency_receipts": [
+        "T2.1",
+        "T1.2",
+        "T-PROD.15"
+      ],
+      "commands_and_results": [
+        "Scope/ownership and existing initializer boundary reconciled; all prior work preserved."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_AGGREGATE_REVIEW",
+        "findings": []
+      },
+      "external_blockers": [],
+      "next_action": "Complete explicit OM-001 fix, affected checks and independent re-review before merge."
+    },
+    "T-OWNERSHIP-01.2": {
+      "task_id": "T-OWNERSHIP-01.2",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "baseline": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "source": "39a828321ac7fa3973d13c0b8fd6ecefb26d1dd0"
+      },
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.1"
+      ],
+      "commands_and_results": [
+        "Two-file component committed; product task remains IN_PROGRESS."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_AGGREGATE_REVIEW",
+        "findings": []
+      },
+      "external_blockers": [],
+      "next_action": "Complete explicit OM-001 fix, affected checks and independent re-review before merge."
+    },
+    "T-OWNERSHIP-01.3": {
+      "task_id": "T-OWNERSHIP-01.3",
+      "status": "COMPLETE",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "baseline": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "source": "39a828321ac7fa3973d13c0b8fd6ecefb26d1dd0"
+      },
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.2"
+      ],
+      "commands_and_results": [
+        "Scoped race/vet, actual escaping-path mutation/restoration and exact-input-hash Linux pinned lint passed."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_AGGREGATE_REVIEW",
+        "findings": []
+      },
+      "external_blockers": [],
+      "next_action": "Complete explicit OM-001 fix, affected checks and independent re-review before merge."
+    },
+    "T-OWNERSHIP-01.4": {
+      "task_id": "T-OWNERSHIP-01.4",
+      "status": "BLOCKED",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "baseline": "90c8ec3249562ce5e753f0fa594a3a5123ea2026",
+        "source": "39a828321ac7fa3973d13c0b8fd6ecefb26d1dd0"
+      },
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.3"
+      ],
+      "commands_and_results": [
+        "Independent reviewer ownership_review found OM-001 at reviewed0298d38f082403266badb9c47636ce801b82c003: omitted frozen authored business roots. No other actionable findings."
+      ],
+      "independent_review_and_findings": {
+        "status": "CHANGES_REQUESTED",
+        "findings": [
+          {
+            "id": "OM-001",
+            "status": "ACCEPTED",
+            "description": "Missing frozen owner-authored business roots; bounded fix and affected checks/re-review required."
+          }
+        ]
+      },
+      "external_blockers": [],
+      "next_action": "Complete explicit OM-001 fix, affected checks and independent re-review before merge."
+    },
+    "T-OWNERSHIP-01.2.F1": {
+      "task_id": "T-OWNERSHIP-01.2.F1",
+      "status": "COMPLETE",
+      "owner": "ready_queue",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "baseline": "39a828321ac7fa3973d13c0b8fd6ecefb26d1dd0",
+        "source": "ca11e953338a7dc5eb661d9fb4772ff341599366"
+      },
+      "external_blockers": [],
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.2"
+      ],
+      "commands_and_results": [
+        "Added frozen business/operations and business/types authored roots and eight lowercase/casefolded class regressions."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_RE_REVIEW",
+        "finding_ids": [
+          "OM-001"
+        ]
+      },
+      "next_action": "Complete affected lint and independent exact-head re-review."
+    },
+    "T-OWNERSHIP-01.3.F1": {
+      "task_id": "T-OWNERSHIP-01.3.F1",
+      "status": "COMPLETE",
+      "owner": "ready_queue",
+      "claim": {
+        "resource": "T9.8",
+        "tip": "5a06c6aff2cb9f12f262095706c9f40ea71e5253"
+      },
+      "source_or_artifact_identity": {
+        "baseline": "39a828321ac7fa3973d13c0b8fd6ecefb26d1dd0",
+        "source": "ca11e953338a7dc5eb661d9fb4772ff341599366"
+      },
+      "external_blockers": [],
+      "dependency_receipts": [
+        "T-OWNERSHIP-01.2.F1"
+      ],
+      "commands_and_results": [
+        "Eight new regressions failed against original code; corrected full scoped race62 named passes, zero failures/skips; vet passes. Affected pinned remote lint pending.",
+        "Corrected exact-source remote lint Go1.27.1/golangci-lint2.13.2 passed zero issues after input-hash verification. Owning Wazi frozen contract validates1607-task authored export with zero findings; all60 verifier fixtures pass."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_RE_REVIEW",
+        "finding_ids": [
+          "OM-001"
+        ]
+      },
+      "next_action": "Independent exact-head OM-001 re-review and full candidate review before guarded merge."
     }
   },
   "receipt_requirements": [

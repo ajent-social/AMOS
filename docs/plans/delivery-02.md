@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1598 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -11,11 +11,101 @@ Product `S0`-`S5` milestones remain `product-milestone` metadata; their display 
 Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-landed`. Original labels remain `authored-stage`.
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
-Canonical source: `docs/planning/wazi-source.json`; `sha256:5e2cb731acd3ba85e8f4a42cc41d14a24c0a00cbac680c8365728895497491e0`.
+Canonical source: `docs/planning/wazi-source.json`; `sha256:82dc4e7d6e1cdeffb3ae62d8e7e8ea5d7c85f460510f9cd60db6ee80800028ac`.
 Registry: `docs/planning/execution-state.json`; `sha256:c04bb04564fdd11562db61675499a9c07ca70268c781f79f6a009add5f944031`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:ed9b3a22f48508562889d3d1a82a438f96ada66e9a804f85cc3b3c2e4897b5ca`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:44d35ec6cb0262d6387497b6e5dd4c0a76f3e391b94732cf2d8037712e1df2e0`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
+
+- [ ] T-RPL-HOST-CONTRACT.2 [Adopt local continuity persistence and host authority contract: author]
+  Stage: implement
+  canonical-id: T-RPL-HOST-CONTRACT.2
+  authored-stage: author
+  deps: [T-RPL-HOST-CONTRACT.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Author the bounded deliverable and documentation without modifying sibling-owned paths.]
+
+- [ ] T-RPL-HOST-CONTRACT.3 [Adopt local continuity persistence and host authority contract: verify]
+  Stage: verify
+  canonical-id: T-RPL-HOST-CONTRACT.3
+  authored-stage: verify
+  deps: [T-RPL-HOST-CONTRACT.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.]
+
+- [ ] T-RPL-HOST-CONTRACT.4 [Adopt local continuity persistence and host authority contract: review]
+  Stage: review
+  canonical-id: T-RPL-HOST-CONTRACT.4
+  authored-stage: review
+  deps: [T-RPL-HOST-CONTRACT.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.]
+
+- [ ] T-RPL-HOST-CONTRACT.5 [Adopt local continuity persistence and host authority contract: merge]
+  Stage: merge
+  canonical-id: T-RPL-HOST-CONTRACT.5
+  authored-stage: merge
+  deps: [T-RPL-HOST-CONTRACT.4]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Read back exact head/base/claim and approved review; guarded rebase merge respects protections. No auto-merge during active review.]
+
+- [ ] T-RPL-HOST-CONTRACT.6 [Adopt local continuity persistence and host authority contract: landed]
+  Stage: verify-landed
+  canonical-id: T-RPL-HOST-CONTRACT.6
+  authored-stage: landed
+  deps: [T-RPL-HOST-CONTRACT.5]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Exact existing local-host/session/workspace/CSRF seams, current-state rechecks, SQL ownership and isolated migration allocation reviewed before dependent source; unresolved authority blocks composition. Verify merged source identity and fresh relevant checks; record obtained evidence and limitations. Narrative completion alone grants no acceptance.]
+
+- [ ] T-RPL-HOST.1 [Compose independently runnable local continuity app: preflight]
+  Stage: preflight
+  canonical-id: T-RPL-HOST.1
+  authored-stage: preflight
+  deps: [T-RPL-WEB.6, T-RPL-HOST-CONTRACT.6]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Reconcile exact prerequisites, claims, existing work and scope; absent required inputs block.]
+
+- [ ] T-RPL-HOST.2 [Compose independently runnable local continuity app: author]
+  Stage: implement
+  canonical-id: T-RPL-HOST.2
+  authored-stage: author
+  deps: [T-RPL-HOST.1]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Author the bounded deliverable and documentation without modifying sibling-owned paths.]
+
+- [ ] T-RPL-HOST.3 [Compose independently runnable local continuity app: verify]
+  Stage: verify
+  canonical-id: T-RPL-HOST.3
+  authored-stage: verify
+  deps: [T-RPL-HOST.2]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Run relevant real-service checks and meaningful isolated negative/restored checks; record exact commands and head.]
+
+- [ ] T-RPL-HOST.4 [Compose independently runnable local continuity app: review]
+  Stage: review
+  canonical-id: T-RPL-HOST.4
+  authored-stage: review
+  deps: [T-RPL-HOST.3]
+  status-source: docs/planning/sdlc-stage-state.json
+  reported-status: UNRECORDED
+  authority: reported-display-only
+  Acceptance: [Qualified existing local host is explicitly reused; actual signup/verify/signin/personal scope/CSRF/revocation/DB failure checks pass; standalone baseline has no paid or external-agent dependency. Different author independently reviews exact head, repeats relevant checks and negative; findings require fix and re-review before clearance.]
 
 - [ ] T-RPL-HOST.5 [Compose independently runnable local continuity app: merge]
   Stage: merge
@@ -926,93 +1016,3 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   reported-status: UNRECORDED
   authority: reported-display-only
   Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-10-17.6 [Verify landed T10.17 — Format, lint and close operational boundary checks]
-  Stage: verify-landed
-  canonical-id: T-SDLC-10-17.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-10-17.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-10-2.1 [Preflight T10.2 — Implement bounded liveness and readiness handlers]
-  Stage: preflight
-  canonical-id: T-SDLC-10-2.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T10.1, T2.2, T1.3, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T10.1, T2.2, T1.3 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-
-- [ ] T-SDLC-10-2.2 [Implement T10.2 — Implement bounded liveness and readiness handlers]
-  Stage: implement
-  canonical-id: T-SDLC-10-2.2
-  authored-stage: implement
-  deps: [T-SDLC-10-2.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Healthy application returns 200; unready required database returns 503 within timeout. Responses contain no DSN, query, internal hostname or secret. Named scoped checks pass and the specified negative case is demonstrated; live/production qualification remains a separate explicitly authorized E16 gate where applicable. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
-
-- [ ] T-SDLC-10-2.3 [Verify changed behavior and required checks T10.2 — Implement bounded liveness and readiness handlers]
-  Stage: verify
-  canonical-id: T-SDLC-10-2.3
-  authored-stage: verify
-  deps: [T-SDLC-10-2.2]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
-
-- [ ] T-SDLC-10-2.4 [Independently review T10.2 — Implement bounded liveness and readiness handlers]
-  Stage: review
-  canonical-id: T-SDLC-10-2.4
-  authored-stage: review
-  deps: [T-SDLC-10-2.3]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Independent reviewer is named for T10.2 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
-
-- [ ] T-SDLC-10-2.5 [Rebase merge T10.2 — Implement bounded liveness and readiness handlers]
-  Stage: merge
-  canonical-id: T-SDLC-10-2.5
-  authored-stage: merge
-  deps: [T-SDLC-10-2.4]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
-
-- [ ] T-SDLC-10-2.6 [Verify landed T10.2 — Implement bounded liveness and readiness handlers]
-  Stage: verify-landed
-  canonical-id: T-SDLC-10-2.6
-  authored-stage: verify-landed
-  deps: [T-SDLC-10-2.5]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
-
-- [ ] T-SDLC-10-3.1 [Preflight T10.3 — Add structured request logs with redaction]
-  Stage: preflight
-  canonical-id: T-SDLC-10-3.1
-  authored-stage: preflight
-  deps: [T-PROD.1, T10.1, T2.2, T-PROD.15]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Current task contract, owned paths, source changes and T10.1, T2.2 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
-
-- [ ] T-SDLC-10-3.2 [Implement T10.3 — Add structured request logs with redaction]
-  Stage: implement
-  canonical-id: T-SDLC-10-3.2
-  authored-stage: implement
-  deps: [T-SDLC-10-3.1]
-  status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
-  authority: reported-display-only
-  Acceptance: [Logs support correlation across app and business service without storing raw bodies. Injected credentials never appear in encoded log output. Named scoped checks pass and the specified negative case is demonstrated; live/production qualification remains a separate explicitly authorized E16 gate where applicable. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
