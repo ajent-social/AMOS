@@ -69,20 +69,57 @@ Do not call the full apphost suite, bound restricted TLS runtime or real browser
 qualified. These separate existing gates remain unresolved; the named development
 scope above passed with zero skips. No hosted CI claim.
 
-## Integration and runtime gates
+## Landed integration
 
-Final independent source review, guarded merge, reviewed-tree equality and fresh
-landed checks remain required for this candidate. The initial standalone executable
-is Linux-only, retaining its verified directory descriptor until host closure;
-public typed host portability is an intended surface, not native Mac evidence.
-Replacing the parent cannot redirect capture. Only after source gates may a fresh
-isolated owned LAN trial start. A separately reviewed private provisioner verifies
-fresh resource tokens/creation identity, exact PID/start-time cleanup and assigned
-RFC1918 binding; it has not run yet. Existing consumer listeners/data stay intact.
+Independent source/final receipt review approved the complete candidate. PR #132
+landed `d3172533c2acc252adae20ac92a55730e3672f4d`; its whole tree equals the
+reviewed candidate. Fresh landed named checks again passed32host+49origin/capture/
+executable=81, zero skips; bounded plan/projection checks passed. No hosted CI or
+full apphost claim follows. Initial standalone executable is Linux-only, retaining
+its verified directory descriptor; no native Mac Go build qualification.
 
-Actual certificate-verifying LAN behavior and browser-visible acceptance will be
-recorded separately. Self-signed material never establishes automatic system/browser
-trust. No production constructor, organization authority, real email delivery,
-live billing/provider or release admission is implied. Requested batch ceiling10;
-one coherent supplementary runnable testing outcome; inherited model/settings
-preserved, exact cost/token telemetry unavailable.
+## Isolated runtime and actual LAN requests
+
+The owner-authorized existing host ran a freshly built landed executable, fresh
+private runtime/IDs/keys, short-lived seven-day IP-SAN ECDSA certificate and fresh
+separately named PostgreSQL container/volume. Database exposure is loopback-only;
+the application binds the assigned RFC1918 address exactly on a previously unused
+port. Fresh resources have unpredictable ownership tokens; volume creation identity
+and token were verified before migration and rechecked after startup. Only the
+new database received the reviewed existing generator registry. Existing consumer
+preview, listeners, private configuration and persistent data remained untouched.
+The database is capped at512MiB/one CPU. No new cloud, public DNS or trust-store edit.
+
+The independently reviewed private setup helper initially failed on a Python file
+API before writing configuration or starting any database, volume or process.
+Only two empty owned private directories were created; both were verified empty
+and removed. Corrected exclusive/private built-in file creation was smoke-tested
+and independently cleared. The retry completed, with direct certificate-verified
+readiness and a detached owned service. Current exact PID/start-time/executable
+identity and built-binary digest were rechecked after the launch session ended;
+container/volume ownership remained intact. A real wrong database password was
+rejected; database TLS and restricted runtime-role qualification remain separate.
+
+From a separate Mac, real direct TLS1.3 requests with only the copied public
+certificate completed signup, captured verification, secure signin, personal todo
+creation/persistence, all three authenticated UI assets and signout/revocation.
+Five native auth HEAD responses returned200, empty bodies and no cookies. Precise
+certificate-verification failures proved ordinary trust and wrong-IP rejection;
+wrong Host with forwarded spoof, plaintext, missing CSRF and foreign Origin were
+denied. No insecure verification, environment proxy or browser trust change.
+Only the public certificate crossed hosts; private TLS keys and database credentials
+stayed with the runtime. Verified test-account details and exact-owned stop/restart
+instructions are in private owner-only handoff files, not public artifacts.
+
+## Remaining limits
+
+The UI tool reported no browser available. Actual visual/native browser acceptance
+and self-signed browser trust remain unverified; certificate-verifying HTTP is not
+browser acceptance. Self-signed material needs an owner's separate browser decision;
+no agent bypassed a browser security warning. The service has no automatic crash
+restart and the certificate is short-lived; this is an explicit testing profile.
+Mail remains private capture, not live email. Production constructor, organization
+policy/authority, live billing/provider behavior, cloud deployment and E16 admission
+remain open. The broader missing runtime/browser test prerequisites above remain.
+Requested batch ceiling10; one coherent supplementary runnable testing outcome;
+inherited model/settings preserved, exact cost/token telemetry unavailable.
