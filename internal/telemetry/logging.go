@@ -51,6 +51,11 @@ var fallbackIDSequence atomic.Uint64
 // It creates a server-generated request ID and never logs request headers,
 // query values, bodies, response bodies, or panic values.
 func Logging(logger *slog.Logger, route RouteTemplate, next http.Handler) http.Handler {
+	return LoggingWithMetrics(logger, route, nil, next)
+}
+
+// LoggingWithMetrics adds optional bounded observations to the existing request boundary.
+func LoggingWithMetrics(logger *slog.Logger, route RouteTemplate, metrics *Metrics, next http.Handler) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -106,6 +111,7 @@ func Logging(logger *slog.Logger, route RouteTemplate, next http.Handler) http.H
 		} else {
 			attrs = append(attrs, "status", rw.status)
 		}
+		metrics.ObserveHTTP(routeValue, rw.status, code, time.Since(started))
 		logger.Info("http request", attrs...)
 	})
 }

@@ -31,6 +31,7 @@ import (
 	"github.com/ajent-social/amos/internal/health"
 	"github.com/ajent-social/amos/jobs"
 	"github.com/ajent-social/amos/jobs/sqlstore"
+	"github.com/ajent-social/amos/observability"
 	"github.com/ajent-social/amos/storage"
 	"github.com/ajent-social/amos/ui/authpassword"
 	"github.com/ajent-social/amos/ui/workspaceswitch"
@@ -58,6 +59,9 @@ type LocalConfig struct {
 	Billing                                      *LocalBillingConfig
 	AuthTheme                                    *authpassword.Theme
 	AuthReturnPolicy                             *authpassword.ReturnPolicy
+	// Metrics optionally observes App and the local email worker. Non-nil collectors
+	// must configure WorkerNames with the fixed name "local-email". No listener is opened.
+	Metrics *observability.Collector
 }
 type Host struct {
 	app       *app.App
@@ -68,11 +72,21 @@ type Host struct {
 	origin    *url.URL
 	closeOnce sync.Once
 	closeErr  error
+	metrics   *observability.Collector
+	outbox    *sqlstore.Store
 }
 
 // NewLocal opens already migrated dependencies. Missing migrations, private
 // mailbox or keys fail visibly; this never substitutes fixtures for delivery.
 func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
+	var observer jobs.Observer
+	if cfg.Metrics != nil {
+		var err error
+		observer, err = cfg.Metrics.WorkerObserver("local-email")
+		if err != nil {
+			return nil, ErrLocalConfiguration
+		}
+	}
 	if cfg.AuthTheme != nil {
 		theme := *cfg.AuthTheme
 		if err := theme.Validate(); err != nil {
@@ -96,7 +110,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, ErrLocalDependency
 	}
-	h := &Host{db: db, origin: origin}
+	h := &Host{db: db, origin: origin, metrics: cfg.Metrics}
 	defer func() {
 		if result != nil {
 			result = errors.Join(result, h.Close())
@@ -143,7 +157,8 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, ErrLocalDependency
 	}
-	h.worker = jobs.Worker{Repository: outbox, Consumer: dispatcher, Owner: "local-email-" + workerID.String(), Lease: time.Minute}
+	h.outbox = outbox
+	h.worker = jobs.Worker{Repository: outbox, Consumer: dispatcher, Owner: "local-email-" + workerID.String(), Lease: time.Minute, Observer: observer}
 	sessions, err := session.New(db, session.Config{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, AllowedOrigins: []string{cfg.Origin}, DevelopmentLoopback: true, PersistAssurance: true})
 	if err != nil {
 		return nil, err
@@ -272,7 +287,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	shared, err := app.New(app.Options{Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, HealthHandler: healthHandler, Billing: billingHandler})
+	shared, err := app.New(app.Options{Metrics: cfg.Metrics, Workspaces: sessions.Middleware(workspacePage), Identity: app.IdentityHandlers{TOTPStatus: factorRead, TOTPEnroll: factorWrite, TOTPConfirm: factorWrite, TOTPChallenge: factorWrite, SignupPage: compatible, SigninPage: compatible, Signup: compatible, Signin: compatible, VerifyEmail: verificationAdmission(limiter, compatible), ForgotPassword: compatible, ResetPassword: compatible, Signout: sessions.Middleware(http.HandlerFunc(sessions.SignOut))}, HealthHandler: healthHandler, Billing: billingHandler})
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +334,9 @@ func (h *Host) Serve(ctx context.Context, listener net.Listener) error {
 				done <- nil
 				return
 			case <-ticker.C:
-				if _, err := h.worker.RunOne(workCtx); err != nil && workCtx.Err() == nil {
+				_, workerErr := h.worker.RunOne(workCtx)
+				h.observeMetrics(workCtx)
+				if workerErr != nil && workCtx.Err() == nil {
 					done <- ErrLocalDependency
 					cancel()
 					return
