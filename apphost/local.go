@@ -56,6 +56,7 @@ type LocalConfig struct {
 	MaterialKey, RateKey                         []byte
 	Business                                     func(*storage.DB, *session.Service) ([]Route, error)
 	Billing                                      *LocalBillingConfig
+	AuthTheme                                    *authpassword.Theme
 }
 type Host struct {
 	app       *app.App
@@ -71,6 +72,13 @@ type Host struct {
 // NewLocal opens already migrated dependencies. Missing migrations, private
 // mailbox or keys fail visibly; this never substitutes fixtures for delivery.
 func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
+	if cfg.AuthTheme != nil {
+		theme := *cfg.AuthTheme
+		if err := theme.Validate(); err != nil {
+			return nil, ErrLocalConfiguration
+		}
+		cfg.AuthTheme = &theme
+	}
 	origin, err := delivery.ParseApplicationOrigin(cfg.Origin, true)
 	if ctx == nil || err != nil || origin.Scheme != "http" || cfg.Business == nil || len(cfg.MaterialKey) != 32 || len(cfg.RateKey) != 32 || !localID(cfg.InstallationID) || !localID(cfg.ApplicationID) || !localID(cfg.EnvironmentID) {
 		return nil, ErrLocalConfiguration
@@ -176,7 +184,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	forms, err := authpassword.New(authpassword.Config{Signup: signup, Signin: signin, RecoveryRequest: recoveryRequest, RecoveryComplete: recoveryComplete, Verification: verification, VerificationConfirm: verificationComplete, Reset: recoveries, AllowsOrigin: sessions.AllowsOrigin})
+	forms, err := authpassword.New(authpassword.Config{Theme: cfg.AuthTheme, Signup: signup, Signin: signin, RecoveryRequest: recoveryRequest, RecoveryComplete: recoveryComplete, Verification: verification, VerificationConfirm: verificationComplete, Reset: recoveries, AllowsOrigin: sessions.AllowsOrigin})
 	if err != nil {
 		return nil, err
 	}

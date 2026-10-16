@@ -32,6 +32,8 @@ type Reset interface {
 }
 
 type Config struct {
+	// Theme adds optional owner-authored presentation without changing actions.
+	Theme                                             *Theme
 	Signup, Signin, RecoveryRequest, RecoveryComplete http.Handler
 	// VerificationConfirm is the PublicJSON(Verification) guarded action. Its
 	// successful completion response must be 204; every other 2xx is ambiguous.
@@ -46,6 +48,13 @@ type Pages struct{ cfg Config }
 func New(cfg Config) (*Pages, error) {
 	if cfg.Signup == nil || cfg.Signin == nil || cfg.RecoveryRequest == nil || cfg.RecoveryComplete == nil || cfg.VerificationConfirm == nil || cfg.Verification == nil || cfg.Reset == nil || cfg.AllowsOrigin == nil {
 		return nil, errors.New("auth password pages require configured identity actions")
+	}
+	if cfg.Theme != nil {
+		theme := *cfg.Theme
+		if err := theme.Validate(); err != nil {
+			return nil, err
+		}
+		cfg.Theme = &theme
 	}
 	return &Pages{cfg: cfg}, nil
 }
@@ -290,18 +299,24 @@ func (p *Pages) reset(w http.ResponseWriter, r *http.Request) {
 }
 
 type model struct {
+	Theme                                                                                                                  *Theme
 	Title, Heading, Message, Action, Submit, PasswordAuto, EmailAuto, Next, Link, LinkText, VerifyAction, Challenge, Token string
 	Email, Password, Verify, ResetForm                                                                                     bool
 }
 
-var pageTemplate = template.Must(template.New("page").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin"><title>{{.Title}}</title></head><body><main><h1>{{.Heading}}</h1>{{if .Message}}<p role="status">{{.Message}}</p>{{end}}{{if .Action}}<form method="post" action="{{.Action}}">{{if .Email}}<label for="email">Email</label><input id="email" name="email" type="email" autocomplete="{{.EmailAuto}}" required maxlength="320">{{end}}{{if .Password}}<label for="password">{{if .ResetForm}}New password{{else}}Password{{end}}</label><input id="password" name="password" type="password" autocomplete="{{.PasswordAuto}}" required minlength="15" maxlength="128">{{end}}{{if .ResetForm}}<input type="hidden" name="challenge_id" value="{{.Challenge}}"><input type="hidden" name="token" value="{{.Token}}">{{end}}{{if .Next}}<input type="hidden" name="next" value="{{.Next}}">{{end}}<button type="submit">{{.Submit}}</button></form>{{end}}{{if .Verify}}<form method="post" action="{{.VerifyAction}}"><input type="hidden" name="challenge" value="{{.Challenge}}"><input type="hidden" name="token" value="{{.Token}}"><button type="submit">{{.Submit}}</button></form>{{end}}{{if .Link}}<p><a href="{{.Link}}">{{.LinkText}}</a></p>{{end}}{{if eq .Title "Verify email"}}<p><a href="/signup">Return to account creation</a></p>{{end}}{{if eq .Title "Sign in"}}<p><a href="/signup">Create account</a> · <a href="/forgot-password">Forgot password?</a></p>{{end}}{{if eq .Title "Create account"}}<p><a href="/signin">Already registered? Sign in</a></p>{{end}}</main></body></html>`))
+var pageTemplate = template.Must(template.New("page").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin"><title>{{.Title}}{{if .Theme}} · {{.Theme.BrandName}}{{end}}</title>{{if .Theme}}{{if .Theme.StylesheetURL}}<link rel="stylesheet" href="{{.Theme.StylesheetURL}}">{{end}}{{end}}</head><body{{if .Theme}} class="amos-auth"{{end}}>{{if .Theme}}<header class="amos-auth-brand"><a href="/">{{if .Theme.LogoURL}}<img src="{{.Theme.LogoURL}}" width="32" height="32" alt="">{{end}}<span>{{.Theme.BrandName}}</span></a></header>{{end}}<main{{if .Theme}} class="amos-auth-main" id="main-content"{{end}}><h1>{{.Heading}}</h1>{{if .Message}}<p{{if .Theme}} class="amos-auth-message"{{end}} role="status">{{.Message}}</p>{{end}}{{if .Action}}<form{{if .Theme}} class="amos-auth-form"{{end}} method="post" action="{{.Action}}">{{if .Email}}<label for="email">Email</label><input id="email" name="email" type="email" autocomplete="{{.EmailAuto}}" required maxlength="320">{{end}}{{if .Password}}<label for="password">{{if .ResetForm}}New password{{else}}Password{{end}}</label><input id="password" name="password" type="password" autocomplete="{{.PasswordAuto}}" required minlength="15" maxlength="128">{{end}}{{if .ResetForm}}<input type="hidden" name="challenge_id" value="{{.Challenge}}"><input type="hidden" name="token" value="{{.Token}}">{{end}}{{if .Next}}<input type="hidden" name="next" value="{{.Next}}">{{end}}<button type="submit">{{.Submit}}</button></form>{{end}}{{if .Verify}}<form{{if .Theme}} class="amos-auth-form"{{end}} method="post" action="{{.VerifyAction}}"><input type="hidden" name="challenge" value="{{.Challenge}}"><input type="hidden" name="token" value="{{.Token}}"><button type="submit">{{.Submit}}</button></form>{{end}}{{if .Link}}<p{{if .Theme}} class="amos-auth-links"{{end}}><a href="{{.Link}}">{{.LinkText}}</a></p>{{end}}{{if eq .Title "Verify email"}}<p{{if .Theme}} class="amos-auth-links"{{end}}><a href="/signup">Return to account creation</a></p>{{end}}{{if eq .Title "Sign in"}}<p{{if .Theme}} class="amos-auth-links"{{end}}><a href="/signup">Create account</a> · <a href="/forgot-password">Forgot password?</a></p>{{end}}{{if eq .Title "Create account"}}<p{{if .Theme}} class="amos-auth-links"{{end}}><a href="/signin">Already registered? Sign in</a></p>{{end}}</main></body></html>`))
 
 func (p *Pages) page(w http.ResponseWriter, r *http.Request, status int, m model) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Referrer-Policy", "strict-origin")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+	csp := "default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+	if p.cfg.Theme != nil {
+		m.Theme = p.cfg.Theme
+		csp += "; style-src 'self'; font-src 'self'; img-src 'self'"
+	}
+	w.Header().Set("Content-Security-Policy", csp)
 	w.WriteHeader(status)
 	if r.Method == http.MethodHead {
 		return

@@ -30,6 +30,7 @@ import (
 	"github.com/ajent-social/amos/internal/testkit"
 	"github.com/ajent-social/amos/migrations"
 	"github.com/ajent-social/amos/storage"
+	"github.com/ajent-social/amos/ui/authpassword"
 	workspaces "github.com/ajent-social/amos/workspace/store"
 	"github.com/google/uuid"
 	"github.com/pquerna/otp/totp"
@@ -184,6 +185,12 @@ func response(t *testing.T, client *http.Client, method, endpoint, origin string
 }
 
 func TestLocalSignupVerificationSigninPersonalTodoAndSignout(t *testing.T) {
+	t.Run("legacy", func(t *testing.T) { testLocalSignupLifecycle(t, nil) })
+	t.Run("themed", func(t *testing.T) {
+		testLocalSignupLifecycle(t, &authpassword.Theme{BrandName: "Example", LogoURL: "/assets/logo.svg", StylesheetURL: "/assets/auth.css"})
+	})
+}
+func testLocalSignupLifecycle(t *testing.T, theme *authpassword.Theme) {
 	dsn := localDatabase(t)
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -191,6 +198,7 @@ func TestLocalSignupVerificationSigninPersonalTodoAndSignout(t *testing.T) {
 	}
 	origin := "http://" + listener.Addr().String()
 	cfg := localConfig(t, dsn, origin)
+	cfg.AuthTheme = theme
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	host, err := NewLocal(ctx, cfg)
@@ -219,9 +227,22 @@ func TestLocalSignupVerificationSigninPersonalTodoAndSignout(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := &http.Client{Jar: jar, Timeout: 5 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	status, signinPage := response(t, client, "GET", origin+"/signin", "", nil)
+	if status != 200 {
+		t.Fatalf("sign-in page status=%d", status)
+	}
+	if theme != nil {
+		theme.BrandName = "Changed after construction"
+		status, signinPage = response(t, client, "GET", origin+"/signin", "", nil)
+		if status != 200 || !strings.Contains(signinPage, `href="/assets/auth.css"`) || !strings.Contains(signinPage, "Sign in · Example") || strings.Contains(signinPage, "Changed after construction") {
+			t.Fatal("host did not retain copied auth theme")
+		}
+	} else if strings.Contains(signinPage, "amos-auth") {
+		t.Fatal("unconfigured host changed auth presentation")
+	}
 	email := "owner@example.test"
 	phrase := "fresh local owner phrase 2026!"
-	status, _ := response(t, client, "POST", origin+"/signup", origin, url.Values{"email": {email}, "password": {phrase}})
+	status, _ = response(t, client, "POST", origin+"/signup", origin, url.Values{"email": {email}, "password": {phrase}})
 	if status != 202 {
 		t.Fatalf("signup status=%d", status)
 	}
@@ -441,5 +462,19 @@ func TestLocalHostRejectsMissingAssurancePrerequisite(t *testing.T) {
 	}
 	if !errors.Is(err, ErrLocalDependency) {
 		t.Fatal("missing assurance prerequisite was not visible")
+	}
+}
+
+func TestLocalRejectsInvalidAuthThemeBeforeDependencies(t *testing.T) {
+	id := func() uuid.UUID {
+		v, err := uuid.NewV7()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	cfg := LocalConfig{InstallationID: id(), ApplicationID: id(), EnvironmentID: id(), Origin: "http://127.0.0.1:18765", DatabaseURL: "test", MaterialKey: make([]byte, 32), RateKey: make([]byte, 32), Business: func(*storage.DB, *session.Service) ([]Route, error) { return nil, nil }, AuthTheme: &authpassword.Theme{BrandName: "Example", StylesheetURL: "//foreign.example/a.css"}}
+	if host, err := NewLocal(context.Background(), cfg); host != nil || !errors.Is(err, ErrLocalConfiguration) {
+		t.Fatalf("invalid theme reached dependencies: host=%v err=%v", host, err)
 	}
 }

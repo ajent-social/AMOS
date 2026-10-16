@@ -353,7 +353,8 @@
       "Scoped Go tests, vet and lint passed; integrated full Go suite passed with required PostgreSQL available.",
       "Two Chromium generated-consumer override tests passed; pinned Prettier formatting passed.",
       "Negative tests reject missing, conditional, inert and spoofed form slots before response output; isolated security-check mutation was detected and restored.",
-      "Renderer evidence does not qualify authentication, checkout providers or deployment."
+      "Renderer evidence does not qualify authentication, checkout providers or deployment.",
+      "Supplemental native auth presentation repair: design PR #114 adopted; scoped actual PostgreSQL race and browser presentation evidence recorded in docs/evidence/auth-presentation-20261016.md. Source review/merge/landed acceptance pending; historical renderer acceptance and full-product qualification unchanged."
     ]
   },
   "T7.4": {
