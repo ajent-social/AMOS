@@ -608,7 +608,8 @@
       "Reviewed telemetry and trusted request-ID bridge landed through PR5. Automatic app/runtime logger composition landed through PR11 at 956ca5d5411f1d36854444756d025a0b3a7e818c; all four reviewed files match landing.",
       "Independent exact-head review cleared a307c450369c02b168def1d67ccd0a6dcfdb7e65 against eeda2c35b247c94897ebeac7ee931ddcac449efd. Scoped app/runtime normal/race/vet/lint checks passed on identical implementation source; final runtime race and public-artifact checks passed at the reviewed head.",
       "Registered route templates and unmatched labels exclude raw paths and request material. Generated executable configuration, complete task acceptance and production qualification remain separate.",
-      "Bounded integrator acceptance adds external-module public App proof across actual separate loopback HTTP services: server-generated response ID correlates handler/backend/response/JSON logs, caller IDs never trusted, credential/body/query/diagnostic redaction asserted on success and failure. Six named race checks zero skips, vet/lint0; compiled ID-reuse and bearer-leak mutations RED and exact restoration GREEN. Original author claim preserved. See docs/evidence/request-logging-qualification-20261016.md; independent final acceptance review and guarded landing required, no private-proxy identity/network/mTLS or E16 qualification."
+      "Bounded integrator acceptance adds external-module public App proof across actual separate loopback HTTP services: server-generated response ID correlates handler/backend/response/JSON logs, caller IDs never trusted, credential/body/query/diagnostic redaction asserted on success and failure. Six named race checks zero skips, vet/lint0; compiled ID-reuse and bearer-leak mutations RED and exact restoration GREEN. Original author claim preserved. See docs/evidence/request-logging-qualification-20261016.md; independent final acceptance review and guarded landing required, no private-proxy identity/network/mTLS or E16 qualification.",
+      "Independent exact-head final acceptance review approved f09933d against ff97e73. PR121 landed0208b87c7bc24d058d327a08d5634c6ef77af4ee, entire reviewed-tree equality and main reachability verified. Fresh landed fulltelemetry race and six external-consumer race checks passed, zero skips; supplemental qualification claim released, retained original author claim preserved."
     ]
   },
   "T5.22": {
@@ -803,6 +804,21 @@
       "Independent exact-head review passed at base 7b98181c1ca7d1cad7a8bb659dc110e81cf2c384 and head ead2be02e8e3b92043d314153c94567ac17e082e. The reviewer found and verified fixes for nested percent-encoded paths and identity-header aliases; disposable mutations made both regression checks fail as expected, then source was restored byte-for-byte.",
       "The repository public-artifact checker passed for all changed files after the ephemeral test-key helper was made explicit to its heuristic; no credentials or private locators are present.",
       "PR #111 merged by rebase as commit 741f6def876c9f21b0f8ac2c31319843747460ec with tree b72174545ad63d460b21658b8427e03a69b79f52. The changed files match the reviewed head. Fresh landed go test/race for proxy/identity, vet, go mod verify, gofmt, diff check and changed-path public-artifact scan passed. GitHub reported no checks and main was unprotected; local verification was the gate."
+    ]
+  },
+  "T10.4": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Original task dependencies accepted; integrator holds original task claim. Independently reviewed design PR122 landed65ceb3e31491b5563f75643d8b0cf52d69bf69bb, full reviewed-tree equality verified. Finite private metrics contract v1.28 delegates bounded source/actual-database checks. Source implementation in progress; no source acceptance, exporter, provider or deployment qualification."
+    ]
+  },
+  "T14.1": {
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
+    "evidence": [
+      "Closed public diagnostic schema/profile and rejected-fixture design checks implement T14.1 only. Scoped Go race/vet/lint and independent Draft2020-12 meta/fixture checks passed; source-manifest definition and actual baseline files checked. Whole private frame rejection/expected omission is a design fixture, not a sanitizer.",
+      "ADR043/amendmentv1.29 document finite reviewed public component provenance vocabulary, fixed codes/signatures/frame IDs, bucketed counts, hard proposed downstream privacy budget and default-off owner controls. No AMSL source admission, automatic export, trusted installed-binary provenance or production qualification. Independent final review/guarded design landing required."
     ]
   }
 }
