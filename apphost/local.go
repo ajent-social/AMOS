@@ -64,21 +64,27 @@ type LocalConfig struct {
 	Metrics *observability.Collector
 }
 type Host struct {
-	app       *app.App
-	db        *storage.DB
-	pool      *sql.DB
-	mailbox   *localcapture.Capture
-	worker    jobs.Worker
-	origin    *url.URL
-	closeOnce sync.Once
-	closeErr  error
-	metrics   *observability.Collector
-	outbox    *sqlstore.Store
+	app         *app.App
+	db          *storage.DB
+	pool        *sql.DB
+	mailbox     *localcapture.Capture
+	worker      jobs.Worker
+	origin      *url.URL
+	closeOnce   sync.Once
+	closeErr    error
+	metrics     *observability.Collector
+	outbox      *sqlstore.Store
+	tlsIdentity *developmentTLSIdentity
+	serveMu     sync.Mutex
+	tlsServing  bool
 }
 
 // NewLocal opens already migrated dependencies. Missing migrations, private
 // mailbox or keys fail visibly; this never substitutes fixtures for delivery.
-func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
+func NewLocal(ctx context.Context, cfg LocalConfig) (*Host, error) { return newHost(ctx, cfg, nil) }
+
+func newHost(ctx context.Context, cfg LocalConfig, identity *developmentTLSIdentity) (host *Host, result error) {
+	developmentLoopback := identity == nil
 	var observer jobs.Observer
 	if cfg.Metrics != nil {
 		var err error
@@ -103,14 +109,17 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 		cfg.AuthReturnPolicy = &policy
 	}
 	origin, err := delivery.ParseApplicationOrigin(cfg.Origin, true)
-	if ctx == nil || err != nil || origin.Scheme != "http" || cfg.Business == nil || len(cfg.MaterialKey) != 32 || len(cfg.RateKey) != 32 || !localID(cfg.InstallationID) || !localID(cfg.ApplicationID) || !localID(cfg.EnvironmentID) {
+	if identity != nil {
+		origin, err = delivery.ParseDevelopmentTLSOrigin(cfg.Origin)
+	}
+	if ctx == nil || err != nil || (developmentLoopback && origin.Scheme != "http") || cfg.Business == nil || len(cfg.MaterialKey) != 32 || len(cfg.RateKey) != 32 || !localID(cfg.InstallationID) || !localID(cfg.ApplicationID) || !localID(cfg.EnvironmentID) {
 		return nil, ErrLocalConfiguration
 	}
 	db, err := storage.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return nil, ErrLocalDependency
 	}
-	h := &Host{db: db, origin: origin, metrics: cfg.Metrics}
+	h := &Host{db: db, origin: origin, metrics: cfg.Metrics, tlsIdentity: identity}
 	defer func() {
 		if result != nil {
 			result = errors.Join(result, h.Close())
@@ -136,15 +145,20 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	materials, err := materialstore.New(materialstore.Config{DevelopmentLoopback: true, DB: db, InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, ActiveKeyID: "local-v1", Keys: map[string][]byte{"local-v1": cfg.MaterialKey}, ApplicationOrigin: cfg.Origin})
+	materials, err := materialstore.New(materialstore.Config{DevelopmentLoopback: developmentLoopback, DB: db, InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, ActiveKeyID: "local-v1", Keys: map[string][]byte{"local-v1": cfg.MaterialKey}, ApplicationOrigin: cfg.Origin})
 	if err != nil {
 		return nil, err
 	}
-	renderer, err := delivery.NewRenderer(delivery.RenderConfig{DevelopmentLoopback: true, FromAddress: "amos@example.invalid", ApplicationOrigin: cfg.Origin, MaxBodyBytes: delivery.MaxBodyBytes})
+	renderer, err := delivery.NewRenderer(delivery.RenderConfig{DevelopmentLoopback: developmentLoopback, FromAddress: "amos@example.invalid", ApplicationOrigin: cfg.Origin, MaxBodyBytes: delivery.MaxBodyBytes})
 	if err != nil {
 		return nil, err
 	}
-	mailbox, err := localcapture.New(cfg.MailDirectory, cfg.Origin, true)
+	var mailbox *localcapture.Capture
+	if developmentLoopback {
+		mailbox, err = localcapture.New(cfg.MailDirectory, cfg.Origin, true)
+	} else {
+		mailbox, err = localcapture.NewDevelopmentTLS(cfg.MailDirectory, cfg.Origin)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +173,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	}
 	h.outbox = outbox
 	h.worker = jobs.Worker{Repository: outbox, Consumer: dispatcher, Owner: "local-email-" + workerID.String(), Lease: time.Minute, Observer: observer}
-	sessions, err := session.New(db, session.Config{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, AllowedOrigins: []string{cfg.Origin}, DevelopmentLoopback: true, PersistAssurance: true})
+	sessions, err := session.New(db, session.Config{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, AllowedOrigins: []string{cfg.Origin}, DevelopmentLoopback: developmentLoopback, CookieSecure: !developmentLoopback, PersistAssurance: true})
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +189,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	verification, err := identityemail.New(db, outbox, renderer, materials, identityemail.Config{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, ApplicationOrigin: cfg.Origin, DevelopmentLoopback: true, ChallengeLifetime: identityemail.DefaultChallengeLifetime})
+	verification, err := identityemail.New(db, outbox, renderer, materials, identityemail.Config{InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, ApplicationOrigin: cfg.Origin, DevelopmentLoopback: developmentLoopback, ChallengeLifetime: identityemail.DefaultChallengeLifetime})
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +206,7 @@ func NewLocal(ctx context.Context, cfg LocalConfig) (host *Host, result error) {
 	if err != nil {
 		return nil, err
 	}
-	recoveries, err := recovery.New(recovery.Config{DB: db, Passwords: hasher, Outbox: outbox, Renderer: renderer, Materials: materials, Policy: localPasswordPolicy{cfg.InstallationID, cfg.ApplicationID}, InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, ApplicationOrigin: cfg.Origin, DevelopmentLoopback: true, ChallengeLifetime: recovery.DefaultChallengeLifetime})
+	recoveries, err := recovery.New(recovery.Config{DB: db, Passwords: hasher, Outbox: outbox, Renderer: renderer, Materials: materials, Policy: localPasswordPolicy{cfg.InstallationID, cfg.ApplicationID}, InstallationID: cfg.InstallationID, ApplicationID: cfg.ApplicationID, EnvironmentID: cfg.EnvironmentID, ApplicationOrigin: cfg.Origin, DevelopmentLoopback: developmentLoopback, ChallengeLifetime: recovery.DefaultChallengeLifetime})
 	if err != nil {
 		return nil, err
 	}
@@ -314,6 +328,9 @@ func (h *Host) Serve(ctx context.Context, listener net.Listener) error {
 	if h == nil || h.app == nil || ctx == nil || listener == nil {
 		return ErrLocalConfiguration
 	}
+	if h.tlsIdentity != nil {
+		return h.serveDevelopmentTLS(ctx, listener)
+	}
 	addr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok || !addr.IP.IsLoopback() {
 		return ErrLocalConfiguration
@@ -322,6 +339,10 @@ func (h *Host) Serve(ctx context.Context, listener net.Listener) error {
 	if err != nil || port != strconv.Itoa(addr.Port) {
 		return ErrLocalConfiguration
 	}
+	return h.serveWithWorker(ctx, func(workCtx context.Context) error { return h.app.Serve(workCtx, listener) })
+}
+
+func (h *Host) serveWithWorker(ctx context.Context, serve func(context.Context) error) error {
 	workCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	done := make(chan error, 1)
@@ -344,7 +365,7 @@ func (h *Host) Serve(ctx context.Context, listener net.Listener) error {
 			}
 		}
 	}()
-	serveErr := h.app.Serve(workCtx, listener)
+	serveErr := serve(workCtx)
 	cancel()
 	workerErr := <-done
 	return errors.Join(serveErr, workerErr)

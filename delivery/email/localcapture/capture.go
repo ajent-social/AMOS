@@ -49,6 +49,20 @@ func New(directory, origin string, developmentLoopback bool) (*Capture, error) {
 	if e != nil {
 		return nil, ErrUnavailable
 	}
+	return newCaptureDirectory(directory, parsed)
+}
+
+// NewDevelopmentTLS keeps messages in private local files for the explicit private IPv4 HTTPS profile.
+// It does not expose a mailbox endpoint or qualify live delivery.
+func NewDevelopmentTLS(directory, origin string) (*Capture, error) {
+	parsed, err := email.ParseDevelopmentTLSOrigin(origin)
+	if err != nil {
+		return nil, ErrUnavailable
+	}
+	return newCaptureDirectory(directory, parsed)
+}
+
+func newCaptureDirectory(directory string, parsed *url.URL) (*Capture, error) {
 	before, e := os.Lstat(directory)
 	if e != nil || !privateDirectory(before) {
 		return nil, ErrUnavailable
