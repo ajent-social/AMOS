@@ -75,7 +75,7 @@ validator at revision `eb90e4b25cce0c2b3d5dcd31d2207a643c6db2f5` validates the
 1607-task export against frozen contract
 `sha256:7582512f122d2f2a9c4461facc7541c9887053f137260d6ebe9c6dea611d039d`
 with zero findings; all60 owning verifier fixtures pass. Export SHA-256:
-`e19ca6e5dae95bea07500b53bf005bb55d8a9f4b35265d4b02e361f31a029e80`.
+`5ef1236e6f71a411e27779e72e605f2f56584364ce62431d86bbfe9ef69c8640`.
 Transferred verifier/exporter/input hashes are retained in the private operating
 receipt. This is plan conformance only, not authenticated execution/admission.
 Exact-head independent re-review and guarded landing remain pending.
