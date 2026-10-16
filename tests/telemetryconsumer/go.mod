@@ -4,7 +4,12 @@ go 1.27.0
 
 toolchain go1.27.1
 
-require github.com/ajent-social/amos v0.0.0
+require (
+	github.com/ajent-social/amos v0.0.0
+	go.opentelemetry.io/otel/trace v1.45.0
+	go.opentelemetry.io/proto/otlp v1.11.0
+	google.golang.org/protobuf v1.36.11
+)
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
