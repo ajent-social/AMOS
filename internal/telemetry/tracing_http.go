@@ -1,12 +1,14 @@
 package telemetry
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
+	"encoding/pem"
 	"io"
 	"net"
 	"net/http"
@@ -41,7 +43,7 @@ func newTraceEndpoint(authority, dial string, ca, cert, key []byte, client bool)
 			return ep, ErrTraceConfig
 		}
 	} else {
-		if host != strings.ToLower(host) || strings.HasSuffix(host, ".") {
+		if host != strings.ToLower(host) || strings.HasSuffix(host, ".") || strings.Trim(host, "0123456789.") == "" {
 			return ep, ErrTraceConfig
 		}
 		for _, part := range strings.Split(host, ".") {
@@ -49,7 +51,7 @@ func newTraceEndpoint(authority, dial string, ca, cert, key []byte, client bool)
 				return ep, ErrTraceConfig
 			}
 			for _, c := range []byte(part) {
-				if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-') {
+				if (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '-' {
 					return ep, ErrTraceConfig
 				}
 			}
@@ -63,13 +65,32 @@ func newTraceEndpoint(authority, dial string, ca, cert, key []byte, client bool)
 		return ep, ErrTraceConfig
 	}
 	roots := x509.NewCertPool()
-	if !roots.AppendCertsFromPEM(bytes.Clone(ca)) {
+	rest := bytes.Clone(ca)
+	count := 0
+	for len(bytes.TrimSpace(rest)) > 0 {
+		rest = bytes.TrimSpace(rest)
+		if !bytes.HasPrefix(rest, []byte("-----BEGIN CERTIFICATE-----")) {
+			return ep, ErrTraceConfig
+		}
+		block, tail := pem.Decode(rest)
+		if block == nil || block.Type != "CERTIFICATE" || len(block.Headers) != 0 {
+			return ep, ErrTraceConfig
+		}
+		cert, e := x509.ParseCertificate(block.Bytes)
+		if e != nil || !cert.IsCA || !cert.BasicConstraintsValid {
+			return ep, ErrTraceConfig
+		}
+		roots.AddCert(cert)
+		count++
+		rest = tail
+	}
+	if count == 0 {
 		return ep, ErrTraceConfig
 	}
 	tc := &tls.Config{MinVersion: tls.VersionTLS13, MaxVersion: tls.VersionTLS13, RootCAs: roots, ServerName: host, NextProtos: []string{"http/1.1"}}
 	ep = traceEndpoint{authority: authority, host: host, dial: net.JoinHostPort(dial, port), tls: tc}
 	if client {
-		if len(cert) == 0 || len(key) == 0 {
+		if len(cert) == 0 || len(key) == 0 || !validTracePEM(cert, false) || !validTracePEM(key, true) {
 			return traceEndpoint{}, ErrTraceConfig
 		}
 		pair, e := tls.X509KeyPair(bytes.Clone(cert), bytes.Clone(key))
@@ -86,8 +107,35 @@ func newTraceEndpoint(authority, dial string, ca, cert, key []byte, client bool)
 	}
 	return ep, nil
 }
+
+// PEM parsing is exact: do not silently ignore prefixed/trailing material.
+func validTracePEM(input []byte, key bool) bool {
+	rest := input
+	count := 0
+	for len(bytes.TrimSpace(rest)) > 0 {
+		rest = bytes.TrimSpace(rest)
+		if !bytes.HasPrefix(rest, []byte("-----BEGIN ")) {
+			return false
+		}
+		block, tail := pem.Decode(rest)
+		if block == nil || len(block.Headers) != 0 {
+			return false
+		}
+		if key {
+			if count != 0 || (block.Type != "PRIVATE KEY" && block.Type != "EC PRIVATE KEY" && block.Type != "RSA PRIVATE KEY") {
+				return false
+			}
+		} else if block.Type != "CERTIFICATE" {
+			return false
+		}
+		count++
+		rest = tail
+	}
+	return count > 0
+}
+
 func validTraceIP(ip netip.Addr) bool {
-	return !ip.IsUnspecified() && !ip.IsMulticast() && !ip.Is4In6() && ip.Zone() == ""
+	return (ip.IsGlobalUnicast() || ip.IsLoopback() || ip.IsLinkLocalUnicast()) && !ip.Is4In6() && ip.Zone() == ""
 }
 func validTraceClient(c *x509.Certificate, now time.Time) bool {
 	if c == nil || now.Before(c.NotBefore) || !now.Before(c.NotAfter) || c.KeyUsage&x509.KeyUsageDigitalSignature == 0 {
@@ -144,16 +192,7 @@ func ObserveTracing(t *Tracer, route RouteTemplate, next http.Handler) http.Hand
 		}
 		parent, _ := t.incoming(r)
 		ctx, _, end := t.startTrace(r.Context(), "http.server", trace.SpanKindServer, parent, nil, attribute.String("amos.route", label))
-		rw := &responseWriter{ResponseWriter: w}
-		if f, ok := w.(http.Flusher); ok {
-			rw.flusher = f
-		}
-		if h, ok := w.(http.Hijacker); ok {
-			rw.hijacker = h
-		}
-		if p, ok := w.(http.Pusher); ok {
-			rw.pusher = p
-		}
+		rw := &traceResponseWriter{ResponseWriter: w}
 		normal := false
 		defer func() {
 			if !normal {
@@ -171,7 +210,7 @@ func ObserveTracing(t *Tracer, route RouteTemplate, next http.Handler) http.Hand
 			}
 			end(v)
 		}()
-		next.ServeHTTP(wrapResponseWriter(rw), r.WithContext(ctx))
+		next.ServeHTTP(wrapTraceResponseWriter(rw), r.WithContext(ctx))
 		normal = true
 	})
 }
@@ -234,7 +273,7 @@ func (t *Tracer) incoming(r *http.Request) (trace.SpanContext, bool) {
 		if i == 2 || i == 35 || i == 52 {
 			continue
 		}
-		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
 			return zero, false
 		}
 	}
@@ -296,20 +335,24 @@ func (t *TraceTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	parent := ownedTraceScope(ctx)
 	end := func(string) {}
-	if parent != nil {
-		ctx, _, end = t.owner.startTrace(ctx, "http.client", trace.SpanKindClient, parent.sc, &parent.sampled, attribute.String("amos.destination", t.ordinal))
+	var child *traceScope
+	if parent != nil && parent.owner == t.owner {
+		ctx, child, end = t.owner.startTrace(ctx, "http.client", trace.SpanKindClient, parent.sc, &parent.sampled, attribute.String("amos.destination", t.ordinal))
 	}
 	clone := r.Clone(ctx)
+	if clone.Header == nil {
+		clone.Header = make(http.Header)
+	}
 	clone.GetBody = nil
 	for key := range clone.Header {
 		if strings.EqualFold(key, "traceparent") || strings.EqualFold(key, "tracestate") || strings.EqualFold(key, "baggage") {
 			delete(clone.Header, key)
 		}
 	}
-	if scope := ownedTraceScope(ctx); scope != nil {
-		sc := scope.sc
+	if child != nil {
+		sc := child.sc
 		flags := "00"
-		if scope.sampled {
+		if child.sampled {
 			flags = "01"
 		}
 		clone.Header.Set("Traceparent", "00-"+sc.TraceID().String()+"-"+sc.SpanID().String()+"-"+flags)
@@ -334,7 +377,9 @@ func (t *TraceTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 		finish()
 		return resp, err
 	}
-	resp.Body = &traceBody{ReadCloser: resp.Body, finish: finish}
+	body := &traceBody{ReadCloser: resp.Body, finish: finish}
+	body.stop = context.AfterFunc(ctx, func() { body.once.Do(finish) })
+	resp.Body = body
 	return resp, nil
 }
 
@@ -342,13 +387,115 @@ type traceBody struct {
 	io.ReadCloser
 	once   sync.Once
 	finish func()
+	stop   func() bool
 }
 
 func (b *traceBody) Read(p []byte) (int, error) {
 	n, e := b.ReadCloser.Read(p)
 	if e != nil {
-		b.once.Do(b.finish)
+		b.complete()
 	}
 	return n, e
 }
-func (b *traceBody) Close() error { e := b.ReadCloser.Close(); b.once.Do(b.finish); return e }
+func (b *traceBody) Close() error { e := b.ReadCloser.Close(); b.complete(); return e }
+
+func (b *traceBody) complete() {
+	if b.stop != nil {
+		b.stop()
+	}
+	b.once.Do(b.finish)
+}
+
+// The status adapter never copies bodies or changes correlation headers.
+type traceResponseWriter struct {
+	http.ResponseWriter
+	status      int
+	wroteHeader bool
+}
+
+func (w *traceResponseWriter) WriteHeader(status int) {
+	if w.wroteHeader {
+		return
+	}
+	if status >= 100 && status < 200 && status != http.StatusSwitchingProtocols {
+		w.ResponseWriter.WriteHeader(status)
+		return
+	}
+	w.wroteHeader = true
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+func (w *traceResponseWriter) Write(p []byte) (int, error) {
+	if !w.wroteHeader {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.ResponseWriter.Write(p)
+}
+func (w *traceResponseWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
+type traceFlush struct {
+	writer  *traceResponseWriter
+	flusher http.Flusher
+}
+
+func (f traceFlush) Flush() {
+	if !f.writer.wroteHeader {
+		f.writer.WriteHeader(http.StatusOK)
+	}
+	f.flusher.Flush()
+}
+
+type traceHijack struct{ h http.Hijacker }
+
+func (h traceHijack) Hijack() (net.Conn, *bufio.ReadWriter, error) { return h.h.Hijack() }
+func wrapTraceResponseWriter(w *traceResponseWriter) http.ResponseWriter {
+	f, hasF := w.ResponseWriter.(http.Flusher)
+	h, hasH := w.ResponseWriter.(http.Hijacker)
+	p, hasP := w.ResponseWriter.(http.Pusher)
+	fl := traceFlush{w, f}
+	hi := traceHijack{h}
+	switch {
+	case hasF && hasH && hasP:
+		return struct {
+			*traceResponseWriter
+			http.Flusher
+			http.Hijacker
+			http.Pusher
+		}{w, fl, hi, p}
+	case hasF && hasH:
+		return struct {
+			*traceResponseWriter
+			http.Flusher
+			http.Hijacker
+		}{w, fl, hi}
+	case hasF && hasP:
+		return struct {
+			*traceResponseWriter
+			http.Flusher
+			http.Pusher
+		}{w, fl, p}
+	case hasH && hasP:
+		return struct {
+			*traceResponseWriter
+			http.Hijacker
+			http.Pusher
+		}{w, hi, p}
+	case hasF:
+		return struct {
+			*traceResponseWriter
+			http.Flusher
+		}{w, fl}
+	case hasH:
+		return struct {
+			*traceResponseWriter
+			http.Hijacker
+		}{w, hi}
+	case hasP:
+		return struct {
+			*traceResponseWriter
+			http.Pusher
+		}{w, p}
+	default:
+		return w
+	}
+}

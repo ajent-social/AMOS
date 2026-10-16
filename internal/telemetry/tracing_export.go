@@ -158,8 +158,16 @@ func traceKV(k, v string) *common.KeyValue {
 	return &common.KeyValue{Key: k, Value: &common.AnyValue{Value: &common.AnyValue_StringValue{StringValue: v}}}
 }
 func (t *Tracer) runTraceWorker() {
-	defer close(t.done)
-	defer func() { _ = t.provider.Shutdown(context.Background()) }()
+	defer func() {
+		t.mu.Lock()
+		if t.shutdownTimer != nil {
+			t.shutdownTimer.Stop()
+		}
+		close(t.done)
+		t.mu.Unlock()
+	}()
+	// The private SDK owns no exporter resources. Keep its processor available
+	// for late ends: shutting it down would silently lose their drop accounting.
 	closing := false
 	closeSignal := t.closing
 	for {
@@ -273,7 +281,7 @@ func (t *Tracer) exportTraceBatch(batch []traceRecord) {
 	req.Header.Set("Authorization", "Bearer "+t.token)
 	resp, err := transport.RoundTrip(req)
 	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 	}
 	if err != nil || resp == nil || resp.StatusCode != http.StatusOK {
 		return
