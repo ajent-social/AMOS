@@ -111,12 +111,27 @@ func (h *Host) serveDevelopmentTLS(ctx context.Context, listener net.Listener) e
 	defer func() { h.serveMu.Lock(); h.tlsServing = false; h.serveMu.Unlock() }()
 	return h.serveWithWorker(ctx, func(workCtx context.Context) error {
 		identity := h.tlsIdentity
-		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS13, GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
-			if !identity.valid(time.Now()) {
-				return nil, ErrLocalConfiguration
-			}
-			return &identity.certificate, nil
-		}}
+		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS13,
+			// GetCertificate alone can be skipped when a TLS session resumes. Check
+			// every ClientHello and the verified handshake, then every HTTP request.
+			GetConfigForClient: func(*tls.ClientHelloInfo) (*tls.Config, error) {
+				if !identity.valid(time.Now()) {
+					return nil, ErrLocalConfiguration
+				}
+				return nil, nil
+			},
+			VerifyConnection: func(tls.ConnectionState) error {
+				if !identity.valid(time.Now()) {
+					return ErrLocalConfiguration
+				}
+				return nil
+			},
+			GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+				if !identity.valid(time.Now()) {
+					return nil, ErrLocalConfiguration
+				}
+				return &identity.certificate, nil
+			}}
 		server := &http.Server{Handler: h.developmentTLSGuard(h.app.Handler()), TLSConfig: tlsConfig, ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 30 * time.Second}
 		done := make(chan error, 1)
 		go func() { done <- server.ServeTLS(tcp, "", "") }()
