@@ -518,3 +518,14 @@ unchanged. No wildcard trust, deployment or provider qualification is added.
 The scheduled-only Go Request.IsolatedClientEnvironment option isolates dump
 child HOME/authentication files while preserving legacy default/object formats.
 Root explicitly delegates this minimal Create change to the scheduling author.
+
+
+## Adopted amendment v1.36: initial local restricted vulnerability hold
+
+[ADR049](../adr/049-restricted-routing.md) and the [restricted-routing contract](../security/vulnerability-routing.md)
+freeze a pure finite decision core for T14.7. Every unreviewed assessment stays
+held, public automation is false and private handling remains unavailable.
+Reporter/analysis labels cannot grant release authority. No raw data, recipient,
+callback, sender, durable storage or publication capability is added. Independent
+design landing precedes source; full T14.7/private-channel/downstream acceptance
+remains pending and external intake stays disabled.
