@@ -73,6 +73,36 @@ func TestOwnerBusinessRouteUsesScopedSessionAndBindsConfiguredPerson(t *testing.
 	if err := application.RegisterOwnerBusinessRoute(http.MethodPost, "/owner/private", sessions, ownerID, ownerHandler); err != nil {
 		t.Fatalf("register owner mutation route: %v", err)
 	}
+	wrongInstallation, err := session.New(db, session.Config{
+		InstallationID: ownerRouteID(t), ApplicationID: ids.application, EnvironmentID: ids.environment,
+		AllowedOrigins: []string{origin}, CookieSecure: true,
+	})
+	if err != nil {
+		t.Fatalf("construct differently scoped native sessions: %v", err)
+	}
+	if err := application.RegisterOwnerBusinessRoute(http.MethodGet, "/owner/wrong-installation", wrongInstallation, ownerID, ownerHandler); err != nil {
+		t.Fatalf("register wrong-installation route: %v", err)
+	}
+	wrongApplication, err := session.New(db, session.Config{
+		InstallationID: ids.installation, ApplicationID: ownerRouteID(t), EnvironmentID: ids.environment,
+		AllowedOrigins: []string{origin}, CookieSecure: true,
+	})
+	if err != nil {
+		t.Fatalf("construct differently scoped native sessions: %v", err)
+	}
+	if err := application.RegisterOwnerBusinessRoute(http.MethodGet, "/owner/wrong-application", wrongApplication, ownerID, ownerHandler); err != nil {
+		t.Fatalf("register wrong-application route: %v", err)
+	}
+	wrongEnvironment, err := session.New(db, session.Config{
+		InstallationID: ids.installation, ApplicationID: ids.application, EnvironmentID: ownerRouteID(t),
+		AllowedOrigins: []string{origin}, CookieSecure: true,
+	})
+	if err != nil {
+		t.Fatalf("construct differently scoped native sessions: %v", err)
+	}
+	if err := application.RegisterOwnerBusinessRoute(http.MethodGet, "/owner/wrong-environment", wrongEnvironment, ownerID, ownerHandler); err != nil {
+		t.Fatalf("register wrong-environment route: %v", err)
+	}
 
 	serve := func(method, path string, cookie *http.Cookie, originValue string) *httptest.ResponseRecorder {
 		t.Helper()
@@ -150,44 +180,14 @@ func TestOwnerBusinessRouteUsesScopedSessionAndBindsConfiguredPerson(t *testing.
 		t.Fatalf("valid native CSRF status=%d calls=%d, want 204 and handler", validResponse.Code, handlerCalls)
 	}
 
-	wrongInstallation, err := session.New(db, session.Config{
-		InstallationID: ownerRouteID(t), ApplicationID: ids.application, EnvironmentID: ids.environment,
-		AllowedOrigins: []string{origin}, CookieSecure: true,
-	})
-	if err != nil {
-		t.Fatalf("construct differently scoped native sessions: %v", err)
-	}
-	if err := application.RegisterOwnerBusinessRoute(http.MethodGet, "/owner/wrong-installation", wrongInstallation, ownerID, ownerHandler); err != nil {
-		t.Fatalf("register wrong-installation route: %v", err)
-	}
 	if response := serve(http.MethodGet, "/owner/wrong-installation", ownerCookie, ""); response.Code != http.StatusUnauthorized || handlerCalls != 2 {
 		t.Fatalf("cross-installation cookie status=%d calls=%d, want 401 without handler", response.Code, handlerCalls)
 	}
 
-	wrongApplication, err := session.New(db, session.Config{
-		InstallationID: ids.installation, ApplicationID: ownerRouteID(t), EnvironmentID: ids.environment,
-		AllowedOrigins: []string{origin}, CookieSecure: true,
-	})
-	if err != nil {
-		t.Fatalf("construct differently scoped native sessions: %v", err)
-	}
-	if err := application.RegisterOwnerBusinessRoute(http.MethodGet, "/owner/wrong-application", wrongApplication, ownerID, ownerHandler); err != nil {
-		t.Fatalf("register wrong-application route: %v", err)
-	}
 	if response := serve(http.MethodGet, "/owner/wrong-application", ownerCookie, ""); response.Code != http.StatusUnauthorized || handlerCalls != 2 {
 		t.Fatalf("cross-application cookie status=%d calls=%d, want 401 without handler", response.Code, handlerCalls)
 	}
 
-	wrongEnvironment, err := session.New(db, session.Config{
-		InstallationID: ids.installation, ApplicationID: ids.application, EnvironmentID: ownerRouteID(t),
-		AllowedOrigins: []string{origin}, CookieSecure: true,
-	})
-	if err != nil {
-		t.Fatalf("construct differently scoped native sessions: %v", err)
-	}
-	if err := application.RegisterOwnerBusinessRoute(http.MethodGet, "/owner/wrong-environment", wrongEnvironment, ownerID, ownerHandler); err != nil {
-		t.Fatalf("register wrong-environment route: %v", err)
-	}
 	if response := serve(http.MethodGet, "/owner/wrong-environment", ownerCookie, ""); response.Code != http.StatusUnauthorized || handlerCalls != 2 {
 		t.Fatalf("cross-environment cookie status=%d calls=%d, want 401 without handler", response.Code, handlerCalls)
 	}
