@@ -420,16 +420,24 @@ func TestBusinessPrefixCollisionAndReservedAliasBoundaries(t *testing.T) {
 	if _, err := New(options); err != nil {
 		t.Fatalf("intentional nested route overrides rejected: %v", err)
 	}
-	for _, path := range []string{"/oauth/unknown", "/oauth/unknown/child", "/BILLING/plan", "/%62illing/plan"} {
+	for _, test := range []struct {
+		path string
+		want int
+	}{
+		{"/oauth/unknown", http.StatusServiceUnavailable},
+		{"/oauth/unknown/child", http.StatusServiceUnavailable},
+		{"/BILLING/plan", http.StatusServiceUnavailable},
+		// Encoded aliases of billing paths are rejected before reserved dispatch.
+		{"/%62illing/plan", http.StatusBadRequest},
+	} {
 		runtime, err := New(routingOptions())
 		if err != nil {
 			t.Fatal(err)
 		}
 		response := httptest.NewRecorder()
-		runtime.ServeHTTP(response, request(http.MethodGet, path, nil))
-		want := http.StatusServiceUnavailable
-		if response.Code != want {
-			t.Fatalf("reserved path %q status=%d, want %d", path, response.Code, want)
+		runtime.ServeHTTP(response, request(http.MethodGet, test.path, nil))
+		if response.Code != test.want {
+			t.Fatalf("reserved path %q status=%d, want %d", test.path, response.Code, test.want)
 		}
 	}
 }
