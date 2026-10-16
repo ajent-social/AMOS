@@ -13,7 +13,7 @@ Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:293e23b9b055ab8bfae1258064ea7f0303ed360e00d3324d06d16311c88eb594`.
 Registry: `docs/planning/execution-state.json`; `sha256:9cd94c97ad934f1c847bcd804a382cb2dabcab33a307382665e6cfe3a42031f5`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:196bba22a71e1b636f8ca4e1ae60fb618e7fc14f5d96a3a750857948fbbff3e4`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:2cb4d4cc0c78a5f79e95739f120f1f1009062317131f2ed3dd0a6036e0f59038`.
 See [projection contract](planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
