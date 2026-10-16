@@ -58,7 +58,7 @@ func developmentCertificate(t *testing.T, change func(*x509.Certificate)) ([]byt
 func TestDevelopmentTLSRejectsIdentityBeforeDependencies(t *testing.T) {
 	cert, key, _ := developmentCertificate(t, nil)
 	cfg := localConfig(t, "invalid-private-database-url", "https://127.0.0.1:8443")
-	if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: cfg, CertificatePEM: cert, PrivateKeyPEM: key}); host != nil || err != ErrLocalDependency {
+	if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: cfg, CertificatePEM: cert, PrivateKeyPEM: key}); host != nil || err != ErrLocalDependency {
 		t.Fatal("control did not reach dependency boundary", err)
 	}
 	for name, change := range map[string]func(*x509.Certificate){"expired": func(c *x509.Certificate) { c.NotAfter = time.Now().Add(-time.Second) }, "not yet valid": func(c *x509.Certificate) {
@@ -67,7 +67,7 @@ func TestDevelopmentTLSRejectsIdentityBeforeDependencies(t *testing.T) {
 	}, "wrong SAN": func(c *x509.Certificate) { c.IPAddresses = []net.IP{net.ParseIP("192.0.2.1")} }, "DNS only": func(c *x509.Certificate) { c.IPAddresses = nil; c.DNSNames = []string{"127.0.0.1"} }, "no explicit server usage": func(c *x509.Certificate) { c.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageAny} }, "no signing usage": func(c *x509.Certificate) { c.KeyUsage = x509.KeyUsageKeyEncipherment }} {
 		t.Run(name, func(t *testing.T) {
 			c, k, _ := developmentCertificate(t, change)
-			if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: cfg, CertificatePEM: c, PrivateKeyPEM: k}); host != nil || err != ErrLocalConfiguration {
+			if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: cfg, CertificatePEM: c, PrivateKeyPEM: k}); host != nil || err != ErrLocalConfiguration {
 				t.Fatal("invalid identity reached dependencies", err)
 			}
 		})
@@ -75,7 +75,7 @@ func TestDevelopmentTLSRejectsIdentityBeforeDependencies(t *testing.T) {
 	_, otherKey, _ := developmentCertificate(t, nil)
 	for name, pair := range map[string][2][]byte{"missing certificate": {nil, key}, "missing key": {cert, nil}, "mismatched key": {cert, otherKey}, "malformed": {[]byte("not PEM"), key}, "extra identity": {append(bytes.Clone(cert), cert...), key}, "extra key": {cert, append(bytes.Clone(key), key...)}, "prefix diagnostic": {append([]byte("untrusted prefix\n"), cert...), key}, "trailing data": {append(bytes.Clone(cert), []byte("junk")...), key}, "oversized": {make([]byte, 64<<10+1), key}} {
 		t.Run(name, func(t *testing.T) {
-			if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: cfg, CertificatePEM: pair[0], PrivateKeyPEM: pair[1]}); host != nil || err != ErrLocalConfiguration {
+			if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: cfg, CertificatePEM: pair[0], PrivateKeyPEM: pair[1]}); host != nil || err != ErrLocalConfiguration {
 				t.Fatal("bad material reached dependencies", err)
 			}
 		})
@@ -83,18 +83,18 @@ func TestDevelopmentTLSRejectsIdentityBeforeDependencies(t *testing.T) {
 	for _, origin := range []string{"http://127.0.0.1:8443", "https://127.0.0.1:8443/", "https://example.invalid:8443", "https://0.0.0.0:8443", "https://10.0.0.1:8443"} {
 		bad := cfg
 		bad.Origin = origin
-		if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: bad, CertificatePEM: cert, PrivateKeyPEM: key}); host != nil || err != ErrLocalConfiguration {
+		if host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: bad, CertificatePEM: cert, PrivateKeyPEM: key}); host != nil || err != ErrLocalConfiguration {
 			t.Fatal("invalid origin/SAN reached dependencies", err)
 		}
 	}
 	bad := cfg
 	bad.Billing = &LocalBillingConfig{}
-	if _, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: bad, CertificatePEM: cert, PrivateKeyPEM: key}); err != ErrLocalConfiguration {
+	if _, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: bad, CertificatePEM: cert, PrivateKeyPEM: key}); err != ErrLocalConfiguration {
 		t.Fatal("billing accepted")
 	}
 	bad = cfg
 	bad.AuthTheme = &authpassword.Theme{BrandName: "Example", StylesheetURL: "https://example.invalid/theme.css"}
-	if _, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: bad, CertificatePEM: cert, PrivateKeyPEM: key}); err != ErrLocalConfiguration {
+	if _, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: bad, CertificatePEM: cert, PrivateKeyPEM: key}); err != ErrLocalConfiguration {
 		t.Fatal("theme validation bypassed")
 	}
 }
@@ -165,7 +165,7 @@ func startDevelopmentHost(t *testing.T, change func(*x509.Certificate)) (*Host, 
 	origin := "https://" + listener.Addr().String()
 	cfg := localConfig(t, dsn, origin)
 	certificate, key, leaf := developmentCertificate(t, change)
-	h, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: cfg, CertificatePEM: certificate, PrivateKeyPEM: key})
+	h, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: cfg, CertificatePEM: certificate, PrivateKeyPEM: key})
 	if err != nil {
 		t.Fatal("TLS host construction failed", err)
 	}
@@ -446,7 +446,7 @@ func TestDevelopmentTLSShutdownForceClosesAfterBound(t *testing.T) {
 	defer func() { _ = listener.Close() }()
 	cfg := localConfig(t, dsn, "https://"+listener.Addr().String())
 	cert, key, leaf := developmentCertificate(t, nil)
-	host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Local: cfg, CertificatePEM: cert, PrivateKeyPEM: key})
+	host, err := NewDevelopmentTLS(context.Background(), DevelopmentTLSConfig{Application: cfg, CertificatePEM: cert, PrivateKeyPEM: key})
 	if err != nil {
 		t.Fatal(err)
 	}

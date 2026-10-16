@@ -21,7 +21,7 @@ import (
 // production deployment or generated amos dev LAN support. PEM inputs are copied
 // and parsed before dependencies. No caller signer, TLS policy or callback escapes.
 type DevelopmentTLSConfig struct {
-	Local                         LocalConfig
+	Application                   LocalConfig
 	CertificatePEM, PrivateKeyPEM []byte
 }
 type developmentTLSIdentity struct {
@@ -30,15 +30,15 @@ type developmentTLSIdentity struct {
 }
 
 func NewDevelopmentTLS(ctx context.Context, cfg DevelopmentTLSConfig) (*Host, error) {
-	origin, err := delivery.ParseDevelopmentTLSOrigin(cfg.Local.Origin)
-	if ctx == nil || err != nil || cfg.Local.Billing != nil {
+	origin, err := delivery.ParseDevelopmentTLSOrigin(cfg.Application.Origin)
+	if ctx == nil || err != nil || cfg.Application.Billing != nil {
 		return nil, ErrLocalConfiguration
 	}
 	identity, err := parseDevelopmentTLSIdentity(cfg.CertificatePEM, cfg.PrivateKeyPEM, origin)
 	if err != nil {
 		return nil, ErrLocalConfiguration
 	}
-	return newHost(ctx, cfg.Local, identity)
+	return newHost(ctx, cfg.Application, identity)
 }
 func parseDevelopmentTLSIdentity(certificate, key []byte, origin *url.URL) (*developmentTLSIdentity, error) {
 	if len(certificate) == 0 || len(certificate) > 64<<10 || len(key) == 0 || len(key) > 64<<10 {
