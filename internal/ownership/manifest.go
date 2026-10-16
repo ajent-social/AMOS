@@ -191,7 +191,7 @@ func version(v string) bool { return len(v) <= 128 && versionPattern.MatchString
 func validDigest(v string) bool { return len(v) == 64 && digestPattern.MatchString(v) }
 
 func authoredPath(p string) bool {
-	for _, root := range []string{"app/business", "api/business", "ui/overrides"} {
+	for _, root := range []string{"app/business", "api/business", "business/operations", "business/types", "ui/overrides"} {
 		if p == root || strings.HasPrefix(p, root+"/") || strings.HasPrefix(p, root+".") {
 			return true
 		}
