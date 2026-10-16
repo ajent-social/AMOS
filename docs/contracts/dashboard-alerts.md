@@ -73,6 +73,11 @@ the configured recovery duration. Faults must hold for the declared failure
 hold; intermittent/stale input cannot accumulate that time. Unavailable input
 preserves an existing firing incident as unresolved and resets pending holds;
 it never silently becomes recovered. Fresh recovery starts its own hold.
+For each signal, a gap between accepted observation/evaluation samples greater
+than configured freshness resets both pending and recovery holds, even if the
+new sample is individually fresh. Never count an unobserved interval toward a
+hold. Preserve an already-firing incident as unresolved across the gap; require
+fresh continuous recovery observations before reporting recovered.
 Unactivated targets remain disabled. Results include only fixed IDs/states and
 safe numeric observations; they contain no raw errors, input files or destinations.
 
@@ -99,7 +104,10 @@ CLI behavior, cloud resource or default application-listener change. The existin
 initializer/runtime generator must remain usable.
 
 Exercise actual generator output and CLI render/evaluate with healthy, degraded,
-pending, firing, missing/stale/reset and recovered sequences. Assert all seven
+pending, firing, missing/stale/reset and recovered sequences. Include adverse
+samples an hour apart with1minute freshness/5minute hold: the second fresh sample
+must not fire from the gap. Test the equivalent gap during recovery: it must
+not resolve an existing incident. Assert all seven
 panels have valid finite rules, severity, owner/runbook/recovery, no notification
 sends can be enabled, and unset/invalid owner options fail. Advance successful
 backup age past selected RPO and hold: it fires independently of disk pressure;
