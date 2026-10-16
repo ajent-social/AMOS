@@ -229,11 +229,19 @@ normal configured-authority validation, exact pinned-IP context dialer, no DNS,
 proxy or system trust. Supply exactly the dedicated bearer authorization metadata
 from config, never application credentials. No ambient metadata, forwarded caller
 headers, resolver fallback, credential callback, global error handler or raw error
-log. Use a private gRPC connection with retries disabled, fail-fast calls and no
-wait-for-ready; enforce equivalent strict behavior at the owned export boundary
-rather than relying on environment-sensitive SDK exporter defaults. Direct pinned
-OTLP protobuf/gRPC export from the private processor is permitted: the pinned SDK
-still owns private spans, while the owner reconstructs every wire field.
+log. Use a private direct OTLP protobuf/gRPC client, never an ambient-configured SDK
+exporter. Each batch owns one fresh connection and one fail-fast Export invocation
+under its complete2s dial/TLS/RPC deadline, with no wait-for-ready. Disable gRPC
+service configuration and configured retries/hedging. The pinned dialer admits at
+most one dial for that attempt; reconnect cannot select another endpoint. Close
+the connection and cancel its dial/RPC context on every completion/failure/deadline,
+including collector rejection. No connection/retry activity survives into idle
+queue time. Bound both outbound and decoded inbound messages to64KiB and response
+header metadata to8KiB; do not retain/log status descriptions, partial-success
+messages, unknown fields or server metadata. Check pinned gRPC transparent-retry
+semantics during implementation: prevent multiple wire Export deliveries, or stop
+and report a contract gap rather than assuming WithDisableRetry disables them.
+The private SDK still owns spans; only this fresh finite OTLP projection is sent.
 
 On span end, offer the immutable finite record to a queue of at most256 records
 using an immediate nonblocking admission operation; never await exporter, worker,
@@ -293,7 +301,9 @@ visibly and blocks this source acceptance; a mock or the development trust fixtu
 cannot substitute. An isolated fresh fixture may be provided under existing
 approved capacity after design landing, preserving all other test services. Exercise
 outbound success/failure/cancellation and unknown destination denial before dial.
-Reject wrong CA, authority/IP SAN, client identity, collector authentication,
+Assert no post-attempt dial/reconnect activity after the queue drains, response
+message/header limits and no duplicate wire delivery under retry-provoking collector
+behavior. Reject wrong CA, authority/IP SAN, client identity, collector authentication,
 poisoned OTEL environment and caller proxy/propagation attempts. Mutate input
 config after construction to prove copied isolation. Try public SDK span mutation,
 events, links, bogus resource/scope data and credential/SQL/body/query/base64
