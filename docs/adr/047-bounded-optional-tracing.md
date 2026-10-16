@@ -17,7 +17,10 @@ A private root sampling decision is inherited by all local children. Trusted
 unsampled parents may narrow it; incoming sampled bits cannot increase it. The outbound transport
 uses copied explicit trust/client identity and pinned-IP authority binding.
 
-A standalone OTLP/gRPC collector fixture proves authenticated wire behavior;
+The worker uses a direct pinned OTLP protobuf/gRPC client, one deadline-bounded
+connection per batch, closed after the attempt, with bounded response size and
+no ambient exporter or idle reconnect activity. A standalone OTLP/gRPC collector
+fixture proves authenticated wire behavior;
 collector operation and production retention/deployment remain separate. Immediate
 queue admission, one-attempt bounded export and bounded shutdown make exporter
 outage a numeric diagnostic failure instead of an application dependency. These
