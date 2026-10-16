@@ -11,13 +11,37 @@ T14.3 own construction and export. No automatic transmission is authorized.
 The wire profile is `amos-public-diagnostic-v1`, registry
 `amos-public-diagnostic-registry-v1`. Component approval is an explicit reviewed
 registry entry, never a caller-provided package name or semantic-version string.
-This initial registry contains only `amos.core` at public source snapshot
-`0208b87c7bc24d058d327a08d5634c6ef77af4ee`. This identifies existing public
-source, not a released version, installed build, maturity claim, or arbitrary
-future revision. An installed source outside this exact registry cannot export
-this profile by relabeling itself. Its diagnostic remains local/unavailable
-until an independently reviewed registry update explicitly admits that source.
-No AMSL revision or frame is approved by this profile.
+This initial registry contains only `amos.http-observability`, public component
+baseline `amos.http-observability.v1`, with manifest SHA-256
+`40020920667a6ff56650b4d5e792356ca6f522b3a0e5c729f68074a6053dbdd3`. This is an exact
+component-code baseline, **not** the whole installed repository commit, release
+version, dependency closure, artifact digest or maturity claim. Its public source
+was inspected at `0208b87c7bc24d058d327a08d5634c6ef77af4ee`; that commit is an
+audit locator, not an installed-release admission condition.
+
+The manifest is the following sorted UTF-8 text: each line is a repository-relative
+path, one space, the lowercase SHA-256 of exact file bytes, then one LF newline.
+Its own schema, registry/checker, documentation and tests are excluded, so adding
+or reviewing this registry cannot change its component fingerprint.
+
+```text
+app/app.go 37d292c2fe6578c1030447e4b948fd34b162c622ace3cf53b9545de40bc08a77
+internal/health/handler.go 87b0a138f70e12ba67026ab5150d48083fb6027e6346b067c90c7d45b8d63e0b
+internal/runtime/runtime.go c104667bad38fe1dd8ee8e6da0927837152935f5a7fc8d2f40ad38012e31f53f
+internal/telemetry/logging.go c1adf2275d6ca681c958c8a39be9ff5353e70292330d7a693275444922480f67
+```
+
+A future exporter must establish, through independently qualified trusted build
+provenance, that the executing component corresponds to these exact source bytes
+before selecting this registry entry. A new full application commit containing
+unchanged component files can truthfully report this component baseline; it must
+not relabel its entire installed build as the old audit commit. Caller labels,
+self-asserted payload fields, a matching symbol name, or arbitrary semver are not
+provenance. Unknown/modified component code stays local until a reviewed new
+registry baseline admits it. Runtime provenance verification is future work and
+is not established by the schema decoder. The source-manifest test checks current
+repository bytes against the proposed public baseline only; it does not attest
+an installed binary. No AMSL revision or frame is approved by this profile.
 
 | Field | Exact approved vocabulary |
 | --- | --- |
@@ -30,7 +54,7 @@ No AMSL revision or frame is approved by this profile.
 
 The sole frame ID maps to exact public symbol
 `github.com/ajent-social/amos/internal/health.(*Handler).ServeHTTP`, declared in
-`internal/health/handler.go` in that exact public AMOS snapshot. It carries no
+`internal/health/handler.go` in that exact approved component baseline. It carries no
 source filename, line, argument, address, URL or raw symbol on the wire. A future
 sanitizer must match exact reviewed source provenance and symbol identity to this
 registry before constructing the ID. Package-prefix matching, matching a suffix,
@@ -88,7 +112,13 @@ profile, rejects duplicate/unknown JSON keys, enforces byte/count/registry limit
 and canonical uniqueness/order, and returns a generic rejection without echoing
 input. It is **not** a general JSON Schema validator. Meta-validation and fixture
 validation through an independent standards implementation remain separate checks;
-Go structure checks do not substitute for them. Schema validation cannot prove
+Go structure checks do not substitute for them. Standard schema `uniqueItems`
+compares complete objects: it does not reject a repeated metric name with a
+different bucket, nor enforce lexicographic order. Those key-uniqueness/order
+checks, duplicate JSON-key rejection and the byte ceiling are additional mandatory
+finite-profile checks. A schema-valid but noncanonical payload is rejected by
+`DecodeAndValidate`; downstream senders must apply both layers, not schema alone.
+Fixtures explicitly exercise this distinction. Schema validation cannot prove
 consent, truthful aggregate provenance, source approval, whole-frame omission,
 rate/retention enforcement, or safe transport.
 

@@ -2,9 +2,12 @@ package diagnosticcontract
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -41,7 +44,7 @@ func TestPublicDiagnosticSchema(t *testing.T) {
 		}},
 		{"infrastructure identifier", func(v map[string]any) { v["components"].([]any)[0].(map[string]any)["host"] = "node.example.invalid" }},
 		{"caller version", func(v map[string]any) {
-			v["components"].([]any)[0].(map[string]any)["source_revision"] = "caller-version"
+			v["components"].([]any)[0].(map[string]any)["source_manifest_sha256"] = "caller-version"
 		}},
 		{"unapproved AMSL", func(v map[string]any) { v["components"].([]any)[0].(map[string]any)["id"] = "amsl" }},
 		{"freeform error", func(v map[string]any) { v["errors"].([]any)[0].(map[string]any)["message"] = "Bearer synthetic-canary" }},
@@ -161,12 +164,60 @@ func TestPublicDiagnosticSchemaIsClosedAndFinite(t *testing.T) {
 		}
 	}
 	inspect(schema)
-	for _, literal := range []string{Profile, Registry, SourceRevision, "amos.health.serve_http.v1"} {
+	for _, literal := range []string{Profile, Registry, ComponentID, PublicBaselineID, SourceManifestSHA256, "amos.health.serve_http.v1"} {
 		if !strings.Contains(string(data), literal) {
 			t.Fatal("schema and finite registry disagree")
 		}
 	}
 	if MaxPayloadBytes != 8192 || MaxQueuedReports != 4 || MaxReportsPerRolling24Hours != 1 || MaxRetentionHours != 168 {
 		t.Fatal("privacy budget changed without profile review")
+	}
+}
+
+// The baseline is component code, not the whole repository commit containing
+// the registry. Unrelated source, docs and registry additions cannot self-hash.
+func TestPublicDiagnosticSchemaSourceManifest(t *testing.T) {
+	digest := sha256.Sum256([]byte(PublicSourceManifest))
+	if hex.EncodeToString(digest[:]) != SourceManifestSHA256 {
+		t.Fatal("component manifest digest differs")
+	}
+	previous := ""
+	for _, line := range strings.Split(strings.TrimSuffix(PublicSourceManifest, "\n"), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) != 2 || fields[0] <= previous || !strings.HasSuffix(fields[0], ".go") || strings.Contains(fields[0], "diagnostic") || filepath.IsAbs(fields[0]) || strings.Contains(fields[0], "..") {
+			t.Fatal("invalid component manifest entry")
+		}
+		previous = fields[0]
+		content, err := os.ReadFile(filepath.Join("../..", fields[0]))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := sha256.Sum256(content)
+		if hex.EncodeToString(got[:]) != fields[1] {
+			t.Fatalf("component source %s requires explicit registry review", fields[0])
+		}
+	}
+}
+
+// JSON Schema's uniqueItems compares whole objects. Canonical aggregate key
+// uniqueness/order are additional finite-profile requirements, never claimed
+// as implications of generic schema validation.
+func TestPublicDiagnosticSchemaCanonicalProfileIsStricter(t *testing.T) {
+	for _, metrics := range [][]Metric{
+		{{Name: "http.requests", Bucket: "1"}, {Name: "http.requests", Bucket: "2-4"}},
+		{{Name: "readiness.failures", Bucket: "1"}, {Name: "http.requests", Bucket: "1"}},
+	} {
+		var d Diagnostic
+		if err := json.Unmarshal(fixture(t, "valid.json"), &d); err != nil {
+			t.Fatal(err)
+		}
+		d.Metrics = metrics
+		b, err := json.Marshal(d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if DecodeAndValidate(b) == nil {
+			t.Fatal("noncanonical profile accepted")
+		}
 	}
 }
