@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -297,5 +298,54 @@ func (c *Metrics) Handler() http.Handler {
 		if r.Method != http.MethodHead {
 			_, _ = w.Write(b)
 		}
+	})
+}
+
+// ObserveMetrics preserves an explicitly composed outer logger's request ID,
+// response capabilities and panic control. A collector already owned by that
+// outer boundary observes the request exactly once.
+func ObserveMetrics(metrics *Metrics, route RouteTemplate, next http.Handler) http.Handler {
+	if metrics == nil {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if outer, _ := r.Context().Value(metricsContextKey{}).(*Metrics); outer == metrics {
+			next.ServeHTTP(w, r)
+			return
+		}
+		r = r.WithContext(context.WithValue(r.Context(), metricsContextKey{}, metrics))
+		started := time.Now()
+		rw := &responseWriter{ResponseWriter: w, requestID: RequestID(r.Context())}
+		if f, ok := w.(http.Flusher); ok {
+			rw.flusher = f
+		}
+		if h, ok := w.(http.Hijacker); ok {
+			rw.hijacker = h
+		}
+		if p, ok := w.(http.Pusher); ok {
+			rw.pusher = p
+		}
+		defer func() {
+			p := recover()
+			status := rw.status
+			code := responseCode(rw.body.Bytes())
+			if p != nil {
+				code = "handler.panic"
+				if !rw.wroteHeader && !rw.hijacked {
+					status = 500
+				}
+			} else if !rw.wroteHeader && !rw.hijacked {
+				status = 200
+			}
+			template := ""
+			if route != nil {
+				template = route(r)
+			}
+			metrics.ObserveHTTP(template, status, code, time.Since(started))
+			if p != nil {
+				panic(p)
+			}
+		}()
+		next.ServeHTTP(wrapResponseWriter(rw), r)
 	})
 }

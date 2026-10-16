@@ -109,6 +109,7 @@ type Runtime struct {
 	routesFrozen     bool
 	healthHandler    http.Handler
 	handler          http.Handler
+	metricsHandler   http.Handler
 	checks           []func(context.Context) error
 	readinessTimeout time.Duration
 	shutdownTimeout  time.Duration
@@ -148,6 +149,7 @@ func New(opts Options) (*Runtime, error) {
 		}
 		return len(runtime.business[i].base) > len(runtime.business[j].base)
 	})
+	runtime.metricsHandler = telemetry.ObserveMetrics(opts.Metrics, runtime.routeTemplate, http.HandlerFunc(runtime.serveHTTP))
 	runtime.handler = telemetry.LoggingWithMetrics(opts.Logger, runtime.routeTemplate, opts.Metrics, http.HandlerFunc(runtime.serveHTTP))
 	return runtime, nil
 }
@@ -397,7 +399,7 @@ func (r *Runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// An explicitly composed outer telemetry middleware already owns the
 	// request ID and log record. Do not nest another logger or replace its ID.
 	if telemetry.RequestID(req.Context()) != "" {
-		r.serveHTTP(w, req)
+		r.metricsHandler.ServeHTTP(w, req)
 		return
 	}
 	r.handler.ServeHTTP(w, req)
