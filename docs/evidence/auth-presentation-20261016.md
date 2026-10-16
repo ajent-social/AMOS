@@ -5,8 +5,11 @@ Source candidate: this receipt accompanies the supplemental T6.14 repair.
 Independent source review approved `afa8ff234a67517a65de82e4208a72c19487dd66`
 against the design baseline. Reviewer: auth_theme_design_review, no blocking
 findings. Reviewer inspected all 13 files and formatting/diff checks; execution
-evidence remains the author’s. Guarded merge and landed verification remain
-pending until recorded in the delivery PR and subsequent receipt. Historical
+evidence remains the author’s. Final evidence-only head `a2b4991c2ae791e7ec2b821feba31ddee37ffe48` was
+independently approved. PR #115 merged by guarded rebase to
+`93b04a67f442d676e96763de044e7299e4c3004f`; landed tree equals reviewed tree.
+Fresh landed scoped race checks passed (59 named tests/subtests, zero skips),
+affected vet passed and both tracked no-JavaScript browser tests passed again. Historical
 product acceptance is unchanged.
 
 ## Actual observations
