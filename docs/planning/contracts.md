@@ -421,3 +421,12 @@ pages and local host. Native credential, challenge, Origin/CSRF, redirect and
 nil-theme behavior remain intact. Independent design review and landing precede
 the scoped T6.14 supplemental source repair. This grants no production host,
 workspace authority or replacement-renderer qualification.
+
+## Proposed amendment v1.27: native sign-in return policy
+
+[ADR 041](../adr/041-native-auth-return-policy.md) and the
+[return-policy contract](../contracts/auth-return-policy.md) add a fixed validated
+consumer destination allowlist/default, with constructor-owned copies and exact
+selection. Nil configuration preserves the existing navigation contract.
+Independent design landing precedes the scoped T6.3 supplemental source repair.
+No identity/resource authority or reserved-route registration is granted.
