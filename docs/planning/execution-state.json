@@ -880,7 +880,8 @@
     "status": "IN_PROGRESS",
     "certification": "NOT_RUN",
     "evidence": [
-      "Dependencies T14.1/T15.1 accepted; original atomic claim acquired. v1.36/ADR049 freezes initial pure local restricted-hold core only, with no public-release/private-channel/sender capability. Independent design landing precedes source. Full downstream and verified private-channel gates remain open; external intake stays disabled."
+      "Dependencies T14.1/T15.1 accepted; original atomic claim acquired. v1.36/ADR049 freezes initial pure local restricted-hold core only, with no public-release/private-channel/sender capability. Independent design landing precedes source. Full downstream and verified private-channel gates remain open; external intake stays disabled.",
+      "Initial local Decision core source07173af independently reviewed, test-only319dda4 unchangedproduction. Scoped29namedracechecks0fail0skip,vet/lint0issues andchangedsourcepublicscanPASS; compiledroutine-label public-release mutationRED/exactrestoreGREEN. Sourcefinalreview/landing pending; fulltaskprivatechannel/downstreamintegration gates remainunqualified andexternalintakedisabled. See docs/evidence/restricted-routing-20261016.md."
     ]
   }
 }
