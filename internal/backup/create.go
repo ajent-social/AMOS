@@ -66,15 +66,18 @@ var (
 // ModuleVersions must come from trusted application composition, not user data.
 // Callers must not mutate the request or its maps/slices until Create returns.
 type Request struct {
-	ID             string
-	DatabaseURL    string
-	DestinationDir string
-	PGDumpPath     string
-	PGDumpVersion  string
-	ModuleVersions map[string]string
-	Schemas        []string
-	MaxBytes       int64
-	Timeout        time.Duration
+	// IsolatedClientEnvironment is a scheduled-only opt-in: no inherited HOME or
+	// SSL trust/client defaults reach pg_dump. Legacy callers retain prior behavior.
+	IsolatedClientEnvironment bool
+	ID                        string
+	DatabaseURL               string
+	DestinationDir            string
+	PGDumpPath                string
+	PGDumpVersion             string
+	ModuleVersions            map[string]string
+	Schemas                   []string
+	MaxBytes                  int64
+	Timeout                   time.Duration
 }
 
 // Manifest is the completion marker and recovery boundary for one artifact.
@@ -231,6 +234,9 @@ func Create(ctx context.Context, request Request) (Manifest, error) {
 	}
 	command := commandWithWaitDelay(backupCtx, request.PGDumpPath, args...)
 	command.Env = childEnvironment(servicePath, passwordPath)
+	if request.IsolatedClientEnvironment {
+		command.Env = isolatedBackupChildEnvironment(command.Env, finalDir)
+	}
 	command.Stdout = limited
 	command.Stderr = io.Discard
 	startedAt := time.Now().UTC()
@@ -348,6 +354,9 @@ func validVersion(value string) bool {
 func pinnedToolVersion(ctx context.Context, request Request) (string, int, error) {
 	command := commandWithWaitDelay(ctx, request.PGDumpPath, "--version")
 	command.Env = childEnvironment("", "")
+	if request.IsolatedClientEnvironment {
+		command.Env = isolatedBackupChildEnvironment(command.Env, request.DestinationDir)
+	}
 	output, err := command.Output()
 	if err != nil {
 		if ctx.Err() != nil {
@@ -583,6 +592,17 @@ func childEnvironment(servicePath, passwordPath string) []string {
 		env = append(env, "PGPASSFILE="+passwordPath)
 	}
 	return env
+}
+
+func isolatedBackupChildEnvironment(env []string, home string) []string {
+	out := make([]string, 0, len(env)+1)
+	for _, e := range env {
+		k, _, _ := strings.Cut(e, "=")
+		if k != "HOME" && k != "SSL_CERT_FILE" && k != "SSL_CERT_DIR" {
+			out = append(out, e)
+		}
+	}
+	return append(out, "HOME="+home)
 }
 
 type limitedHashWriter struct {

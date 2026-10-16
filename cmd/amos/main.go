@@ -14,6 +14,9 @@ import (
 func main() { os.Exit(run(os.Args[1:])) }
 
 func run(args []string) int {
+	if len(args) > 0 && args[0] == "backup" {
+		return runBackup(args[1:])
+	}
 	if len(args) > 0 && args[0] == "ops" {
 		return runOps(args[1:])
 	}

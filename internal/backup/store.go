@@ -117,7 +117,10 @@ func (s *Store) Upload(ctx context.Context, backupDir string, want Manifest) (St
 		return StoredBackup{}, ErrIntegrityMismatch
 	}
 	localHash := sha256.New()
-	if _, err := io.Copy(localHash, io.LimitReader(file, s.maxSize+1)); err != nil {
+	if _, err := io.Copy(localHash, io.LimitReader(backupContextReader{ctx: ctx, reader: file}, s.maxSize+1)); err != nil {
+		if ctx.Err() != nil {
+			return StoredBackup{}, errors.Join(ErrIncompleteBackup, ctx.Err())
+		}
 		return StoredBackup{}, errors.Join(ErrInvalidStoreRequest, errors.New("backup archive could not be read"))
 	}
 	if hex.EncodeToString(localHash.Sum(nil)) != manifest.ArchiveSHA256 {
@@ -129,8 +132,11 @@ func (s *Store) Upload(ctx context.Context, backupDir string, want Manifest) (St
 
 	archiveKey := s.objectKey(want.ID, manifest.ArchiveName)
 	expectedArchiveChecksum := base64.StdEncoding.EncodeToString(localHash.Sum(nil))
+	if err := ctx.Err(); err != nil {
+		return StoredBackup{}, errors.Join(ErrIncompleteBackup, err)
+	}
 	archiveResult, err := s.writer.PutObject(ctx, PutObjectInput{
-		Bucket: s.bucket, Key: archiveKey, Body: file, ContentLength: manifest.ArchiveBytes,
+		Bucket: s.bucket, Key: archiveKey, Body: backupContextReader{ctx: ctx, reader: file}, ContentLength: manifest.ArchiveBytes,
 		ChecksumSHA256: expectedArchiveChecksum, IfNoneMatch: "*",
 		Metadata:          map[string]string{"sha256": manifest.ArchiveSHA256, "backup-id": manifest.ID},
 		ServerSideEncrypt: "aws:kms", KMSKeyID: s.kmsKey, BucketKeyEnabled: false,
@@ -145,6 +151,9 @@ func (s *Store) Upload(ctx context.Context, backupDir string, want Manifest) (St
 		return StoredBackup{}, ErrIntegrityMismatch
 	}
 
+	if err := ctx.Err(); err != nil {
+		return StoredBackup{}, errors.Join(ErrIncompleteBackup, err)
+	}
 	remoteManifest := StoredManifest{
 		Format: remoteManifestFormat, Backup: manifest, ArchiveVersionID: archiveResult.VersionID,
 		ArchiveChecksumSHA256: archiveResult.ChecksumSHA256,
@@ -155,6 +164,9 @@ func (s *Store) Upload(ctx context.Context, backupDir string, want Manifest) (St
 	}
 	manifestKey := s.objectKey(want.ID, "manifest.json")
 	expectedManifestChecksum := checksumBase64(manifestBytes)
+	if err := ctx.Err(); err != nil {
+		return StoredBackup{}, errors.Join(ErrIncompleteBackup, err)
+	}
 	manifestResult, err := s.writer.PutObject(ctx, PutObjectInput{
 		Bucket: s.bucket, Key: manifestKey, Body: strings.NewReader(string(manifestBytes)), ContentLength: int64(len(manifestBytes)),
 		ChecksumSHA256: expectedManifestChecksum, IfNoneMatch: "*",
@@ -169,6 +181,9 @@ func (s *Store) Upload(ctx context.Context, backupDir string, want Manifest) (St
 	}
 	if manifestResult.VersionID == "" || manifestResult.ChecksumSHA256 != expectedManifestChecksum {
 		return StoredBackup{}, ErrIntegrityMismatch
+	}
+	if err := ctx.Err(); err != nil {
+		return StoredBackup{}, errors.Join(ErrIncompleteBackup, err)
 	}
 	return StoredBackup{Manifest: manifest, ArchiveVersionID: archiveResult.VersionID, ManifestVersionID: manifestResult.VersionID}, nil
 }
@@ -334,4 +349,22 @@ func validStorePrefix(prefix string) bool {
 		}
 	}
 	return true
+}
+
+// Cancellation is checked between finite archive chunks and during the upload
+// body's second read. It cannot interrupt a stuck kernel/filesystem operation.
+type backupContextReader struct {
+	ctx    context.Context
+	reader io.Reader
+}
+
+func (r backupContextReader) Read(p []byte) (int, error) {
+	if e := r.ctx.Err(); e != nil {
+		return 0, e
+	}
+	n, e := r.reader.Read(p)
+	if cancel := r.ctx.Err(); cancel != nil {
+		return n, cancel
+	}
+	return n, e
 }

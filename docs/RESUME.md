@@ -33,11 +33,13 @@ intact. See the [tracing receipt](evidence/bounded-tracing-20261016.md). No coll
 deployment, external provider, production or release acceptance is implied.
 PR136 landed bounded tracing at `a5a91377bc26c14750782f9643a662ba3eb87ae5`;
 fresh landed257 named scoped race checks pass with zero failures/skips. T10.9
-backup scheduling is in progress under an owned claim; a durable schedule,
-fenced publication and snapshot-age freshness contract must land before source.
-The proposed [v1.34 backup contract](contracts/backup-scheduling.md) preserves
-separate operational storage and explicit runtime identity. No backup scheduler
-or external storage is enabled by that design work.
+backup scheduling remains in progress under an owned claim. Design PR137 landed
+at e2022cc; [v1.35 backup source](contracts/backup-scheduling.md) is being verified
+against the separate operational ledger, explicit runtime identities and
+snapshot-age freshness. Root's scoped real read-only PostgreSQL adapter, alert
+input, trigger graph and migration checks pass84 named race checks with zero skips.
+Final actual dump/publication/CLI composition and independent source approval
+remain pending. No backup scheduler or cloud storage has been enabled.
 T14.13 is accepted only as the closed upstream declaration/schema/validator;
 actual isolation, collection and deployment remain unqualified. T14.2 local-only
 component landed in PR #125 while full task acceptance remains open. Neither
