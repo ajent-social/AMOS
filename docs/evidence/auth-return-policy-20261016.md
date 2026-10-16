@@ -2,7 +2,11 @@
 
 Design PR #116 landed at `ca4ba4b2b4ea95ba1217b6e5885a7da9a752c6a5`;
 its tree matched the independently reviewed design candidate. This receipt
-accompanies the supplemental T6.3 source repair; source review/landing are pending.
+accompanies the supplemental T6.3 source repair; independent source reviewer auth_theme_design_review approved
+`ed7545c3489224dd8c6c88bf8321c57a88588af9` with no blocking findings. PR #117
+landed `97679c97983993f5fdb500481702f6bdf62e1aa9`, full reviewed-tree equality.
+Fresh landed scoped race passed 75 named tests/subtests with zero skips, affected
+vet passed, and both no-JavaScript navigation browser tests passed again.
 
 ## Obtained evidence
 
