@@ -68,5 +68,10 @@ qualify native workflow admission or release execution.
 
 ## Landing status
 
-Final complete-candidate independent review, guarded merge and fresh landed
-verification remain pending. This draft does not accept the task.
+The complete source candidate `ea18777eeb792bdca29444fe036f47da072eb893` was
+independently approved against design `780d91b1f47cbf89fc22482a2f21fbfd63a058bf`.
+The coordinator independently reran the complete257-check selection at that exact
+candidate: all package completions passed, zero failures/skips. The reviewer
+reconciled its JSON results, exact restored source hashes and scoped scanner
+exception. This source acceptance remains bounded as described above; guarded
+merge and fresh landed verification are recorded separately after they occur.
