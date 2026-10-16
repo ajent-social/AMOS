@@ -76,7 +76,10 @@ type ScheduleSnapshot struct {
     RetainedAttempts, RetainedLimit uint32
     PublicationKnown bool
 }
-func NewScheduler(db *sql.DB, cfg ScheduleConfig, store *Store) (*Scheduler, error)
+func NewRuntimeStore(ctx context.Context, cfg ScheduleAWSConfig,
+    maxBytes int64, requiredLifetime time.Duration) (*Store, error)
+func NewScheduler(db *sql.DB, cfg ScheduleConfig, store *Store,
+    dumpDatabaseURL string) (*Scheduler, error)
 func (*Scheduler) RunDue(context.Context) (ScheduleResult, error)
 func (*Scheduler) Snapshot(context.Context) (ScheduleSnapshot, error)
 func NewScheduleReader(db *sql.DB, cfg ScheduleConfig) (*ScheduleReader, error)
@@ -118,11 +121,28 @@ the dump reader has only required data/migration reads. Neither silently receive
 the other role's grants. An application runtime identity is not a substitute.
 No application principal supplies config.
 
-The constructor copies mutable config and validates before acquiring a lease or
-performing a dump/upload. It accepts a concrete existing Store, not an arbitrary
-completion callback. CLI composition constructs that Store with the dedicated
-write-only adapter below. Low-level adapter injection is a composition/test seam,
-not evidence that an arbitrary implementation is a live provider.
+NewScheduler copies mutable config, parses/validates the explicitly passed
+resolved dumpDatabaseURL against the configured dump target/role, and performs
+no hidden environment lookup or credential resolution. The URL remains private
+in memory and is supplied only to the actual Create request; it is not config,
+a ledger field or output. The caller owns the explicitly constructed ledger DB
+handle. Before core construction the run CLI validates the closed config, resolves
+only LedgerWriteRef and DumpRef, rejects ambient PG selectors, validates both
+strict DSNs and opens the ledger writer. It calls NewRuntimeStore with maxBytes
+and requiredLifetime=RunTimeout+15s, then NewScheduler(db,cfg,store,dumpURL), then
+RunDue once. No LedgerReadRef resolution on the write path. This concrete factory
+performs the actual selected metadata/STS preflight described below and returns
+the dedicated Store; no caller success boolean or credential-authority callback.
+A preflight failure creates no admitted attempt or spent slot, does not change
+attempt/success timestamps, and returns a generic error. A not-due run may have
+performed identity preflight, but performs no Create/PUT. A subsequent invocation
+constructs and verifies fresh runtime authority again.
+
+Reader composition resolves only LedgerReadRef, validates its strict DSN and opens
+its own read-only handle, then NewScheduleReader(db,cfg). Core constructors never
+resolve process envrefs. Low-level concrete Store/DB injection is a trusted
+composition/test seam, not evidence that an arbitrary implementation is a live
+provider or that a supplied database handle has qualified grants.
 
 Use a strict, closed, versioned local JSON configuration, maximum64KiB. Reject
 unknown/duplicate decoded keys, aliases, extra/trailing values, invalid reference
@@ -190,9 +210,13 @@ and service-endpoint override selectors, including empty-valued ones. Proxy and
 CA/region environment overrides do not affect owned clients. Region is explicit.
 `LoadDefaultConfig` is not an admissible runtime credential selector here.
 
-After durable slot reservation but before Create or any S3 PUT, resolve the
-selected runtime credentials and call
-regional `sts.GetCallerIdentity` through an owned normally verified HTTPS client,
+NewRuntimeStore retrieves one credential snapshot from the selected metadata
+source before database attempt admission. Require actual nonempty access/session
+material, expiring credentials and expiry covering the complete requiredLifetime
+plus the remaining preflight time; reject a snapshot that cannot cover RunTimeout
+plus15s at the instant it is admitted. Copy that exact credential set into a
+private non-refreshing SDK provider. Call regional `sts.GetCallerIdentity` with
+this same snapshot through an owned normally verified HTTPS client,
 with one SDK attempt and a2second deadline. Require the configured partition and
 account and the exact expected role name in the actual assumed-role ARN; reject
 IAM-user/federated-user identities and missing/mismatched results. The initial
@@ -202,6 +226,19 @@ read/delete privilege or deploy/recovery credential fallback. This network ident
 check is not a caller-controlled `verified` flag. Trust policies, platform isolation
 and effective resource permissions still need independent provider qualification.
 
+The returned runtime Store binds its verified account/role/config identity, exact
+credential snapshot and expiry privately. STS and every S3 PUT use that identical
+snapshot: never verify one provider retrieval and let S3 retrieve another. No
+background refresh, automatic source re-resolution or replacement credentials on
+retry. Immediately before admission, the scheduler rechecks the factory binding
+against cfg.AWS and verifies remaining lifetime covers its full attempt and cleanup
+budget; deny admission otherwise. The PUT path checks expiry/cancellation again
+without network refresh. Closing/ending this one-shot runner cannot leave a
+credential-refresh worker. A later invocation retrieves a new snapshot and repeats
+STS verification. Metadata expiry and STS identity do not prove effective bucket
+or KMS permissions. Fixture preflight can prove exact snapshot reuse/mismatch
+rejection only, never live AWS provenance.
+
 The backup adapter implements the existing `ObjectWriter.PutObject` with the
 pinned AWS SDK S3 client. It forwards exact conditional-create, content length,
 SHA-256 checksum, metadata and SSE-KMS fields; binds configured region, bucket
@@ -209,8 +246,8 @@ owner/account, prefix and key; always set S3 ExpectedBucketOwner from the
 explicit backup bucket owner field, never infer it from successful runtime STS.
 Validate KMS partition/region/account against the selected destination. Initial
 source requires bucket/KMS and runtime accounts to agree; cross-account policy is
-unsupported until separately designed. Do not choose a static ACL; returns only actual checksum/version acknowledgements;
-and translates provider conflict/failure generically. Missing/null version or wrong
+unsupported until separately designed. Do not choose a static ACL. Return only actual checksum/version acknowledgements
+and translate provider conflict/failure generically. Missing/null version or wrong
 checksum is failure. The adapter performs no Head/Get/Delete/List, cleanup delete,
 restore, IAM, KMS administration or credential delegation. Do not reuse
 `objects/s3.Store`, whose reconciliation/delete behavior has different authority.
@@ -427,36 +464,148 @@ sample series. A one-shot check is not a persistent incident monitor. Notificati
 sending remains disabled; no new sender, live monitoring service or continuous
 recovery claim follows from a generated asset or synthetic sample.
 
-## CLI and hosting assets
+## CLI and separately configured hosting assets
 
 Provide actual `amos backup run --config <file>`, `amos backup status --config
 <file>`, `amos backup check --config <file>` and `amos backup render --config
-<file>`. Run invokes RunDue once, never a web request loop. Status/check read the
-ledger and evaluate freshness without dumping/uploading. Render validates local
-config and writes a deterministic bounded bundle without resolving credentials,
-contacting AWS/PostgreSQL, installing units or mutating files: the bundle is written only to stdout. Invalid input and
-runtime failure return generic nonzero diagnostics without echoing supplied data.
-Not-due/already-authorized runs are explicit finite no-op results.
+<file> --assets-config <file>`. Run invokes RunDue once, never a web request loop.
+Status/check use only the read-only construction above. Render validates both
+bounded local inputs and writes a deterministic bundle only to stdout, without
+resolving credentials, contacting AWS/PostgreSQL, inspecting live task definitions,
+installing units or overwriting files. Invalid input/runtime failure produces
+generic nonzero diagnostics without echoing supplied data. Not-due/busy runs have
+finite no-op results.
 
-VM assets are systemd oneshot service/timer definitions invoking the actual pinned
-AMOS executable/config and a separate periodic check, with bounded service timeout,
-private environment references and no shell interpolation. Managed assets are an
-explicit Go/Pulumi EventBridge Scheduler→ECS RunTask recipe with selected immutable
-task/image/config references, task/execution/scheduler roles, cluster, private
-subnets/security groups and region. Disable flexible delivery windows and scheduler
-retries; database slot reservation handles duplicate delivery. The task runs the
-same executable with its separate runtime credential mode. A separate scheduled
-check uses read-only authority. Task role/pass-role scopes and network settings
-must be explicit; do not grant a scheduler deployment or backup bucket creation.
-Generated AWS/Pulumi/mock evidence does not qualify actual trigger delivery.
+Assets use a separate closed `amos-backup-assets-v1` JSON document, maximum64KiB,
+with these exact types and the same exact snake_case field-name rule. Its root
+keys are `version`, `profile`, `vm`, `managed`. Profile must match the schedule
+config. Require exactly the matching nonnull profile object; omit the other key.
+Every field in that selected object is required. Reject duplicate/unknown/alias
+keys, wrong types, trailing values, unsupported versions and bounds before typed
+decoding. Assets are installation declarations, **not** part of the immutable
+schedule-ledger digest; changing a path/task invocation does not silently permit
+a different schedule/config/destination.
 
-Both profiles wake the runner/check every minute; the durable database slot gate
-owns the configured backup interval, so platform retry/restart cannot bypass it.
-Render files are at most64KiB in total and include version/profile/activation and
-explicit install/qualification limits. Use typed generation and reject unsafe
-unit/resource identifiers rather than shell/template interpolation. Inactive assets
-remain disabled. Hosting installation, enabling tasks and real spending require
-separate owner authority; this source task performs none of those actions.
+```go
+type BackupAssetsConfig struct {
+    Version string
+    Profile opsconfig.Profile
+    VM *BackupVMAssets
+    Managed *BackupManagedAssets
+}
+type BackupVMAssets struct {
+    Executable, ExpectedExecutableSHA256 string
+    ConfigFile, ExpectedConfigSHA256 string
+    WriteEnvironmentFile, ReadEnvironmentFile string
+    RunnerUser, RunnerGroup, ReaderUser, ReaderGroup string
+    RunService, RunTimer, CheckService, CheckTimer string
+}
+type BackupManagedAssets struct {
+    ClusterARN, ScheduleGroupARN string
+    RunScheduleName, CheckScheduleName string
+    RunSchedulerRoleARN, CheckSchedulerRoleARN string
+    SubnetIDs, SecurityGroupIDs []string
+    Run, Check BackupTaskAssets
+}
+type BackupTaskAssets struct {
+    TaskDefinitionARN, ContainerName, ExpectedImage string
+    Executable, ConfigFile, ExpectedConfigSHA256 string
+    TaskRoleARN, ExecutionRoleARN, EnvironmentFileARN string
+}
+```
+
+VM object keys are `executable`, `expected_executable_sha256`, `config_file`,
+`expected_config_sha256`, `write_environment_file`, `read_environment_file`,
+`runner_user`, `runner_group`, `reader_user`, `reader_group`, `run_service`,
+`run_timer`, `check_service`, `check_timer`. Managed keys are `cluster_arn`,
+`schedule_group_arn`, `run_schedule_name`, `check_schedule_name`,
+`run_scheduler_role_arn`, `check_scheduler_role_arn`, `subnet_ids`,
+`security_group_ids`, `run`, `check`. Each task object has `task_definition_arn`,
+`container_name`, `expected_image`, `executable`, `config_file`,
+`expected_config_sha256`, `task_role_arn`, `execution_role_arn`,
+`environment_file_arn`. There are no credential values, inline shell commands,
+public/private assertions or default deployment references.
+
+All paths are canonical absolute ASCII paths of at most512bytes, no traversal,
+control/whitespace, quotes, shell metacharacters, percent specifiers or variable
+expansion. Accept only letters/digits, slash, dot, underscore and hyphen; reject
+`..` path segments and root itself. SHA-256 values are exactly64 lowercase hex
+characters. POSIX users/groups are at most32bytes matching the existing ordinary
+lowercase name grammar; disallow root and require distinct runner/reader users
+and distinct groups. Unit names are unique safe lowercase identifiers of at most
+64bytes, with `.service`/`.timer` suffix matching their field and paired stem;
+no custom directives, substitutions or injected argv.
+
+VM generation emits systemd oneshot run/check services and one-minute timers.
+The exact ExecStart argv are `[Executable, "backup", "run", "--config", ConfigFile]`
+and the corresponding `check` argv, rendered with safe unit syntax and no shell.
+Set the declared users/groups and distinct required EnvironmentFile references;
+run receives only the selected ledger-write/dump environment values, check only
+the selected ledger-read value. Timers cannot enable either unit by rendering.
+Services have bounded stop/runtime timeouts consistent with RunTimeout+15s and
+private file/process settings. The expected binary/config digests are declared
+installation preconditions, not hashes verified by an offline renderer. Owner
+installation must verify executable/config bytes, paths, modes, identities and
+secret-file separation before enabling units. Distinct OS names alone do not
+prove process/network isolation or effective IAM restrictions.
+
+Managed ARNs are canonical explicit AWS references, maximum2048bytes each, bound
+to the selected account/partition/region where applicable. Task definitions must
+include a positive immutable numeric revision; no family-only or `latest` target.
+Cluster/schedule-group/task/role resource kinds must match their fields. Run's
+TaskRoleARN must exactly equal ScheduleConfig.AWS.RuntimeRoleARN; the check task
+role must be distinct. These declarations never replace runtime STS verification.
+Require
+distinct Run/Check task definitions and scheduler/task roles; execution
+roles are explicit and may be shared only when the owner separately qualifies
+secret-file isolation. Names/container identifiers are1–64 bounded ASCII letters,
+digits, underscore or hyphen, without substitutions. ExpectedImage is a bounded
+registry/repository reference (maximum512bytes) ending in `@sha256:` plus64
+lowercase hex characters, never a mutable tag. SubnetIDs contains1–16 unique
+canonical subnet IDs and SecurityGroupIDs1–5 unique canonical security-group IDs;
+each uses its AWS resource prefix and8or17 lowercase hex digits. No inferred
+network/default VPC, profile, role or task definition.
+
+Each task definition must declare exact entrypoint `[Executable]`. The run
+container command override is `["backup", "run", "--config", ConfigFile]`; check
+uses `check`. Its config file must already exist read-only in the declared immutable
+image at ConfigFile and match ExpectedConfigSHA256. There is no task-entrypoint
+script that downloads or invents config. Both files must decode to the same bound
+schedule config. Run/Check EnvironmentFileARN reference separate explicit S3
+`.env` objects; emit actual ECS `EnvironmentFiles` overrides with type `s3`, never
+secret contents or inline environment credentials. Those files provide only the
+appropriate database envref values for the selected command. Execution roles
+need separately qualified read/decrypt authority for their selected environment
+file/image, not backup-object read/delete or task-secret authority by implication.
+
+The generated Go/Pulumi recipe creates explicit EventBridge Scheduler→ECS RunTask
+invocations for those selected tasks, using the declared cluster/container/network
+references and command/environment-file overrides. Set task count1,
+AssignPublicIp=DISABLED, flexible windows OFF, UTC one-minute cadence, maximum
+scheduler retries0 and event age60s. Database slots handle duplicate delivery.
+Scheduler-role permission artifacts scope `ecs:RunTask` to the exact corresponding
+task-definition revision with exact `ecs:cluster` condition, and `iam:PassRole`
+to only that task's explicit task/execution roles with
+`iam:PassedToService=ecs-tasks.amazonaws.com`. Their scheduler trust is limited
+to the Scheduler service with the selected source account and exact schedule ARN.
+Deployment pass-role for these scheduler roles is a separate owner deploy grant,
+never runtime runner authority. Do not add broad resource/pass-role patterns,
+role assumption, task-definition registration, bucket creation or deploy privilege.
+
+Render validates syntax and emits declarations; it cannot prove an existing task
+definition's actual image, entrypoint, role, config bytes, environment-file mapping
+or private subnet routes without provider inspection. Mark every such mapping as
+**declared, unverified** in the bundle and require owner/provider qualification
+before installation. No verified/image/private-network boolean input is accepted.
+Actual metadata/STS identity checks remain mandatory at runtime regardless of
+asset declarations. Source/Pulumi mock tests qualify generated references/argv/
+policy only, never trigger delivery or the selected remote task's identity.
+
+Both profiles wake runner/check every minute; the database gate owns the actual
+backup interval. Output is at most64KiB total, includes version/profile/activation
+and explicit install/qualification limits, and never activates a resource. Inactive
+inputs render disabled assets. Installing/enabling schedules and real spending
+remain separate owner actions; this task performs none.
 
 ## Delegation and required proof
 
@@ -494,6 +643,11 @@ publication enables fresh/recovery only under existing holds. Unknown/stale read
 cannot recover an incident. Prove late remote completion and duplicate-ID responses
 do not advance the ledger. A compiled isolated mutation advancing last success on
 failed upload must make this regression RED, then exact restoration GREEN.
+Assert separate strict assets decoding, exact emitted argv, no shell/default/private
+inference, role/pass-role scope and explicit unverified mappings. Verify changing
+asset inputs cannot change the ledger digest or make a mismatched config eligible.
+Credential tests rotate metadata responses and prove STS/S3 sign with the same
+captured set, reject insufficient expiry, and do not refresh silently.
 
 Report missing pg_dump/database/TLS fixtures as failed prerequisites, never skipped
 passes. Obtain source/race/vet/lint/privacy checks, independent exact-head review,

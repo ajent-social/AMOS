@@ -37,7 +37,10 @@ to separately selected storage retention and recovery procedures.
 Runtime AWS credentials use only explicitly selected IMDSv2 or ECS task metadata
 routes, owned bounded transports and a regional STS account/assumed-role check.
 No deployment loader, default chain, static/profile/OIDC fallback or caller boolean
-establishes runtime authority. Use existing pinned SDK packages. Generated source
+establishes runtime authority. STS and S3 use one captured expiring credential set
+whose remaining life covers the attempt/cleanup budget, with no hidden refresh.
+Core construction receives the resolved dump URL explicitly; only CLI composition
+resolves the command's selected environment references. Use existing pinned SDK packages. Generated source
 and local metadata/STS/S3-shaped fixtures are not proof of real AWS identity,
 effective IAM/KMS policy, encryption, versioning, retention or trigger delivery.
 
@@ -59,7 +62,11 @@ A recent upload is not an RPO guarantee. One-shot checks and generated assets do
 incident monitor or enable notification sends.
 
 Render disabled-by-default systemd VM and Go/Pulumi managed scheduling assets from
-explicit owner config, using the same real commands and database slot gate. Do not
+an explicit separate strict assets document, using the same real commands and
+database slot gate. Freeze paths/OS identities, immutable task/image/config refs,
+entrypoint/argv, environment-file mappings, network/role refs and exact pass-role
+scopes. Offline rendering marks provider mappings unverified; it never claims it
+inspected task definitions, file bytes, private routes or effective permissions. Do not
 install/activate resources or choose real accounts, roles, regions, destinations,
 credentials or retention policy. Root expands the original leaf-task ownership for
 CLI/adapter/schema/grants/profile wiring before source dispatch. Required actual
