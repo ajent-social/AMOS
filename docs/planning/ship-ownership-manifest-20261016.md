@@ -44,4 +44,9 @@ provider/database service applies to this data-only component.
 The initial remote check rejected its cached image's Go1.26.9; it is not passing
 verification evidence. The corrected bounded check selects exact Go1.27.1 and
 will verify transferred input hashes and the pinned linter release checksum.
-Remote lint, independent review and landing are pending.
+The corrected remote attempt completed successfully: Go1.27.1 Linux ARM64,
+SHA-256 input verification for both source files, root module/sums and lint config,
+checksum-verified golangci-lint2.13.2, zero issues. This is scoped remote lint,
+not hosted CI. The disposable container was bounded to2CPUs/4GiB with a600second
+hard command timeout; no model/provider or credential access was used.
+Independent review and landing are pending.
