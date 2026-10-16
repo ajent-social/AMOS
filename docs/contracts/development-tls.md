@@ -52,7 +52,11 @@ retains the existing explicit owner lifecycle.
 Add the separate `cmd/amos-devtls` executable for the reference personal todo
 application. This supported narrow path consumes an existing migrated database;
 it never initializes, migrates, resets or discovers another application's data.
-It is not generated `amos dev` LAN support. The private directory is selected
+It is not generated `amos dev` LAN support. The initial executable is supported
+on Linux only; the public typed host remains portable. Retain a verified runtime
+directory descriptor for the entire host lifetime and resolve the capture child
+through that pinned descriptor (`/proc/self/fd`), so renaming/replacing its parent
+cannot redirect capture. Unsupported executable platforms fail before dependencies. The private directory is selected
 explicitly by `--runtime-dir`; no implicit cwd or environment credential fallback.
 
 Use a pinned owner-only real directory0700, no symlink, current effective owner.

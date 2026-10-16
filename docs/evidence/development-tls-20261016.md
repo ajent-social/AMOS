@@ -28,3 +28,9 @@ Actual certificate-verifying LAN service behavior and browser-visible acceptance
 will be recorded separately. Self-signed material never establishes automatic
 system/browser trust. No production constructor, organization authority, real
 email delivery, live billing/provider or release admission is implied.
+
+Implementation custody clarification: the initial standalone executable is Linux
+only, retaining its verified runtime directory descriptor until host closure.
+Capture resolves through that descriptor so replacing the parent pathname cannot
+redirect private mail. The public typed host API stays portable. This is an
+explicit support limit, not a claimed cross-platform executable qualification.
