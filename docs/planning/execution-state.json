@@ -818,7 +818,8 @@
     "certification": "REVIEWED",
     "evidence": [
       "Closed public diagnostic schema/profile and rejected-fixture design checks implement T14.1 only. Scoped Go race/vet/lint and independent Draft2020-12 meta/fixture checks passed; source-manifest definition and actual baseline files checked. Whole private frame rejection/expected omission is a design fixture, not a sanitizer.",
-      "ADR043/amendmentv1.29 document finite reviewed public component provenance vocabulary, fixed codes/signatures/frame IDs, bucketed counts, hard proposed downstream privacy budget and default-off owner controls. No AMSL source admission, automatic export, trusted installed-binary provenance or production qualification. Independent final review/guarded design landing required."
+      "ADR043/amendmentv1.29 document finite reviewed public component provenance vocabulary, fixed codes/signatures/frame IDs, bucketed counts, hard proposed downstream privacy budget and default-off owner controls. No AMSL source admission, automatic export, trusted installed-binary provenance or production qualification. Independent final review/guarded design landing required.",
+      "Independent review rejected a case-insensitive Go JSON alias bypass. New root/component/metric/error/frame canary-overwrite regressions failed before the fix; exact decoded-key/type grammar fixed all object boundaries. Scoped race/vet/lint passed, zero skips/issues; final independent re-review required before landing."
     ]
   }
 }
