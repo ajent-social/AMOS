@@ -63,3 +63,17 @@ Requested batch ceiling10; this coherent source delivery has one product member
 preserves inherited session selection; final independent review, guarded merge
 and fresh landed verification remain required. Exact token/cost telemetry is
 unavailable; no acceleration or hosted CI claim.
+
+## Landed verification
+
+Independent review approvedb30d22660d0f71e8d17b96e1e893e3b1efdf9574 against
+c41a0669cd07ad8f5228caa4bb02fa5d6a83f608 across all25changed files. PR #124
+rebased tof6c3f40bc211865d5132fe09551161cb0db10392; full reviewed/landed tree
+equality and main reachability verified. Fresh landed eight-package metrics
+race selection passed30 named checks, zero skips. Additional actual PostgreSQL
+legacy signup/verification/signin/personal-todo/signout and default/themed HEAD
+compatibility passed6 named checks before merge. Landed generator reject/copy/
+resume tests passed3 named checks with race detection (13.183s), including actual
+generated consumer tests/build and preservation of private runtime identity.
+These are generated-code/local PostgreSQL checks, not a fresh Chromium or
+consumer-owned browser acceptance. Own original T10.4 claim released afterward.
