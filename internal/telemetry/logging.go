@@ -34,6 +34,7 @@ var (
 )
 
 type requestIDContextKey struct{}
+type metricsContextKey struct{}
 
 // RequestID returns the server-generated request ID installed by Logging.
 // It returns an empty string when the context did not originate in the middleware.
@@ -67,6 +68,9 @@ func LoggingWithMetrics(logger *slog.Logger, route RouteTemplate, metrics *Metri
 		rw := &responseWriter{ResponseWriter: w}
 		requestID := newID()
 		r = r.WithContext(context.WithValue(r.Context(), requestIDContextKey{}, requestID))
+		if metrics != nil {
+			r = r.WithContext(context.WithValue(r.Context(), metricsContextKey{}, metrics))
+		}
 		rw.requestID = requestID
 		if flusher, ok := w.(http.Flusher); ok {
 			rw.flusher = flusher
