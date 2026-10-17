@@ -22,14 +22,14 @@ Fixed managed output under internal/amosgen/business; fixed source policy metada
 Root holds the task's canonical atomic reservation `3b68db6f4ae2f47e133941c894ba114666c69639` and integration
 reservation. Implementer writes only delegated leaf paths in its isolated
 worktree. No shared manifests, migrations, policy/identity types or executable
-wiring are delegated beyond the precise CI emission call above. Production
+wiring are delegated beyond the generator scope above. Production
 services, deployment and live-provider qualification remain separate gates.
 
 ## Evidence
 
-Preflight complete for the bounded assigned outcome. Implementation, verification,
-independent exact-head review, guarded merge and fresh landed verification remain
-pending; only actual results may advance their records or product acceptance.
+Preflight, implementation, verification, independent exact-head review, guarded
+merge and fresh landed verification are complete for the original generation and
+startup-skeleton acceptance; the final delivery evidence below bounds that claim.
 
 
 ## Verified candidate
@@ -59,9 +59,33 @@ verifies exact recorded managed preimages and inventory, makes no writes, and
 fails on changed/unknown/unmanaged/symlink/nonregular output. Callers serialize
 with owner edits; no concurrent-editor exclusion or updater is claimed.
 
-This completes the original generation/startup-skeleton boundary when reviewed
-and landed. It does not install HTTP routes, invoke handlers, enforce current
+This completes the original generation/startup-skeleton boundary after review
+and verified landing. It does not install HTTP routes, invoke handlers, enforce current
 runtime authority, qualify codec behavior, implement a shared executor, add CLI
 selection, or deliver providers/deployment. Those distinct tasks retain their
-existing gates. T12.2 acceptance remains pending independent final review and
-fresh landed verification.
+existing gates. Final independent review and fresh landed evidence follow.
+
+
+## Independent review and guarded landing
+
+Independent reviewer `generation_review` approved the full candidate
+`a130e62d2eb83bce81e7d678993b46b22ac4ff97` against
+`508bb1e3505004c09ca7159c28869fc2ebd7f1a9`, with no actionable findings.
+The actual independent review reservation is recorded on T-SDLC-12-2.4.
+[PR148](https://github.com/ajent-social/AMOS/pull/148) landed by guarded
+GitHub rebase at `2fcf582b67f8b886089a963d93daf0038c5e69ce`.
+The fetched main contains this merge, and the complete reviewed and landed trees
+compare exactly equal. Fresh exact-landed Linux ARM64 Go1.27.1 scoped race
+checks pass 17 named tests including subtests (six top-level), plus 10 actual
+generated external-consumer tests, with zero failures/skips. The fresh compiled authored-handler overwrite mutation
+fails the actual finalized ownership test; exact source restoration was verified
+and the restored ownership race passes. Scoped vet and checksum-verified pinned
+golangci-lint2.13.2 pass with zero issues.
+
+T12.2 is ACCEPTED / REVIEWED for the original generation/startup-skeleton
+contract, with all six original delivery stages recorded. No hosted CI, live
+provider, production deployment, callable route, handler execution, runtime
+authority enforcement, codec behavior, updater or CLI selection is qualified.
+Requested batch ceiling25 admitted two independent one-member assignments; this
+receipt covers only T12.2. Exact stage timing, token and cost telemetry remain
+unavailable; no acceleration claim follows from task count.

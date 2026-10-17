@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **73/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **74/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -12,8 +12,8 @@ Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-land
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:293e23b9b055ab8bfae1258064ea7f0303ed360e00d3324d06d16311c88eb594`.
-Registry: `docs/planning/execution-state.json`; `sha256:1b25c1559be76c2bf5a2995079380ca92a523ddd1b093f2e27792312dfb57cfd`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:9f079d2690bd0cbeb9c6fa9d4fec07625dcda6c14e37d2bcb62de36e546e3ebd`.
+Registry: `docs/planning/execution-state.json`; `sha256:b96722daea8bde6d0031a364365e5759bb3e13d41d0fdce4a152cc8ae282b55b`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:cdf4e907d3a4a1342d7cf721ce685fec12d515381bb0df2f65a33559504b70a2`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
@@ -587,33 +587,33 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   authority: reported-display-only
   Acceptance: [At the exact candidate head, task-contract verification and negative checks pass with required real services; changed API/UI behavior has actual boundary/browser evidence where applicable; relevant format, lint, security, schema and required CI checks pass; missing services fail visibly and fixtures do not qualify providers.]
 
-- [ ] T-SDLC-12-2.4 [Independently review T12.2 — Generate business transport stubs without false success]
+- [x] T-SDLC-12-2.4 [Independently review T12.2 — Generate business transport stubs without false success]
   Stage: review
   canonical-id: T-SDLC-12-2.4
   authored-stage: review
   deps: [T-SDLC-12-2.3]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Independent reviewer is named for T12.2 with PR/base/head SHA, covered paths, checks, stable findings and dispositions; no unresolved blocking findings remain. Accepted findings append stable fix, affected verification and re-review tasks before this gate can pass.]
 
-- [ ] T-SDLC-12-2.5 [Rebase merge T12.2 — Generate business transport stubs without false success]
+- [x] T-SDLC-12-2.5 [Rebase merge T12.2 — Generate business transport stubs without false success]
   Stage: merge
   canonical-id: T-SDLC-12-2.5
   authored-stage: merge
   deps: [T-SDLC-12-2.4]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [GitHub REBASE merge lands the exact independently reviewed candidate after required CI and branch checks; PR URL, reviewed head and resulting main SHA are recorded; changed head/base invalidates affected verification and review.]
 
-- [ ] T-SDLC-12-2.6 [Verify landed T12.2 — Generate business transport stubs without false success]
+- [x] T-SDLC-12-2.6 [Verify landed T12.2 — Generate business transport stubs without false success]
   Stage: verify-landed
   canonical-id: T-SDLC-12-2.6
   authored-stage: verify-landed
   deps: [T-SDLC-12-2.5]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: COMPLETE
   authority: reported-display-only
   Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
 
