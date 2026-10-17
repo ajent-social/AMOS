@@ -392,10 +392,10 @@ External collection remains disabled; provider/deployment gates remain separate.
 
 The new internal payload decoder implements the bounded parsed-envelope/byte
 projection only, reusing the finite public profile before fresh canonical output.
-Candidate scoped race checks pass64 named cases,30second fuzz completes1,207,085
+Scoped race checks pass64 named cases,30second fuzz completes1,207,085
 executions, the compiled trailing-guard negative fails before exact restoration,
 and scoped vet/pinned lint pass. See the
-[component receipt](planning/ship-intake-payload-20261017.md). Independent final
-review/landing remain pending. No endpoint, admitted attempt, provenance, receipt,
+[component receipt](planning/ship-intake-payload-20261017.md). PR154 landed at `28ee817` after independent review; fresh landed race checks
+pass64 named cases with zero failures/skips. No endpoint, admitted attempt, provenance, receipt,
 storage or network deadline capability is supplied. T14.4 stays IN_PROGRESS and
 external collection disabled.

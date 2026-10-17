@@ -69,3 +69,27 @@ relative link was corrected before final checks. No linter waiver or skip was ad
 
 Independent exact-head full candidate review, guarded merge and fresh landed
 behavior remain pending. Full T14.4 and external collection remain unaccepted.
+
+## Independent review and verified component landing
+
+Reviewer `generation_review` approved full candidate
+`d6276eb15ef0bc43695821a85505811eebd20d5e` against
+`17130246b58aaffda1887236361e29240e4b6414`, with no unresolved findings. Its actual
+component review reservation is recorded above; it is not the implementation
+claim or completion of the original whole-task review stage.
+[PR154](https://github.com/ajent-social/AMOS/pull/154) landed by guarded GitHub
+rebase at `28ee8174c5912eaa0ef9a2eee5f70717099fb669`. Fetched main contains the
+merge and its full tree equals the reviewed candidate.
+
+Fresh exact-landed Linux Go1.27.1 race checks pass64 named cases, seven top-level,
+zero failures/skips. The fuzz, compiled negative/restoration, vet and pinned lint
+results above are reused from identical source7140126, not described as new
+landed executions. Native1607-task freshness and changed documentation/public
+checks pass. One source component is delivered under requested ceiling25;
+T14.4 remains IN_PROGRESS/NOT_RUN and collection stays disabled.
+
+A coordinator header-count concern was checked against the exact landed revision
+and withdrawn: per-value accounting and its boundary test were already present.
+It came from an earlier draft, not an escaped defect; no production correction or
+new negative-before evidence is claimed. The published component source remains the
+independently reviewed and tested version.
