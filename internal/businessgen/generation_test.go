@@ -347,9 +347,11 @@ func TestGeneratedExternalConsumer(t *testing.T) {
 	cmd := exec.Command("go", "test", "-json", "-mod=readonly", "-count=1", ".")
 	cmd.Dir = root
 	cmd.Env = append(os.Environ(), "GOWORK=off")
-	output, err := cmd.CombinedOutput()
+	var diagnostics bytes.Buffer
+	cmd.Stderr = &diagnostics
+	output, err := cmd.Output()
 	if err != nil {
-		t.Fatalf("external generated consumer failed: %v\n%s", err, output)
+		t.Fatalf("external generated consumer failed: %v\nstdout:\n%s\nstderr:\n%s", err, output, diagnostics.Bytes())
 	}
 	decoder := json.NewDecoder(bytes.NewReader(output))
 	passes := 0
