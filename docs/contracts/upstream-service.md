@@ -117,3 +117,21 @@ T14.4 owns real quarantined intake; E16 owns applicable live/deployed evidence.
 No AMSL revision is selected or copied. Changes to identity/storage semantics or
 budget ceilings require independent review and integrator version amendment;
 operators may lower limits but cannot add raw diagnostic fields or bypass gates.
+
+
+## Proposed v1.37 intake admission clarification
+
+The [intake admission contract](upstream-intake.md) and
+[ADR050](../adr/050-quarantined-intake-admission.md) define the first runtime
+profile without changing this accepted declaration validator. Anonymous-only
+activation requires enrolled allowances zero, complete bounded HMAC epoch lookup,
+current independently custodied witness/fences and actual encrypted object custody.
+Every principal, alias and key-epoch record shares the declared anonymous entry
+budget. PostgreSQL holds metadata only; intake can execute finite metadata functions,
+not SELECT payloads. A narrowly scoped storage-purpose witness credential may
+verify metadata and maintain fences, never read payloads or change operator membership.
+Collection remains disabled until these real authorities and provider write-quiescence
+are qualified. Restored snapshots cannot activate in the initial profile. The v1.37
+contract specifies charged-attempt versus network-arrival accounting, scoped receipts,
+first-reservation expiry and strict HTTP/gzip behavior; syntax validity is still
+neither runtime admission nor deployment authority.
