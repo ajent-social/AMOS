@@ -531,7 +531,7 @@ design landing precedes source; full T14.7/private-channel/downstream acceptance
 remains pending and external intake stays disabled.
 
 
-## Proposed amendment v1.37: quarantined intake admission
+## Adopted amendment v1.37: quarantined intake admission
 
 [ADR050](../adr/050-quarantined-intake-admission.md) and the
 [intake contract](../contracts/upstream-intake.md) specify anonymous-only durable

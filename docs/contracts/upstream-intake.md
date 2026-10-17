@@ -1,7 +1,7 @@
 # Quarantined intake admission v1
 
-Status: proposed `amos-contract-v1.37` admission design, pending independent review
-and integrator adoption. No handler, migration, witness, enrollment, storage adapter
+Status: adopted `amos-contract-v1.37` admission design through independently
+reviewed PR152. No handler, migration, witness, enrollment, storage adapter
 or deployment is implemented by this document. Original T14.4 is not accepted.
 This contract resolves the policy questions in
 [issue145](https://github.com/ajent-social/AMOS/issues/145), supplements

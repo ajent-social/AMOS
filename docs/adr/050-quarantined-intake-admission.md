@@ -1,6 +1,7 @@
 # ADR050: Quarantined diagnostic intake admission
 
-Status: Proposed for independent review and integrator adoption as v1.37.
+Status: Adopted design v1.37 through independently reviewed PR152.
+Implementation, authority qualification and collection activation remain separate.
 Date: 2026-10-17.
 
 ## Context

@@ -382,7 +382,7 @@ retained257-product inventory; delivery-node counts are not product completion.
 
 T14.4 is in progress for the bounded admission amendment tracked by
 [issue145](https://github.com/ajent-social/AMOS/issues/145) and its
-[delivery record](planning/ship-intake-contract-20261017.md). Independent contract
-review and landing precede source admission. No HTTP collector, durable budgets,
+[delivery record](planning/ship-intake-contract-20261017.md). The independently reviewed v1.37 contract landed in PR152 at `b165cb6`;
+exact source artifacts and all authority/required-service qualifications remain. No HTTP collector, durable budgets,
 quarantine, enrollment or restore implementation is accepted by this design.
 External collection remains disabled; provider/deployment gates remain separate.
