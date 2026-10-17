@@ -113,3 +113,27 @@ The helper now invokes Go through PATH with explicit `GOTOOLCHAIN=go1.27.1` and
 retains the exact actual-version assertion and single-worker CPU bound.
 This is a lint correction, not a failing consumer behavior or completed final
 verification; fresh checks and independent review remain required.
+
+
+## Final source verification
+
+Exact implementation `306395b75d34351f3f1eb033e4cdd38834c52645` passes the
+bounded Go1.27.1 Linux ARM64 check. Parsed race output records93 named passes:
+85 CI-package and8 application-package cases, with zero failures/skips. Actual
+consumer initialization, repeated initialization, resume and both changed CI
+preimages pass. The actual emitted application completes adopted vet and race-test
+commands against its unchanged nested-package layout; that case took83.64seconds.
+Scoped vet passes. Official-release checksum verification succeeds for
+golangci-lint2.13.2, which reports zero issues. The earlier deprecated-helper lint
+failure is resolved; no lint waiver was introduced.
+
+The remote attempt completed successfully; its exact-source receipt is retained
+outside the tracked public tree. Local actionlint, deterministic aggregate matrix,
+compiled lint-failure mutation/restoration, formatting and scoped public checks
+supplement the result. These are local/remote command checks, not hosted GitHub
+Actions, PostgreSQL service, provider or deployment qualification.
+
+Original delivery stages T-SDLC-9-2.1/.2/.3 are COMPLETE for preflight,
+implementation and verification. T9.2 remains IN_PROGRESS and NOT_RUN pending
+independent exact-head candidate review, guarded merge and fresh landed acceptance.
+Accepted T12.2 records and authored scope remain unchanged.
