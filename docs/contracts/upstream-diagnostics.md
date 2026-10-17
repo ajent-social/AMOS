@@ -158,3 +158,15 @@ can identify an installation independently of payload fields. This is no
 anonymity guarantee, differential-privacy claim or permission to send personal
 data. Review transport/linkability and owner-visible privacy disclosures before
 any collector or live export is qualified.
+
+
+## Proposed v1.37 collector clarification
+
+The [intake admission contract](upstream-intake.md) consumes this finite wire
+allowlist without accepting source/build-provenance claims. A recognized wire
+baseline remains unverified quarantine data. Invalid input is discarded without
+persisting or hashing its raw body; no instruction, URL or arbitrary signature is
+rewritten into an approved value. Only freshly normalized validated finite payload
+bytes may receive a canonical digest. Source/build provenance for later export or
+trusted analysis remains separate. No collector, consent, transmission, enrollment
+or public-release authority follows from adopting this admission design.

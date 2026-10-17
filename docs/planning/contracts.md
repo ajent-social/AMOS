@@ -529,3 +529,22 @@ Reporter/analysis labels cannot grant release authority. No raw data, recipient,
 callback, sender, durable storage or publication capability is added. Independent
 design landing precedes source; full T14.7/private-channel/downstream acceptance
 remains pending and external intake stays disabled.
+
+
+## Proposed amendment v1.37: quarantined intake admission
+
+[ADR050](../adr/050-quarantined-intake-admission.md) and the
+[intake contract](../contracts/upstream-intake.md) specify anonymous-only durable
+attempt admission, bounded cross-epoch HMAC continuity, scoped immutable receipts,
+strict finite JSON/gzip/HTTP and metadata/object publication fencing. Enrollment
+stays denied pending a qualified issuer/verifier/current-revocation contract.
+PostgreSQL holds metadata only; payload custody remains private normalized SSE-KMS
+object quarantine. Every mutation requires an independently current witness and
+real metadata verification; that service is an unqualified hard prerequisite,
+not a callback or verified flag. Initial restore activation is forbidden. First
+reservation fixes expiry; provider-proven write quiescence must precede deletion
+capacity release. No AWS mechanism is presumed qualified. Independent design
+adoption precedes source admission; exact SQL/witness artifacts, real required-service
+proof and effective provider/retention enforcement remain gates. No existing
+configuration schema, application code, migration or product acceptance changes;
+full T14.4 and external intake remain unqualified and disabled.
