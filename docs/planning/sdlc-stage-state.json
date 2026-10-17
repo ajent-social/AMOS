@@ -3906,7 +3906,7 @@
     },
     "T-SDLC-9-2.1": {
       "task_id": "T-SDLC-9-2.1",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "owner": "Coordinator",
       "claim": {
         "resource": "T9.2",
@@ -3920,24 +3920,26 @@
       "source_or_artifact_identity": {
         "baseline": "508bb1e3505004c09ca7159c28869fc2ebd7f1a9",
         "resumed_base": "c554e0e50729a50c8a1a219a4234bdfd8e28600d",
-        "approved_upstream": "680caa87f92395cb034df6a9b2dc95b517134209"
+        "approved_upstream": "680caa87f92395cb034df6a9b2dc95b517134209",
+        "verified_source": "306395b75d34351f3f1eb033e4cdd38834c52645"
       },
       "commands_and_results": [
         "Task acceptance, dependency outputs, exact delegated leaf paths and actual generated-consumer checks are reconciled; preserved all prior work.",
         "Current1607-task authored source bytes match the prior owning Wazi conformance record; native display/source freshness passes.",
         "Follow-up real Go1.27.1 command probe invalidated selected upstream source: go test -race -- ./... fails at module root when only nested packages exist.",
         "Related upstream PR5 final proposed f7b7326b6e86d381ced145080355a2eeea8e19b7 has actual old12failures/fixed2passingmethods command evidence and clear independent review; human maintainer review/merge remains pending. Preserve blocked AMOS draft and existing published pin until approved repin/requalification.",
-        "Prior blocker resolved after explicit owner approval and upstream PR5 merge. Landed680caa87 entire tree equals approvedf7b7326; repin actual emitted caller and preserve current mainT12.2 records. Fresh claim acquired for resumed work."
+        "Prior blocker resolved after explicit owner approval and upstream PR5 merge. Landed680caa87 entire tree equals approvedf7b7326; repin actual emitted caller and preserve current mainT12.2 records. Fresh claim acquired for resumed work.",
+        "Final source306395b passes actual Go1.27.1 Linux ARM64 scoped race: CI85 named and application8 named passes, zero fail/skip; includes real generated-consumer vet/race commands. Scoped vet and official-checksum golangci-lint2.13.2 pass zero issues. Prior upstream blocker resolved; source handoff complete, not product acceptance."
       ],
       "independent_review_and_findings": {
         "status": "PENDING_EXACT_HEAD_REVIEW"
       },
       "external_blockers": [],
-      "next_action": "Run final exact-source scoped verification including actual generated consumer, then independent review before guarded merge/landed acceptance."
+      "next_action": "Independent exact-head full candidate review before guarded merge and fresh landed verification; product task remains IN_PROGRESS."
     },
     "T-SDLC-9-2.2": {
       "task_id": "T-SDLC-9-2.2",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "owner": "Retained-context isolated implementer",
       "claim": {
         "resource": "T9.2",
@@ -3949,19 +3951,47 @@
       "source_or_artifact_identity": {
         "baseline": "508bb1e3505004c09ca7159c28869fc2ebd7f1a9",
         "resumed_base": "c554e0e50729a50c8a1a219a4234bdfd8e28600d",
-        "approved_upstream": "680caa87f92395cb034df6a9b2dc95b517134209"
+        "approved_upstream": "680caa87f92395cb034df6a9b2dc95b517134209",
+        "verified_source": "306395b75d34351f3f1eb033e4cdd38834c52645"
       },
       "commands_and_results": [
         "One retained-context implementation assignment admitted; actual generation and strict missing/conflicting dependency behavior required before acceptance.",
         "Current1607-task authored source bytes match the prior owning Wazi conformance record; native display/source freshness passes.",
         "Related upstream PR5 final proposed f7b7326b6e86d381ced145080355a2eeea8e19b7 has actual old12failures/fixed2passingmethods command evidence and clear independent review; human maintainer review/merge remains pending. Preserve blocked AMOS draft and existing published pin until approved repin/requalification.",
-        "Prior blocker resolved after explicit owner approval and upstream PR5 merge. Landed680caa87 entire tree equals approvedf7b7326; repin actual emitted caller and preserve current mainT12.2 records. Fresh claim acquired for resumed work."
+        "Prior blocker resolved after explicit owner approval and upstream PR5 merge. Landed680caa87 entire tree equals approvedf7b7326; repin actual emitted caller and preserve current mainT12.2 records. Fresh claim acquired for resumed work.",
+        "Final source306395b passes actual Go1.27.1 Linux ARM64 scoped race: CI85 named and application8 named passes, zero fail/skip; includes real generated-consumer vet/race commands. Scoped vet and official-checksum golangci-lint2.13.2 pass zero issues. Prior upstream blocker resolved; source handoff complete, not product acceptance."
       ],
       "independent_review_and_findings": {
         "status": "PENDING_EXACT_HEAD_REVIEW"
       },
       "external_blockers": [],
-      "next_action": "Run final exact-source scoped verification including actual generated consumer, then independent review before guarded merge/landed acceptance."
+      "next_action": "Independent exact-head full candidate review before guarded merge and fresh landed verification; product task remains IN_PROGRESS."
+    },
+    "T-SDLC-9-2.3": {
+      "task_id": "T-SDLC-9-2.3",
+      "status": "COMPLETE",
+      "owner": "Coordinator verification",
+      "claim": {
+        "resource": "T9.2",
+        "tip": "9142f8ccd57b65b8fc949a5cf927a088a6900698"
+      },
+      "dependency_receipts": [
+        "T-SDLC-9-2.2"
+      ],
+      "source_or_artifact_identity": {
+        "baseline": "508bb1e3505004c09ca7159c28869fc2ebd7f1a9",
+        "resumed_base": "c554e0e50729a50c8a1a219a4234bdfd8e28600d",
+        "approved_upstream": "680caa87f92395cb034df6a9b2dc95b517134209",
+        "verified_source": "306395b75d34351f3f1eb033e4cdd38834c52645"
+      },
+      "commands_and_results": [
+        "At exact source306395b75d34351f3f1eb033e4cdd38834c52645:93 named scoped race passes (CI85/application8), zero fail/skip. Actual emitted application runs adopted vet and race-test commands at Go1.27.1. Scoped vet passes; official-checksum golangci-lint2.13.2 reports zero issues. Local actual caller actionlint, compiled aggregate negative/restoration, formatting and changed-path public checks pass; remote checks are not hosted CI."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_EXACT_HEAD_REVIEW"
+      },
+      "external_blockers": [],
+      "next_action": "Independent exact-head full candidate review before guarded merge and fresh landed verification; product task remains IN_PROGRESS."
     }
   },
   "receipt_requirements": [

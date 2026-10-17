@@ -12,8 +12,8 @@ Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-land
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:293e23b9b055ab8bfae1258064ea7f0303ed360e00d3324d06d16311c88eb594`.
-Registry: `docs/planning/execution-state.json`; `sha256:5dadae403e976079065642d2561be6640843a68ddee73901bcd70db646dc6b05`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:c5c543c01e8edd6abd86e477e27594bbb5b91fa04146ca550a992f6e2f559760`.
+Registry: `docs/planning/execution-state.json`; `sha256:2f5482f726c24875cbe302e33d1a0c9f8ba18d0c6ab22211863b2ade43b62ed1`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:e70642e0902aaf6fdb56b055fa41351fc5f21a76c7eaf78010b1bb446f80ea31`.
 See [projection contract](planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 

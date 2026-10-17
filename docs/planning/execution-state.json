@@ -913,7 +913,8 @@
       "Actual pinned upstream Go command qualification failed: go test -race -- ./... selects the root package instead of the intended tree; no safe existing immutable public workflow revision was found.",
       "Upstream correction and required human maintainer review must precede a new immutable pin and full T9.2 acceptance. No broken caller is accepted or advertised.",
       "Upstream PR5 proposes f7b7326b6e86d381ced145080355a2eeea8e19b7; actual command harness original12failures/corrected2testmethodsPASS covers eight race/branch/outcome combinations. Independent upstream review clear; human maintainer review/merge and approved immutable repin remain pending. AMOS candidate preserved as blocked draft, unmerged.",
-      "Owner explicitly approved upstream PR5 correction; guarded rebase merge landed680caa87f92395cb034df6a9b2dc95b517134209, complete tree equal independently reviewedf7b7326b6e86d381ced145080355a2eeea8e19b7. Candidate repinned after safe rebase preserving acceptedT12.2; final exact-source verification/review/landing pending. Prior upstream blocker is resolved, not product acceptance."
+      "Owner explicitly approved upstream PR5 correction; guarded rebase merge landed680caa87f92395cb034df6a9b2dc95b517134209, complete tree equal independently reviewedf7b7326b6e86d381ced145080355a2eeea8e19b7. Candidate repinned after safe rebase preserving acceptedT12.2; final exact-source verification/review/landing pending. Prior upstream blocker is resolved, not product acceptance.",
+      "Final implementation306395b75d34351f3f1eb033e4cdd38834c52645 passes93 named scoped Linux race checks (CI85/application8), zero fail/skip, actual generated-consumer vet/race commands, scoped vet and official-checksum lint2.13.2 zero issues. Preflight/implementation/verification rows complete; independent candidate review, merge and fresh landed acceptance remain pending. No hosted CI/provider/deployment acceptance."
     ]
   }
 }
