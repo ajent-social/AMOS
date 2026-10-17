@@ -893,5 +893,13 @@
       "Generated initializer emission/schema migration, durable baseline storage and upgrade integration remain separate unqualified gates; this component does not replace the current initializer manifest.",
       "Bounded library component independently reviewed and landed via PR146 at18643232165bff247c448bfe92da1b47f48739d9, full-tree equal reviewed03f5ef24253bcb6c8a61bd08fecc0e40cb742d37. Fresh landed62 named scoped race checks pass with zero failures/skips and native1607-task freshness passes. Full initializer/upgrade/durable baseline integration remains open; no product descendants released."
     ]
+  },
+  "T12.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Ready dependencies and current frozen contracts reconciled; bounded original-task implementation admitted with isolated ownership.",
+      "Actual outcome acceptance and independent review/landing remain pending; no production or provider authority is granted."
+    ]
   }
 }
