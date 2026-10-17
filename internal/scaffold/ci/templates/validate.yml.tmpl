@@ -1,5 +1,5 @@
 # Credential-free validation only. No artifact, release or deployment authority.
-# Public AMSL workflows at reviewed commit 601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd
+# Public AMSL workflows at reviewed commit 680caa87f92395cb034df6a9b2dc95b517134209
 # remain CANDIDATE; consumer adoption does not promote upstream maturity.
 # Validation/setup-go caches are disabled upstream. The lint action caches only
 # lint data under GitHub's repository/ref cache boundary. Privileged workflows
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   go-validation:
     # AMSL go-validation, immutable CANDIDATE snapshot.
-    uses: ajent-social/workflows/.github/workflows/go-validation.yml@601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd
+    uses: ajent-social/workflows/.github/workflows/go-validation.yml@680caa87f92395cb034df6a9b2dc95b517134209
     with:
       working-directory: .
       go-version-file: .github/amos-ci/go.mod
@@ -27,7 +27,7 @@ jobs:
       enable-postgres: false
   go-lint:
     # AMSL go-lint, same immutable CANDIDATE snapshot.
-    uses: ajent-social/workflows/.github/workflows/go-lint.yml@601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd
+    uses: ajent-social/workflows/.github/workflows/go-lint.yml@680caa87f92395cb034df6a9b2dc95b517134209
     with:
       working-directory: .
       go-version-file: .github/amos-ci/go.mod

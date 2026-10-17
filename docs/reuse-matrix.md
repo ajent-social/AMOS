@@ -16,3 +16,37 @@ Status: dependency and shared-source review, recorded 2026-09-30. The integrated
 Reuse is preferred where a public, versioned shared capability satisfies the contract and its consumer evidence fits AMOS. Public Apache-2.0 repository license files were inspected through read-only sibling sources and are linked above; no exact AMSL revision is selected here. This inventory does not approve wholesale adoption, code copying, or a maturity/security claim. No AMSL source was copied into AMOS. Restricted donor material remains excluded pending the separately required source and publication clearance.
 
 The PostgreSQL dependency is selected for both supported deployment shapes. The next qualification step is the actual consumer check: transactions, pooling, migrations, TLS/authentication, failure behavior and database-backed tenant isolation against PostgreSQL. Avoid adding an extra database abstraction before those checks establish a need.
+
+
+### Historical blocked narrow CI caller candidate (2026-10-16)
+
+The historical workflow candidate row above is supplemented by T9.2's inspection
+of public workflow revision `601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd` for
+credential-free generated validation only. The [provenance record](provenance.md)
+records exact files, license, transitive pin/cache limits and CANDIDATE maturity.
+No Go/Pulumi/capability module, MCP baseline, privileged release workflow or
+hosted provider qualification is adopted by this selection.
+
+The candidate remains blocked by the actual upstream Go package-selection
+command defect. These source/license observations do not adopt a broken caller;
+corrected workflow review and immutable requalification remain required.
+
+
+[Upstream repair PR #5](https://github.com/ajent-social/workflows/pull/5), proposed
+head `f7b7326b6e86d381ced145080355a2eeea8e19b7`, has command-regression
+and independent review evidence. Required human maintainer review/merge remains
+pending; AMOS T9.2 remains BLOCKED and does not consume this proposed revision.
+
+
+## Resumed with owner-approved upstream correction
+
+The owner explicitly approved the correction in
+[upstream PR #5](https://github.com/ajent-social/workflows/pull/5). Its guarded
+rebase merge landed `680caa87f92395cb034df6a9b2dc95b517134209`; the complete
+landed tree equals independently reviewed `f7b7326b6e86d381ced145080355a2eeea8e19b7`.
+The generated caller now pins the landed SHA for both validation and lint.
+The earlier human-review blocker is resolved. T9.2 is IN_PROGRESS pending fresh
+exact-source consumer verification, independent AMOS review and landing.
+The candidate was safely rebased onto current main while preserving accepted
+T12.2 implementation, records and authored scope. CANDIDATE upstream maturity,
+cache limits and hosted/provider/deployment qualification boundaries are unchanged.

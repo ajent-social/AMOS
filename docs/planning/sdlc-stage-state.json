@@ -173,7 +173,7 @@
         "findings": []
       },
       "external_blockers": [],
-      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2\u20136 and corrective chainF1/R1."
+      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2–6 and corrective chainF1/R1."
     },
     "T-SDLC-10-7.2": {
       "task_id": "T-SDLC-10-7.2",
@@ -3903,6 +3903,65 @@
       },
       "external_blockers": [],
       "next_action": "Preserve generation/startup registration acceptance; dependent runtime/upgrade/release tasks retain their original gates."
+    },
+    "T-SDLC-9-2.1": {
+      "task_id": "T-SDLC-9-2.1",
+      "status": "IN_PROGRESS",
+      "owner": "Coordinator",
+      "claim": {
+        "resource": "T9.2",
+        "tip": "9142f8ccd57b65b8fc949a5cf927a088a6900698"
+      },
+      "dependency_receipts": [
+        "T9.1",
+        "T1.4",
+        "T-PROD.15"
+      ],
+      "source_or_artifact_identity": {
+        "baseline": "508bb1e3505004c09ca7159c28869fc2ebd7f1a9",
+        "resumed_base": "c554e0e50729a50c8a1a219a4234bdfd8e28600d",
+        "approved_upstream": "680caa87f92395cb034df6a9b2dc95b517134209"
+      },
+      "commands_and_results": [
+        "Task acceptance, dependency outputs, exact delegated leaf paths and actual generated-consumer checks are reconciled; preserved all prior work.",
+        "Current1607-task authored source bytes match the prior owning Wazi conformance record; native display/source freshness passes.",
+        "Follow-up real Go1.27.1 command probe invalidated selected upstream source: go test -race -- ./... fails at module root when only nested packages exist.",
+        "Related upstream PR5 final proposed f7b7326b6e86d381ced145080355a2eeea8e19b7 has actual old12failures/fixed2passingmethods command evidence and clear independent review; human maintainer review/merge remains pending. Preserve blocked AMOS draft and existing published pin until approved repin/requalification.",
+        "Prior blocker resolved after explicit owner approval and upstream PR5 merge. Landed680caa87 entire tree equals approvedf7b7326; repin actual emitted caller and preserve current mainT12.2 records. Fresh claim acquired for resumed work."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_EXACT_HEAD_REVIEW"
+      },
+      "external_blockers": [],
+      "next_action": "Run final exact-source scoped verification including actual generated consumer, then independent review before guarded merge/landed acceptance."
+    },
+    "T-SDLC-9-2.2": {
+      "task_id": "T-SDLC-9-2.2",
+      "status": "IN_PROGRESS",
+      "owner": "Retained-context isolated implementer",
+      "claim": {
+        "resource": "T9.2",
+        "tip": "9142f8ccd57b65b8fc949a5cf927a088a6900698"
+      },
+      "dependency_receipts": [
+        "T-SDLC-9-2.1"
+      ],
+      "source_or_artifact_identity": {
+        "baseline": "508bb1e3505004c09ca7159c28869fc2ebd7f1a9",
+        "resumed_base": "c554e0e50729a50c8a1a219a4234bdfd8e28600d",
+        "approved_upstream": "680caa87f92395cb034df6a9b2dc95b517134209"
+      },
+      "commands_and_results": [
+        "One retained-context implementation assignment admitted; actual generation and strict missing/conflicting dependency behavior required before acceptance.",
+        "Current1607-task authored source bytes match the prior owning Wazi conformance record; native display/source freshness passes.",
+        "Related upstream PR5 final proposed f7b7326b6e86d381ced145080355a2eeea8e19b7 has actual old12failures/fixed2passingmethods command evidence and clear independent review; human maintainer review/merge remains pending. Preserve blocked AMOS draft and existing published pin until approved repin/requalification.",
+        "Prior blocker resolved after explicit owner approval and upstream PR5 merge. Landed680caa87 entire tree equals approvedf7b7326; repin actual emitted caller and preserve current mainT12.2 records. Fresh claim acquired for resumed work."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING_EXACT_HEAD_REVIEW"
+      },
+      "external_blockers": [],
+      "next_action": "Run final exact-source scoped verification including actual generated consumer, then independent review before guarded merge/landed acceptance."
     }
   },
   "receipt_requirements": [
