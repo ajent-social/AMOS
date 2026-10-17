@@ -5,8 +5,11 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/ajent-social/amos/internal/initializer"
 	"github.com/ajent-social/amos/internal/scaffold/ci"
@@ -103,5 +106,49 @@ func TestValidationWorkflowGeneratedAndResume(t *testing.T) {
 				t.Fatal("resume overwrote changed CI preimage")
 			}
 		})
+	}
+}
+
+// The adopted workflow commands must work in the actual emitted application,
+// whose module root intentionally contains no Go files. This is local command
+// qualification, not hosted Actions or database/provider acceptance.
+func TestValidationWorkflowGeneratedConsumerCommands(t *testing.T) {
+	root, err := filepath.Abs("../../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := initializer.Input{SchemaVersion: 1, AppSlug: "validation-consumer", ModulePath: "example.com/validation/consumer", ParentDir: ownerTempDir(t), Target: "validation-consumer", Modules: []string{"identity", "workspace"}, Mode: "evaluation", BusinessMode: "integrated-go", PublicOrigin: "http://127.0.0.1:8080"}
+	result, err := initializer.Initialize(context.Background(), input, Generator{SourceDir: root})
+	if err != nil || !result.Finalized {
+		t.Fatalf("actual consumer initialize: %v", err)
+	}
+	target := filepath.Join(input.ParentDir, result.Target)
+	rootFiles, err := filepath.Glob(filepath.Join(target, "*.go"))
+	if err != nil || len(rootFiles) != 0 {
+		t.Fatal("generated consumer must retain its real nested-package layout")
+	}
+	env := append(os.Environ(), "GOTOOLCHAIN=local", "GOWORK=off", "GOMAXPROCS=2", "GOFLAGS=-p=1")
+	run := func(args ...string) []byte {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, "go", args...)
+		cmd.Dir = target
+		cmd.Env = env
+		out, e := cmd.CombinedOutput()
+		if e != nil {
+			t.Fatalf("generated consumer go %v: %v\n%s", args, e, out)
+		}
+		return out
+	}
+	if got := strings.TrimSpace(string(run("env", "GOVERSION"))); got != "go"+ci.ValidationGoVersion {
+		t.Fatalf("actual consumer toolchain %q, want go%s", got, ci.ValidationGoVersion)
+	}
+	// Exact argument vectors in approved upstream snapshot680caa87; no dummy
+	// root package, altered package scope, service fixture or swallowed failure.
+	run("vet", "--", "./...")
+	out := run("test", "-race", "./...")
+	if !bytes.Contains(out, []byte(input.ModulePath+"/cmd/app")) {
+		t.Fatalf("actual generated tests did not execute: %s", out)
 	}
 }

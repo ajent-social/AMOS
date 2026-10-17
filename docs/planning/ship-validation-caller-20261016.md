@@ -19,7 +19,9 @@ repository execution, not external scheduler admission.
 
 Integrator explicitly delegates internal/scaffold/ci/validate.go, internal/scaffold/ci/templates/validate.yml.tmpl, internal/scaffold/ci/validate_test.go, a small CI emission call in internal/scaffold/application/generator.go, and a new focused validation_workflow_test.go. No root repository workflow, permission/protection or release setting changes. Public immutable workflow qualification must retain CANDIDATE maturity and inspect all transitive pins/cache behavior. Actual generated Initialize output and aggregate script behavior are required.
 
-Root holds the task's canonical atomic reservation `f93042b6fb7171c2ff107bdde05b7fcad1c619ea` and integration
+The initial coordinator reservation `f93042b6fb7171c2ff107bdde05b7fcad1c619ea`
+is historical and superseded. Resumed task ownership uses canonical reservation
+`9142f8ccd57b65b8fc949a5cf927a088a6900698`; the coordinator owns separate integration
 reservation. Implementer writes only delegated leaf paths in its isolated
 worktree. No shared manifests, migrations, policy/identity types or executable
 wiring are delegated beyond the precise CI emission call above. Production
@@ -93,3 +95,12 @@ exact-source consumer verification, independent AMOS review and landing.
 The candidate was safely rebased onto current main while preserving accepted
 T12.2 implementation, records and authored scope. CANDIDATE upstream maturity,
 cache limits and hosted/provider/deployment qualification boundaries are unchanged.
+
+
+Final verification now includes `TestValidationWorkflowGeneratedConsumerCommands`:
+Initialize the actual nested-package application, require exact Go1.27.1 with
+local-only toolchain selection, then execute the adopted upstream `go vet` and
+race-test argument vectors against its unchanged `./...` package scope. No dummy
+root Go file or service substitute is introduced. This added check is pending
+execution on the qualified Linux runner; local shared-Mac load blocks heavy
+verification. Scope remains generated source/local commands, not hosted CI.
