@@ -1,0 +1,72 @@
+# Credential-free validation only. No artifact, release or deployment authority.
+# Public AMSL workflows at reviewed commit 601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd
+# remain CANDIDATE; consumer adoption does not promote upstream maturity.
+# Validation/setup-go caches are disabled upstream. The lint action caches only
+# lint data under GitHub's repository/ref cache boundary. Privileged workflows
+# must never restore or execute these untrusted validation caches/artifacts.
+name: AMOS validation
+on:
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+permissions:
+  contents: read
+concurrency:
+  group: amos-validation-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  go-validation:
+    # AMSL go-validation, immutable CANDIDATE snapshot.
+    uses: ajent-social/workflows/.github/workflows/go-validation.yml@601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd
+    with:
+      working-directory: .
+      go-version-file: .github/amos-ci/go.mod
+      packages: ./...
+      race: true
+      timeout-minutes: 20
+      enable-postgres: false
+  go-lint:
+    # AMSL go-lint, same immutable CANDIDATE snapshot.
+    uses: ajent-social/workflows/.github/workflows/go-lint.yml@601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd
+    with:
+      working-directory: .
+      go-version-file: .github/amos-ci/go.mod
+      golangci-lint-version: v2.13.2
+      args: --timeout=15m
+      timeout-minutes: 20
+  aggregate:
+    name: AMOS / Validate
+    if: ${{ always() }}
+    needs: [go-validation, go-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require every validation child to succeed
+        shell: bash
+        env:
+          VALIDATION_RESULT: ${{ needs.go-validation.result }}
+          LINT_RESULT: ${{ needs.go-lint.result }}
+        run: |
+          set -euo pipefail
+          if [ "$VALIDATION_RESULT" != success ] || [ "$LINT_RESULT" != success ]; then
+            echo 'Required validation jobs did not both succeed.'
+            exit 1
+          fi
+  merge-queue:
+    name: AMOS / Merge Queue
+    if: ${{ always() && github.event_name == 'merge_group' }}
+    needs: [go-validation, go-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require every merge queue child to succeed
+        shell: bash
+        env:
+          VALIDATION_RESULT: ${{ needs.go-validation.result }}
+          LINT_RESULT: ${{ needs.go-lint.result }}
+        run: |
+          set -euo pipefail
+          if [ "$VALIDATION_RESULT" != success ] || [ "$LINT_RESULT" != success ]; then
+            echo 'Required validation jobs did not both succeed.'
+            exit 1
+          fi

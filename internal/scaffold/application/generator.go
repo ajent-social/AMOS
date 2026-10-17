@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/ajent-social/amos/internal/initializer"
+	"github.com/ajent-social/amos/internal/scaffold/ci"
 	"github.com/ajent-social/amos/internal/scaffold/local"
 	"github.com/google/uuid"
 )
@@ -26,7 +27,7 @@ import (
 // plus its app-owned sources and generated command overhead) to fit.
 const MaxFrameworkFiles = initializer.MaxGeneratedFiles
 const initializerFileBudget = initializer.MaxGeneratedFiles
-const generatedFileOverhead = 16
+const generatedFileOverhead = 18
 const maxFrameworkFileBytes = 8 << 20
 const maxFrameworkBytes = 64 << 20
 
@@ -75,6 +76,9 @@ func (g Generator) Generate(ctx context.Context, c initializer.Config, files *in
 	}
 	if len(closure) > MaxFrameworkFiles || len(closure)+generatedFileOverhead+len(ownerSource) > initializerFileBudget {
 		return fmt.Errorf("framework runtime closure exceeds bounded initializer file limit")
+	}
+	if err := ci.GenerateValidation(ctx, c, files); err != nil {
+		return err
 	}
 	if err := (local.Generator{}).Generate(ctx, c, files); err != nil {
 		return err
