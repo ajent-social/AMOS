@@ -895,11 +895,14 @@
     ]
   },
   "T12.2": {
-    "status": "IN_PROGRESS",
-    "certification": "NOT_RUN",
+    "status": "ACCEPTED",
+    "certification": "REVIEWED",
     "evidence": [
-      "Ready dependencies and current frozen contracts reconciled; bounded original-task implementation admitted with isolated ownership.",
-      "Actual outcome acceptance and independent review/landing remain pending; no production or provider authority is granted."
+      "Original typed generation/startup-registration skeleton accepted after independent full-candidate review by generation_review at a130e62d2eb83bce81e7d678993b46b22ac4ff97 against 508bb1e3505004c09ca7159c28869fc2ebd7f1a9; guarded PR148 rebase landed 2fcf582b67f8b886089a963d93daf0038c5e69ce.",
+      "Fetched remote main contains the merge; reviewed and landed trees compare exactly equal. Fresh exact-landed Linux ARM64 Go1.27.1 scoped race checks pass17 named tests including subtests (six top-level) and10 actual external generated-consumer tests, zero failures/skips; scoped vet and checksum-verified golangci-lint2.13.2 pass with zero issues.",
+      "Fresh landed compiled disposable mutation overwrote an authored handler during finalized repetition; actual ownership test failed, exact source restoration was verified, and restored ownership race passed. Authored operations/types/UI overrides remain outside the managed write set.",
+      "Initial emission uses the existing initializer transaction. Actual finalized-tree identical repetition verifies ownership/preimages and makes no writes; changed/conflicting output fails. Actual owner implementation compiles against generated models; real operation.Bind/NewRegistry fail on missing handlers, typed-nil dependencies or mismatched schema digests.",
+      "Acceptance covers generation and startup registration only: no callable routes, invocation/current-authority enforcement, codec behavior qualification, updater, CLI selection, hosted CI, provider or deployment acceptance. Full receipt: docs/planning/ship-business-stubs-20261016.md."
     ]
   }
 }
