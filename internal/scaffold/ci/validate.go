@@ -13,7 +13,7 @@ const (
 	ValidationGoVersionPath    = ".github/amos-ci/go.mod"
 	ValidationGoVersion        = "1.27.1"
 	ValidationLintVersion      = "v2.13.2"
-	ValidationWorkflowRevision = "601745b22e78dbed4a7349c7dc3fad2cc2b4c0dd"
+	ValidationWorkflowRevision = "680caa87f92395cb034df6a9b2dc95b517134209"
 )
 
 // The embedded caller is fixed, not an evaluation of caller-supplied templates.

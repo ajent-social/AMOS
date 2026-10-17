@@ -12,8 +12,8 @@ Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-land
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:293e23b9b055ab8bfae1258064ea7f0303ed360e00d3324d06d16311c88eb594`.
-Registry: `docs/planning/execution-state.json`; `sha256:b96722daea8bde6d0031a364365e5759bb3e13d41d0fdce4a152cc8ae282b55b`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:cdf4e907d3a4a1342d7cf721ce685fec12d515381bb0df2f65a33559504b70a2`.
+Registry: `docs/planning/execution-state.json`; `sha256:5dadae403e976079065642d2561be6640843a68ddee73901bcd70db646dc6b05`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:c5c543c01e8edd6abd86e477e27594bbb5b91fa04146ca550a992f6e2f559760`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
@@ -37,23 +37,23 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   authority: reported-display-only
   Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
 
-- [ ] T-SDLC-9-2.1 [Preflight T9.2 — Generate credential-free Go validation workflow]
+- [~] T-SDLC-9-2.1 [Preflight T9.2 — Generate credential-free Go validation workflow]
   Stage: preflight
   canonical-id: T-SDLC-9-2.1
   authored-stage: preflight
   deps: [T-PROD.1, T9.1, T1.4, T-PROD.15]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: IN_PROGRESS
   authority: reported-display-only
   Acceptance: [Current task contract, owned paths, source changes and T9.1, T1.4 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
 
-- [ ] T-SDLC-9-2.2 [Implement T9.2 — Generate credential-free Go validation workflow]
+- [~] T-SDLC-9-2.2 [Implement T9.2 — Generate credential-free Go validation workflow]
   Stage: implement
   canonical-id: T-SDLC-9-2.2
   authored-stage: implement
   deps: [T-SDLC-9-2.1]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: IN_PROGRESS
   authority: reported-display-only
   Acceptance: [Generated workflow validates both PR and merge-group events. A failing child job makes the required aggregate check fail. Named scoped checks pass and the specified negative case is demonstrated; live/production qualification remains a separate explicitly authorized E16 gate where applicable. Candidate source/head, owned diff, test changes and public-safe handoff are recorded; this stage does not accept the product task.]
 

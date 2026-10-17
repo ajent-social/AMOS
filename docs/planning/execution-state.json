@@ -904,5 +904,16 @@
       "Initial emission uses the existing initializer transaction. Actual finalized-tree identical repetition verifies ownership/preimages and makes no writes; changed/conflicting output fails. Actual owner implementation compiles against generated models; real operation.Bind/NewRegistry fail on missing handlers, typed-nil dependencies or mismatched schema digests.",
       "Acceptance covers generation and startup registration only: no callable routes, invocation/current-authority enforcement, codec behavior qualification, updater, CLI selection, hosted CI, provider or deployment acceptance. Full receipt: docs/planning/ship-business-stubs-20261016.md."
     ]
+  },
+  "T9.2": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Generated caller/source, real Initialize/resume/preimage tests, aggregate executable failure matrix and public dependency inspection are present as an unmerged candidate.",
+      "Actual pinned upstream Go command qualification failed: go test -race -- ./... selects the root package instead of the intended tree; no safe existing immutable public workflow revision was found.",
+      "Upstream correction and required human maintainer review must precede a new immutable pin and full T9.2 acceptance. No broken caller is accepted or advertised.",
+      "Upstream PR5 proposes f7b7326b6e86d381ced145080355a2eeea8e19b7; actual command harness original12failures/corrected2testmethodsPASS covers eight race/branch/outcome combinations. Independent upstream review clear; human maintainer review/merge and approved immutable repin remain pending. AMOS candidate preserved as blocked draft, unmerged.",
+      "Owner explicitly approved upstream PR5 correction; guarded rebase merge landed680caa87f92395cb034df6a9b2dc95b517134209, complete tree equal independently reviewedf7b7326b6e86d381ced145080355a2eeea8e19b7. Candidate repinned after safe rebase preserving acceptedT12.2; final exact-source verification/review/landing pending. Prior upstream blocker is resolved, not product acceptance."
+    ]
   }
 }
