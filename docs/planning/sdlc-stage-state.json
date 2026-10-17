@@ -173,7 +173,7 @@
         "findings": []
       },
       "external_blockers": [],
-      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2–6 and corrective chainF1/R1."
+      "next_action": "Preflight fulfilled; landed local adapter evidence follows in stages2\u20136 and corrective chainF1/R1."
     },
     "T-SDLC-10-7.2": {
       "task_id": "T-SDLC-10-7.2",
@@ -4085,6 +4085,37 @@
       },
       "external_blockers": [],
       "next_action": "Preserve generated caller acceptance and upstream CANDIDATE maturity; hosted Actions, provider/deployment and privileged workflow gates remain separate."
+    },
+    "T-SDLC-14-4.1": {
+      "task_id": "T-SDLC-14-4.1",
+      "status": "IN_PROGRESS",
+      "owner": "generation_review; independent design reviewer",
+      "claim": {
+        "resource": "T-SDLC-14-4.1",
+        "tip": "d4fe60fc90a4d58c107e8362bb8ff973c468692e"
+      },
+      "dependency_receipts": [
+        "T14.1",
+        "T1.3",
+        "T14.13"
+      ],
+      "source_or_artifact_identity": {
+        "baseline": "7de91f2c343727452b9759269e7986112de27d1b",
+        "scope": "T14.4 admission contract v1.37; design only"
+      },
+      "commands_and_results": [
+        "Reconciled accepted dependencies and issue145. Existing declaration/profile validators do not qualify durable intake authority.",
+        "No source implementation is dispatched by this design reservation."
+      ],
+      "independent_review_and_findings": {
+        "status": "PENDING",
+        "reviewer": "generation_review; separate from author ownership_review",
+        "scope": "Contract authority, durable budgets/receipts, restore and privacy boundaries."
+      },
+      "external_blockers": [
+        "Source admission requires independently reviewed and landed contract; actual runtime and external activation qualifications remain unperformed."
+      ],
+      "next_action": "Review the final contract candidate; retain T14.4 product acceptance as NOT_RUN."
     }
   },
   "receipt_requirements": [

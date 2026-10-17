@@ -917,5 +917,13 @@
       "Final implementation306395b75d34351f3f1eb033e4cdd38834c52645 passes93 named scoped Linux race checks (CI85/application8), zero fail/skip, actual generated-consumer vet/race commands, scoped vet and official-checksum lint2.13.2 zero issues. Preflight/implementation/verification rows complete; independent candidate review, merge and fresh landed acceptance remain pending. No hosted CI/provider/deployment acceptance.",
       "PR149 guarded-rebase landedc016b2b5857c5eae5fc5938c0cb2751c9068d80d, complete tree equal independently approved902d795e904ede0941abe398981b7c547285f312. Fresh landed93 named scoped race passes (CI85/application8), zero failures/skips, including actual generated-consumer commands81.62s. Identical-source306395b scoped vet and official-checksum lint2.13.2 zero issues reused; not fresh landed vet/lint. T9.2 accepted as generated credential-free caller/local command behavior; no hosted Actions, service/provider or deployment qualification."
     ]
+  },
+  "T14.4": {
+    "status": "IN_PROGRESS",
+    "certification": "NOT_RUN",
+    "evidence": [
+      "Dependency readiness reconciled at 7de91f2c343727452b9759269e7986112de27d1b. Issue145 identifies unresolved durable intake authority; original implementation remains unaccepted.",
+      "Bounded v1.37 admission-contract amendment is in preparation under the original task. Independent design review/landing precedes source admission; no intake, external collection or provider behavior is qualified."
+    ]
   }
 }
