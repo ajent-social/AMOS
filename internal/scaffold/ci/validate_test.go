@@ -92,7 +92,7 @@ func TestValidationWorkflowTrustAndPins(t *testing.T) {
 	if bytes.Equal(copyBytes, RenderValidation()) {
 		t.Fatal("renderer exposes mutable embedded bytes")
 	}
-	if err := GenerateValidation(nil, initializer.Config{}, nil); err == nil {
+	if err := GenerateValidation(context.Background(), initializer.Config{}, nil); err == nil {
 		t.Fatal("invalid emission accepted")
 	}
 }
