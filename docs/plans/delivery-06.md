@@ -12,8 +12,8 @@ Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-land
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:293e23b9b055ab8bfae1258064ea7f0303ed360e00d3324d06d16311c88eb594`.
-Registry: `docs/planning/execution-state.json`; `sha256:ad5a3f837e11bfc523f6cc56ec0917b03a049f55699840f82e08f310d4a0b904`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:5e23a6e390619851d42f8d7df32c4288f0ff04ac316382f139e0d2c5490232d5`.
+Registry: `docs/planning/execution-state.json`; `sha256:e094e521f57cb0b7c59c06463845923b8adc4ef314328983afbb35e2df19d0b3`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:cd2ec10163e0b261ba438064d6b0c75fa4d3eb863de6736407bd170d49e1a21b`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
@@ -297,13 +297,13 @@ See [projection contract](../planning/portable-plan-export.md) for regeneration 
   authority: reported-display-only
   Acceptance: [Fetched remote main contains the reviewed change; reviewed-versus-landed content and affected checks pass on the landed SHA; coordinator records only the source task acceptance actually established in execution-state.json, with component/provider/production boundaries explicit.]
 
-- [ ] T-SDLC-14-4.1 [Preflight T14.4 — Implement quarantined upstream diagnostic intake]
+- [~] T-SDLC-14-4.1 [Preflight T14.4 — Implement quarantined upstream diagnostic intake]
   Stage: preflight
   canonical-id: T-SDLC-14-4.1
   authored-stage: preflight
   deps: [T-PROD.1, T-SDLC-14-1.6, T1.3, T-SDLC-14-13.6, T-PROD.15]
   status-source: docs/planning/sdlc-stage-state.json
-  reported-status: UNRECORDED
+  reported-status: IN_PROGRESS
   authority: reported-display-only
   Acceptance: [Current task contract, owned paths, source changes and T14.1, T1.3, T14.13 are reconciled; acceptance and required services are executable; task claim and isolated SSD worktree are assigned; shared-file conflicts and external gates are resolved before implementation.]
 
