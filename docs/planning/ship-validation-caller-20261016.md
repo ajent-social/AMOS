@@ -137,3 +137,27 @@ Original delivery stages T-SDLC-9-2.1/.2/.3 are COMPLETE for preflight,
 implementation and verification. T9.2 remains IN_PROGRESS and NOT_RUN pending
 independent exact-head candidate review, guarded merge and fresh landed acceptance.
 Accepted T12.2 records and authored scope remain unchanged.
+
+
+## Verified landing and task acceptance
+
+Independent `generation_review` approved exact candidate
+`902d795e904ede0941abe398981b7c547285f312` against
+`c554e0e50729a50c8a1a219a4234bdfd8e28600d`. Review reservation
+`cc402c4cb5b7873d90211810a804b6c3ba0eefd5` is recorded separately from task
+ownership. [PR149](https://github.com/ajent-social/AMOS/pull/149) landed through
+guarded rebase at `c016b2b5857c5eae5fc5938c0cb2751c9068d80d`; fetched main
+reachability and complete reviewed/landed tree equality pass.
+
+Fresh landed Linux race verification completed successfully:93 named passes
+(CI85/application8), zero failures/skips, including the actual generated-consumer
+commands in81.62seconds. The independently parsed terminal receipt reports
+`VALIDATION_LANDED_BEHAVIOR_PASS`. Vet and official-checksum lint2.13.2 zero-issue
+results are reused from source-identical verified implementation306395b; they
+were not rerun as fresh landed checks. Main T12.2 records/source are preserved.
+
+Original T9.2 is ACCEPTED/REVIEWED and all six original delivery stages are
+COMPLETE. Current registry counts are75 accepted and13 in progress. This accepts
+actual generated credential-free caller/local command behavior; it does not claim
+hosted Actions execution, live database/provider, deployment, privileged release
+or cache-consumer qualification. Upstream workflows remain CANDIDATE.

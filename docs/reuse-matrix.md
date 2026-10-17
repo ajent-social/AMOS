@@ -50,3 +50,10 @@ exact-source consumer verification, independent AMOS review and landing.
 The candidate was safely rebased onto current main while preserving accepted
 T12.2 implementation, records and authored scope. CANDIDATE upstream maturity,
 cache limits and hosted/provider/deployment qualification boundaries are unchanged.
+
+
+T9.2 subsequently completed independent candidate review and guarded landing in
+[AMOS PR149](https://github.com/ajent-social/AMOS/pull/149), with fresh actual
+generated-consumer behavior checks. Its qualification is limited to generated
+caller/local commands; the prior blocked/resumed notes are historical. Upstream
+workflows remain CANDIDATE and no hosted/provider/deployment maturity is promoted.
