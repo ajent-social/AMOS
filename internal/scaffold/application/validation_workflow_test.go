@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -127,12 +128,12 @@ func TestValidationWorkflowGeneratedConsumerCommands(t *testing.T) {
 	if err != nil || len(rootFiles) != 0 {
 		t.Fatal("generated consumer must retain its real nested-package layout")
 	}
-	env := append(os.Environ(), "GOTOOLCHAIN=local", "GOWORK=off", "GOMAXPROCS=2", "GOFLAGS=-p=1")
+	env := append(os.Environ(), "GOTOOLCHAIN=local", "GOWORK=off", "GOMAXPROCS=1", "GOFLAGS=-p=1")
 	run := func(args ...string) []byte {
 		t.Helper()
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
-		cmd := exec.CommandContext(ctx, "go", args...)
+		cmd := exec.CommandContext(ctx, filepath.Join(runtime.GOROOT(), "bin", "go"), args...)
 		cmd.Dir = target
 		cmd.Env = env
 		out, e := cmd.CombinedOutput()
