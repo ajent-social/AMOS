@@ -3,7 +3,7 @@
 <!-- current-native-projection:start -->
 ## Current read-only display projection
 
-Product acceptance: **74/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
+Product acceptance: **75/257**. Combined inventory: **1607 product and delivery nodes**; node completion is not product completion.
 This current view supersedes historical inventory/tooling statements below; the original 1,501 IDs remain retained.
 Checkboxes report registry status only; they grant no execution, acceptance or release authority.
 The consumer may additionally display dependency-blocked status. Consult the registries and claims before dispatch.
@@ -12,8 +12,8 @@ Delivery aliases: `author` -> `implement`; `landed` and `accept` -> `verify-land
 Unrecorded tasks remain unchecked. Checked product rows report ACCEPTED; checked delivery rows report COMPLETE.
 These generated fields do not modify canonical authored statuses or authenticate registry receipts.
 Canonical source: `docs/planning/wazi-source.json`; `sha256:293e23b9b055ab8bfae1258064ea7f0303ed360e00d3324d06d16311c88eb594`.
-Registry: `docs/planning/execution-state.json`; `sha256:2f5482f726c24875cbe302e33d1a0c9f8ba18d0c6ab22211863b2ade43b62ed1`.
-Registry: `docs/planning/sdlc-stage-state.json`; `sha256:e70642e0902aaf6fdb56b055fa41351fc5f21a76c7eaf78010b1bb446f80ea31`.
+Registry: `docs/planning/execution-state.json`; `sha256:ad5a3f837e11bfc523f6cc56ec0917b03a049f55699840f82e08f310d4a0b904`.
+Registry: `docs/planning/sdlc-stage-state.json`; `sha256:5e23a6e390619851d42f8d7df32c4288f0ff04ac316382f139e0d2c5490232d5`.
 See [projection contract](../planning/portable-plan-export.md) for regeneration and limits.
 <!-- current-native-projection:end -->
 
