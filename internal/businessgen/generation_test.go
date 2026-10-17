@@ -285,11 +285,13 @@ func TestGenerationDeterministicBoundedContracts(t *testing.T) {
 			t.Fatal("unsupported contract accepted")
 		}
 	}
-	if err := a.Generate(nil, initializer.Config{}, nil); !errors.Is(err, ErrCanceled) {
-		t.Fatal("missing context accepted")
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := a.Generate(canceled, initializer.Config{}, nil); !errors.Is(err, ErrCanceled) {
+		t.Fatal("canceled generation accepted")
 	}
-	if err := a.VerifyRepeat(nil, ""); !errors.Is(err, ErrCanceled) {
-		t.Fatal("missing repeat context accepted")
+	if err := a.VerifyRepeat(canceled, ""); !errors.Is(err, ErrCanceled) {
+		t.Fatal("canceled repeat accepted")
 	}
 }
 
