@@ -95,3 +95,23 @@ Public artifact and changed relative-link checks, `git diff --check`, and
 `python3 scripts/check-plan.py --native-root .` pass. Authored plan source is
 unchanged. No Go build, database or cloud job is needed for this documentation
 change; runtime qualification remains explicitly NOT_RUN.
+
+## Adopted design and landed verification
+
+Independent reviewer `generation_review` approved full candidate
+`d690cf91a2a536fea5924794100cecf9aef71eac` against
+`7de91f2c343727452b9759269e7986112de27d1b`, with no unresolved findings.
+Actual review reservation: T-SDLC-14-4.1,
+`d4fe60fc90a4d58c107e8362bb8ff973c468692e`.
+[PR152](https://github.com/ajent-social/AMOS/pull/152) landed by guarded GitHub
+rebase at `b165cb65018eeb4f86045b7a59cf5e8fe786a811`. Fetched main contains the
+merge and its complete tree equals the reviewed candidate. Fresh exact-landed
+public-document scans and1607-task native freshness pass; changed relative links
+resolve. No runtime/service/provider evidence was substituted.
+
+The one bounded design outcome is delivered under requested ceiling25. Original
+T14.4 remains IN_PROGRESS/NOT_RUN; its preflight is not declared fully complete.
+Exact SQL/witness source artifacts and actual authorities/service qualification
+remain to be supplied. Issue145 remains open for implementation/qualification.
+External collection, enrollment, restore activation and publication stay disabled.
+No deployment or product-task acceptance follows from this contract adoption.
