@@ -99,8 +99,17 @@ cache limits and hosted/provider/deployment qualification boundaries are unchang
 
 Final verification now includes `TestValidationWorkflowGeneratedConsumerCommands`:
 Initialize the actual nested-package application, require exact Go1.27.1 with
-local-only toolchain selection, then execute the adopted upstream `go vet` and
+explicit version selection, then execute the adopted upstream `go vet` and
 race-test argument vectors against its unchanged `./...` package scope. No dummy
 root Go file or service substitute is introduced. This added check is pending
 execution on the qualified Linux runner; local shared-Mac load blocks heavy
 verification. Scope remains generated source/local commands, not hosted CI.
+
+
+The first final-candidate check at `62b35935b45d6c9cebd53110e7a2096484978d7c`
+passed scoped race tests, including the actual generated-consumer commands, and
+vet. Lint rejected the test helper's deprecated `runtime.GOROOT` call (SA1019).
+The helper now invokes Go through PATH with explicit `GOTOOLCHAIN=go1.27.1` and
+retains the exact actual-version assertion and single-worker CPU bound.
+This is a lint correction, not a failing consumer behavior or completed final
+verification; fresh checks and independent review remain required.
