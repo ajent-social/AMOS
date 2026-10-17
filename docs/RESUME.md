@@ -386,3 +386,16 @@ T14.4 is in progress for the bounded admission amendment tracked by
 exact source artifacts and all authority/required-service qualifications remain. No HTTP collector, durable budgets,
 quarantine, enrollment or restore implementation is accepted by this design.
 External collection remains disabled; provider/deployment gates remain separate.
+
+
+## Strict intake payload component (2026-10-17)
+
+The new internal payload decoder implements the bounded parsed-envelope/byte
+projection only, reusing the finite public profile before fresh canonical output.
+Candidate scoped race checks pass64 named cases,30second fuzz completes1,207,085
+executions, the compiled trailing-guard negative fails before exact restoration,
+and scoped vet/pinned lint pass. See the
+[component receipt](planning/ship-intake-payload-20261017.md). Independent final
+review/landing remain pending. No endpoint, admitted attempt, provenance, receipt,
+storage or network deadline capability is supplied. T14.4 stays IN_PROGRESS and
+external collection disabled.
